@@ -177,6 +177,25 @@ function CompleteProfileForm({
   ) => {
     e.preventDefault();
 
+      const normalizedEnrollment = enrollmentNo
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+
+      if (!/^IU[0-9]+$/.test(normalizedEnrollment)) {
+        setError(
+          "Enrollment number must start with IU followed by numbers only. Example: IU2341230377"
+        );
+        return;
+      }
+
+      if (!/^[0-9]{10}$/.test(contactNumber)) {
+        setError(
+          "Contact number must contain exactly 10 digits."
+        );
+        return;
+      }
+
     try {
       setSaving(true);
       setError("");
@@ -195,7 +214,7 @@ function CompleteProfileForm({
           .from("student_master")
           .insert({
             user_id: account.user_id,
-            enrollment_no: enrollmentNo,
+            enrollment_no: normalizedEnrollment,
             first_name: firstName,
             last_name: lastName,
             institute_email: email,
@@ -208,10 +227,37 @@ function CompleteProfileForm({
       if (insertError) throw insertError;
 
       onCreated();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message ?? "Failed to create profile");
-    } finally {
+    }  
+    catch (err: any) {
+    console.error(err);
+
+      const message = err?.message ?? "";
+
+      if (
+        message.includes("chk_enrollment_pattern")
+      ) {
+        setError(
+          "Enrollment number must start with IU followed by numbers only. Example: IU2341230377"
+        );
+      } else if (
+        message.includes("chk_contact_number")
+      ) {
+        setError(
+          "Contact number must contain exactly 10 digits."
+        );
+      } else if (
+        message.includes("student_master_enrollment_no_key")
+      ) {
+        setError(
+          "This enrollment number is already registered."
+        );
+      } else {
+        setError(
+          "Unable to create profile. Please try again."
+        );
+      }
+    }
+      finally {
       setSaving(false);
     }
   };

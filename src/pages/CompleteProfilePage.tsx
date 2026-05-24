@@ -22,6 +22,25 @@ export function CompleteProfilePage() {
 
     if (!user) return;
 
+      const normalizedEnrollment = form.enrollment_no
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+
+      if (!/^IU[0-9]+$/.test(normalizedEnrollment)) {
+        setError(
+          "Enrollment number format is invalid. Example: IU2341230377"
+        );
+        return;
+      }
+
+      if (!/^[0-9]{10}$/.test(form.contact_number)) {
+        setError(
+          "Please enter a valid 10-digit mobile number."
+        );
+        return;
+      }
+
     try {
       setLoading(true);
       setError("");
@@ -38,7 +57,7 @@ export function CompleteProfilePage() {
         .from("student_master")
         .insert({
           user_id: account.user_id,
-          enrollment_no: form.enrollment_no,
+          enrollment_no: normalizedEnrollment,
           first_name: form.first_name,
           last_name: form.last_name,
           institute_email: user.email,
@@ -53,10 +72,33 @@ export function CompleteProfilePage() {
       window.location.href = "/profile";
     } catch (err: any) {
       console.error(err);
-      setError(err?.message ?? "Failed to create profile");
-    } finally {
-      setLoading(false);
-    }
+
+      const message = err?.message ?? "";
+
+  if (
+    message.includes("chk_contact_number")
+  ) {
+    setError(
+      "Please enter a valid 10-digit mobile number."
+    );
+  } else if (
+    message.includes("chk_enrollment_pattern")
+  ) {
+    setError(
+      "Enrollment number format is invalid. Example: IU2341230377"
+    );
+  } else if (
+    message.includes("uq_student_enrollment")
+  ) {
+    setError(
+      "This enrollment number already exists."
+    );
+  } else {
+    setError(
+      "Failed to create profile."
+    );
+  }
+}
   };
 
   return (
@@ -132,6 +174,7 @@ export function CompleteProfilePage() {
         >
           {loading ? "Saving..." : "Create Profile"}
         </button>
+        
       </form>
     </div>
   );
