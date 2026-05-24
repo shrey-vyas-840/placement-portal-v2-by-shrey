@@ -20,6 +20,12 @@ export function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [originalProfile, setOriginalProfile] = useState<StudentMaster | null>(null);
+  const hasChanges =
+    profile &&
+      originalProfile
+      ? JSON.stringify(profile) !==
+      JSON.stringify(originalProfile)
+      : false;
 
   useEffect(() => {
     if (!user) {
@@ -58,6 +64,17 @@ export function ProfilePage() {
 
   const handleProfileSave = async () => {
     if (!profile) return;
+
+    if (!profile.first_name.trim()) {
+      setError("First name is required.");
+      return;
+    }
+
+    if (!profile.last_name.trim()) {
+      setError("Last name is required.");
+      return;
+    }
+
     if (!/^[0-9]{10}$/.test(profile.contact_number)) {
       setError(
         "Contact number must contain exactly 10 digits."
@@ -75,6 +92,45 @@ export function ProfilePage() {
         "Alternate contact number must contain exactly 10 digits."
       );
       return;
+    }
+    if (
+      profile.personal_email &&
+      !/^[a-z0-9]+([._%+-]?[a-z0-9]+)*@[a-z0-9-]+\.(com|in|org|edu|net)$/i.test(
+        profile.personal_email.trim(),
+      )
+    ) {
+      setError(
+        "Please enter a valid personal email address."
+      );
+      return;
+    }
+
+    if (
+      profile.middle_name &&
+      !/^[A-Za-z]$/.test(
+        profile.middle_name.trim(),
+      )
+    ) {
+      setError(
+        "Middle name must contain exactly one alphabet character."
+      );
+      return;
+    }
+
+    if (profile.date_of_birth) {
+      const selectedDate = new Date(
+        profile.date_of_birth,
+      );
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate > today) {
+        setError(
+          "Date of birth cannot be in the future."
+        );
+        return;
+      }
     }
     try {
       setError(null);
@@ -211,7 +267,9 @@ export function ProfilePage() {
 
                   <button
                     onClick={handleProfileSave}
-                    disabled={savingProfile}
+                    disabled={
+                      savingProfile || !hasChanges
+                    }
                     className="rounded bg-black px-4 py-2 text-white"
                   >
                     {savingProfile
@@ -344,7 +402,8 @@ export function ProfilePage() {
                     onChange={(e) =>
                       setProfile({
                         ...profile,
-                        contact_number: e.target.value,
+                        contact_number:
+                          e.target.value.replace(/\D/g, ""),
                       })
                     }
                   />
