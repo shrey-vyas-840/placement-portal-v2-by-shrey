@@ -19,6 +19,7 @@ export function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [originalProfile, setOriginalProfile] = useState<StudentMaster | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -33,6 +34,7 @@ export function ProfilePage() {
       .then((data) => {
         if (cancelled) return;
         setProfile(data);
+        setOriginalProfile(data);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -75,6 +77,7 @@ export function ProfilePage() {
       return;
     }
     try {
+      setError(null);
       setSavingProfile(true);
 
       const updated =
@@ -96,6 +99,7 @@ export function ProfilePage() {
         );
 
       setProfile(updated);
+      setOriginalProfile(updated);
       setError(null);
       setEditing(false);
     } catch (err) {
@@ -177,7 +181,10 @@ export function ProfilePage() {
 
               {!editing && (
                 <button
-                  onClick={() => setEditing(true)}
+                  onClick={() => {
+                    setError(null);
+                    setEditing(true);
+                  }}
                   className="rounded bg-black px-4 py-2 text-white"
                 >
                   Edit Profile
@@ -187,7 +194,16 @@ export function ProfilePage() {
               {editing && (
                 <>
                   <button
-                    onClick={() => setEditing(false)}
+                    onClick={() => {
+                      if (originalProfile) {
+                        setProfile({
+                          ...originalProfile,
+                        });
+                      }
+
+                      setError(null);
+                      setEditing(false);
+                    }}
                     className="rounded border px-4 py-2"
                   >
                     Cancel
@@ -340,25 +356,124 @@ export function ProfilePage() {
                 />
               )}
 
-              <Field
-                label="Alternate Contact"
-                value={profile.alternate_contact_number ?? "-"}
-              />
+              {editing ? (
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Alternate Contact
+                  </p>
 
-              <Field
-                label="Gender"
-                value={profile.gender ?? "-"}
-              />
+                  <input
+                    className="w-full rounded border p-2"
+                    value={profile.alternate_contact_number ?? ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        alternate_contact_number: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              ) : (
+                <Field
+                  label="Alternate Contact"
+                  value={profile.alternate_contact_number ?? "-"}
+                />
+              )}
 
-              <Field
-                label="Date Of Birth"
-                value={profile.date_of_birth ?? "-"}
-              />
+              {editing ? (
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Gender
+                  </p>
 
-              <Field
-                label="Placement Preference"
-                value={profile.placement_preference}
-              />
+                  <select
+                    className="w-full rounded border p-2"
+                    value={profile.gender ?? ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        gender: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              ) : (
+                <Field
+                  label="Gender"
+                  value={profile.gender ?? "-"}
+                />
+              )}
+
+              {editing ? (
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Date Of Birth
+                  </p>
+
+                  <input
+                    type="date"
+                    max={new Date().toISOString().split("T")[0]}
+                    className="w-full rounded border p-2"
+                    value={profile.date_of_birth ?? ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        date_of_birth: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              ) : (
+                <Field
+                  label="Date Of Birth"
+                  value={profile.date_of_birth ?? "-"}
+                />
+              )}
+
+              {editing ? (
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Placement Preference
+                  </p>
+
+                  <select
+                    className="w-full rounded border p-2"
+                    value={profile.placement_preference}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        placement_preference: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="Interested">
+                      Interested
+                    </option>
+
+                    <option value="Not Interested">
+                      Not Interested
+                    </option>
+
+                    <option value="Higher Studies">
+                      Higher Studies
+                    </option>
+
+                    <option value="Entrepreneurship">
+                      Entrepreneurship
+                    </option>
+                  </select>
+                </div>
+              ) : (
+                <Field
+                  label="Placement Preference"
+                  value={profile.placement_preference}
+                />
+              )}
 
               <Field
                 label="Placement Status"
@@ -493,8 +608,7 @@ function CompleteProfileForm({
     }
 
     try {
-      setError(null);
-      setSavingProfile(true);
+      setSaving(true);
       setError("");
 
       const { data: account, error: accountError } =
