@@ -45,3 +45,4 @@ export type StudentMasterUpdate = Partial<
     "updated_at"
   >
 >;
+
