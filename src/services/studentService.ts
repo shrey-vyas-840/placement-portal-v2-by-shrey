@@ -7,19 +7,38 @@ import type { StudentMaster, StudentMasterUpdate } from "@/types/student";
  * helpers do NOT bypass policies.
  */
 export const studentService = {
-  async getProfileByUserId(userId: string): Promise<StudentMaster | null> {
-    // Using `from<any>` until the generated Database type includes
-    // the institutional tables. Replace once types are regenerated.
-    const { data, error } = await (supabase as any)
-      .from("student_master")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
+    async getProfileByUserId(
+    authUserId: string,
+  ): Promise<StudentMaster | null> {
 
-    if (error) throw error;
+    const { data: account, error: accountError } =
+      await (supabase as any)
+        .from("user_accounts")
+        .select("user_id")
+        .eq("auth_provider_id", authUserId)
+        .maybeSingle();
+
+    if (accountError) {
+      throw accountError;
+    }
+
+    if (!account) {
+      return null;
+    }
+
+    const { data, error } =
+      await (supabase as any)
+        .from("student_master")
+        .select("*")
+        .eq("user_id", account.user_id)
+        .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
     return (data as StudentMaster | null) ?? null;
   },
-
   async updateProfile(
     id: string,
     patch: StudentMasterUpdate,
