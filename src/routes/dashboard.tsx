@@ -1,0 +1,11 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { DashboardPage } from "@/pages/DashboardPage";
+
+export const Route = createFileRoute("/dashboard")({
+  component: () => (
+    <ProtectedRoute>
+      <DashboardPage />
+    </ProtectedRoute>
+  ),
+});
