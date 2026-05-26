@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { studentService } from "@/services/studentService";
 import { supabase } from "@/lib/supabase";
 import type { StudentMaster } from "@/types/student";
+import { documentService } from "@/services/documentService";
+import { ResumeSection } from "@/components/ResumeSection";
 
 type Mode = "view";
 
@@ -20,6 +22,8 @@ export function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [originalProfile, setOriginalProfile] = useState<StudentMaster | null>(null);
+  const [resumeUrl, setResumeUrl] =
+    useState<string | null>(null);
   const hasChanges =
     profile &&
       originalProfile
@@ -41,6 +45,19 @@ export function ProfilePage() {
         if (cancelled) return;
         setProfile(data);
         setOriginalProfile(data);
+
+        if (data?.student_id) {
+          documentService
+            .getResume(data.student_id)
+            .then((resume: any) => {
+              const url =
+                resume?.document_metadata
+                  ?.storage_url ?? null;
+
+              setResumeUrl(url);
+            })
+            .catch(console.error);
+        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -61,6 +78,25 @@ export function ProfilePage() {
       cancelled = true;
     };
   }, [user]);
+
+  const loadResume = async (
+    studentId: string,
+  ) => {
+    try {
+      const resume: any =
+        await documentService.getResume(
+          studentId,
+        );
+
+      const url =
+        resume?.document_metadata
+          ?.storage_url ?? null;
+
+      setResumeUrl(url);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleProfileSave = async () => {
     if (!profile) return;
@@ -231,315 +267,326 @@ export function ProfilePage() {
         )}
 
         {profile && (
-          <div className="mt-6 rounded border p-6">
+          <>
+            <div className="mt-6 rounded border p-6">
 
-            <div className="mb-6 flex justify-end gap-2">
+              <div className="mb-6 flex justify-end gap-2">
 
-              {!editing && (
-                <button
-                  onClick={() => {
-                    setError(null);
-                    setEditing(true);
-                  }}
-                  className="rounded bg-black px-4 py-2 text-white"
-                >
-                  Edit Profile
-                </button>
-              )}
-
-              {editing && (
-                <>
+                {!editing && (
                   <button
                     onClick={() => {
-                      if (originalProfile) {
-                        setProfile({
-                          ...originalProfile,
-                        });
-                      }
-
                       setError(null);
-                      setEditing(false);
+                      setEditing(true);
                     }}
-                    className="rounded border px-4 py-2"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    onClick={handleProfileSave}
-                    disabled={
-                      savingProfile || !hasChanges
-                    }
                     className="rounded bg-black px-4 py-2 text-white"
                   >
-                    {savingProfile
-                      ? "Saving..."
-                      : "Save Changes"}
+                    Edit Profile
                   </button>
-                </>
-              )}
+                )}
 
-            </div>
+                {editing && (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (originalProfile) {
+                          setProfile({
+                            ...originalProfile,
+                          });
+                        }
 
-            <div className="grid gap-4 sm:grid-cols-2">
+                        setError(null);
+                        setEditing(false);
+                      }}
+                      className="rounded border px-4 py-2"
+                    >
+                      Cancel
+                    </button>
 
-              <Field
-                label="Enrollment Number"
-                value={profile.enrollment_no}
-              />
+                    <button
+                      onClick={handleProfileSave}
+                      disabled={
+                        savingProfile || !hasChanges
+                      }
+                      className="rounded bg-black px-4 py-2 text-white"
+                    >
+                      {savingProfile
+                        ? "Saving..."
+                        : "Save Changes"}
+                    </button>
+                  </>
+                )}
 
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    First Name
-                  </p>
+              </div>
 
-                  <input
-                    className="w-full rounded border p-2"
+              <div className="grid gap-4 sm:grid-cols-2">
+
+                <Field
+                  label="Enrollment Number"
+                  value={profile.enrollment_no}
+                />
+
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      First Name
+                    </p>
+
+                    <input
+                      className="w-full rounded border p-2"
+                      value={profile.first_name}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          first_name: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Field
+                    label="First Name"
                     value={profile.first_name}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        first_name: e.target.value,
-                      })
-                    }
                   />
-                </div>
-              ) : (
-                <Field
-                  label="First Name"
-                  value={profile.first_name}
-                />
-              )}
+                )}
 
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Middle Name
-                  </p>
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Middle Name
+                    </p>
 
-                  <input
-                    maxLength={1}
-                    className="w-full rounded border p-2"
-                    value={profile.middle_name ?? ""}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        middle_name: e.target.value.toUpperCase(),
-                      })
-                    }
+                    <input
+                      maxLength={1}
+                      className="w-full rounded border p-2"
+                      value={profile.middle_name ?? ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          middle_name: e.target.value.toUpperCase(),
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Field
+                    label="Middle Name"
+                    value={profile.middle_name ?? "-"}
                   />
-                </div>
-              ) : (
-                <Field
-                  label="Middle Name"
-                  value={profile.middle_name ?? "-"}
-                />
-              )}
+                )}
 
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Last Name
-                  </p>
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Last Name
+                    </p>
 
-                  <input
-                    className="w-full rounded border p-2"
+                    <input
+                      className="w-full rounded border p-2"
+                      value={profile.last_name}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          last_name: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Field
+                    label="Last Name"
                     value={profile.last_name}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        last_name: e.target.value,
-                      })
-                    }
                   />
-                </div>
-              ) : (
+                )}
+
                 <Field
-                  label="Last Name"
-                  value={profile.last_name}
+                  label="Institute Email"
+                  value={profile.institute_email}
                 />
-              )}
 
-              <Field
-                label="Institute Email"
-                value={profile.institute_email}
-              />
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Personal Email
+                    </p>
 
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Personal Email
-                  </p>
-
-                  <input
-                    type="email"
-                    className="w-full rounded border p-2"
-                    value={profile.personal_email ?? ""}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        personal_email: e.target.value,
-                      })
-                    }
+                    <input
+                      type="email"
+                      className="w-full rounded border p-2"
+                      value={profile.personal_email ?? ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          personal_email: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Field
+                    label="Personal Email"
+                    value={profile.personal_email ?? "-"}
                   />
-                </div>
-              ) : (
-                <Field
-                  label="Personal Email"
-                  value={profile.personal_email ?? "-"}
-                />
-              )}
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Contact Number
-                  </p>
+                )}
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Contact Number
+                    </p>
 
-                  <input
-                    className="w-full rounded border p-2"
+                    <input
+                      className="w-full rounded border p-2"
+                      value={profile.contact_number}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          contact_number:
+                            e.target.value.replace(/\D/g, ""),
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Field
+                    label="Contact Number"
                     value={profile.contact_number}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        contact_number:
-                          e.target.value.replace(/\D/g, ""),
-                      })
-                    }
                   />
-                </div>
-              ) : (
-                <Field
-                  label="Contact Number"
-                  value={profile.contact_number}
-                />
-              )}
+                )}
 
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Alternate Contact
-                  </p>
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Alternate Contact
+                    </p>
 
-                  <input
-                    className="w-full rounded border p-2"
-                    value={profile.alternate_contact_number ?? ""}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        alternate_contact_number: e.target.value,
-                      })
-                    }
+                    <input
+                      className="w-full rounded border p-2"
+                      value={profile.alternate_contact_number ?? ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          alternate_contact_number: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Field
+                    label="Alternate Contact"
+                    value={profile.alternate_contact_number ?? "-"}
                   />
-                </div>
-              ) : (
-                <Field
-                  label="Alternate Contact"
-                  value={profile.alternate_contact_number ?? "-"}
-                />
-              )}
+                )}
 
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Gender
-                  </p>
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Gender
+                    </p>
 
-                  <select
-                    className="w-full rounded border p-2"
-                    value={profile.gender ?? ""}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        gender: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              ) : (
-                <Field
-                  label="Gender"
-                  value={profile.gender ?? "-"}
-                />
-              )}
-
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Date Of Birth
-                  </p>
-
-                  <input
-                    type="date"
-                    max={new Date().toISOString().split("T")[0]}
-                    className="w-full rounded border p-2"
-                    value={profile.date_of_birth ?? ""}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        date_of_birth: e.target.value,
-                      })
-                    }
+                    <select
+                      className="w-full rounded border p-2"
+                      value={profile.gender ?? ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          gender: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                ) : (
+                  <Field
+                    label="Gender"
+                    value={profile.gender ?? "-"}
                   />
-                </div>
-              ) : (
-                <Field
-                  label="Date Of Birth"
-                  value={profile.date_of_birth ?? "-"}
-                />
-              )}
+                )}
 
-              {editing ? (
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Placement Preference
-                  </p>
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Date Of Birth
+                    </p>
 
-                  <select
-                    className="w-full rounded border p-2"
+                    <input
+                      type="date"
+                      max={new Date().toISOString().split("T")[0]}
+                      className="w-full rounded border p-2"
+                      value={profile.date_of_birth ?? ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          date_of_birth: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Field
+                    label="Date Of Birth"
+                    value={profile.date_of_birth ?? "-"}
+                  />
+                )}
+
+                {editing ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Placement Preference
+                    </p>
+
+                    <select
+                      className="w-full rounded border p-2"
+                      value={profile.placement_preference}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          placement_preference: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="Interested">
+                        Interested
+                      </option>
+
+                      <option value="Not Interested">
+                        Not Interested
+                      </option>
+
+                      <option value="Higher Studies">
+                        Higher Studies
+                      </option>
+
+                      <option value="Entrepreneurship">
+                        Entrepreneurship
+                      </option>
+                    </select>
+                  </div>
+                ) : (
+                  <Field
+                    label="Placement Preference"
                     value={profile.placement_preference}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        placement_preference: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="Interested">
-                      Interested
-                    </option>
+                  />
+                )}
 
-                    <option value="Not Interested">
-                      Not Interested
-                    </option>
-
-                    <option value="Higher Studies">
-                      Higher Studies
-                    </option>
-
-                    <option value="Entrepreneurship">
-                      Entrepreneurship
-                    </option>
-                  </select>
-                </div>
-              ) : (
                 <Field
-                  label="Placement Preference"
-                  value={profile.placement_preference}
+                  label="Placement Status"
+                  value={profile.placement_status ?? "-"}
                 />
-              )}
-
-              <Field
-                label="Placement Status"
-                value={profile.placement_status ?? "-"}
-              />
+              </div>
             </div>
-          </div>
+
+            <ResumeSection
+              studentId={profile.student_id}
+              authUserId={user?.id ?? ""}
+              existingUrl={resumeUrl}
+              onSaved={() =>
+                loadResume(profile.student_id)
+              }
+            />
+          </>
         )}
       </main>
     </div>
@@ -675,9 +722,21 @@ function CompleteProfileForm({
           .from("user_accounts")
           .select("user_id")
           .eq("auth_provider_id", authUserId)
-          .single();
+          .maybeSingle()
+      console.log(
+        "ACCOUNT LOOKUP",
+        account,
+        accountError,
+      );
 
       if (accountError) throw accountError;
+      if (!account) {
+        setError(
+          "User account was not provisioned correctly. Please logout and login again."
+        );
+
+        return;
+      }
 
       const { error: insertError } =
         await (supabase as any)
@@ -705,7 +764,11 @@ function CompleteProfileForm({
       onCreated();
     }
     catch (err: any) {
-      console.error(err);
+      console.error(
+        "PROFILE CREATE ERROR",
+        err,
+        JSON.stringify(err, null, 2),
+      );
 
       const message = err?.message ?? "";
 
@@ -803,23 +866,30 @@ function CompleteProfileForm({
         />
 
         <input
-          className="rounded border p-2"
-          placeholder="Contact Number"
-          value={contactNumber}
-          onChange={(e) =>
-            setContactNumber(e.target.value)
-          }
-          required
-        />
+  className="rounded border p-2"
+  placeholder="Contact Number"
+  maxLength={10}
+  value={contactNumber}
+  onChange={(e) =>
+    setContactNumber(
+      e.target.value.replace(/\D/g, "")
+    )
+  }
+  required
+/>
 
         <input
-          className="rounded border p-2"
-          placeholder="Alternate Contact Number (Optional)"
-          value={alternateContactNumber}
-          onChange={(e) =>
-            setAlternateContactNumber(e.target.value)
-          }
-        />
+  className="rounded border p-2"
+  placeholder="Alternate Contact Number (Optional)"
+  maxLength={10}
+  value={contactNumber}
+  onChange={(e) =>
+    setContactNumber(
+      e.target.value.replace(/\D/g, "")
+    )
+  }
+  required
+/>
 
         <select
           className="rounded border p-2"

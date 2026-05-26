@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureUserProvisioned } from "@/services/provisionService";
 
 export const Route = createFileRoute("/auth/callback")({
   component: AuthCallback,
@@ -20,10 +21,31 @@ function AuthCallback() {
       }
 
       if (data.session) {
-        navigate({ to: "/dashboard" });
-      } else {
-        navigate({ to: "/login" });
-      }
+  try {
+    await ensureUserProvisioned();
+
+    console.log(
+      "User provisioning completed",
+    );
+
+    navigate({
+      to: "/dashboard",
+    });
+  } catch (err) {
+    console.error(
+      "Provisioning failed",
+      err,
+    );
+
+    navigate({
+      to: "/login",
+    });
+  }
+} else {
+  navigate({
+    to: "/login",
+  });
+}
     };
 
     handleAuth();
