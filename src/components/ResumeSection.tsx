@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { documentService } from "@/services/documentService";
 import { isValidResumeUrl } from "@/lib/resumeValidation";
 
@@ -17,6 +17,13 @@ export function ResumeSection({
 }: Props) {
   const [resumeUrl, setResumeUrl] =
     useState(existingUrl ?? "");
+
+  useEffect(() => {
+    setResumeUrl(existingUrl ?? "");
+  }, [existingUrl]);
+
+  const [editingResume, setEditingResume] =
+    useState(false);
 
   const [saving, setSaving] =
     useState(false);
@@ -54,7 +61,9 @@ export function ResumeSection({
         resumeUrl.trim(),
       );
 
-      onSaved();
+      setEditingResume(false);
+
+      await onSaved();
     } catch (err) {
       console.error(err);
 
@@ -86,9 +95,13 @@ export function ResumeSection({
 
       <div className="mt-4 flex flex-col gap-3">
         <input
-          className="rounded border p-2"
+          className="rounded border p-2 disabled:bg-gray-100 disabled:text-gray-500"
           placeholder="Paste resume URL"
           value={resumeUrl}
+          disabled={
+            !!existingUrl &&
+            !editingResume
+          }
           onChange={(e) =>
             setResumeUrl(
               e.target.value,
@@ -97,27 +110,41 @@ export function ResumeSection({
         />
 
         <div className="flex gap-2">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded bg-black px-4 py-2 text-white"
-          >
-            {saving
-              ? "Saving..."
-              : existingUrl
-              ? "Replace Resume"
-              : "Save Resume"}
-          </button>
-
-          {existingUrl && (
-            <a
-              href={existingUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded border px-4 py-2"
+          {(!existingUrl || editingResume) && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded bg-black px-4 py-2 text-white"
             >
-              View Resume
-            </a>
+              {saving
+                ? "Saving..."
+                : editingResume
+                  ? "Save New Resume"
+                  : "Save Resume"}
+            </button>
+          )}
+
+          {existingUrl && !editingResume && (
+            <>
+              <button
+                onClick={() => {
+                  setResumeUrl("");
+                  setEditingResume(true);
+                }}
+                className="rounded bg-black px-4 py-2 text-white"
+              >
+                Replace Resume
+              </button>
+
+              <a
+                href={resumeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded border px-4 py-2"
+              >
+                View Resume
+              </a>
+            </>
           )}
         </div>
       </div>

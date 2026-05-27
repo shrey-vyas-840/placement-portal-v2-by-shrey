@@ -88,11 +88,43 @@ export function ProfilePage() {
           studentId,
         );
 
-      const url =
-        resume?.document_metadata
-          ?.storage_url ?? null;
+      console.log(
+        "LATEST RESUME",
+        resume,
+      );
 
-      setResumeUrl(url);
+      const metadata =
+        Array.isArray(
+          resume?.document_metadata,
+        )
+          ? resume.document_metadata
+            .filter(
+              (x: any) => x?.storage_url
+            )
+            .sort(
+              (a: any, b: any) =>
+                new Date(
+                  b.created_at
+                ).getTime() -
+                new Date(
+                  a.created_at
+                ).getTime()
+            )[0]
+          : resume?.document_metadata;
+
+      console.log(
+        "RESUME RESPONSE",
+        JSON.stringify(resume, null, 2)
+      );
+
+      console.log(
+        "RESUME URL",
+        metadata?.storage_url
+      );
+      setResumeUrl
+        (
+          metadata?.storage_url ?? null,
+        );
     } catch (err) {
       console.error(err);
     }
@@ -866,30 +898,30 @@ function CompleteProfileForm({
         />
 
         <input
-  className="rounded border p-2"
-  placeholder="Contact Number"
-  maxLength={10}
-  value={contactNumber}
-  onChange={(e) =>
-    setContactNumber(
-      e.target.value.replace(/\D/g, "")
-    )
-  }
-  required
-/>
+          className="rounded border p-2"
+          placeholder="Contact Number"
+          maxLength={10}
+          value={contactNumber}
+          onChange={(e) =>
+            setContactNumber(
+              e.target.value.replace(/\D/g, "")
+            )
+          }
+          required
+        />
 
         <input
-  className="rounded border p-2"
-  placeholder="Alternate Contact Number (Optional)"
-  maxLength={10}
-  value={contactNumber}
-  onChange={(e) =>
-    setContactNumber(
-      e.target.value.replace(/\D/g, "")
-    )
-  }
-  required
-/>
+          className="rounded border p-2"
+          placeholder="Alternate Contact Number (Optional)"
+          maxLength={10}
+          value={contactNumber}
+          onChange={(e) =>
+            setContactNumber(
+              e.target.value.replace(/\D/g, "")
+            )
+          }
+          required
+        />
 
         <select
           className="rounded border p-2"

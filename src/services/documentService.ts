@@ -2,20 +2,26 @@ import { supabase } from "@/lib/supabase";
 
 export const documentService = {
     async getResume(studentId: string) {
-        const { data, error } = await (supabase as any)
-            .from("student_documents")
-            .select(`
+        const { data, error } =
+            await (supabase as any)
+                .from("student_documents")
+                .select(`
         student_document_id,
+        document_metadata_id,
         document_metadata (
           document_metadata_id,
           storage_url,
-          document_name
+          document_name,
+          created_at
         )
       `)
-            .eq("student_id", studentId)
-            .eq("is_active", true)
-            .limit(1)
-            .maybeSingle();
+                .eq("student_id", studentId)
+                .eq("is_active", true)
+                .order("created_at", {
+                    ascending: false,
+                })
+                .limit(1)
+                .maybeSingle();
 
         if (error) {
             throw error;
