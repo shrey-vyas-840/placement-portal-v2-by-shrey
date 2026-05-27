@@ -38,9 +38,13 @@ export function AcademicSection({
 }: Props) {
     const [saving, setSaving] =
         useState(false);
+    const [editing, setEditing] =
+        useState(false);
 
     const [error, setError] =
         useState("");
+    const [originalData, setOriginalData] =
+        useState<any>(null);
 
     const [educationPath, setEducationPath] =
         useState(
@@ -138,7 +142,13 @@ export function AcademicSection({
     );
 
     useEffect(() => {
-        if (!existingData) return;
+        if (!existingData) {
+            setEditing(true);
+            return;
+        }
+
+        setEditing(false);
+        setOriginalData(existingData);
 
         setEducationPath(
             existingData.education_path ?? "",
@@ -382,14 +392,14 @@ export function AcademicSection({
                         ),
 
                     twelfth_percentage:
-                        twelfthPercentage
+                        educationPath === "HSC"
                             ? Number(
                                 twelfthPercentage,
                             )
                             : null,
 
                     diploma_percentage:
-                        diplomaPercentage
+                        educationPath === "Diploma"
                             ? Number(
                                 diplomaPercentage,
                             )
@@ -416,6 +426,8 @@ export function AcademicSection({
                     is_active: true,
                 },
             );
+
+            setEditing(false);
 
             onSaved();
 
@@ -449,13 +461,25 @@ export function AcademicSection({
             <div className="mt-4 grid gap-4 md:grid-cols-2">
 
                 <select
+                    disabled={!editing}
                     className="rounded border p-2"
                     value={educationPath}
-                    onChange={(e) =>
-                        setEducationPath(
-                            e.target.value,
-                        )
-                    }
+                    onChange={(e) => {
+                        const value =
+                            e.target.value;
+
+                        setEducationPath(value);
+
+                        if (value === "HSC") {
+                            setDiplomaPercentage("");
+                        }
+
+                        if (
+                            value === "Diploma"
+                        ) {
+                            setTwelfthPercentage("");
+                        }
+                    }}
                 >
                     <option value="">
                         Select Education Path
@@ -476,6 +500,7 @@ export function AcademicSection({
                     </label>
 
                     <select
+                        disabled={!editing}
                         className="w-full rounded border p-2"
                         value={currentDegreeLevel}
                         onChange={(e) =>
@@ -507,6 +532,7 @@ export function AcademicSection({
                     </label>
 
                     <select
+                        disabled={!editing}
                         className="w-full rounded border p-2"
                         value={currentInstituteName}
                         onChange={(e) =>
@@ -538,6 +564,7 @@ export function AcademicSection({
                     </label>
 
                     <select
+                        disabled={!editing}
                         className="w-full rounded border p-2"
                         value={currentBranchName}
                         onChange={(e) =>
@@ -569,6 +596,7 @@ export function AcademicSection({
                     </label>
 
                     <input
+                        disabled={!editing}
                         className="w-full rounded border p-2"
                         value={tenthPercentage}
                         onChange={(e) =>
@@ -590,6 +618,7 @@ export function AcademicSection({
                             </label>
 
                             <input
+                                disabled={!editing}
                                 className="w-full rounded border p-2"
                                 value={
                                     twelfthPercentage
@@ -614,6 +643,7 @@ export function AcademicSection({
                             </label>
 
                             <input
+                                disabled={!editing}
                                 className="w-full rounded border p-2"
                                 value={
                                     diplomaPercentage
@@ -648,6 +678,7 @@ export function AcademicSection({
 
                             <div className="flex gap-2">
                                 <input
+                                    disabled={!editing}
                                     className="w-full rounded border p-2"
                                     placeholder="Enter GPA"
                                     value={gpaInput}
@@ -712,21 +743,27 @@ export function AcademicSection({
                         </div>
                     )}
 
-                <input
-                    className="rounded border p-2"
-                    placeholder="Current Semester"
-                    value={
-                        currentSemester
-                    }
-                    onChange={(e) =>
-                        setCurrentSemester(
-                            e.target.value.replace(
-                                /\D/g,
-                                "",
-                            ),
-                        )
-                    }
-                />
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Current Semester
+                    </label>
+                    <input
+                        disabled={!editing}
+                        className="rounded border p-2"
+                        placeholder="Current Semester"
+                        value={
+                            currentSemester
+                        }
+                        onChange={(e) =>
+                            setCurrentSemester(
+                                e.target.value.replace(
+                                    /\D/g,
+                                    "",
+                                ),
+                            )
+                        }
+                    />
+                </div>
 
                 <div>
                     <label className="mb-1 block text-sm font-medium">
@@ -734,6 +771,7 @@ export function AcademicSection({
                     </label>
 
                     <input
+                        disabled={!editing}
                         className="w-full rounded border p-2"
                         value={cgpa}
                         onChange={(e) =>
@@ -747,37 +785,49 @@ export function AcademicSection({
                     />
                 </div>
 
-                <input
-                    className="rounded border p-2"
-                    placeholder="Active Backlogs"
-                    value={
-                        activeBacklogs
-                    }
-                    onChange={(e) =>
-                        setActiveBacklogs(
-                            e.target.value.replace(
-                                /\D/g,
-                                "",
-                            ),
-                        )
-                    }
-                />
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Current Active Backlogs
+                    </label>
+                    <input
+                        disabled={!editing}
+                        className="rounded border p-2"
+                        placeholder="Active Backlogs"
+                        value={
+                            activeBacklogs
+                        }
+                        onChange={(e) =>
+                            setActiveBacklogs(
+                                e.target.value.replace(
+                                    /\D/g,
+                                    "",
+                                ),
+                            )
+                        }
+                    />
+                </div>
 
-                <input
-                    className="rounded border p-2"
-                    placeholder="Year Gap Count"
-                    value={
-                        yearGapCount
-                    }
-                    onChange={(e) =>
-                        setYearGapCount(
-                            e.target.value.replace(
-                                /\D/g,
-                                "",
-                            ),
-                        )
-                    }
-                />
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Year Gap Count
+                    </label>
+                    <input
+                        disabled={!editing}
+                        className="rounded border p-2"
+                        placeholder="Year Gap Count"
+                        value={
+                            yearGapCount
+                        }
+                        onChange={(e) =>
+                            setYearGapCount(
+                                e.target.value.replace(
+                                    /\D/g,
+                                    "",
+                                ),
+                            )
+                        }
+                    />
+                </div>
 
                 <div>
                     <label className="mb-1 block text-sm font-medium">
@@ -785,6 +835,7 @@ export function AcademicSection({
                     </label>
 
                     <input
+                        disabled={!editing}
                         className="w-full rounded border p-2"
                         value={graduationYear}
                         onChange={(e) =>
@@ -800,15 +851,95 @@ export function AcademicSection({
 
             </div>
 
-            <button
-                onClick={handleSave}
-                disabled={saving}
-                className="mt-6 rounded bg-black px-4 py-2 text-white"
-            >
-                {saving
-                    ? "Saving..."
-                    : "Save Academic Details"}
-            </button>
+            <div className="mt-6 flex gap-2">
+
+                {!editing && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setEditing(true)
+                        }
+                        className="rounded bg-black px-4 py-2 text-white"
+                    >
+                        Edit Academic Details
+                    </button>
+                )}
+
+                {editing && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (originalData) {
+                                    setEducationPath(
+                                        originalData.education_path ?? "",
+                                    );
+
+                                    setCurrentDegreeLevel(
+                                        originalData.current_degree_level ?? "",
+                                    );
+
+                                    setCurrentInstituteName(
+                                        originalData.current_institute_name ?? "",
+                                    );
+
+                                    setCurrentBranchName(
+                                        originalData.current_branch_name ?? "",
+                                    );
+
+                                    setCurrentSemester(
+                                        originalData.current_semester?.toString() ?? "",
+                                    );
+
+                                    setCgpa(
+                                        originalData.current_cgpa?.toString() ?? "",
+                                    );
+
+                                    setTenthPercentage(
+                                        originalData.tenth_percentage?.toString() ?? "",
+                                    );
+
+                                    setTwelfthPercentage(
+                                        originalData.twelfth_percentage?.toString() ?? "",
+                                    );
+
+                                    setDiplomaPercentage(
+                                        originalData.diploma_percentage?.toString() ?? "",
+                                    );
+
+                                    setActiveBacklogs(
+                                        originalData.active_backlogs?.toString() ?? "0",
+                                    );
+
+                                    setYearGapCount(
+                                        originalData.year_gap_count?.toString() ?? "0",
+                                    );
+
+                                    setGraduationYear(
+                                        originalData.graduation_year?.toString() ?? "",
+                                    );
+                                }
+
+                                setEditing(false);
+                            }}
+                            className="rounded border px-4 py-2"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="rounded bg-black px-4 py-2 text-white"
+                        >
+                            {saving
+                                ? "Saving..."
+                                : "Save Academic Details"}
+                        </button>
+                    </>
+                )}
+
+            </div>
         </div>
     );
 }
