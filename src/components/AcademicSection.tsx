@@ -7,6 +7,30 @@ type Props = {
     onSaved: () => void;
 };
 
+const instituteOptions = [
+    "IITE",
+    "IIMS",
+    "IIICT",
+    "IIPR",
+    "IISHLS",
+    "IIATE",
+    "Other",
+];
+
+const branchOptions = [
+    "Computer Science Engineering",
+    "Information Technology",
+    "Civil Engineering",
+    "Mechanical Engineering",
+    "Electrical Engineering",
+    "Other",
+];
+
+const degreeOptions = [
+    "Diploma",
+    "UG",
+    "PG",
+];
 export function AcademicSection({
     studentId,
     existingData,
@@ -165,24 +189,42 @@ export function AcademicSection({
         );
     }, [existingData]);
 
-    useEffect(() => {
-        if (!gpaInput) return;
+    function handleGpaConvert() {
+        if (!gpaInput) {
+            return;
+        }
 
-        const gpa = Number(gpaInput);
+        const gpa =
+            Number(gpaInput);
 
-        if (Number.isNaN(gpa)) return;
+        if (
+            Number.isNaN(gpa) ||
+            gpa < 0 ||
+            gpa > 10
+        ) {
+            return;
+        }
 
         const converted =
             (gpa * 9.5).toFixed(2);
 
-        if (educationPath === "HSC") {
-            setTwelfthPercentage(converted);
+        if (
+            educationPath === "HSC"
+        ) {
+            setTwelfthPercentage(
+                converted,
+            );
         }
 
-        if (educationPath === "Diploma") {
-            setDiplomaPercentage(converted);
+        if (
+            educationPath ===
+            "Diploma"
+        ) {
+            setDiplomaPercentage(
+                converted,
+            );
         }
-    }, [gpaInput, educationPath]);
+    }
 
     async function handleSave() {
         try {
@@ -428,59 +470,98 @@ export function AcademicSection({
                     </option>
                 </select>
 
-                <select
-                    className="rounded border p-2"
-                    value={
-                        currentDegreeLevel
-                    }
-                    onChange={(e) =>
-                        setCurrentDegreeLevel(
-                            e.target.value,
-                        )
-                    }
-                >
-                    <option value="">
-                        Select Current Degree
-                    </option>
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Current Degree Level
+                    </label>
 
-                    <option value="Diploma">
-                        Diploma
-                    </option>
+                    <select
+                        className="w-full rounded border p-2"
+                        value={currentDegreeLevel}
+                        onChange={(e) =>
+                            setCurrentDegreeLevel(
+                                e.target.value,
+                            )
+                        }
+                    >
+                        <option value="">
+                            Select Degree
+                        </option>
 
-                    <option value="UG">
-                        UG
-                    </option>
+                        {degreeOptions.map(
+                            (degree) => (
+                                <option
+                                    key={degree}
+                                    value={degree}
+                                >
+                                    {degree}
+                                </option>
+                            ),
+                        )}
+                    </select>
+                </div>
 
-                    <option value="PG">
-                        PG
-                    </option>
-                </select>
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Current Institute
+                    </label>
 
-                <input
-                    className="rounded border p-2"
-                    placeholder="Current Institute Name"
-                    value={
-                        currentInstituteName
-                    }
-                    onChange={(e) =>
-                        setCurrentInstituteName(
-                            e.target.value,
-                        )
-                    }
-                />
+                    <select
+                        className="w-full rounded border p-2"
+                        value={currentInstituteName}
+                        onChange={(e) =>
+                            setCurrentInstituteName(
+                                e.target.value,
+                            )
+                        }
+                    >
+                        <option value="">
+                            Select Institute
+                        </option>
 
-                <input
-                    className="rounded border p-2"
-                    placeholder="Current Branch Name"
-                    value={
-                        currentBranchName
-                    }
-                    onChange={(e) =>
-                        setCurrentBranchName(
-                            e.target.value,
-                        )
-                    }
-                />
+                        {instituteOptions.map(
+                            (institute) => (
+                                <option
+                                    key={institute}
+                                    value={institute}
+                                >
+                                    {institute}
+                                </option>
+                            ),
+                        )}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Current Branch
+                    </label>
+
+                    <select
+                        className="w-full rounded border p-2"
+                        value={currentBranchName}
+                        onChange={(e) =>
+                            setCurrentBranchName(
+                                e.target.value,
+                            )
+                        }
+                    >
+                        <option value="">
+                            Select Branch
+                        </option>
+
+                        {branchOptions.map(
+                            (branch) => (
+                                <option
+                                    key={branch}
+                                    value={branch}
+                                >
+                                    {branch}
+                                </option>
+                            ),
+                        )}
+                    </select>
+                </div>
 
                 <div>
                     <label className="mb-1 block text-sm font-medium">
@@ -505,7 +586,7 @@ export function AcademicSection({
                     "HSC" && (
                         <div>
                             <label className="mb-1 block text-sm font-medium">
-                                12th Percentage
+                                12th / Diploma Percentage
                             </label>
 
                             <input
@@ -549,26 +630,87 @@ export function AcademicSection({
                         </div>
                     )}
 
-                {educationPath && (
-                    <div> <label className="mb-1 block text-sm font-medium">
-                        GPA to Percentage Converter (Optional)
-                    </label>
+                {educationPath &&
+                    !(
+                        educationPath ===
+                        "HSC" &&
+                        twelfthPercentage
+                    ) &&
+                    !(
+                        educationPath ===
+                        "Diploma" &&
+                        diplomaPercentage
+                    ) && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">
+                                GPA to Percentage Converter (Optional)
+                            </label>
 
-                        <input
-                            className="w-full rounded border p-2"
-                            placeholder="Enter GPA (Optional)"
-                            value={gpaInput}
-                            onChange={(e) =>
-                                setGpaInput(
-                                    e.target.value.replace(
-                                        /[^0-9.]/g,
-                                        "",
-                                    ),
-                                )
-                            }
-                        />
-                    </div>
-                )}
+                            <div className="flex gap-2">
+                                <input
+                                    className="w-full rounded border p-2"
+                                    placeholder="Enter GPA"
+                                    value={gpaInput}
+                                    onChange={(e) => {
+                                        let value =
+                                            e.target.value.replace(
+                                                /[^0-9.]/g,
+                                                "",
+                                            );
+
+                                        const parts =
+                                            value.split(".");
+
+                                        if (
+                                            parts.length > 2
+                                        ) {
+                                            return;
+                                        }
+
+                                        if (
+                                            parts[1] &&
+                                            parts[1].length >
+                                            2
+                                        ) {
+                                            return;
+                                        }
+
+                                        if (
+                                            Number(value) > 10
+                                        ) {
+                                            return;
+                                        }
+
+                                        if (
+                                            value.startsWith(
+                                                "10",
+                                            ) &&
+                                            value !== "10" &&
+                                            value !== "10." &&
+                                            value !== "10.0" &&
+                                            value !== "10.00"
+                                        ) {
+                                            return;
+                                        }
+
+                                        setGpaInput(
+                                            value,
+                                        );
+                                    }}
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        handleGpaConvert
+                                    }
+                                    className="rounded bg-black px-4 py-2 text-white"
+                                >
+                                    Convert
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                 <input
                     className="rounded border p-2"
