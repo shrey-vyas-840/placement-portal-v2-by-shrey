@@ -445,7 +445,161 @@ export function AcademicSection({
             setSaving(false);
         }
     }
+    if (
+        existingData &&
+        !editing
+    ) {
+        return (
+            <div className="mt-6 rounded border p-6">
 
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">
+                        Academic Details
+                    </h2>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setEditing(true)
+                        }
+                        className="rounded bg-black px-4 py-2 text-white"
+                    >
+                        Edit Academic Details
+                    </button>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Education Path
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {educationPath}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Current Degree
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {currentDegreeLevel}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Institute
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {currentInstituteName}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Branch
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {currentBranchName}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Current CGPA
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {cgpa}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Current Semester
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {currentSemester}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            10th Percentage
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {tenthPercentage}%
+                        </p>
+                    </div>
+
+                    {educationPath ===
+                        "HSC" && (
+                            <div className="rounded border p-4">
+                                <p className="text-sm text-muted-foreground">
+                                    12th Percentage
+                                </p>
+
+                                <p className="mt-1 font-medium">
+                                    {twelfthPercentage}%
+                                </p>
+                            </div>
+                        )}
+
+                    {educationPath ===
+                        "Diploma" && (
+                            <div className="rounded border p-4">
+                                <p className="text-sm text-muted-foreground">
+                                    Diploma Percentage
+                                </p>
+
+                                <p className="mt-1 font-medium">
+                                    {diplomaPercentage}%
+                                </p>
+                            </div>
+                        )}
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Active Backlogs
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {activeBacklogs}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Year Gaps
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {yearGapCount}
+                        </p>
+                    </div>
+
+                    <div className="rounded border p-4">
+                        <p className="text-sm text-muted-foreground">
+                            Graduation Year
+                        </p>
+
+                        <p className="mt-1 font-medium">
+                            {graduationYear}
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="mt-6 rounded border p-6">
             <h2 className="text-lg font-semibold">
@@ -941,5 +1095,6 @@ export function AcademicSection({
 
             </div>
         </div>
+
     );
 }
