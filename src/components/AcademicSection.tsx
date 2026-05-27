@@ -1,0 +1,672 @@
+import { useEffect, useState } from "react";
+import { academicService } from "@/services/academicService";
+
+type Props = {
+    studentId: string;
+    existingData?: any;
+    onSaved: () => void;
+};
+
+export function AcademicSection({
+    studentId,
+    existingData,
+    onSaved,
+}: Props) {
+    const [saving, setSaving] =
+        useState(false);
+
+    const [error, setError] =
+        useState("");
+
+    const [educationPath, setEducationPath] =
+        useState(
+            existingData?.education_path ??
+            "",
+        );
+
+    const [
+        currentDegreeLevel,
+        setCurrentDegreeLevel,
+    ] = useState(
+        existingData?.current_degree_level ??
+        "",
+    );
+
+    const [
+        currentInstituteName,
+        setCurrentInstituteName,
+    ] = useState(
+        existingData?.current_institute_name ??
+        "",
+    );
+
+    const [
+        currentBranchName,
+        setCurrentBranchName,
+    ] = useState(
+        existingData?.current_branch_name ??
+        "",
+    );
+
+    const [
+        currentSemester,
+        setCurrentSemester,
+    ] = useState(
+        existingData?.current_semester?.toString() ??
+        "",
+    );
+
+    const [cgpa, setCgpa] =
+        useState(
+            existingData?.current_cgpa?.toString() ??
+            "",
+        );
+
+    const [
+        tenthPercentage,
+        setTenthPercentage,
+    ] = useState(
+        existingData?.tenth_percentage?.toString() ??
+        "",
+    );
+
+    const [
+        twelfthPercentage,
+        setTwelfthPercentage,
+    ] = useState(
+        existingData?.twelfth_percentage?.toString() ??
+        "",
+    );
+
+    const [
+        diplomaPercentage,
+        setDiplomaPercentage,
+    ] = useState(
+        existingData?.diploma_percentage?.toString() ??
+        "",
+    );
+
+    const [gpaInput, setGpaInput] =
+        useState("");
+
+    const [
+        activeBacklogs,
+        setActiveBacklogs,
+    ] = useState(
+        existingData?.active_backlogs?.toString() ??
+        "0",
+    );
+
+    const [
+        yearGapCount,
+        setYearGapCount,
+    ] = useState(
+        existingData?.year_gap_count?.toString() ??
+        "0",
+    );
+
+    const [
+        graduationYear,
+        setGraduationYear,
+    ] = useState(
+        existingData?.graduation_year?.toString() ??
+        "",
+    );
+
+    useEffect(() => {
+        if (!existingData) return;
+
+        setEducationPath(
+            existingData.education_path ?? "",
+        );
+
+        setCurrentDegreeLevel(
+            existingData.current_degree_level ?? "",
+        );
+
+        setCurrentInstituteName(
+            existingData.current_institute_name ?? "",
+        );
+
+        setCurrentBranchName(
+            existingData.current_branch_name ?? "",
+        );
+
+        setCurrentSemester(
+            existingData.current_semester?.toString() ?? "",
+        );
+
+        setCgpa(
+            existingData.current_cgpa?.toString() ?? "",
+        );
+
+        setTenthPercentage(
+            existingData.tenth_percentage?.toString() ?? "",
+        );
+
+        setTwelfthPercentage(
+            existingData.twelfth_percentage?.toString() ?? "",
+        );
+
+        setDiplomaPercentage(
+            existingData.diploma_percentage?.toString() ?? "",
+        );
+
+        setActiveBacklogs(
+            existingData.active_backlogs?.toString() ?? "0",
+        );
+
+        setYearGapCount(
+            existingData.year_gap_count?.toString() ?? "0",
+        );
+
+        setGraduationYear(
+            existingData.graduation_year?.toString() ?? "",
+        );
+    }, [existingData]);
+
+    useEffect(() => {
+        if (!gpaInput) return;
+
+        const gpa = Number(gpaInput);
+
+        if (Number.isNaN(gpa)) return;
+
+        const converted =
+            (gpa * 9.5).toFixed(2);
+
+        if (educationPath === "HSC") {
+            setTwelfthPercentage(converted);
+        }
+
+        if (educationPath === "Diploma") {
+            setDiplomaPercentage(converted);
+        }
+    }, [gpaInput, educationPath]);
+
+    async function handleSave() {
+        try {
+            setError("");
+
+            if (!educationPath) {
+                setError(
+                    "Education path is required.",
+                );
+                return;
+            }
+
+            if (
+                !currentDegreeLevel
+            ) {
+                setError(
+                    "Current degree level is required.",
+                );
+                return;
+            }
+
+            if (
+                !currentInstituteName.trim()
+            ) {
+                setError(
+                    "Institute name is required.",
+                );
+                return;
+            }
+
+            if (
+                !currentBranchName.trim()
+            ) {
+                setError(
+                    "Branch name is required.",
+                );
+                return;
+            }
+
+            if (
+                !tenthPercentage
+            ) {
+                setError(
+                    "10th percentage is required.",
+                );
+                return;
+            }
+
+            if (
+                educationPath ===
+                "HSC" &&
+                !twelfthPercentage
+            ) {
+                setError(
+                    "12th percentage is required.",
+                );
+                return;
+            }
+
+            if (
+                educationPath ===
+                "Diploma" &&
+                !diplomaPercentage
+            ) {
+                setError(
+                    "Diploma percentage is required.",
+                );
+                return;
+            }
+
+            if (
+                Number(cgpa) < 0 ||
+                Number(cgpa) > 10
+            ) {
+                setError(
+                    "CGPA must be between 0 and 10.",
+                );
+                return;
+            }
+
+            if (
+                Number(tenthPercentage) <
+                0 ||
+                Number(tenthPercentage) >
+                100
+            ) {
+                setError(
+                    "10th percentage must be between 0 and 100.",
+                );
+                return;
+            }
+
+            if (
+                educationPath ===
+                "HSC" &&
+                (Number(
+                    twelfthPercentage,
+                ) < 0 ||
+                    Number(
+                        twelfthPercentage,
+                    ) > 100)
+            ) {
+                setError(
+                    "12th percentage must be between 0 and 100.",
+                );
+                return;
+            }
+
+            if (
+                educationPath ===
+                "Diploma" &&
+                (Number(
+                    diplomaPercentage,
+                ) < 0 ||
+                    Number(
+                        diplomaPercentage,
+                    ) > 100)
+            ) {
+                setError(
+                    "Diploma percentage must be between 0 and 100.",
+                );
+                return;
+            }
+
+            setSaving(true);
+
+            await academicService.saveAcademicDetails(
+                {
+                    student_id:
+                        studentId,
+
+                    education_path:
+                        educationPath,
+
+                    current_degree_level:
+                        currentDegreeLevel,
+
+                    current_institute_name:
+                        currentInstituteName,
+
+                    current_branch_name:
+                        currentBranchName,
+
+                    current_semester:
+                        Number(
+                            currentSemester,
+                        ),
+
+                    current_cgpa:
+                        Number(cgpa),
+
+                    tenth_percentage:
+                        Number(
+                            tenthPercentage,
+                        ),
+
+                    twelfth_percentage:
+                        twelfthPercentage
+                            ? Number(
+                                twelfthPercentage,
+                            )
+                            : null,
+
+                    diploma_percentage:
+                        diplomaPercentage
+                            ? Number(
+                                diplomaPercentage,
+                            )
+                            : null,
+
+                    active_backlogs:
+                        Number(
+                            activeBacklogs,
+                        ),
+
+                    year_gap_count:
+                        Number(
+                            yearGapCount,
+                        ),
+
+                    graduation_year:
+                        Number(
+                            graduationYear,
+                        ),
+
+                    created_by_type:
+                        "User",
+
+                    is_active: true,
+                },
+            );
+
+            onSaved();
+
+            setError("");
+        } catch (err) {
+            console.error(
+                "ACADEMIC SAVE ERROR",
+                JSON.stringify(err, null, 2),
+            );
+
+            setError(
+                "Failed to save academic details.",
+            );
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <div className="mt-6 rounded border p-6">
+            <h2 className="text-lg font-semibold">
+                Academic Details
+            </h2>
+
+            {error && (
+                <p className="mt-3 text-red-500">
+                    {error}
+                </p>
+            )}
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+
+                <select
+                    className="rounded border p-2"
+                    value={educationPath}
+                    onChange={(e) =>
+                        setEducationPath(
+                            e.target.value,
+                        )
+                    }
+                >
+                    <option value="">
+                        Select Education Path
+                    </option>
+
+                    <option value="HSC">
+                        HSC
+                    </option>
+
+                    <option value="Diploma">
+                        Diploma
+                    </option>
+                </select>
+
+                <select
+                    className="rounded border p-2"
+                    value={
+                        currentDegreeLevel
+                    }
+                    onChange={(e) =>
+                        setCurrentDegreeLevel(
+                            e.target.value,
+                        )
+                    }
+                >
+                    <option value="">
+                        Select Current Degree
+                    </option>
+
+                    <option value="Diploma">
+                        Diploma
+                    </option>
+
+                    <option value="UG">
+                        UG
+                    </option>
+
+                    <option value="PG">
+                        PG
+                    </option>
+                </select>
+
+                <input
+                    className="rounded border p-2"
+                    placeholder="Current Institute Name"
+                    value={
+                        currentInstituteName
+                    }
+                    onChange={(e) =>
+                        setCurrentInstituteName(
+                            e.target.value,
+                        )
+                    }
+                />
+
+                <input
+                    className="rounded border p-2"
+                    placeholder="Current Branch Name"
+                    value={
+                        currentBranchName
+                    }
+                    onChange={(e) =>
+                        setCurrentBranchName(
+                            e.target.value,
+                        )
+                    }
+                />
+
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        10th Percentage
+                    </label>
+
+                    <input
+                        className="w-full rounded border p-2"
+                        value={tenthPercentage}
+                        onChange={(e) =>
+                            setTenthPercentage(
+                                e.target.value.replace(
+                                    /[^0-9.]/g,
+                                    "",
+                                ),
+                            )
+                        }
+                    />
+                </div>
+
+                {educationPath ===
+                    "HSC" && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">
+                                12th Percentage
+                            </label>
+
+                            <input
+                                className="w-full rounded border p-2"
+                                value={
+                                    twelfthPercentage
+                                }
+                                onChange={(e) =>
+                                    setTwelfthPercentage(
+                                        e.target.value.replace(
+                                            /[^0-9.]/g,
+                                            "",
+                                        ),
+                                    )
+                                }
+                            />
+                        </div>
+                    )}
+
+                {educationPath ===
+                    "Diploma" && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">
+                                Diploma Percentage
+                            </label>
+
+                            <input
+                                className="w-full rounded border p-2"
+                                value={
+                                    diplomaPercentage
+                                }
+                                onChange={(e) =>
+                                    setDiplomaPercentage(
+                                        e.target.value.replace(
+                                            /[^0-9.]/g,
+                                            "",
+                                        ),
+                                    )
+                                }
+                            />
+                        </div>
+                    )}
+
+                {educationPath && (
+                    <div> <label className="mb-1 block text-sm font-medium">
+                        GPA to Percentage Converter (Optional)
+                    </label>
+
+                        <input
+                            className="w-full rounded border p-2"
+                            placeholder="Enter GPA (Optional)"
+                            value={gpaInput}
+                            onChange={(e) =>
+                                setGpaInput(
+                                    e.target.value.replace(
+                                        /[^0-9.]/g,
+                                        "",
+                                    ),
+                                )
+                            }
+                        />
+                    </div>
+                )}
+
+                <input
+                    className="rounded border p-2"
+                    placeholder="Current Semester"
+                    value={
+                        currentSemester
+                    }
+                    onChange={(e) =>
+                        setCurrentSemester(
+                            e.target.value.replace(
+                                /\D/g,
+                                "",
+                            ),
+                        )
+                    }
+                />
+
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Current CGPA
+                    </label>
+
+                    <input
+                        className="w-full rounded border p-2"
+                        value={cgpa}
+                        onChange={(e) =>
+                            setCgpa(
+                                e.target.value.replace(
+                                    /[^0-9.]/g,
+                                    "",
+                                ),
+                            )
+                        }
+                    />
+                </div>
+
+                <input
+                    className="rounded border p-2"
+                    placeholder="Active Backlogs"
+                    value={
+                        activeBacklogs
+                    }
+                    onChange={(e) =>
+                        setActiveBacklogs(
+                            e.target.value.replace(
+                                /\D/g,
+                                "",
+                            ),
+                        )
+                    }
+                />
+
+                <input
+                    className="rounded border p-2"
+                    placeholder="Year Gap Count"
+                    value={
+                        yearGapCount
+                    }
+                    onChange={(e) =>
+                        setYearGapCount(
+                            e.target.value.replace(
+                                /\D/g,
+                                "",
+                            ),
+                        )
+                    }
+                />
+
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Graduation Year
+                    </label>
+
+                    <input
+                        className="w-full rounded border p-2"
+                        value={graduationYear}
+                        onChange={(e) =>
+                            setGraduationYear(
+                                e.target.value.replace(
+                                    /\D/g,
+                                    "",
+                                ),
+                            )
+                        }
+                    />
+                </div>
+
+            </div>
+
+            <button
+                onClick={handleSave}
+                disabled={saving}
+                className="mt-6 rounded bg-black px-4 py-2 text-white"
+            >
+                {saving
+                    ? "Saving..."
+                    : "Save Academic Details"}
+            </button>
+        </div>
+    );
+}

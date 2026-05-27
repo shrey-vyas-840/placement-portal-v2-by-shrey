@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import type { StudentMaster } from "@/types/student";
 import { documentService } from "@/services/documentService";
 import { ResumeSection } from "@/components/ResumeSection";
+import { AcademicSection } from "@/components/AcademicSection";
+import { academicService } from "@/services/academicService";
 
 type Mode = "view";
 
@@ -17,6 +19,8 @@ export function ProfilePage() {
       user.email,
     );
   const [profile, setProfile] = useState<StudentMaster | null>(null);
+  const [academicData, setAcademicData] =
+    useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -45,6 +49,11 @@ export function ProfilePage() {
         if (cancelled) return;
         setProfile(data);
         setOriginalProfile(data);
+        if (data?.student_id) {
+          loadAcademicDetails(
+            data.student_id,
+          );
+        }
 
         if (data?.student_id) {
           documentService
@@ -129,6 +138,22 @@ export function ProfilePage() {
       console.error(err);
     }
   };
+
+  const loadAcademicDetails =
+    async (
+      studentId: string,
+    ) => {
+      try {
+        const data =
+          await academicService.getAcademicDetails(
+            studentId,
+          );
+
+        setAcademicData(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
   const handleProfileSave = async () => {
     if (!profile) return;
@@ -618,6 +643,21 @@ export function ProfilePage() {
                 loadResume(profile.student_id)
               }
             />
+            {profile && (
+              <AcademicSection
+                studentId={
+                  profile.student_id
+                }
+                existingData={
+                  academicData
+                }
+                onSaved={() =>
+                  loadAcademicDetails(
+                    profile.student_id,
+                  )
+                }
+              />
+            )}
           </>
         )}
       </main>
