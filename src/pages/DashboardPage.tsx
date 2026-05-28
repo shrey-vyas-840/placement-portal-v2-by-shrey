@@ -17,7 +17,6 @@ export function DashboardPage() {
       resume: false,
       academics: false,
       skills: false,
-      certifications: false,
       percentage: 0,
     });
 
@@ -93,10 +92,6 @@ export function DashboardPage() {
 
               <div>
                 {completion.skills ? "✓" : "✗"} Skills Profile
-              </div>
-
-              <div>
-                {completion.certifications ? "✓" : "✗"} Certifications
               </div>
             </div>
           </div>
