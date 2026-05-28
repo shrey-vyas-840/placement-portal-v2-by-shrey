@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
+import CreatableSelect from "react-select/creatable";
 import { skillService } from "@/services/skillService";
+
+type SkillOption = {
+    label: string;
+    value: string;
+};
 
 interface SkillsSectionProps {
     studentId: string;
@@ -11,9 +16,14 @@ interface SkillsSectionProps {
 }
 
 const defaultFormData = {
-    technical_skills: "",
-    programming_languages: "",
-    tools_and_technologies: "",
+    technical_skills:
+        [] as SkillOption[],
+
+    programming_languages:
+        [] as SkillOption[],
+
+    tools_and_technologies:
+        [] as SkillOption[],
 
     github_url: "",
     linkedin_url: "",
@@ -21,6 +31,51 @@ const defaultFormData = {
 
     strengths: "",
 };
+
+const technicalSkillOptions = [
+    "React",
+    "Node.js",
+    "Express.js",
+    "MongoDB",
+    "PostgreSQL",
+    "Supabase",
+    "Firebase",
+    "Docker",
+    "AWS",
+    "Machine Learning",
+    "AI",
+    "UI/UX",
+    "Git",
+    "GitHub",
+].map((skill) => ({
+    label: skill,
+    value: skill,
+}));
+
+const languageOptions = [
+    "C",
+    "C++",
+    "Java",
+    "Python",
+    "JavaScript",
+    "TypeScript",
+].map((skill) => ({
+    label: skill,
+    value: skill,
+}));
+
+const toolsOptions = [
+    "VS Code",
+    "Figma",
+    "Git",
+    "GitHub",
+    "Postman",
+    "Docker",
+    "Linux",
+].map((skill) => ({
+    label: skill,
+    value: skill,
+}));
 
 export default function SkillsSection({
     studentId,
@@ -32,14 +87,25 @@ export default function SkillsSection({
     const [saving, setSaving] =
         useState(false);
 
-    const [editMode, setEditMode] =
+    const [hasExistingData, setHasExistingData] =
         useState(false);
 
-    const [hasExistingData, setHasExistingData] =
+    const [initialData, setInitialData] =
+        useState("");
+
+    const [editMode, setEditMode] =
         useState(false);
 
     const [formData, setFormData] =
         useState(defaultFormData);
+
+    const [errors, setErrors] =
+
+        useState({
+            github_url: "",
+            linkedin_url: "",
+            portfolio_url: "",
+        });
 
     useEffect(() => {
         loadSkills();
@@ -55,19 +121,72 @@ export default function SkillsSection({
                 );
 
             if (data) {
+
                 setHasExistingData(true);
+                setEditMode(false);
 
                 setFormData({
-                    technical_skills:
-                        data.technical_skills || "",
+                    technical_skills: Array.isArray(
+                        data.technical_skills,
+                    )
+                        ? data.technical_skills
+                        : data.technical_skills
+                            ? data.technical_skills
+                                .split(",")
+                                .filter(Boolean)
+                                .map(
+                                    (
+                                        skill: string,
+                                    ) => ({
+                                        label:
+                                            skill.trim(),
+                                        value:
+                                            skill.trim(),
+                                    }),
+                                )
+                            : [],
 
                     programming_languages:
-                        data.programming_languages ||
-                        "",
+                        Array.isArray(
+                            data.programming_languages,
+                        )
+                            ? data.programming_languages
+                            : data.programming_languages
+                                ? data.programming_languages
+                                    .split(",")
+                                    .filter(Boolean)
+                                    .map(
+                                        (
+                                            skill: string,
+                                        ) => ({
+                                            label:
+                                                skill.trim(),
+                                            value:
+                                                skill.trim(),
+                                        }),
+                                    )
+                                : [],
 
                     tools_and_technologies:
-                        data.tools_and_technologies ||
-                        "",
+                        Array.isArray(
+                            data.tools_and_technologies,
+                        )
+                            ? data.tools_and_technologies
+                            : data.tools_and_technologies
+                                ? data.tools_and_technologies
+                                    .split(",")
+                                    .filter(Boolean)
+                                    .map(
+                                        (
+                                            skill: string,
+                                        ) => ({
+                                            label:
+                                                skill.trim(),
+                                            value:
+                                                skill.trim(),
+                                        }),
+                                    )
+                                : [],
 
                     github_url:
                         data.github_url || "",
@@ -113,74 +232,127 @@ export default function SkillsSection({
     const handleChange = (
         e: any,
     ) => {
+        const {
+            name,
+            value,
+        } = e.target;
+
         setFormData({
             ...formData,
-            [e.target.name]:
-                e.target.value,
+            [name]: value,
+        });
+
+        if (name === "github_url") {
+            const valid =
+                /^https:\/\/(www\.)?github\.com\/[A-Za-z0-9_-]+\/?$/.test(
+                    value,
+                ) || value === "";
+
+            setErrors((prev) => ({
+                ...prev,
+                github_url: valid
+                    ? ""
+                    : "Only valid GitHub profile links allowed",
+            }));
+        }
+
+        if (name === "linkedin_url") {
+            const valid =
+                /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+\/?$/.test(
+                    value,
+                ) || value === "";
+
+            setErrors((prev) => ({
+                ...prev,
+                linkedin_url: valid
+                    ? ""
+                    : "Only valid LinkedIn profile links allowed",
+            }));
+        }
+
+        if (name === "portfolio_url") {
+            const valid =
+                /^https:\/\/.+\.(vercel\.app|netlify\.app|github\.io)(\/.*)?$/.test(
+                    value,
+                ) || value === "";
+
+            setErrors((prev) => ({
+                ...prev,
+                portfolio_url: valid
+                    ? ""
+                    : "Only Vercel / Netlify / GitHub Pages links allowed",
+            }));
+        }
+    };
+
+    const generateComparableData = () => {
+        return JSON.stringify({
+            technical_skills:
+                formData.technical_skills
+                    .map(
+                        (item) =>
+                            item.value,
+                    )
+                    .sort(),
+
+            programming_languages:
+                formData.programming_languages
+                    .map(
+                        (item) =>
+                            item.value,
+                    )
+                    .sort(),
+
+            tools_and_technologies:
+                formData.tools_and_technologies
+                    .map(
+                        (item) =>
+                            item.value,
+                    )
+                    .sort(),
+
+            github_url:
+                formData.github_url.trim(),
+
+            linkedin_url:
+                formData.linkedin_url.trim(),
+
+            portfolio_url:
+                formData.portfolio_url.trim(),
+
+            strengths:
+                formData.strengths.trim(),
         });
     };
 
-    const validateUrls = () => {
-        const validUrl = (
-            url: string,
-        ) => {
-            if (!url) return true;
-
-            return (
-                url.startsWith(
-                    "http://",
-                ) ||
-                url.startsWith(
-                    "https://",
-                )
-            );
-        };
-
-        if (
-            !validUrl(
-                formData.github_url,
-            )
-        ) {
-            toast.error(
-                "GitHub URL must start with https://",
-            );
-
-            return false;
-        }
-
-        if (
-            !validUrl(
-                formData.linkedin_url,
-            )
-        ) {
-            toast.error(
-                "LinkedIn URL must start with https://",
-            );
-
-            return false;
-        }
-
-        if (
-            !validUrl(
-                formData.portfolio_url,
-            )
-        ) {
-            toast.error(
-                "Portfolio URL must start with https://",
-            );
-
-            return false;
-        }
-
-        return true;
-    };
-
     const handleSave = async () => {
-        if (!validateUrls()) {
+
+        const currentData = generateComparableData();
+
+        if (
+            errors.github_url ||
+            errors.linkedin_url ||
+            errors.portfolio_url
+        ) {
+            toast.error(
+                "Please fix invalid links before saving",
+            );
+
+            return;
+        }
+
+        if (
+            currentData === initialData
+        ) {
+            toast.info(
+                "No changes detected",
+            );
+
             return;
         }
 
         try {
+
             setSaving(true);
 
             await skillService.saveSkillProfile(
@@ -188,16 +360,28 @@ export default function SkillsSection({
                     student_id: studentId,
 
                     technical_skills:
-                        formData.technical_skills?.trim() ||
-                        null,
+                        formData.technical_skills
+                            .map(
+                                (item: any) =>
+                                    item.value,
+                            )
+                            .join(", "),
 
                     programming_languages:
-                        formData.programming_languages?.trim() ||
-                        null,
+                        formData.programming_languages
+                            .map(
+                                (item: any) =>
+                                    item.value,
+                            )
+                            .join(", "),
 
                     tools_and_technologies:
-                        formData.tools_and_technologies?.trim() ||
-                        null,
+                        formData.tools_and_technologies
+                            .map(
+                                (item: any) =>
+                                    item.value,
+                            )
+                            .join(", "),
 
                     github_url:
                         formData.github_url?.trim() ||
@@ -228,12 +412,16 @@ export default function SkillsSection({
             );
 
             const completed =
-                !!formData.technical_skills &&
-                !!formData.programming_languages &&
+                !!formData.technical_skills.length &&
+                !!formData.programming_languages.length &&
                 !!formData.linkedin_url;
 
             onCompletionChange?.(
                 completed,
+            );
+
+            setInitialData(
+                generateComparableData(),
             );
 
             setHasExistingData(true);
@@ -243,7 +431,11 @@ export default function SkillsSection({
             toast.success(
                 "Skills updated successfully",
             );
+
+            await loadSkills();
+
         } catch (error: any) {
+
             console.error(
                 "SKILLS SAVE ERROR:",
                 error,
@@ -253,11 +445,17 @@ export default function SkillsSection({
                 error.message ||
                 "Failed to save skills",
             );
+
         } finally {
+
             setSaving(false);
+
         }
     };
 
+    const currentData =
+        generateComparableData()
+        
     if (loading) {
         return (
             <div className="p-4">
@@ -285,21 +483,24 @@ export default function SkillsSection({
                                 : "Save"}
                         </button>
                     ) : (
-                        <>
-                            <button
-                                onClick={() => {
-                                    setEditMode(true);
-                                }}
-                                className="px-4 py-2 border rounded-lg"
-                            >
-                                Edit
-                            </button>
 
-                            {editMode && (
+                        <>
+                            {!editMode ? (
+                                <button
+                                    onClick={() => {
+                                        setEditMode(true);
+                                    }}
+                                    className="px-4 py-2 border rounded-lg"
+                                >
+                                    Edit
+                                </button>
+                            ) : (
                                 <>
                                     <button
-                                        onClick={() => {
-                                            loadSkills();
+                                        onClick={async () => {
+                                            await loadSkills();
+
+                                            setEditMode(false);
                                         }}
                                         className="px-4 py-2 border rounded-lg"
                                     >
@@ -318,131 +519,194 @@ export default function SkillsSection({
                                 </>
                             )}
                         </>
+
                     )}
                 </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
                 <div>
-                    <label className="text-sm font-medium block mb-2">
+                    <label className="text-sm font-medium">
                         Technical Skills
                     </label>
 
-                    <textarea
-                        name="technical_skills"
-                        placeholder="Example: React, Node.js, SQL"
+                    <CreatableSelect<
+                        SkillOption,
+                        true
+                    >
+                        isMulti
+                        isDisabled={!editMode}
+                        options={technicalSkillOptions}
+
                         value={
-                            formData.technical_skills
+                            Array.isArray(
+                                formData.technical_skills,
+                            )
+                                ? formData.technical_skills
+                                : []
                         }
-                        onChange={handleChange}
-                        disabled={!editMode}
-                        className="w-full border rounded-lg p-3"
+                        onChange={(value) =>
+                            setFormData({
+                                ...formData,
+                                technical_skills: [
+                                    ...value,
+                                ],
+                            })
+                        }
                     />
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium block mb-2">
+                    <label className="text-sm font-medium">
                         Programming Languages
                     </label>
 
-                    <textarea
-                        name="programming_languages"
-                        placeholder="Example: Java, Python, C++"
+                    <CreatableSelect<
+                        SkillOption,
+                        true
+                    >
+                        isMulti
+                        isDisabled={!editMode}
+                        options={languageOptions}
+
                         value={
-                            formData.programming_languages
+                            Array.isArray(
+                                formData.programming_languages,
+                            )
+                                ? formData.programming_languages
+                                : []
                         }
-                        onChange={handleChange}
-                        disabled={!editMode}
-                        className="w-full border rounded-lg p-3"
+                        onChange={(value) =>
+                            setFormData({
+                                ...formData,
+                                programming_languages:
+                                    [...value],
+                            })
+                        }
                     />
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium block mb-2">
+                    <label className="text-sm font-medium">
                         Tools & Technologies
                     </label>
 
-                    <textarea
-                        name="tools_and_technologies"
-                        placeholder="Example: Git, Docker, Firebase"
+                    <CreatableSelect<
+                        SkillOption,
+                        true
+                    >
+                        isMulti
+                        isDisabled={!editMode}
+                        options={toolsOptions}
+
                         value={
-                            formData.tools_and_technologies
+                            Array.isArray(
+                                formData.tools_and_technologies,
+                            )
+                                ? formData.tools_and_technologies
+                                : []
                         }
-                        onChange={handleChange}
-                        disabled={!editMode}
-                        className="w-full border rounded-lg p-3"
+
+                        onChange={(value) =>
+                            setFormData({
+                                ...formData,
+                                tools_and_technologies:
+                                    [...value],
+                            })
+                        }
                     />
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium block mb-2">
+                    <label className="text-sm font-medium">
                         GitHub URL
                     </label>
 
                     <input
+                        disabled={!editMode}
                         type="text"
                         name="github_url"
-                        placeholder="https://github.com/username"
+                        placeholder="GitHub URL"
                         value={
                             formData.github_url
                         }
                         onChange={handleChange}
-                        disabled={!editMode}
                         className="w-full border rounded-lg p-3"
                     />
+
+                    {errors.github_url && (
+                        <p className="text-red-500 text-sm mt-1">
+                            {errors.github_url}
+                        </p>
+                    )}
+
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium block mb-2">
+                    <label className="text-sm font-medium">
                         LinkedIn URL
                     </label>
 
                     <input
+                        disabled={!editMode}
                         type="text"
                         name="linkedin_url"
-                        placeholder="https://linkedin.com/in/username"
+                        placeholder="LinkedIn URL"
                         value={
                             formData.linkedin_url
                         }
                         onChange={handleChange}
-                        disabled={!editMode}
                         className="w-full border rounded-lg p-3"
                     />
+
+                    {errors.linkedin_url && (
+                        <p className="text-red-500 text-sm mt-1">
+                            {errors.linkedin_url}
+                        </p>
+                    )}
+
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium block mb-2">
+                    <label className="text-sm font-medium">
                         Portfolio URL
                     </label>
 
                     <input
+                        disabled={!editMode}
                         type="text"
                         name="portfolio_url"
-                        placeholder="https://yourportfolio.com"
+                        placeholder="Portfolio URL"
                         value={
                             formData.portfolio_url
                         }
                         onChange={handleChange}
-                        disabled={!editMode}
                         className="w-full border rounded-lg p-3"
                     />
+                    {errors.portfolio_url && (
+                        <p className="text-red-500 text-sm mt-1">
+                            {errors.portfolio_url}
+                        </p>
+                    )}
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium block mb-2">
+                    <label className="text-sm font-medium">
                         Strengths
                     </label>
 
                     <textarea
-                        name="strengths"
-                        placeholder="Example: Leadership, Communication, Problem Solving"
-                        value={formData.strengths}
-                        onChange={handleChange}
                         disabled={!editMode}
+                        name="strengths"
+                        placeholder="Strengths"
+                        value={
+                            formData.strengths
+                        }
+                        onChange={handleChange}
                         className="w-full border rounded-lg p-3"
                     />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
