@@ -46,3 +46,22 @@ export type StudentMasterUpdate = Partial<
   >
 >;
 
+export interface StudentSkillProfile {
+  skill_profile_id?: string;
+
+  technical_skills: string;
+  programming_languages: string;
+  tools_and_technologies: string;
+
+  github_url: string;
+  linkedin_url: string;
+  portfolio_url: string;
+
+  strengths: string;
+
+  certification_count?: number;
+  hackathon_count?: number;
+  project_count?: number;
+  profile_score?: number;
+}
+

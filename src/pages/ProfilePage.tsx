@@ -8,6 +8,7 @@ import { documentService } from "@/services/documentService";
 import { ResumeSection } from "@/components/ResumeSection";
 import { AcademicSection } from "@/components/AcademicSection";
 import { academicService } from "@/services/academicService";
+import SkillsSection from "@/components/SkillsSection";
 
 type Mode = "view";
 
@@ -634,7 +635,13 @@ export function ProfilePage() {
                 />
               </div>
             </div>
+            
+<div className="mt-8">
 
+            <SkillsSection
+              studentId={profile.student_id}
+            />
+          </div>  
             <ResumeSection
               studentId={profile.student_id}
               authUserId={user?.id ?? ""}
