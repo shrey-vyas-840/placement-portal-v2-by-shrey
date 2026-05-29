@@ -274,4 +274,82 @@ export const adminStudentService = {
         };
     },
 
+
+    async searchStudents(
+        searchTerm: string,
+    ) {
+        let query =
+            (supabase as any)
+                .from("student_master")
+                .select("*")
+                .order("created_at", {
+                    ascending: false,
+                });
+
+        if (
+            searchTerm.trim() &&
+            searchTerm.length >= 8
+        ) {
+            const enrollmentSearch =
+                `IU${searchTerm}`;
+
+            query =
+                query.ilike(
+                    "enrollment_no",
+                    `%${enrollmentSearch}%`,
+                );
+        }
+
+        const { data, error } =
+            await query;
+
+        if (error) throw error;
+
+        const students =
+            data ?? [];
+
+        const enriched =
+            await Promise.all(
+                students.map(
+                    async (
+                        student: any,
+                    ) => {
+                        const {
+                            data: account,
+                        } =
+                            await (
+                                supabase as any
+                            )
+                                .from(
+                                    "user_accounts",
+                                )
+                                .select(
+                                    "auth_provider_id",
+                                )
+                                .eq(
+                                    "user_id",
+                                    student.user_id,
+                                )
+                                .maybeSingle();
+
+                        const percentage =
+                            account
+                                ?.auth_provider_id
+                                ? await this.getStudentCompletion(
+                                    account.auth_provider_id,
+                                )
+                                : 0;
+
+                        return {
+                            ...student,
+                            completion_percentage:
+                                percentage,
+                        };
+                    },
+                ),
+            );
+
+        return enriched;
+    },
+
 };

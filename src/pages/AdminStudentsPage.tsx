@@ -9,13 +9,30 @@ export function AdminStudentsPage() {
     const [loading, setLoading] =
         useState(true);
 
+    const [searchTerm, setSearchTerm] =
+        useState("");
+
+    const [interestFilter, setInterestFilter] =
+        useState("All");
+
     useEffect(() => {
         async function loadStudents() {
             try {
                 const data =
-                    await adminStudentService.getAllStudents();
+                    await adminStudentService.searchStudents(
+                        searchTerm,
+                    );
 
-                setStudents(data);
+                setStudents(
+                    interestFilter === "All"
+                        ? data
+                        : data.filter(
+                            (student: any) =>
+                                student.placement_preference ===
+                                interestFilter,
+                        ),
+                );
+
             } catch (err) {
                 console.error(err);
             } finally {
@@ -24,7 +41,10 @@ export function AdminStudentsPage() {
         }
 
         loadStudents();
-    }, []);
+    }, [
+        searchTerm,
+        interestFilter,
+    ]);
 
     if (loading) {
         return (
@@ -41,6 +61,53 @@ export function AdminStudentsPage() {
                 <h1 className="text-3xl font-bold">
                     Students
                 </h1>
+
+                <div className="mt-6">
+                    <div className="flex items-center">
+                        <div className="rounded-l-lg border border-r-0 border-border bg-muted px-4 py-2 font-medium">
+                            IU
+                        </div>
+
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => {
+                                const value =
+                                    e.target.value
+                                        .replace(/\D/g, "")
+                                        .slice(0, 13);
+
+                                setSearchTerm(value);
+                            }}
+                            placeholder="Enter 8-13 digit enrollment number"
+                            className="w-full rounded-r-lg border border-border bg-background px-4 py-2"
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-4">
+                    <select
+                        value={interestFilter}
+                        onChange={(e) =>
+                            setInterestFilter(
+                                e.target.value,
+                            )
+                        }
+                        className="rounded-lg border border-border px-4 py-2"
+                    >
+                        <option value="All">
+                            All Students
+                        </option>
+
+                        <option value="Interested">
+                            Interested
+                        </option>
+
+                        <option value="Not Interested">
+                            Not Interested
+                        </option>
+                    </select>
+                </div>
 
                 <div className="mt-6 overflow-hidden rounded-lg border">
                     <table className="w-full">
@@ -68,47 +135,62 @@ export function AdminStudentsPage() {
                         </thead>
 
                         <tbody>
-                            {students.map((student) => (
-                                <tr
-                                    key={student.student_id}
-                                    className="border-b"
-                                >
-                                    <td className="p-3">
-                                        <Link
-                                            to="/admin/$studentId"
-                                            params={{
-                                                studentId:
-                                                    student.student_id,
-                                            }}
-                                            className="text-primary underline"
-                                        >
-                                            {student.enrollment_no}
-                                        </Link>
-                                    </td>
-
-                                    <td className="p-3">
-                                        {student.first_name}
-                                        {" "}
-                                        {student.last_name}
-                                    </td>
-
-                                    <td className="p-3">
-                                        {student.institute_email}
-                                    </td>
-
-                                    <td className="p-3">
-                                        {
-                                            student.placement_preference
-                                        }
-                                    </td>
-
-                                    <td className="p-3">
-                                        {
-                                            student.completion_percentage
-                                        }%
+                            {students.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={5}
+                                        className="p-8 text-center text-muted-foreground"
+                                    >
+                                        {searchTerm.length > 0 &&
+                                            searchTerm.length < 8
+                                            ? "Enrollment number must contain at least 8 digits."
+                                            : "Student data not found in database."
+                                            }
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                students.map((student) => (
+                                    <tr
+                                        key={student.student_id}
+                                        className="border-b"
+                                    >
+                                        <td className="p-3">
+                                            <Link
+                                                to="/admin/$studentId"
+                                                params={{
+                                                    studentId:
+                                                        student.student_id,
+                                                }}
+                                                className="text-primary underline"
+                                            >
+                                                {student.enrollment_no}
+                                            </Link>
+                                        </td>
+
+                                        <td className="p-3">
+                                            {student.first_name}
+                                            {" "}
+                                            {student.last_name}
+                                        </td>
+
+                                        <td className="p-3">
+                                            {student.institute_email}
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                student.placement_preference
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                student.completion_percentage
+                                            }%
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
