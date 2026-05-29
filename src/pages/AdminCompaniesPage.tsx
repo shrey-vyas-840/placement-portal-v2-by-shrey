@@ -23,6 +23,9 @@ export function AdminCompaniesPage() {
     const [companySize, setCompanySize] =
         useState("");
 
+    const [editingCompanyId, setEditingCompanyId] =
+        useState<string | null>(null);
+
     async function loadCompanies() {
         const data =
             await adminDriveService.getCompanies();
@@ -40,16 +43,40 @@ export function AdminCompaniesPage() {
         e.preventDefault();
 
         try {
-            await adminDriveService.createCompany({
-                company_name: companyName,
-                company_website: website,
-                hiring_location: location,
-                industry_type: industry,
-                company_description:
-                    description,
-                company_size:
-                    companySize,
-            });
+            if (editingCompanyId) {
+                await adminDriveService.updateCompany(
+                    editingCompanyId,
+                    {
+                        company_name:
+                            companyName,
+                        company_website:
+                            website,
+                        hiring_location:
+                            location,
+                        industry_type:
+                            industry,
+                        company_description:
+                            description,
+                        company_size:
+                            companySize,
+                    },
+                );
+            } else {
+                await adminDriveService.createCompany({
+                    company_name:
+                        companyName,
+                    company_website:
+                        website,
+                    hiring_location:
+                        location,
+                    industry_type:
+                        industry,
+                    company_description:
+                        description,
+                    company_size:
+                        companySize,
+                });
+            }
 
             setCompanyName("");
             setWebsite("");
@@ -57,6 +84,7 @@ export function AdminCompaniesPage() {
             setIndustry("");
             setDescription("");
             setCompanySize("");
+            setEditingCompanyId(null);
 
             await loadCompanies();
 
@@ -73,6 +101,12 @@ export function AdminCompaniesPage() {
                 <h1 className="text-3xl font-bold">
                     Companies
                 </h1>
+
+                {editingCompanyId && (
+                    <div className="mt-3 rounded border border-yellow-500 bg-yellow-50 p-3">
+                        Editing Company
+                    </div>
+                )}
 
                 <form
                     onSubmit={handleSubmit}
@@ -202,8 +236,29 @@ export function AdminCompaniesPage() {
                         type="submit"
                         className="rounded border px-4 py-2"
                     >
-                        Create Company
+                        {editingCompanyId
+                            ? "Save Changes"
+                            : "Create Company"}
                     </button>
+
+                    {editingCompanyId && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEditingCompanyId(null);
+
+                                setCompanyName("");
+                                setWebsite("");
+                                setLocation("");
+                                setIndustry("");
+                                setDescription("");
+                                setCompanySize("");
+                            }}
+                            className="ml-2 rounded border px-4 py-2"
+                        >
+                            Cancel
+                        </button>
+                    )}
 
                 </form>
 
@@ -260,6 +315,40 @@ export function AdminCompaniesPage() {
                                         <td className="p-3">
                                             <button
                                                 className="rounded border px-3 py-1"
+                                                onClick={() => {
+                                                    setEditingCompanyId(
+                                                        company.company_id,
+                                                    );
+
+                                                    setCompanyName(
+                                                        company.company_name || "",
+                                                    );
+
+                                                    setWebsite(
+                                                        company.company_website ||
+                                                        "",
+                                                    );
+
+                                                    setLocation(
+                                                        company.hiring_location ||
+                                                        "",
+                                                    );
+
+                                                    setIndustry(
+                                                        company.industry_type ||
+                                                        "",
+                                                    );
+
+                                                    setDescription(
+                                                        company.company_description ||
+                                                        "",
+                                                    );
+
+                                                    setCompanySize(
+                                                        company.company_size ||
+                                                        "",
+                                                    );
+                                                }}
                                             >
                                                 Edit
                                             </button>

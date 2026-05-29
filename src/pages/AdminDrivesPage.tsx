@@ -38,6 +38,9 @@ export function AdminDrivesPage() {
     const [remarks, setRemarks] =
         useState("");
 
+    const [editingDriveId, setEditingDriveId] =
+        useState<string | null>(null);
+
     async function load() {
         const companyData =
             await adminDriveService.getCompanies();
@@ -59,22 +62,66 @@ export function AdminDrivesPage() {
         e.preventDefault();
 
         try {
-            await adminDriveService.createDrive({
-                company_id: companyId,
-                drive_name: driveName,
-                drive_type: driveType,
-                drive_mode: driveMode,
-                drive_date: driveDate,
-                registration_deadline:
-                    deadline,
-                lowest_package_lpa:
-                    Number(lowestPackage),
-                highest_package_lpa:
-                    Number(highestPackage),
-                bond_years:
-                    Number(bondYears),
-                remarks,
-            });
+            if (editingDriveId) {
+                await adminDriveService.updateDrive(
+                    editingDriveId,
+                    {
+                        company_id:
+                            companyId,
+                        drive_name:
+                            driveName,
+                        drive_type:
+                            driveType,
+                        drive_mode:
+                            driveMode,
+                        registration_deadline:
+                            deadline,
+                        drive_date:
+                            driveDate,
+                        lowest_package_lpa:
+                            Number(
+                                lowestPackage,
+                            ),
+                        highest_package_lpa:
+                            Number(
+                                highestPackage,
+                            ),
+                        bond_years:
+                            Number(
+                                bondYears,
+                            ),
+                        remarks,
+                    },
+                );
+            } else {
+                await adminDriveService.createDrive({
+                    company_id:
+                        companyId,
+                    drive_name:
+                        driveName,
+                    drive_type:
+                        driveType,
+                    drive_mode:
+                        driveMode,
+                    registration_deadline:
+                        deadline,
+                    drive_date:
+                        driveDate,
+                    lowest_package_lpa:
+                        Number(
+                            lowestPackage,
+                        ),
+                    highest_package_lpa:
+                        Number(
+                            highestPackage,
+                        ),
+                    bond_years:
+                        Number(
+                            bondYears,
+                        ),
+                    remarks,
+                });
+            }
 
             setCompanyId("");
             setDriveName("");
@@ -86,6 +133,7 @@ export function AdminDrivesPage() {
             setHighestPackage("");
             setBondYears("");
             setRemarks("");
+            setEditingDriveId(null);
 
             await load();
 
@@ -103,9 +151,216 @@ export function AdminDrivesPage() {
                     Drives
                 </h1>
 
+                {editingDriveId && (
+                    <div className="mt-3 rounded border border-yellow-500 bg-yellow-50 p-3">
+                        Editing Drive
+                    </div>
+                )}
+
+                <div className="mt-6 overflow-hidden rounded-lg border">
+
+                    <table className="w-full">
+
+                        <thead>
+                            <tr className="border-b bg-muted">
+
+                                <th className="p-3 text-left">
+                                    Company
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Drive
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Type
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Status
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Package
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Action
+                                </th>
+
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {drives
+                                .filter(
+                                    (drive) =>
+                                        drive.is_active === true,
+                                )
+                                .map((drive) => (
+                                    <tr
+                                        key={drive.drive_id}
+                                        className="border-b"
+                                    >
+
+                                        <td className="p-3">
+                                            {
+                                                drive.company_master
+                                                    ?.company_name
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                drive.drive_name
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                drive.drive_type
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                drive.drive_status
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {drive.lowest_package_lpa &&
+                                                drive.highest_package_lpa
+                                                ? `${Number(
+                                                    drive.lowest_package_lpa,
+                                                )
+                                                    .toFixed(2)
+                                                    .padStart(5, "0")} - ${Number(
+                                                        drive.highest_package_lpa,
+                                                    )
+                                                        .toFixed(2)
+                                                        .padStart(5, "0")} LPA`
+                                                : "-"}
+                                        </td>
+
+                                        <td className="p-3">
+                                            <button
+                                                className="rounded border px-3 py-1"
+                                                onClick={() => {
+                                                    setEditingDriveId(
+                                                        drive.drive_id,
+                                                    );
+
+                                                    setCompanyId(
+                                                        drive.company_id ||
+                                                        "",
+                                                    );
+
+                                                    setDriveName(
+                                                        drive.drive_name ||
+                                                        "",
+                                                    );
+
+                                                    setDriveType(
+                                                        drive.drive_type ||
+                                                        "",
+                                                    );
+
+                                                    setDriveMode(
+                                                        drive.drive_mode ||
+                                                        "Online",
+                                                    );
+
+                                                    setDriveDate(
+                                                        drive.drive_date ||
+                                                        "",
+                                                    );
+
+                                                    setDeadline(
+                                                        drive.registration_deadline
+                                                            ?.slice(
+                                                                0,
+                                                                16,
+                                                            ) ||
+                                                        "",
+                                                    );
+
+                                                    setLowestPackage(
+                                                        String(
+                                                            drive.lowest_package_lpa ??
+                                                            "",
+                                                        ),
+                                                    );
+
+                                                    setHighestPackage(
+                                                        String(
+                                                            drive.highest_package_lpa ??
+                                                            "",
+                                                        ),
+                                                    );
+
+                                                    setBondYears(
+                                                        String(
+                                                            drive.bond_years ??
+                                                            "",
+                                                        ),
+                                                    );
+
+                                                    setRemarks(
+                                                        drive.remarks ||
+                                                        "",
+                                                    );
+
+                                                    window.scrollTo({
+                                                        top: document.body.scrollHeight,
+                                                        behavior:
+                                                            "smooth",
+                                                    });
+                                                }}
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                className="ml-2 rounded border px-3 py-1"
+                                                onClick={async () => {
+                                                    const confirmed =
+                                                        window.confirm(
+                                                            "Archive this drive?",
+                                                        );
+
+                                                    if (!confirmed) return;
+
+                                                    await adminDriveService.deactivateDrive(
+                                                        drive.drive_id,
+                                                    );
+
+                                                    await load();
+                                                }}
+                                            >
+                                                Archive
+                                            </button>
+                                        </td>
+
+                                    </tr>
+                                ))}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                {editingDriveId && (
+                    <div className="mt-3 rounded border border-yellow-500 bg-yellow-50 p-3">
+                        Editing Drive
+                    </div>
+                )}
+
                 <form
                     onSubmit={handleSubmit}
-                    className="mt-6 rounded-lg border p-5 space-y-4"
+                    className="mt-8 rounded-lg border p-5 space-y-4"
                 >
 
                     <div>
@@ -276,6 +531,10 @@ export function AdminDrivesPage() {
                             Lowest Package (LPA)
                         </label>
 
+                        <p className="mb-2 text-xs text-muted-foreground">
+                            Example: 4.50, 12.75, 18.25
+                        </p>
+
                         <input
                             type="number"
                             step="0.01"
@@ -295,6 +554,10 @@ export function AdminDrivesPage() {
                             Highest Package (LPA)
                         </label>
 
+                        <p className="mb-2 text-xs text-muted-foreground">
+                            Example: 8.50, 15.25, 24.75
+                        </p>
+
                         <input
                             type="number"
                             step="0.01"
@@ -311,8 +574,12 @@ export function AdminDrivesPage() {
 
                     <div>
                         <label className="mb-1 block font-medium">
-                            Bond Years
+                            Bond Duration (Years)
                         </label>
+
+                        <p className="mb-2 text-xs text-muted-foreground">
+                            Example: 0.50, 1.00, 2.50, 3.75
+                        </p>
 
                         <input
                             type="number"
@@ -349,8 +616,33 @@ export function AdminDrivesPage() {
                         type="submit"
                         className="rounded border px-4 py-2"
                     >
-                        Create Drive
+                        {editingDriveId
+                            ? "Save Changes"
+                            : "Create Drive"}
                     </button>
+
+                    {editingDriveId && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setEditingDriveId(null);
+
+                                setCompanyId("");
+                                setDriveName("");
+                                setDriveType("");
+                                setDriveMode("Online");
+                                setDriveDate("");
+                                setDeadline("");
+                                setLowestPackage("");
+                                setHighestPackage("");
+                                setBondYears("");
+                                setRemarks("");
+                            }}
+                            className="ml-2 rounded border px-4 py-2"
+                        >
+                            Cancel
+                        </button>
+                    )}
 
                 </form>
             </div>
