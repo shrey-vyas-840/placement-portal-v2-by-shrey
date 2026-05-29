@@ -15,23 +15,138 @@ export function AdminStudentsPage() {
     const [interestFilter, setInterestFilter] =
         useState("All");
 
+    const [placementFilter, setPlacementFilter] =
+        useState("All");
+
+    const [branchFilter, setBranchFilter] =
+        useState("All");
+
+    const [graduationFilter, setGraduationFilter] =
+        useState("All");
+
+    const [cgpaFilter, setCgpaFilter] =
+        useState("All");
+
+    const [filterOptions, setFilterOptions] =
+        useState({
+            branches: [] as string[],
+            graduationYears: [] as number[],
+        });
+
     useEffect(() => {
         async function loadStudents() {
             try {
+                const options =
+                    await adminStudentService.getFilterOptions();
+
+                setFilterOptions(options);
+
                 const data =
                     await adminStudentService.searchStudents(
                         searchTerm,
                     );
 
-                setStudents(
-                    interestFilter === "All"
-                        ? data
-                        : data.filter(
+                const academics =
+                    await adminStudentService.getAcademicMap();
+
+                let filtered =
+                    data.map(
+                        (student: any) => {
+                            const academic =
+                                academics.find(
+                                    (a: any) =>
+                                        a.student_id ===
+                                        student.student_id,
+                                );
+
+                            return {
+                                ...student,
+                                academic,
+                            };
+                        },
+                    );
+
+                if (
+                    interestFilter !== "All"
+                ) {
+                    filtered =
+                        filtered.filter(
                             (student: any) =>
                                 student.placement_preference ===
                                 interestFilter,
-                        ),
-                );
+                        );
+                }
+
+                if (
+                    placementFilter !== "All"
+                ) {
+                    filtered =
+                        filtered.filter(
+                            (student: any) =>
+                                student.placement_status ===
+                                placementFilter,
+                        );
+                }
+
+                if (
+                    branchFilter !== "All"
+                ) {
+                    filtered =
+                        filtered.filter(
+                            (student: any) =>
+                                student.academic
+                                    ?.current_branch_name ===
+                                branchFilter,
+                        );
+                }
+
+                if (
+                    graduationFilter !== "All"
+                ) {
+                    filtered =
+                        filtered.filter(
+                            (student: any) =>
+                                String(
+                                    student.academic
+                                        ?.graduation_year,
+                                ) ===
+                                graduationFilter,
+                        );
+                }
+
+                if (
+                    cgpaFilter !== "All"
+                ) {
+                    filtered =
+                        filtered.filter(
+                            (student: any) => {
+                                const cgpa =
+                                    Number(
+                                        student.academic
+                                            ?.current_cgpa ??
+                                        0,
+                                    );
+
+                                switch (
+                                cgpaFilter
+                                ) {
+                                    case "9+":
+                                        return cgpa >= 9;
+
+                                    case "8+":
+                                        return cgpa >= 8;
+
+                                    case "7+":
+                                        return cgpa >= 7;
+
+                                    default:
+                                        return true;
+                                }
+                            },
+                        );
+                }
+
+                setStudents(filtered);
 
             } catch (err) {
                 console.error(err);
@@ -44,6 +159,10 @@ export function AdminStudentsPage() {
     }, [
         searchTerm,
         interestFilter,
+        placementFilter,
+        branchFilter,
+        graduationFilter,
+        cgpaFilter,
     ]);
 
     if (loading) {
@@ -85,7 +204,8 @@ export function AdminStudentsPage() {
                     </div>
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+
                     <select
                         value={interestFilter}
                         onChange={(e) =>
@@ -93,7 +213,7 @@ export function AdminStudentsPage() {
                                 e.target.value,
                             )
                         }
-                        className="rounded-lg border border-border px-4 py-2"
+                        className="rounded-lg border px-4 py-2"
                     >
                         <option value="All">
                             All Students
@@ -107,6 +227,119 @@ export function AdminStudentsPage() {
                             Not Interested
                         </option>
                     </select>
+
+                    <select
+                        value={placementFilter}
+                        onChange={(e) =>
+                            setPlacementFilter(
+                                e.target.value,
+                            )
+                        }
+                        className="rounded-lg border px-4 py-2"
+                    >
+                        <option value="All">
+                            All Status
+                        </option>
+
+                        <option value="Placed">
+                            Placed
+                        </option>
+
+                        <option value="Unplaced">
+                            Unplaced
+                        </option>
+                    </select>
+
+                    <select
+                        value={branchFilter}
+                        onChange={(e) =>
+                            setBranchFilter(
+                                e.target.value,
+                            )
+                        }
+                        className="rounded-lg border px-4 py-2"
+                    >
+                        <option value="All">
+                            All Branches
+                        </option>
+
+                        {filterOptions.branches.map(
+                            (branch) => (
+                                <option
+                                    key={branch}
+                                    value={branch}
+                                >
+                                    {branch}
+                                </option>
+                            ),
+                        )}
+                    </select>
+
+                    <select
+                        value={graduationFilter}
+                        onChange={(e) =>
+                            setGraduationFilter(
+                                e.target.value,
+                            )
+                        }
+                        className="rounded-lg border px-4 py-2"
+                    >
+                        <option value="All">
+                            Graduation Year
+                        </option>
+
+                        {filterOptions.graduationYears.map(
+                            (year) => (
+                                <option
+                                    key={year}
+                                    value={year}
+                                >
+                                    {year}
+                                </option>
+                            ),
+                        )}
+                    </select>
+
+                    <select
+                        value={cgpaFilter}
+                        onChange={(e) =>
+                            setCgpaFilter(
+                                e.target.value,
+                            )
+                        }
+                        className="rounded-lg border px-4 py-2"
+                    >
+                        <option value="All">
+                            All CGPA
+                        </option>
+
+                        <option value="9+">
+                            9+
+                        </option>
+
+                        <option value="8+">
+                            8+
+                        </option>
+
+                        <option value="7+">
+                            7+
+                        </option>
+                    </select>
+
+                    <button
+                        onClick={() => {
+                            setSearchTerm("");
+                            setInterestFilter("All");
+                            setPlacementFilter("All");
+                            setBranchFilter("All");
+                            setGraduationFilter("All");
+                            setCgpaFilter("All");
+                        }}
+                        className="rounded-lg border px-4 py-2"
+                    >
+                        Reset
+                    </button>
+
                 </div>
 
                 <div className="mt-6 overflow-hidden rounded-lg border">
@@ -145,7 +378,7 @@ export function AdminStudentsPage() {
                                             searchTerm.length < 8
                                             ? "Enrollment number must contain at least 8 digits."
                                             : "Student data not found in database."
-                                            }
+                                        }
                                     </td>
                                 </tr>
                             ) : (

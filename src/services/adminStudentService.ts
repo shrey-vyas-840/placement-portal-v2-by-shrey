@@ -352,4 +352,64 @@ export const adminStudentService = {
         return enriched;
     },
 
+    async getFilterOptions() {
+        const {
+            data: academics,
+        } = await (supabase as any)
+            .from(
+                "student_academic_details",
+            )
+            .select(`
+            current_branch_name,
+            graduation_year
+        `);
+
+        const branches: string[] =
+            [
+                ...new Set(
+                    (academics ?? []).map(
+                        (a: any) =>
+                            a.current_branch_name,
+                    ),
+                ),
+            ]
+                .filter(Boolean) as string[];
+
+        const graduationYears: number[] =
+            [
+                ...new Set(
+                    (academics ?? []).map(
+                        (a: any) =>
+                            a.graduation_year,
+                    ),
+                ),
+            ]
+                .filter(Boolean) as number[];
+
+        return {
+            branches: branches as string[],
+            graduationYears:
+                graduationYears as number[],
+        };
+    },
+
+    async getAcademicMap() {
+        const { data, error } =
+            await (supabase as any)
+                .from(
+                    "student_academic_details",
+                )
+                .select(`
+                student_id,
+                current_cgpa,
+                current_branch_name,
+                graduation_year
+            `);
+
+        if (error) throw error;
+
+        return data ?? [];
+    },
+
 };
+
