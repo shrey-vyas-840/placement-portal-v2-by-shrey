@@ -360,9 +360,21 @@ export const adminStudentService = {
                 "student_academic_details",
             )
             .select(`
-            current_branch_name,
-            graduation_year
+                current_institute_name,
+                current_branch_name,
+                graduation_year
         `);
+
+        const institutes: string[] =
+            [
+                ...new Set(
+                    (academics ?? []).map(
+                        (a: any) =>
+                            a.current_institute_name,
+                    ),
+                ),
+            ]
+                .filter(Boolean) as string[];
 
         const branches: string[] =
             [
@@ -387,7 +399,12 @@ export const adminStudentService = {
                 .filter(Boolean) as number[];
 
         return {
-            branches: branches as string[],
+            institutes:
+                institutes as string[],
+
+            branches:
+                branches as string[],
+
             graduationYears:
                 graduationYears as number[],
         };

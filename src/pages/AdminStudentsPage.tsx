@@ -18,6 +18,9 @@ export function AdminStudentsPage() {
     const [placementFilter, setPlacementFilter] =
         useState("All");
 
+    const [instituteFilter, setInstituteFilter] =
+        useState("All");
+
     const [branchFilter, setBranchFilter] =
         useState("All");
 
@@ -29,6 +32,7 @@ export function AdminStudentsPage() {
 
     const [filterOptions, setFilterOptions] =
         useState({
+            institutes: [] as string[],
             branches: [] as string[],
             graduationYears: [] as number[],
         });
@@ -87,7 +91,17 @@ export function AdminStudentsPage() {
                                 placementFilter,
                         );
                 }
-
+                if (
+                    instituteFilter !== "All"
+                ) {
+                    filtered =
+                        filtered.filter(
+                            (student: any) =>
+                                student.academic
+                                    ?.current_institute_name ===
+                                instituteFilter,
+                        );
+                }
                 if (
                     branchFilter !== "All"
                 ) {
@@ -160,6 +174,7 @@ export function AdminStudentsPage() {
         searchTerm,
         interestFilter,
         placementFilter,
+        instituteFilter,
         branchFilter,
         graduationFilter,
         cgpaFilter,
@@ -251,6 +266,31 @@ export function AdminStudentsPage() {
                     </select>
 
                     <select
+                        value={instituteFilter}
+                        onChange={(e) =>
+                            setInstituteFilter(
+                                e.target.value,
+                            )
+                        }
+                        className="rounded-lg border px-4 py-2"
+                    >
+                        <option value="All">
+                            All Institutes
+                        </option>
+
+                        {filterOptions.institutes.map(
+                            (institute) => (
+                                <option
+                                    key={institute}
+                                    value={institute}
+                                >
+                                    {institute}
+                                </option>
+                            ),
+                        )}
+                    </select>
+
+                    <select
                         value={branchFilter}
                         onChange={(e) =>
                             setBranchFilter(
@@ -331,6 +371,7 @@ export function AdminStudentsPage() {
                             setSearchTerm("");
                             setInterestFilter("All");
                             setPlacementFilter("All");
+                            setInstituteFilter("All");
                             setBranchFilter("All");
                             setGraduationFilter("All");
                             setCgpaFilter("All");
