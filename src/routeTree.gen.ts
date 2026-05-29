@@ -16,6 +16,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
+import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
+import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
 
 const ProfileRoute = ProfileRouteImport.update({
@@ -53,6 +55,16 @@ const AdminStudentsRoute = AdminStudentsRouteImport.update({
   path: '/admin/students',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminDrivesRoute = AdminDrivesRouteImport.update({
+  id: '/admin/drives',
+  path: '/admin/drives',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
+  id: '/admin/companies',
+  path: '/admin/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminStudentIdRoute = AdminStudentIdRouteImport.update({
   id: '/admin/$studentId',
   path: '/admin/$studentId',
@@ -65,6 +77,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
+  '/admin/companies': typeof AdminCompaniesRoute
+  '/admin/drives': typeof AdminDrivesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
+  '/admin/companies': typeof AdminCompaniesRoute
+  '/admin/drives': typeof AdminDrivesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin': typeof AdminIndexRoute
@@ -86,6 +102,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
+  '/admin/companies': typeof AdminCompaniesRoute
+  '/admin/drives': typeof AdminDrivesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
@@ -98,6 +116,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/profile'
     | '/admin/$studentId'
+    | '/admin/companies'
+    | '/admin/drives'
     | '/admin/students'
     | '/auth/callback'
     | '/admin/'
@@ -108,6 +128,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/profile'
     | '/admin/$studentId'
+    | '/admin/companies'
+    | '/admin/drives'
     | '/admin/students'
     | '/auth/callback'
     | '/admin'
@@ -118,6 +140,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/profile'
     | '/admin/$studentId'
+    | '/admin/companies'
+    | '/admin/drives'
     | '/admin/students'
     | '/auth/callback'
     | '/admin/'
@@ -129,6 +153,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   AdminStudentIdRoute: typeof AdminStudentIdRoute
+  AdminCompaniesRoute: typeof AdminCompaniesRoute
+  AdminDrivesRoute: typeof AdminDrivesRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -185,6 +211,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStudentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/drives': {
+      id: '/admin/drives'
+      path: '/admin/drives'
+      fullPath: '/admin/drives'
+      preLoaderRoute: typeof AdminDrivesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/companies': {
+      id: '/admin/companies'
+      path: '/admin/companies'
+      fullPath: '/admin/companies'
+      preLoaderRoute: typeof AdminCompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/$studentId': {
       id: '/admin/$studentId'
       path: '/admin/$studentId'
@@ -201,6 +241,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   AdminStudentIdRoute: AdminStudentIdRoute,
+  AdminCompaniesRoute: AdminCompaniesRoute,
+  AdminDrivesRoute: AdminDrivesRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AdminIndexRoute: AdminIndexRoute,

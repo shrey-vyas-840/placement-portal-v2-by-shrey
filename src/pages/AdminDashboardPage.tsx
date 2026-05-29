@@ -91,7 +91,30 @@ export function AdminDashboardPage() {
                             View all registered students.
                         </p>
                     </Link>
+                    <Link
+                        to="/admin/companies"
+                        className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+                    >
+                        <h2 className="text-lg font-semibold">
+                            Companies
+                        </h2>
 
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Manage company records.
+                        </p>
+                    </Link>
+                    <Link
+                        to="/admin/drives"
+                        className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+                    >
+                        <h2 className="text-lg font-semibold">
+                            Drives
+                        </h2>
+
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Manage placement drives.
+                        </p>
+                    </Link>
                 </div>
             </div>
         </div>
