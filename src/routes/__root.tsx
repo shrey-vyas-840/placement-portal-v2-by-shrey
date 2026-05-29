@@ -75,7 +75,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "PMS by Shrey" },
       { name: "description", content: "Shrey Generated Project" },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "Shrey Vyas" },
       { property: "og:title", content: "Shrey Vyas" },
       { property: "og:description", content: "Shrey Vyas @Owner of PMS" },
       { property: "og:type", content: "website" },

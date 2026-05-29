@@ -5,8 +5,11 @@ import { useEffect, useState } from "react";
 import { ensureUserProvisioned } from "@/services/provisionService";
 import { profileCompletionService } from "@/services/profileCompletionService";
 import { studentService } from "@/services/studentService";
+import { rbacService } from "@/services/rbacService";
+
 
 export function DashboardPage() {
+
   const { user } = useAuth();
   const [completionName, setCompletionName] =
     useState("");
@@ -27,11 +30,15 @@ export function DashboardPage() {
 
         if (!user) return;
 
+        const role =
+          await rbacService.getCurrentUserRole(
+            user.id,
+          );
+
         const progress =
           await profileCompletionService.getCompletion(
             user.id,
           );
-
         setCompletion(progress);
 
         const profile =
@@ -100,6 +107,18 @@ export function DashboardPage() {
             to="/profile"
             className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
           >
+            <Link
+              to="/admin"
+              className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+            >
+              <h2 className="text-base font-medium text-foreground">
+                Admin Dashboard
+              </h2>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Open admin panel.
+              </p>
+            </Link>
             <h2 className="text-base font-medium text-foreground">
               Student Profile
             </h2>
@@ -112,4 +131,5 @@ export function DashboardPage() {
       </main>
     </div>
   );
+
 }
