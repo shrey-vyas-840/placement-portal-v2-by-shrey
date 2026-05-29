@@ -6,7 +6,7 @@ import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
 export const Route = createFileRoute("/admin/")({
   component: () => (
     <AdminProtectedRoute>
-      <AdminDashboardPage />
+    <AdminDashboardPage />
     </AdminProtectedRoute>
   ),
 });
