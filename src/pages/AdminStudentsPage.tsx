@@ -57,6 +57,13 @@ export function AdminStudentsPage() {
                                 <th className="p-3 text-left">
                                     Email
                                 </th>
+                                <th className="p-3 text-left">
+                                    Interest
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Completion
+                                </th>
                             </tr>
                         </thead>
 
@@ -87,6 +94,18 @@ export function AdminStudentsPage() {
 
                                     <td className="p-3">
                                         {student.institute_email}
+                                    </td>
+
+                                    <td className="p-3">
+                                        {
+                                            student.placement_preference
+                                        }
+                                    </td>
+
+                                    <td className="p-3">
+                                        {
+                                            student.completion_percentage
+                                        }%
                                     </td>
                                 </tr>
                             ))}
