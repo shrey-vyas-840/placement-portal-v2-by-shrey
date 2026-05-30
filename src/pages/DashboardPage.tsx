@@ -129,6 +129,32 @@ export function DashboardPage() {
             </p>
           </Link>
 
+          <Link
+            to="/opportunities"
+            className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+          >
+            <h2 className="text-base font-medium text-foreground">
+              Opportunities
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              View available placement opportunities.
+            </p>
+          </Link>
+
+          <Link
+            to="/my-applications"
+            className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+          >
+            <h2 className="text-base font-medium text-foreground">
+              My Applications
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Track your placement applications.
+            </p>
+          </Link>
+
         </section>
       </main>
     </div>
