@@ -78,6 +78,7 @@ export function AdminDrivesPage() {
     const [additionalRequirements,
         setAdditionalRequirements] =
         useState("");
+
     async function load() {
         const companyData =
             await adminDriveService.getCompanies();
@@ -827,24 +828,6 @@ export function AdminDrivesPage() {
 
                     <div>
                         <label className="mb-1 block font-medium">
-                            Registration Deadline
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            value={deadline}
-                            onChange={(e) =>
-                                setDeadline(
-                                    e.target.value,
-                                )
-                            }
-                            className="w-full rounded border px-4 py-2"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block font-medium">
                             Lowest Package (LPA)
                         </label>
 
@@ -1152,6 +1135,8 @@ export function AdminDrivesPage() {
 
                         <input
                             type="number"
+                            min="0"
+                            max="10"
                             step="0.01"
                             value={minimumCgpa}
                             onChange={(e) =>
@@ -1170,6 +1155,8 @@ export function AdminDrivesPage() {
 
                         <input
                             type="number"
+                            min="0"
+                            step="1"
                             value={backlogs}
                             onChange={(e) =>
                                 setBacklogs(

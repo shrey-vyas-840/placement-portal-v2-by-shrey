@@ -28,12 +28,8 @@ export function AdminOpportunitiesPage() {
         setDescription] =
         useState("");
 
-    const [startDate,
-        setStartDate] =
-        useState("");
-
-    const [endDate,
-        setEndDate] =
+    const [registrationDeadline,
+        setRegistrationDeadline] =
         useState("");
 
     const [applications,
@@ -87,19 +83,15 @@ export function AdminOpportunitiesPage() {
                     opportunity_description:
                         description,
 
-                    application_start_date:
-                        startDate,
-
-                    application_end_date:
-                        endDate,
+                    registration_deadline:
+                        registrationDeadline,
                 },
             );
 
             setDriveId("");
             setTitle("");
             setDescription("");
-            setStartDate("");
-            setEndDate("");
+            setRegistrationDeadline("");
 
             await load();
 
@@ -127,62 +119,62 @@ export function AdminOpportunitiesPage() {
 
                 <div className="mt-4 rounded-lg border p-4">
 
-    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
 
-        <div className="rounded border p-3">
-            <div className="text-sm text-muted-foreground">
-                Total Opportunities
-            </div>
+                        <div className="rounded border p-3">
+                            <div className="text-sm text-muted-foreground">
+                                Total Opportunities
+                            </div>
 
-            <div className="mt-2 text-2xl font-bold">
-                {opportunities.length}
-            </div>
-        </div>
+                            <div className="mt-2 text-2xl font-bold">
+                                {opportunities.length}
+                            </div>
+                        </div>
 
-        <div className="rounded border p-3">
-            <div className="text-sm text-muted-foreground">
-                Published
-            </div>
+                        <div className="rounded border p-3">
+                            <div className="text-sm text-muted-foreground">
+                                Published
+                            </div>
 
-            <div className="mt-2 text-2xl font-bold">
-                {
-                    opportunities.filter(
-                        (x) =>
-                            x.visible_to_students,
-                    ).length
-                }
-            </div>
-        </div>
+                            <div className="mt-2 text-2xl font-bold">
+                                {
+                                    opportunities.filter(
+                                        (x) =>
+                                            x.visible_to_students,
+                                    ).length
+                                }
+                            </div>
+                        </div>
 
-        <div className="rounded border p-3">
-            <div className="text-sm text-muted-foreground">
-                Draft
-            </div>
+                        <div className="rounded border p-3">
+                            <div className="text-sm text-muted-foreground">
+                                Draft
+                            </div>
 
-            <div className="mt-2 text-2xl font-bold">
-                {
-                    opportunities.filter(
-                        (x) =>
-                            x.application_status ===
-                            "Draft",
-                    ).length
-                }
-            </div>
-        </div>
+                            <div className="mt-2 text-2xl font-bold">
+                                {
+                                    opportunities.filter(
+                                        (x) =>
+                                            x.application_status ===
+                                            "Draft",
+                                    ).length
+                                }
+                            </div>
+                        </div>
 
-        <div className="rounded border p-3">
-            <div className="text-sm text-muted-foreground">
-                Applications
-            </div>
+                        <div className="rounded border p-3">
+                            <div className="text-sm text-muted-foreground">
+                                Applications
+                            </div>
 
-            <div className="mt-2 text-2xl font-bold">
-                {applications.length}
-            </div>
-        </div>
+                            <div className="mt-2 text-2xl font-bold">
+                                {applications.length}
+                            </div>
+                        </div>
 
-    </div>
+                    </div>
 
-</div>
+                </div>
 
                 <p className="mt-2 text-sm text-muted-foreground">
                     Create opportunities from approved drives and publish them to students.
@@ -323,53 +315,45 @@ export function AdminOpportunitiesPage() {
 
                 </div>
 
+                <div className="mt-8 rounded-lg border p-4">
 
+                    <h2 className="font-semibold">
+                        Opportunity Workflow
+                    </h2>
 
-<div className="mt-8 rounded-lg border p-4">
+                    <div className="mt-3 flex gap-3 text-sm">
 
-    <h2 className="font-semibold">
-        Opportunity Workflow
-    </h2>
+                        <span>
+                            Draft
+                        </span>
 
-    <div className="mt-3 flex gap-3 text-sm">
+                        <span>
+                            →
+                        </span>
 
-        <span>
-            Draft
-        </span>
+                        <span>
+                            Open
+                        </span>
 
-        <span>
-            →
-        </span>
+                        <span>
+                            →
+                        </span>
 
-        <span>
-            Open
-        </span>
+                        <span>
+                            Closed
+                        </span>
 
-        <span>
-            →
-        </span>
+                        <span>
+                            →
+                        </span>
 
-        <span>
-            Closed
-        </span>
+                        <span>
+                            Completed
+                        </span>
 
-        <span>
-            →
-        </span>
+                    </div>
 
-        <span>
-            Completed
-        </span>
-
-    </div>
-
-</div>
-
-
-
-
-
-
+                </div>
 
                 <form
                     onSubmit={
@@ -478,47 +462,23 @@ export function AdminOpportunitiesPage() {
                     <div>
 
                         <label className="mb-1 block font-medium">
-                            Application Start
+                            Registration Deadline
                         </label>
 
                         <input
                             type="datetime-local"
                             value={
-                                startDate
+                                registrationDeadline
                             }
                             onChange={(
                                 e,
                             ) =>
-                                setStartDate(
-                                    e.target
-                                        .value,
+                                setRegistrationDeadline(
+                                    e.target.value,
                                 )
                             }
                             className="w-full rounded border px-4 py-2"
-                        />
-
-                    </div>
-
-                    <div>
-
-                        <label className="mb-1 block font-medium">
-                            Application End
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            value={
-                                endDate
-                            }
-                            onChange={(
-                                e,
-                            ) =>
-                                setEndDate(
-                                    e.target
-                                        .value,
-                                )
-                            }
-                            className="w-full rounded border px-4 py-2"
+                            required
                         />
 
                     </div>

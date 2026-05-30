@@ -17,8 +17,58 @@ export function StudentOpportunitiesPage() {
 
     async function load() {
 
+        const {
+            data: authData,
+        } =
+            await supabase.auth.getUser();
+
+        const authUserId =
+            authData.user?.id;
+
+        if (!authUserId) {
+            return;
+        }
+
+        const { data: account } =
+            await (supabase as any)
+                .from(
+                    "user_accounts",
+                )
+                .select(
+                    "user_id",
+                )
+                .eq(
+                    "auth_provider_id",
+                    authUserId,
+                )
+                .maybeSingle();
+
+        if (!account) {
+            return;
+        }
+
+        const { data: student } =
+            await (supabase as any)
+                .from(
+                    "student_master",
+                )
+                .select(
+                    "student_id",
+                )
+                .eq(
+                    "user_id",
+                    account.user_id,
+                )
+                .maybeSingle();
+
+        if (!student) {
+            return;
+        }
+
         const data =
-            await studentOpportunityService.getPublishedOpportunities();
+            await studentOpportunityService.getPublishedOpportunities(
+                student.student_id,
+            );
 
         setOpportunities(
             data,

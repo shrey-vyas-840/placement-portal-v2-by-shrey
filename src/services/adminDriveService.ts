@@ -76,7 +76,7 @@ export const adminDriveService = {
         drive_name: string;
         drive_type: string;
         drive_mode: string;
-        registration_deadline: string;
+        registration_deadline?: string;
         drive_date?: string;
         lowest_package_lpa?: number;
         highest_package_lpa?: number;
@@ -103,7 +103,10 @@ export const adminDriveService = {
                         "Created",
 
                     registration_deadline:
-                        payload.registration_deadline,
+                        payload.registration_deadline &&
+                            payload.registration_deadline.trim() !== ""
+                            ? payload.registration_deadline
+                            : null,
 
                     drive_date:
                         payload.drive_date &&
