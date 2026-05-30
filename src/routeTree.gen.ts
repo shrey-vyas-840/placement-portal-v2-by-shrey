@@ -10,12 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
+import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
 import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
@@ -23,6 +25,11 @@ import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpportunitiesRoute = OpportunitiesRouteImport.update({
+  id: '/opportunities',
+  path: '/opportunities',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -55,6 +62,11 @@ const AdminStudentsRoute = AdminStudentsRouteImport.update({
   path: '/admin/students',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOpportunitiesRoute = AdminOpportunitiesRouteImport.update({
+  id: '/admin/opportunities',
+  path: '/admin/opportunities',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDrivesRoute = AdminDrivesRouteImport.update({
   id: '/admin/drives',
   path: '/admin/drives',
@@ -75,10 +87,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
@@ -87,10 +101,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin': typeof AdminIndexRoute
@@ -100,10 +116,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
@@ -114,10 +132,12 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/opportunities'
     | '/profile'
     | '/admin/$studentId'
     | '/admin/companies'
     | '/admin/drives'
+    | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
     | '/admin/'
@@ -126,10 +146,12 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/opportunities'
     | '/profile'
     | '/admin/$studentId'
     | '/admin/companies'
     | '/admin/drives'
+    | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
     | '/admin'
@@ -138,10 +160,12 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/opportunities'
     | '/profile'
     | '/admin/$studentId'
     | '/admin/companies'
     | '/admin/drives'
+    | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
     | '/admin/'
@@ -151,10 +175,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  OpportunitiesRoute: typeof OpportunitiesRoute
   ProfileRoute: typeof ProfileRoute
   AdminStudentIdRoute: typeof AdminStudentIdRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
   AdminDrivesRoute: typeof AdminDrivesRoute
+  AdminOpportunitiesRoute: typeof AdminOpportunitiesRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -167,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/opportunities': {
+      id: '/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof OpportunitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -211,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStudentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/opportunities': {
+      id: '/admin/opportunities'
+      path: '/admin/opportunities'
+      fullPath: '/admin/opportunities'
+      preLoaderRoute: typeof AdminOpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/drives': {
       id: '/admin/drives'
       path: '/admin/drives'
@@ -239,10 +279,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  OpportunitiesRoute: OpportunitiesRoute,
   ProfileRoute: ProfileRoute,
   AdminStudentIdRoute: AdminStudentIdRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
   AdminDrivesRoute: AdminDrivesRoute,
+  AdminOpportunitiesRoute: AdminOpportunitiesRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AdminIndexRoute: AdminIndexRoute,

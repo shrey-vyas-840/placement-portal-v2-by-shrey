@@ -1,0 +1,135 @@
+import {
+    useEffect,
+    useState,
+} from "react";
+
+import { supabase } from "@/lib/supabase";
+
+import {
+    studentOpportunityService,
+} from "@/services/studentOpportunityService";
+
+export function StudentOpportunitiesPage() {
+
+    const [opportunities,
+        setOpportunities] =
+        useState<any[]>([]);
+
+    async function load() {
+
+        const data =
+            await studentOpportunityService.getPublishedOpportunities();
+
+        setOpportunities(
+            data,
+        );
+    }
+
+    useEffect(() => {
+        load();
+    }, []);
+
+    async function apply(
+        opportunityId: string,
+    ) {
+
+        const {
+            data: authData,
+        } =
+            await supabase.auth.getUser();
+
+        const studentId =
+            authData.user?.id;
+
+        if (!studentId) {
+
+            alert(
+                "User not found",
+            );
+
+            return;
+        }
+
+        try {
+
+            await studentOpportunityService.apply(
+                opportunityId,
+                studentId,
+            );
+
+            alert(
+                "Application submitted",
+            );
+
+        } catch {
+
+            alert(
+                "Already applied",
+            );
+        }
+    }
+
+    return (
+
+        <div className="min-h-screen bg-background">
+
+            <div className="mx-auto max-w-7xl px-6 py-8">
+
+                <h1 className="text-3xl font-bold">
+                    Opportunities
+                </h1>
+
+                <div className="mt-8 grid gap-4">
+
+                    {opportunities.map(
+                        (
+                            opportunity,
+                        ) => (
+
+                            <div
+                                key={
+                                    opportunity.opportunity_id
+                                }
+                                className="rounded-lg border p-5"
+                            >
+
+                                <h2 className="text-lg font-semibold">
+                                    {
+                                        opportunity.opportunity_title
+                                    }
+                                </h2>
+
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    {
+                                        opportunity.drive_master?.drive_name
+                                    }
+                                </p>
+
+                                <p className="mt-4">
+                                    {
+                                        opportunity.opportunity_description
+                                    }
+                                </p>
+
+                                <button
+                                    onClick={() =>
+                                        apply(
+                                            opportunity.opportunity_id,
+                                        )
+                                    }
+                                    className="mt-4 rounded border px-4 py-2"
+                                >
+                                    Apply
+                                </button>
+
+                            </div>
+                        ),
+                    )}
+
+                </div>
+
+            </div>
+
+        </div>
+    );
+}

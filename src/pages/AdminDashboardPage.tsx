@@ -115,6 +115,18 @@ export function AdminDashboardPage() {
                             Manage placement drives.
                         </p>
                     </Link>
+                    <Link
+                        to="/admin/opportunities"
+                        className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+                    >
+                        <h2 className="text-lg font-semibold">
+                            Opportunities
+                        </h2>
+
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Manage published opportunities and applications.
+                        </p>
+                    </Link>
                 </div>
             </div>
         </div>
