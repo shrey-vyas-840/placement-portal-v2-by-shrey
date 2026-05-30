@@ -50,7 +50,7 @@ export const studentOpportunityService = {
 
         if (error) throw error;
 
-        const eligibleOpportunities =
+        const processedOpportunities =
             [];
 
         for (const opportunity of opportunities || []) {
@@ -69,9 +69,13 @@ export const studentOpportunityService = {
 
             if (!eligibility) {
 
-                eligibleOpportunities.push(
-                    opportunity,
-                );
+                processedOpportunities.push({
+                    ...opportunity,
+                    eligibility_status:
+                        "Eligible",
+                    eligibility_reason:
+                        "",
+                });
 
                 continue;
             }
@@ -142,22 +146,51 @@ export const studentOpportunityService = {
                     eligibility.passing_out_batch,
                 );
 
-            if (
-                instituteMatch &&
-                degreeMatch &&
-                branchMatch &&
-                cgpaMatch &&
-                backlogMatch &&
-                batchMatch
-            ) {
+            let reason = "";
 
-                eligibleOpportunities.push(
-                    opportunity,
-                );
+            if (!instituteMatch) {
+                reason =
+                    "Institute not eligible";
             }
+            else if (!degreeMatch) {
+                reason =
+                    "Degree not eligible";
+            }
+            else if (!branchMatch) {
+                reason =
+                    "Branch not eligible";
+            }
+            else if (!cgpaMatch) {
+                reason =
+                    "CGPA below requirement";
+            }
+            else if (!backlogMatch) {
+                reason =
+                    "Backlog criteria not met";
+            }
+            else if (!batchMatch) {
+                reason =
+                    "Graduation batch not eligible";
+            }
+
+            processedOpportunities.push({
+                ...opportunity,
+                eligibility_status:
+                    instituteMatch &&
+                        degreeMatch &&
+                        branchMatch &&
+                        cgpaMatch &&
+                        backlogMatch &&
+                        batchMatch
+                        ? "Eligible"
+                        : "Not Eligible",
+
+                eligibility_reason:
+                    reason,
+            });
         }
 
-        return eligibleOpportunities;
+        return processedOpportunities;
     },
 
     async apply(
