@@ -22,52 +22,53 @@ export const academicService = {
   },
 
   async saveAcademicDetails(
-    payload: any,
-  ) {
-    const { data: existing } =
-      await (supabase as any)
-        .from(
-          "student_academic_details",
-        )
-        .select("academic_id")
-        .eq(
-          "student_id",
-          payload.student_id,
-        )
-        .maybeSingle();
+  payload: any,
+) {
+  const { data: existing } =
+    await (supabase as any)
+      .from(
+        "student_academic_details",
+      )
+      .select("academic_id")
+      .eq(
+        "student_id",
+        payload.student_id,
+      )
+      .maybeSingle();
 
-    if (existing) {
-      const { error } =
-        await (supabase as any)
-          .from(
-            "student_academic_details",
-          )
-          .update({
-            ...payload,
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq(
-            "academic_id",
-            existing.academic_id,
-          );
-
-      if (error) {
-        throw error;
-      }
-
-      return;
-    }
+  if (existing) {
 
     const { error } =
       await (supabase as any)
         .from(
           "student_academic_details",
         )
-        .insert(payload);
+        .update({
+          ...payload,
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "student_id",
+          payload.student_id,
+        );
 
     if (error) {
       throw error;
     }
-  },
+
+    return;
+  }
+
+  const { error } =
+    await (supabase as any)
+      .from(
+        "student_academic_details",
+      )
+      .insert(payload);
+
+  if (error) {
+    throw error;
+  }
+}
 };

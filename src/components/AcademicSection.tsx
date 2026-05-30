@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { academicService } from "@/services/academicService";
+import { ELIGIBILITY_MAPPING } from "@/constants/eligibilityMapping";
 
 type Props = {
     studentId: string;
@@ -7,30 +8,7 @@ type Props = {
     onSaved: () => void;
 };
 
-const instituteOptions = [
-    "IITE",
-    "IIMS",
-    "IIICT",
-    "IIPR",
-    "IISHLS",
-    "IIATE",
-    "Other",
-];
 
-const branchOptions = [
-    "Computer Science Engineering",
-    "Information Technology",
-    "Civil Engineering",
-    "Mechanical Engineering",
-    "Electrical Engineering",
-    "Other",
-];
-
-const degreeOptions = [
-    "Diploma",
-    "UG",
-    "PG",
-];
 export function AcademicSection({
     studentId,
     existingData,
@@ -53,8 +31,8 @@ export function AcademicSection({
         );
 
     const [
-        currentDegreeLevel,
-        setCurrentDegreeLevel,
+        currentDegreeName,
+        setCurrentDegreeName,
     ] = useState(
         existingData?.current_degree_level ??
         "",
@@ -141,6 +119,29 @@ export function AcademicSection({
         "",
     );
 
+    const availableDegrees =
+        currentInstituteName
+            ? Object.keys(
+                ELIGIBILITY_MAPPING[
+                currentInstituteName as keyof typeof ELIGIBILITY_MAPPING
+                ] || {},
+            )
+            : [];
+
+    const availableBranches =
+        currentInstituteName &&
+            currentDegreeName
+            ? (
+                (
+                    ELIGIBILITY_MAPPING[
+                    currentInstituteName as keyof typeof ELIGIBILITY_MAPPING
+                    ] as Record<string, string[]>
+                )?.[
+                currentDegreeName
+                ] || []
+            )
+            : [];
+
     useEffect(() => {
         if (!existingData) {
             setEditing(true);
@@ -154,7 +155,7 @@ export function AcademicSection({
             existingData.education_path ?? "",
         );
 
-        setCurrentDegreeLevel(
+        setCurrentDegreeName(
             existingData.current_degree_level ?? "",
         );
 
@@ -248,10 +249,10 @@ export function AcademicSection({
             }
 
             if (
-                !currentDegreeLevel
+                !currentDegreeName
             ) {
                 setError(
-                    "Current degree level is required.",
+                    "Current degree is required.",
                 );
                 return;
             }
@@ -370,7 +371,7 @@ export function AcademicSection({
                         educationPath,
 
                     current_degree_level:
-                        currentDegreeLevel,
+                        currentDegreeName,
 
                     current_institute_name:
                         currentInstituteName,
@@ -486,7 +487,7 @@ export function AcademicSection({
                         </p>
 
                         <p className="mt-1 font-medium">
-                            {currentDegreeLevel}
+                            {currentDegreeName}
                         </p>
                     </div>
 
@@ -650,24 +651,71 @@ export function AcademicSection({
 
                 <div>
                     <label className="mb-1 block text-sm font-medium">
-                        Current Degree Level
+                        Current Institute
                     </label>
 
                     <select
                         disabled={!editing}
                         className="w-full rounded border p-2"
-                        value={currentDegreeLevel}
-                        onChange={(e) =>
-                            setCurrentDegreeLevel(
-                                e.target.value,
-                            )
+                        value={currentInstituteName}
+                        onChange={(e) => {
+
+                            const selectedInstitute =
+                                e.target.value;
+
+                            setCurrentInstituteName(
+                                selectedInstitute,
+                            );
+
+                            setCurrentDegreeName("");
+
+                            setCurrentBranchName("");
+
+                        }}
+                    >
+                        <option value="">
+                            Select Institute
+                        </option>
+
+                        {Object.keys(
+                            ELIGIBILITY_MAPPING,
+                        ).map((institute) => (
+                            <option
+                                key={institute}
+                                value={institute}
+                            >
+                                {institute}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="mb-1 block text-sm font-medium">
+                        Current Degree
+                    </label>
+
+                    <select
+                        disabled={
+                            !editing ||
+                            !currentInstituteName
                         }
+                        className="w-full rounded border p-2"
+                        value={currentDegreeName}
+                        onChange={(e) => {
+
+                            setCurrentDegreeName(
+                                e.target.value,
+                            );
+
+                            setCurrentBranchName("");
+                        }}
                     >
                         <option value="">
                             Select Degree
                         </option>
 
-                        {degreeOptions.map(
+                        {availableDegrees.map(
                             (degree) => (
                                 <option
                                     key={degree}
@@ -682,43 +730,15 @@ export function AcademicSection({
 
                 <div>
                     <label className="mb-1 block text-sm font-medium">
-                        Current Institute
-                    </label>
-
-                    <select
-                        disabled={!editing}
-                        className="w-full rounded border p-2"
-                        value={currentInstituteName}
-                        onChange={(e) =>
-                            setCurrentInstituteName(
-                                e.target.value,
-                            )
-                        }
-                    >
-                        <option value="">
-                            Select Institute
-                        </option>
-
-                        {instituteOptions.map(
-                            (institute) => (
-                                <option
-                                    key={institute}
-                                    value={institute}
-                                >
-                                    {institute}
-                                </option>
-                            ),
-                        )}
-                    </select>
-                </div>
-
-                <div>
-                    <label className="mb-1 block text-sm font-medium">
                         Current Branch
                     </label>
 
                     <select
-                        disabled={!editing}
+                        disabled={
+                            !editing ||
+                            !currentInstituteName ||
+                            !currentDegreeName
+                        }
                         className="w-full rounded border p-2"
                         value={currentBranchName}
                         onChange={(e) =>
@@ -731,8 +751,8 @@ export function AcademicSection({
                             Select Branch
                         </option>
 
-                        {branchOptions.map(
-                            (branch) => (
+                        {availableBranches.map(
+                            (branch: string) => (
                                 <option
                                     key={branch}
                                     value={branch}
@@ -1029,7 +1049,7 @@ export function AcademicSection({
                                         originalData.education_path ?? "",
                                     );
 
-                                    setCurrentDegreeLevel(
+                                    setCurrentDegreeName(
                                         originalData.current_degree_level ?? "",
                                     );
 
