@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { adminDriveService } from "@/services/adminDriveService";
+import { ELIGIBILITY_MAPPING } from "@/constants/eligibilityMapping";
 
 export function AdminDrivesPage() {
     const [companies, setCompanies] =
@@ -62,13 +63,21 @@ export function AdminDrivesPage() {
     const [relocation, setRelocation] =
         useState(false);
 
-    const [institutes, setInstitutes] =
-        useState("");
+    const [selectedInstitutes,
+        setSelectedInstitutes] =
+        useState<string[]>([]);
+
+    const [selectedDegrees,
+        setSelectedDegrees] =
+        useState<string[]>([]);
+
+    const [selectedBranches,
+        setSelectedBranches] =
+        useState<string[]>([]);
 
     const [additionalRequirements,
         setAdditionalRequirements] =
         useState("");
-
     async function load() {
         const companyData =
             await adminDriveService.getCompanies();
@@ -88,6 +97,64 @@ export function AdminDrivesPage() {
         e: React.FormEvent,
     ) {
         e.preventDefault();
+
+        const currentYear =
+            new Date().getFullYear();
+
+        if (
+            passingBatch &&
+            Number(
+                passingBatch,
+            ) < currentYear
+        ) {
+            alert(
+                "Invalid passing batch",
+            );
+            return;
+        }
+
+        if (
+            minimumCgpa &&
+            Number(
+                minimumCgpa,
+            ) < 0
+        ) {
+            alert(
+                "CGPA cannot be negative",
+            );
+            return;
+        }
+
+        if (
+            Number(backlogs) < 0
+        ) {
+            alert(
+                "Backlogs cannot be negative",
+            );
+            return;
+        }
+
+        if (
+            Number(
+                lowestPackage,
+            ) < 0
+        ) {
+            alert(
+                "Package cannot be negative",
+            );
+            return;
+        }
+
+        if (
+            Number(
+                highestPackage,
+            ) < 0
+        ) {
+            alert(
+                "Package cannot be negative",
+            );
+            return;
+        }
 
         try {
             if (editingDriveId) {
@@ -161,6 +228,17 @@ export function AdminDrivesPage() {
             setHighestPackage("");
             setBondYears("");
             setRemarks("");
+            setPassingBatch("");
+            setMinimumCgpa("");
+            setBacklogs("0");
+
+            setSelectedInstitutes([]);
+            setSelectedDegrees([]);
+            setSelectedBranches([]);
+
+            setRelocation(false);
+
+            setAdditionalRequirements("");
 
             if (
                 editingDriveId
@@ -171,13 +249,13 @@ export function AdminDrivesPage() {
                             editingDriveId,
 
                         allowed_institutes:
-                            institutes,
-
-                        allowed_branches:
-                            branches,
+                            selectedInstitutes.join(","),
 
                         allowed_degrees:
-                            degrees,
+                            selectedDegrees.join(","),
+
+                        allowed_branches:
+                            selectedBranches.join(","),
 
                         passing_out_batch:
                             Number(
@@ -506,23 +584,26 @@ export function AdminDrivesPage() {
                                                             ),
                                                         );
 
-                                                        setBranches(
-                                                            eligibility.allowed_branches ||
-                                                            "",
+                                                        setSelectedBranches(
+                                                            eligibility.allowed_branches
+                                                                ? eligibility.allowed_branches.split(",")
+                                                                : [],
                                                         );
 
-                                                        setDegrees(
-                                                            eligibility.allowed_degrees ||
-                                                            "",
+                                                        setSelectedDegrees(
+                                                            eligibility.allowed_degrees
+                                                                ? eligibility.allowed_degrees.split(",")
+                                                                : [],
                                                         );
 
                                                         setRelocation(
                                                             eligibility.willing_to_relocate_required,
                                                         );
 
-                                                        setInstitutes(
-                                                            eligibility.allowed_institutes ||
-                                                            "",
+                                                        setSelectedInstitutes(
+                                                            eligibility.allowed_institutes
+                                                                ? eligibility.allowed_institutes.split(",")
+                                                                : [],
                                                         );
 
                                                         setAdditionalRequirements(
@@ -833,21 +914,218 @@ export function AdminDrivesPage() {
 
                     <hr />
 
+                    <hr />
+
+                    <h2 className="text-xl font-semibold">
+                        Eligibility Mapping
+                    </h2>
+
+                    <h2 className="text-xl font-semibold">
+                        Eligibility Mapping
+                    </h2>
+
                     <div>
-                        <label className="mb-1 block font-medium">
-                            Allowed Institutes
+
+                        <label className="mb-2 block font-medium">
+                            Institutes
                         </label>
 
-                        <textarea
-                            rows={3}
-                            value={institutes}
-                            onChange={(e) =>
-                                setInstitutes(
-                                    e.target.value,
+                        <div className="grid grid-cols-2 gap-2">
+
+                            {Object.keys(
+                                ELIGIBILITY_MAPPING,
+                            ).map((institute) => (
+
+                                <label
+                                    key={institute}
+                                    className="flex items-center gap-2"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedInstitutes.includes(
+                                            institute,
+                                        )}
+                                        onChange={(e) => {
+
+                                            if (
+                                                e.target.checked
+                                            ) {
+
+                                                setSelectedInstitutes([
+                                                    ...selectedInstitutes,
+                                                    institute,
+                                                ]);
+
+                                            } else {
+
+                                                setSelectedInstitutes(
+                                                    selectedInstitutes.filter(
+                                                        (x) =>
+                                                            x !==
+                                                            institute,
+                                                    ),
+                                                );
+                                            }
+                                        }}
+                                    />
+
+                                    {institute}
+
+                                </label>
+                            ))}
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label className="mb-2 block font-medium">
+                            Degrees
+                        </label>
+
+                        <div className="grid grid-cols-2 gap-2">
+
+                            {selectedInstitutes.flatMap(
+                                (inst) =>
+                                    Object.keys(
+                                        ELIGIBILITY_MAPPING[
+                                        inst as keyof typeof ELIGIBILITY_MAPPING
+                                        ],
+                                    ),
+                            )
+                                .filter(
+                                    (
+                                        value,
+                                        index,
+                                        array,
+                                    ) =>
+                                        array.indexOf(
+                                            value,
+                                        ) === index,
                                 )
-                            }
-                            className="w-full rounded border px-4 py-2"
-                        />
+                                .map((degree) => (
+
+                                    <label
+                                        key={degree}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedDegrees.includes(
+                                                degree,
+                                            )}
+                                            onChange={(e) => {
+
+                                                if (
+                                                    e.target.checked
+                                                ) {
+
+                                                    setSelectedDegrees([
+                                                        ...selectedDegrees,
+                                                        degree,
+                                                    ]);
+
+                                                } else {
+
+                                                    setSelectedDegrees(
+                                                        selectedDegrees.filter(
+                                                            (x) =>
+                                                                x !==
+                                                                degree,
+                                                        ),
+                                                    );
+                                                }
+                                            }}
+                                        />
+
+                                        {degree}
+
+                                    </label>
+
+                                ))}
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label className="mb-2 block font-medium">
+                            Branches
+                        </label>
+
+                        <div className="grid grid-cols-2 gap-2">
+
+                            {selectedInstitutes.flatMap(
+                                (inst) => {
+
+                                    const institute =
+                                        ELIGIBILITY_MAPPING[
+                                        inst as keyof typeof ELIGIBILITY_MAPPING
+                                        ];
+
+                                    return selectedDegrees.flatMap(
+                                        (degree) =>
+                                            institute[
+                                            degree as keyof typeof institute
+                                            ] || [],
+                                    );
+                                },
+                            )
+                                .filter(
+                                    (
+                                        value,
+                                        index,
+                                        array,
+                                    ) =>
+                                        array.indexOf(
+                                            value,
+                                        ) === index,
+                                )
+                                .map((branch) => (
+
+                                    <label
+                                        key={branch}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedBranches.includes(
+                                                branch,
+                                            )}
+                                            onChange={(e) => {
+
+                                                if (
+                                                    e.target.checked
+                                                ) {
+
+                                                    setSelectedBranches([
+                                                        ...selectedBranches,
+                                                        branch,
+                                                    ]);
+
+                                                } else {
+
+                                                    setSelectedBranches(
+                                                        selectedBranches.filter(
+                                                            (x) =>
+                                                                x !==
+                                                                branch,
+                                                        ),
+                                                    );
+                                                }
+                                            }}
+                                        />
+
+                                        {branch}
+
+                                    </label>
+
+                                ))}
+
+                        </div>
+
                     </div>
 
                     <div>
@@ -895,40 +1173,6 @@ export function AdminDrivesPage() {
                             value={backlogs}
                             onChange={(e) =>
                                 setBacklogs(
-                                    e.target.value,
-                                )
-                            }
-                            className="w-full rounded border px-4 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block font-medium">
-                            Allowed Branches
-                        </label>
-
-                        <textarea
-                            rows={3}
-                            value={branches}
-                            onChange={(e) =>
-                                setBranches(
-                                    e.target.value,
-                                )
-                            }
-                            className="w-full rounded border px-4 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block font-medium">
-                            Allowed Degrees
-                        </label>
-
-                        <textarea
-                            rows={3}
-                            value={degrees}
-                            onChange={(e) =>
-                                setDegrees(
                                     e.target.value,
                                 )
                             }
@@ -1015,6 +1259,17 @@ export function AdminDrivesPage() {
                                 setHighestPackage("");
                                 setBondYears("");
                                 setRemarks("");
+                                setPassingBatch("");
+                                setMinimumCgpa("");
+                                setBacklogs("0");
+
+                                setSelectedInstitutes([]);
+                                setSelectedDegrees([]);
+                                setSelectedBranches([]);
+
+                                setRelocation(false);
+
+                                setAdditionalRequirements("");
                             }}
                             className="ml-2 rounded border px-4 py-2"
                         >

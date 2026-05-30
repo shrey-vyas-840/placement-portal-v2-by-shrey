@@ -106,7 +106,10 @@ export const adminDriveService = {
                         payload.registration_deadline,
 
                     drive_date:
-                        payload.drive_date,
+                        payload.drive_date &&
+                            payload.drive_date.trim() !== ""
+                            ? payload.drive_date
+                            : null,
 
                     lowest_package_lpa:
                         payload.lowest_package_lpa,
@@ -212,8 +215,10 @@ export const adminDriveService = {
                         payload.registration_deadline,
 
                     drive_date:
-                        payload.drive_date ||
-                        null,
+                        payload.drive_date &&
+                            payload.drive_date.trim() !== ""
+                            ? payload.drive_date
+                            : null,
 
                     lowest_package_lpa:
                         payload.lowest_package_lpa,
