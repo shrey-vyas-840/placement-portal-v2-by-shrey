@@ -273,6 +273,24 @@ export const adminDriveService = {
     if (error) throw error;
 },
 
+async updateDriveStatus(
+    driveId: string,
+    status: string,
+) {
+    const { error } =
+        await (supabase as any)
+            .from("drive_master")
+            .update({
+                drive_status:
+                    status,
+            })
+            .eq(
+                "drive_id",
+                driveId,
+            );
+
+    if (error) throw error;
+},
 
 
 };

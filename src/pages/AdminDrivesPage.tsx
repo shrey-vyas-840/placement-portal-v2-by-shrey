@@ -218,6 +218,10 @@ export function AdminDrivesPage() {
                                 </th>
 
                                 <th className="p-3 text-left">
+                                    Deadline
+                                </th>
+
+                                <th className="p-3 text-left">
                                     Action
                                 </th>
 
@@ -258,9 +262,61 @@ export function AdminDrivesPage() {
                                         </td>
 
                                         <td className="p-3">
-                                            {
-                                                drive.drive_status
-                                            }
+
+                                            <select
+                                                value={
+                                                    drive.drive_status
+                                                }
+                                                onChange={async (e) => {
+
+                                                    await adminDriveService.updateDriveStatus(
+                                                        drive.drive_id,
+                                                        e.target.value,
+                                                    );
+
+                                                    await load();
+                                                }}
+                                                className="rounded border px-2 py-1"
+                                            >
+
+                                                <option value="Created">
+                                                    Created
+                                                </option>
+
+                                                <option value="Published">
+                                                    Published
+                                                </option>
+
+                                                <option value="Registration Open">
+                                                    Registration Open
+                                                </option>
+
+                                                <option value="Registration Closed">
+                                                    Registration Closed
+                                                </option>
+
+                                                <option value="Shortlisting">
+                                                    Shortlisting
+                                                </option>
+
+                                                <option value="Interview Process">
+                                                    Interview Process
+                                                </option>
+
+                                                <option value="Offer Released">
+                                                    Offer Released
+                                                </option>
+
+                                                <option value="Completed">
+                                                    Completed
+                                                </option>
+
+                                                <option value="Cancelled">
+                                                    Cancelled
+                                                </option>
+
+                                            </select>
+
                                         </td>
 
                                         <td className="p-3">
@@ -276,6 +332,16 @@ export function AdminDrivesPage() {
                                                         .toFixed(2)
                                                         .padStart(5, "0")} LPA`
                                                 : "-"}
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {drive.registration_deadline
+                                                ? new Date(
+                                                    drive.registration_deadline,
+                                                ).toLocaleDateString()
+                                                : "-"}
+
                                         </td>
 
                                         <td className="p-3">
