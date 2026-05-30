@@ -104,21 +104,22 @@ export function DashboardPage() {
           </div>
 
           <Link
+            to="/admin"
+            className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+          >
+            <h2 className="text-base font-medium text-foreground">
+              Admin Dashboard
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Open admin panel.
+            </p>
+          </Link>
+
+          <Link
             to="/profile"
             className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
           >
-            <Link
-              to="/admin"
-              className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
-            >
-              <h2 className="text-base font-medium text-foreground">
-                Admin Dashboard
-              </h2>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Open admin panel.
-              </p>
-            </Link>
             <h2 className="text-base font-medium text-foreground">
               Student Profile
             </h2>
@@ -127,6 +128,7 @@ export function DashboardPage() {
               View and edit your profile details.
             </p>
           </Link>
+
         </section>
       </main>
     </div>

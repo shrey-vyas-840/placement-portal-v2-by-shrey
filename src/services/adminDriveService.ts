@@ -257,40 +257,104 @@ export const adminDriveService = {
     },
 
     async restoreDrive(
-    driveId: string,
-) {
-    const { error } =
-        await (supabase as any)
-            .from("drive_master")
-            .update({
-                is_active: true,
-            })
-            .eq(
-                "drive_id",
-                driveId,
-            );
+        driveId: string,
+    ) {
+        const { error } =
+            await (supabase as any)
+                .from("drive_master")
+                .update({
+                    is_active: true,
+                })
+                .eq(
+                    "drive_id",
+                    driveId,
+                );
 
-    if (error) throw error;
-},
+        if (error) throw error;
+    },
 
-async updateDriveStatus(
-    driveId: string,
-    status: string,
-) {
-    const { error } =
-        await (supabase as any)
-            .from("drive_master")
-            .update({
-                drive_status:
-                    status,
-            })
-            .eq(
-                "drive_id",
-                driveId,
-            );
+    async updateDriveStatus(
+        driveId: string,
+        status: string,
+    ) {
+        const { error } =
+            await (supabase as any)
+                .from("drive_master")
+                .update({
+                    drive_status:
+                        status,
+                })
+                .eq(
+                    "drive_id",
+                    driveId,
+                );
 
-    if (error) throw error;
-},
+        if (error) throw error;
+    },
+    async getEligibility(
+        driveId: string,
+    ) {
+        const { data, error } =
+            await (supabase as any)
+                .from("drive_eligibility")
+                .select("*")
+                .eq("drive_id", driveId)
+                .maybeSingle();
+
+        if (error) throw error;
+
+        return data;
+    },
+
+    async saveEligibility(
+        payload: {
+            drive_id: string;
+            allowed_institutes: string;
+            allowed_branches: string;
+            allowed_degrees: string;
+            additional_requirements?: string;
+            passing_out_batch: number;
+            minimum_cgpa: number;
+            maximum_active_backlogs: number;
+            willing_to_relocate_required: boolean;
+        },
+    ) {
+        const { data: existing } =
+            await (supabase as any)
+                .from("drive_eligibility")
+                .select("eligibility_id")
+                .eq(
+                    "drive_id",
+                    payload.drive_id,
+                )
+                .maybeSingle();
+
+        if (existing) {
+
+            const { error } =
+                await (supabase as any)
+                    .from(
+                        "drive_eligibility",
+                    )
+                    .update(payload)
+                    .eq(
+                        "drive_id",
+                        payload.drive_id,
+                    );
+
+            if (error) throw error;
+
+            return;
+        }
+
+        const { error } =
+            await (supabase as any)
+                .from("drive_eligibility")
+                .insert(payload);
+
+        if (error) throw error;
+    },
+
 
 
 };

@@ -44,6 +44,31 @@ export function AdminDrivesPage() {
     const [showArchived, setShowArchived] =
         useState(false);
 
+    const [passingBatch, setPassingBatch] =
+        useState("");
+
+    const [minimumCgpa, setMinimumCgpa] =
+        useState("");
+
+    const [backlogs, setBacklogs] =
+        useState("0");
+
+    const [branches, setBranches] =
+        useState("");
+
+    const [degrees, setDegrees] =
+        useState("");
+
+    const [relocation, setRelocation] =
+        useState(false);
+
+    const [institutes, setInstitutes] =
+        useState("");
+
+    const [additionalRequirements,
+        setAdditionalRequirements] =
+        useState("");
+
     async function load() {
         const companyData =
             await adminDriveService.getCompanies();
@@ -136,6 +161,48 @@ export function AdminDrivesPage() {
             setHighestPackage("");
             setBondYears("");
             setRemarks("");
+
+            if (
+                editingDriveId
+            ) {
+                await adminDriveService.saveEligibility(
+                    {
+                        drive_id:
+                            editingDriveId,
+
+                        allowed_institutes:
+                            institutes,
+
+                        allowed_branches:
+                            branches,
+
+                        allowed_degrees:
+                            degrees,
+
+                        passing_out_batch:
+                            Number(
+                                passingBatch,
+                            ),
+
+                        minimum_cgpa:
+                            Number(
+                                minimumCgpa,
+                            ),
+
+                        maximum_active_backlogs:
+                            Number(
+                                backlogs,
+                            ),
+
+                        willing_to_relocate_required:
+                            relocation,
+
+                        additional_requirements:
+                            additionalRequirements,
+                    }
+                );
+            }
+
             setEditingDriveId(null);
 
             await load();
@@ -411,6 +478,59 @@ export function AdminDrivesPage() {
                                                         drive.remarks ||
                                                         "",
                                                     );
+
+                                                    (async () => {
+
+                                                        const eligibility =
+                                                            await adminDriveService.getEligibility(
+                                                                drive.drive_id,
+                                                            );
+
+                                                        if (!eligibility) return;
+
+                                                        setPassingBatch(
+                                                            String(
+                                                                eligibility.passing_out_batch,
+                                                            ),
+                                                        );
+
+                                                        setMinimumCgpa(
+                                                            String(
+                                                                eligibility.minimum_cgpa,
+                                                            ),
+                                                        );
+
+                                                        setBacklogs(
+                                                            String(
+                                                                eligibility.maximum_active_backlogs,
+                                                            ),
+                                                        );
+
+                                                        setBranches(
+                                                            eligibility.allowed_branches ||
+                                                            "",
+                                                        );
+
+                                                        setDegrees(
+                                                            eligibility.allowed_degrees ||
+                                                            "",
+                                                        );
+
+                                                        setRelocation(
+                                                            eligibility.willing_to_relocate_required,
+                                                        );
+
+                                                        setInstitutes(
+                                                            eligibility.allowed_institutes ||
+                                                            "",
+                                                        );
+
+                                                        setAdditionalRequirements(
+                                                            eligibility.additional_requirements ||
+                                                            "",
+                                                        );
+
+                                                    })();
 
                                                     window.scrollTo({
                                                         top: document.body.scrollHeight,
@@ -709,6 +829,148 @@ export function AdminDrivesPage() {
                             }
                             className="w-full rounded border px-4 py-2"
                         />
+                    </div>
+
+                    <hr />
+
+                    <div>
+                        <label className="mb-1 block font-medium">
+                            Allowed Institutes
+                        </label>
+
+                        <textarea
+                            rows={3}
+                            value={institutes}
+                            onChange={(e) =>
+                                setInstitutes(
+                                    e.target.value,
+                                )
+                            }
+                            className="w-full rounded border px-4 py-2"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block font-medium">
+                            Passing Out Batch
+                        </label>
+
+                        <input
+                            type="number"
+                            value={passingBatch}
+                            onChange={(e) =>
+                                setPassingBatch(
+                                    e.target.value,
+                                )
+                            }
+                            className="w-full rounded border px-4 py-2"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block font-medium">
+                            Minimum CGPA
+                        </label>
+
+                        <input
+                            type="number"
+                            step="0.01"
+                            value={minimumCgpa}
+                            onChange={(e) =>
+                                setMinimumCgpa(
+                                    e.target.value,
+                                )
+                            }
+                            className="w-full rounded border px-4 py-2"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block font-medium">
+                            Maximum Active Backlogs
+                        </label>
+
+                        <input
+                            type="number"
+                            value={backlogs}
+                            onChange={(e) =>
+                                setBacklogs(
+                                    e.target.value,
+                                )
+                            }
+                            className="w-full rounded border px-4 py-2"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block font-medium">
+                            Allowed Branches
+                        </label>
+
+                        <textarea
+                            rows={3}
+                            value={branches}
+                            onChange={(e) =>
+                                setBranches(
+                                    e.target.value,
+                                )
+                            }
+                            className="w-full rounded border px-4 py-2"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block font-medium">
+                            Allowed Degrees
+                        </label>
+
+                        <textarea
+                            rows={3}
+                            value={degrees}
+                            onChange={(e) =>
+                                setDegrees(
+                                    e.target.value,
+                                )
+                            }
+                            className="w-full rounded border px-4 py-2"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block font-medium">
+                            Additional Requirements
+                        </label>
+
+                        <textarea
+                            rows={3}
+                            value={
+                                additionalRequirements
+                            }
+                            onChange={(e) =>
+                                setAdditionalRequirements(
+                                    e.target.value,
+                                )
+                            }
+                            className="w-full rounded border px-4 py-2"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+
+                        <input
+                            type="checkbox"
+                            checked={relocation}
+                            onChange={(e) =>
+                                setRelocation(
+                                    e.target.checked,
+                                )
+                            }
+                        />
+
+                        <label>
+                            Willing To Relocate Required
+                        </label>
+
                     </div>
 
                     <div>
