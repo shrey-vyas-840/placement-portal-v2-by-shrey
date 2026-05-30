@@ -41,6 +41,9 @@ export function AdminDrivesPage() {
     const [editingDriveId, setEditingDriveId] =
         useState<string | null>(null);
 
+    const [showArchived, setShowArchived] =
+        useState(false);
+
     async function load() {
         const companyData =
             await adminDriveService.getCompanies();
@@ -157,6 +160,36 @@ export function AdminDrivesPage() {
                     </div>
                 )}
 
+                <div className="mt-4 flex gap-2">
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setShowArchived(false)
+                        }
+                        className={`rounded border px-4 py-2 ${!showArchived
+                            ? "font-semibold"
+                            : ""
+                            }`}
+                    >
+                        Active Drives
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setShowArchived(true)
+                        }
+                        className={`rounded border px-4 py-2 ${showArchived
+                            ? "font-semibold"
+                            : ""
+                            }`}
+                    >
+                        Archived Drives
+                    </button>
+
+                </div>
+
                 <div className="mt-6 overflow-hidden rounded-lg border">
 
                     <table className="w-full">
@@ -194,9 +227,10 @@ export function AdminDrivesPage() {
                         <tbody>
 
                             {drives
-                                .filter(
-                                    (drive) =>
-                                        drive.is_active === true,
+                                .filter((drive) =>
+                                    showArchived
+                                        ? drive.is_active === false
+                                        : drive.is_active === true,
                                 )
                                 .map((drive) => (
                                     <tr
@@ -322,25 +356,41 @@ export function AdminDrivesPage() {
                                                 Edit
                                             </button>
 
-                                            <button
-                                                className="ml-2 rounded border px-3 py-1"
-                                                onClick={async () => {
-                                                    const confirmed =
-                                                        window.confirm(
-                                                            "Archive this drive?",
+                                            {drive.is_active ? (
+                                                <button
+                                                    className="ml-2 rounded border px-3 py-1"
+                                                    onClick={async () => {
+                                                        const confirmed =
+                                                            window.confirm(
+                                                                "Archive this drive?",
+                                                            );
+
+                                                        if (!confirmed)
+                                                            return;
+
+                                                        await adminDriveService.deactivateDrive(
+                                                            drive.drive_id,
                                                         );
 
-                                                    if (!confirmed) return;
+                                                        await load();
+                                                    }}
+                                                >
+                                                    Archive
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="ml-2 rounded border px-3 py-1"
+                                                    onClick={async () => {
+                                                        await adminDriveService.restoreDrive(
+                                                            drive.drive_id,
+                                                        );
 
-                                                    await adminDriveService.deactivateDrive(
-                                                        drive.drive_id,
-                                                    );
-
-                                                    await load();
-                                                }}
-                                            >
-                                                Archive
-                                            </button>
+                                                        await load();
+                                                    }}
+                                                >
+                                                    Restore
+                                                </button>
+                                            )}
                                         </td>
 
                                     </tr>

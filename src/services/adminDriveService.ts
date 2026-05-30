@@ -256,4 +256,23 @@ export const adminDriveService = {
         if (error) throw error;
     },
 
+    async restoreDrive(
+    driveId: string,
+) {
+    const { error } =
+        await (supabase as any)
+            .from("drive_master")
+            .update({
+                is_active: true,
+            })
+            .eq(
+                "drive_id",
+                driveId,
+            );
+
+    if (error) throw error;
+},
+
+
+
 };
