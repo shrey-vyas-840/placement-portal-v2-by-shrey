@@ -36,6 +36,18 @@ export function AdminOpportunitiesPage() {
         setApplications] =
         useState<any[]>([]);
 
+    const [searchTerm,
+        setSearchTerm] =
+        useState("");
+
+    const [branchFilter,
+        setBranchFilter] =
+        useState("All");
+
+    const [statusFilter,
+        setStatusFilter] =
+        useState("All");
+
     async function load() {
 
         const drivesData =
@@ -45,7 +57,7 @@ export function AdminOpportunitiesPage() {
             await adminOpportunityService.getOpportunities();
 
         const applicationsData =
-            await adminOpportunityService.getApplications();
+            await adminOpportunityService.getApplicantDetails();
 
         setDrives(
             drivesData,
@@ -106,6 +118,47 @@ export function AdminOpportunitiesPage() {
             );
         }
     }
+
+    const filteredApplications =
+        applications.filter(
+            (application) => {
+
+                const matchesSearch =
+                    searchTerm === "" ||
+                    application.student_master?.first_name
+                        ?.toLowerCase()
+                        .includes(
+                            searchTerm.toLowerCase(),
+                        ) ||
+                    application.student_master?.last_name
+                        ?.toLowerCase()
+                        .includes(
+                            searchTerm.toLowerCase(),
+                        ) ||
+                    application.student_master?.enrollment_no
+                        ?.toLowerCase()
+                        .includes(
+                            searchTerm.toLowerCase(),
+                        );
+
+                const matchesBranch =
+                    branchFilter === "All" ||
+                    application.academic
+                        ?.current_branch_name ===
+                    branchFilter;
+
+                const matchesStatus =
+                    statusFilter === "All" ||
+                    application.application_status ===
+                    statusFilter;
+
+                return (
+                    matchesSearch &&
+                    matchesBranch &&
+                    matchesStatus
+                );
+            },
+        );
 
     return (
 
@@ -189,19 +242,23 @@ export function AdminOpportunitiesPage() {
                             <tr className="border-b">
 
                                 <th className="p-3 text-left">
+                                    Branch
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    CGPA
+                                </th>
+
+                                <th className="p-3 text-left">
                                     Opportunity
                                 </th>
 
                                 <th className="p-3 text-left">
-                                    Drive
+                                    Resume
                                 </th>
 
                                 <th className="p-3 text-left">
                                     Status
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Visible
                                 </th>
 
                                 <th className="p-3 text-left">
@@ -494,10 +551,96 @@ export function AdminOpportunitiesPage() {
 
             </div>
 
+            <div className="mt-8 flex gap-3 flex-wrap">
+
+                <input
+                    value={searchTerm}
+                    onChange={(e) =>
+                        setSearchTerm(
+                            e.target.value,
+                        )
+                    }
+                    placeholder="Search Student"
+                    className="rounded border px-3 py-2"
+                />
+
+                <select
+                    value={statusFilter}
+                    onChange={(e) =>
+                        setStatusFilter(
+                            e.target.value,
+                        )
+                    }
+                    className="rounded border px-3 py-2"
+                >
+
+                    <option value="All">
+                        All Status
+                    </option>
+
+                    <option value="Applied">
+                        Applied
+                    </option>
+
+                    <option value="Shortlisted">
+                        Shortlisted
+                    </option>
+
+                    <option value="Interview Scheduled">
+                        Interview Scheduled
+                    </option>
+
+                    <option value="Selected">
+                        Selected
+                    </option>
+
+                    <option value="Rejected">
+                        Rejected
+                    </option>
+
+                </select>
+
+                <select
+                    value={branchFilter}
+                    onChange={(e) =>
+                        setBranchFilter(
+                            e.target.value,
+                        )
+                    }
+                    className="rounded border px-3 py-2"
+                >
+
+                    <option value="All">
+                        All Branches
+                    </option>
+
+                    {[...new Set(
+                        applications.map(
+                            (x) =>
+                                x.academic
+                                    ?.current_branch_name,
+                        ),
+                    )]
+                        .filter(Boolean)
+                        .map(
+                            (branch) => (
+                                <option
+                                    key={String(branch)}
+                                    value={String(branch)}
+                                >
+                                    {String(branch)}
+                                </option>
+                            ),
+                        )}
+
+                </select>
+
+            </div>
+
             <div className="mt-8 overflow-hidden rounded-lg border">
 
                 <div className="border-b p-4 font-semibold">
-                    Applications
+                    Applicant Management
                 </div>
 
                 <table className="w-full">
@@ -507,11 +650,27 @@ export function AdminOpportunitiesPage() {
                         <tr className="border-b">
 
                             <th className="p-3 text-left">
-                                Application ID
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Opportunity
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Applied
                             </th>
 
                             <th className="p-3 text-left">
                                 Status
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Action
                             </th>
 
                         </tr>
@@ -520,7 +679,7 @@ export function AdminOpportunitiesPage() {
 
                     <tbody>
 
-                        {applications.map(
+                        {filteredApplications.map(
                             (
                                 application,
                             ) => (
@@ -533,18 +692,137 @@ export function AdminOpportunitiesPage() {
                                 >
 
                                     <td className="p-3">
-                                        {
-                                            application.application_id
-                                        }
+
+                                        {application.student_master?.first_name}
+                                        {" "}
+                                        {application.student_master?.last_name}
+
                                     </td>
 
                                     <td className="p-3">
+
+                                        {
+                                            application.student_master?.enrollment_no
+                                        }
+
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        {
+                                            application.academic
+                                                ?.current_branch_name
+                                        }
+
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        {
+                                            application.academic
+                                                ?.current_cgpa
+                                        }
+
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        {
+                                            application.opportunity_master
+                                                ?.opportunity_title
+                                        }
+
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        {application.resumeUrl ? (
+
+                                            <a
+                                                href={
+                                                    application.resumeUrl
+                                                }
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-primary underline"
+                                            >
+                                                Open Resume
+                                            </a>
+
+                                        ) : (
+
+                                            "No Resume"
+
+                                        )}
+
+                                    </td>
+
+                                    <td className="p-3">
+
                                         {
                                             application.application_status
                                         }
+
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        <div className="flex gap-2 items-center">
+
+                                            <a
+                                                href={`/admin/${application.student_id}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="rounded border px-2 py-1"
+                                            >
+                                                Profile
+                                            </a>
+
+                                            <select
+                                                value={
+                                                    application.application_status
+                                                }
+                                                onChange={async (e) => {
+
+                                                    await adminOpportunityService.updateApplicationStatus(
+                                                        application.application_id,
+                                                        e.target.value,
+                                                    );
+
+                                                    await load();
+
+                                                }}
+                                                className="rounded border px-2 py-1"
+                                            >
+
+                                                <option value="Applied">
+                                                    Applied
+                                                </option>
+
+                                                <option value="Shortlisted">
+                                                    Shortlisted
+                                                </option>
+
+                                                <option value="Interview Scheduled">
+                                                    Interview Scheduled
+                                                </option>
+
+                                                <option value="Selected">
+                                                    Selected
+                                                </option>
+
+                                                <option value="Rejected">
+                                                    Rejected
+                                                </option>
+
+                                            </select>
+
+                                        </div>
+
                                     </td>
 
                                 </tr>
+
                             ),
                         )}
 

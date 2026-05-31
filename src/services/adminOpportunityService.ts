@@ -160,9 +160,21 @@ export const adminOpportunityService = {
         const { data, error } =
             await (supabase as any)
                 .from(
-                    "student_applications",
+                    "student_opportunity_applications",
                 )
-                .select("*")
+                .select(`
+                *,
+                student_master(
+                    student_id,
+                    first_name,
+                    last_name,
+                    enrollment_no
+                ),
+                opportunity_master(
+                    opportunity_id,
+                    opportunity_title
+                )
+            `)
                 .order(
                     "applied_at",
                     {
@@ -175,6 +187,134 @@ export const adminOpportunityService = {
         return data || [];
     },
 
+    async updateApplicationStatus(
+        applicationId: string,
+        status: string,
+    ) {
 
+        const { error } =
+            await (supabase as any)
+                .from(
+                    "student_opportunity_applications",
+                )
+                .update({
+                    application_status:
+                        status,
+                })
+                .eq(
+                    "application_id",
+                    applicationId,
+                );
+
+        if (error) throw error;
+    },
+
+    async getApplicantDetails() {
+
+        const { data, error } =
+            await (supabase as any)
+                .from(
+                    "student_opportunity_applications",
+                )
+                .select(`
+                *,
+                student_master(
+                    student_id,
+                    first_name,
+                    last_name,
+                    enrollment_no
+                ),
+                opportunity_master(
+                    opportunity_id,
+                    opportunity_title
+                )
+            `)
+                .order(
+                    "applied_at",
+                    {
+                        ascending: false,
+                    },
+                );
+
+        if (error) throw error;
+
+        const applications =
+            data || [];
+
+        const studentIds =
+            applications.map(
+                (x: any) =>
+                    x.student_id,
+            );
+
+        const {
+            data: academics,
+        } =
+            await (supabase as any)
+                .from(
+                    "student_academic_details",
+                )
+                .select(`
+                student_id,
+                current_branch_name,
+                current_cgpa,
+                graduation_year
+            `)
+                .in(
+                    "student_id",
+                    studentIds,
+                );
+
+        const {
+            data: resumes,
+        } =
+            await (supabase as any)
+                .from(
+                    "student_documents",
+                )
+                .select(`
+                student_id,
+                document_metadata(
+                    storage_url,
+                    document_type
+                )
+            `)
+                .eq(
+                    "is_active",
+                    true,
+                );
+
+        return applications.map(
+            (
+                application: any,
+            ) => {
+
+                const academic =
+                    academics?.find(
+                        (a: any) =>
+                            a.student_id ===
+                            application.student_id,
+                    );
+
+                const resume =
+                    resumes?.find(
+                        (r: any) =>
+                            r.student_id ===
+                            application.student_id &&
+                            r.document_metadata
+                                ?.document_type ===
+                            "Resume",
+                    );
+
+                return {
+                    ...application,
+                    academic,
+                    resumeUrl:
+                        resume?.document_metadata
+                            ?.storage_url || "",
+                };
+            },
+        );
+    },
 
 };
