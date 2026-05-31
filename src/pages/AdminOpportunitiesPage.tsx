@@ -175,8 +175,8 @@ export function AdminOpportunitiesPage() {
                             <div className="mt-2 text-2xl font-bold">
                                 {
                                     opportunityCards.filter(
-                                        (x) =>
-                                            x.visible_to_students
+                                        (item) =>
+                                            item.visible_to_students === true
                                     ).length
                                 }
                             </div>
@@ -190,8 +190,8 @@ export function AdminOpportunitiesPage() {
                             <div className="mt-2 text-2xl font-bold">
                                 {
                                     opportunityCards.filter(
-                                        (x) =>
-                                            x.visible_to_students
+                                        (item) =>
+                                            item.application_status === "Draft"
                                     ).length
                                 }
                             </div>
@@ -205,10 +205,13 @@ export function AdminOpportunitiesPage() {
                             <div className="mt-2 text-2xl font-bold">
                                 {
                                     opportunityCards.reduce(
-                                        (sum, item) =>
-                                            sum +
+                                        (
+                                            total,
+                                            item,
+                                        ) =>
+                                            total +
                                             item.appliedCount,
-                                        0
+                                        0,
                                     )
                                 }
                             </div>

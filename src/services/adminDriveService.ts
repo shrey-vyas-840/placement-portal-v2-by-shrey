@@ -76,8 +76,6 @@ export const adminDriveService = {
         drive_name: string;
         drive_type: string;
         drive_mode: string;
-        registration_deadline?: string;
-        drive_date?: string;
         lowest_package_lpa?: number;
         highest_package_lpa?: number;
         bond_years?: number;
@@ -101,19 +99,6 @@ export const adminDriveService = {
 
                     drive_status:
                         "Created",
-
-                    registration_deadline:
-                        payload.registration_deadline &&
-                            payload.registration_deadline.trim() !== ""
-                            ? payload.registration_deadline
-                            : null,
-
-                    drive_date:
-                        payload.drive_date &&
-                            payload.drive_date.trim() !== ""
-                            ? payload.drive_date
-                            : null,
-
                     lowest_package_lpa:
                         payload.lowest_package_lpa,
 
@@ -190,8 +175,6 @@ export const adminDriveService = {
             drive_name: string;
             drive_type: string;
             drive_mode: string;
-            registration_deadline: string;
-            drive_date?: string;
             lowest_package_lpa?: number;
             highest_package_lpa?: number;
             bond_years?: number;
@@ -213,15 +196,6 @@ export const adminDriveService = {
 
                     drive_mode:
                         payload.drive_mode,
-
-                    registration_deadline:
-                        payload.registration_deadline,
-
-                    drive_date:
-                        payload.drive_date &&
-                            payload.drive_date.trim() !== ""
-                            ? payload.drive_date
-                            : null,
 
                     lowest_package_lpa:
                         payload.lowest_package_lpa,
@@ -321,7 +295,7 @@ export const adminDriveService = {
             allowed_branches: string;
             allowed_degrees: string;
             additional_requirements?: string;
-            passing_out_batch: number;
+            passing_out_batches: string;
             minimum_cgpa: number;
             maximum_active_backlogs: number;
             willing_to_relocate_required: boolean;

@@ -28,11 +28,15 @@ export const studentOpportunityService = {
                     "opportunity_master",
                 )
                 .select(`
-                    *,
-                    drive_master(
-                        drive_name
-                    )
-                `)
+    *,
+    drive_master(
+        drive_name
+    ),
+   student_opportunity_applications(
+    student_id,
+    application_status
+)
+`)
                 .eq(
                     "visible_to_students",
                     true,
@@ -68,9 +72,21 @@ export const studentOpportunityService = {
                     .maybeSingle();
 
             if (!eligibility) {
-
+                const alreadyApplied =
+                    opportunity
+                        .student_opportunity_applications
+                        ?.some(
+                            (app: any) =>
+                                app.student_id
+                                ===
+                                studentId
+                        )
+                    ||
+                    false;
                 processedOpportunities.push({
                     ...opportunity,
+                    alreadyApplied:
+                        alreadyApplied,
                     eligibility_status:
                         "Eligible",
                     eligibility_reason:
@@ -138,12 +154,24 @@ export const studentOpportunityService = {
                     eligibility.maximum_active_backlogs || 0,
                 );
 
+            const batches =
+                eligibility.passing_out_batches
+                    ?.split(",")
+                    .map(
+                        (x: string) =>
+                            x.trim()
+                    )
+                ||
+                [];
+
+
             const batchMatch =
-                Number(
-                    academic.graduation_year,
-                ) ===
-                Number(
-                    eligibility.passing_out_batch,
+                batches.length === 0
+                ||
+                batches.includes(
+                    String(
+                        academic.graduation_year
+                    )
                 );
 
             let reason = "";
@@ -172,9 +200,21 @@ export const studentOpportunityService = {
                 reason =
                     "Graduation batch not eligible";
             }
-
+            const alreadyApplied =
+                opportunity
+                    .student_opportunity_applications
+                    ?.some(
+                        (app: any) =>
+                            app.student_id
+                            ===
+                            studentId
+                    )
+                ||
+                false;
             processedOpportunities.push({
                 ...opportunity,
+                alreadyApplied:
+                    alreadyApplied,
                 eligibility_status:
                     instituteMatch &&
                         degreeMatch &&

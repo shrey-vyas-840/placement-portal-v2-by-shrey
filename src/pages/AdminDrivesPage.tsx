@@ -21,12 +21,6 @@ export function AdminDrivesPage() {
     const [driveMode, setDriveMode] =
         useState("Online");
 
-    const [driveDate, setDriveDate] =
-        useState("");
-
-    const [deadline, setDeadline] =
-        useState("");
-
     const [lowestPackage, setLowestPackage] =
         useState("");
 
@@ -45,8 +39,8 @@ export function AdminDrivesPage() {
     const [showArchived, setShowArchived] =
         useState(false);
 
-    const [passingBatch, setPassingBatch] =
-        useState("");
+    const [passingBatches, setPassingBatches] =
+        useState<string[]>([]);
 
     const [minimumCgpa, setMinimumCgpa] =
         useState("");
@@ -79,6 +73,13 @@ export function AdminDrivesPage() {
         setAdditionalRequirements] =
         useState("");
 
+    const packageInvalid =
+        lowestPackage !== "" &&
+        highestPackage !== "" &&
+        Number(highestPackage)
+        <
+        Number(lowestPackage);
+
     async function load() {
         const companyData =
             await adminDriveService.getCompanies();
@@ -99,18 +100,13 @@ export function AdminDrivesPage() {
     ) {
         e.preventDefault();
 
-        const currentYear =
-            new Date().getFullYear();
-
         if (
-            passingBatch &&
-            Number(
-                passingBatch,
-            ) < currentYear
+            packageInvalid
         ) {
             alert(
-                "Invalid passing batch",
+                "Highest package cannot be lower than lowest package"
             );
+
             return;
         }
 
@@ -158,6 +154,9 @@ export function AdminDrivesPage() {
         }
 
         try {
+            let savedDriveId =
+                editingDriveId;
+
             if (editingDriveId) {
                 await adminDriveService.updateDrive(
                     editingDriveId,
@@ -170,10 +169,6 @@ export function AdminDrivesPage() {
                             driveType,
                         drive_mode:
                             driveMode,
-                        registration_deadline:
-                            deadline,
-                        drive_date:
-                            driveDate,
                         lowest_package_lpa:
                             Number(
                                 lowestPackage,
@@ -190,64 +185,71 @@ export function AdminDrivesPage() {
                     },
                 );
             } else {
-                await adminDriveService.createDrive({
-                    company_id:
-                        companyId,
-                    drive_name:
-                        driveName,
-                    drive_type:
-                        driveType,
-                    drive_mode:
-                        driveMode,
-                    registration_deadline:
-                        deadline,
-                    drive_date:
-                        driveDate,
-                    lowest_package_lpa:
-                        Number(
-                            lowestPackage,
-                        ),
-                    highest_package_lpa:
-                        Number(
-                            highestPackage,
-                        ),
-                    bond_years:
-                        Number(
-                            bondYears,
-                        ),
-                    remarks,
-                });
+
+                const createdDrive =
+                    await adminDriveService.createDrive({
+                        company_id:
+                            companyId,
+
+                        drive_name:
+                            driveName,
+
+                        drive_type:
+                            driveType,
+
+                        drive_mode:
+                            driveMode,
+
+                        lowest_package_lpa:
+                            Number(
+                                lowestPackage,
+                            ),
+
+                        highest_package_lpa:
+                            Number(
+                                highestPackage,
+                            ),
+
+                        bond_years:
+                            Number(
+                                bondYears,
+                            ),
+
+                        remarks,
+                    });
+
+
+                savedDriveId =
+                    createdDrive.drive_id;
+
             }
 
             setCompanyId("");
             setDriveName("");
             setDriveType("");
             setDriveMode("Online");
-            setDriveDate("");
-            setDeadline("");
             setLowestPackage("");
             setHighestPackage("");
             setBondYears("");
             setRemarks("");
-            setPassingBatch("");
             setMinimumCgpa("");
             setBacklogs("0");
 
             setSelectedInstitutes([]);
             setSelectedDegrees([]);
             setSelectedBranches([]);
-
+            setPassingBatches([]);
             setRelocation(false);
 
             setAdditionalRequirements("");
 
             if (
-                editingDriveId
+                savedDriveId
             ) {
                 await adminDriveService.saveEligibility(
                     {
                         drive_id:
-                            editingDriveId,
+                            savedDriveId!,
 
                         allowed_institutes:
                             selectedInstitutes.join(","),
@@ -258,10 +260,8 @@ export function AdminDrivesPage() {
                         allowed_branches:
                             selectedBranches.join(","),
 
-                        passing_out_batch:
-                            Number(
-                                passingBatch,
-                            ),
+                        passing_out_batches:
+                            passingBatches.join(","),
 
                         minimum_cgpa:
                             Number(
@@ -518,20 +518,6 @@ export function AdminDrivesPage() {
                                                         "Online",
                                                     );
 
-                                                    setDriveDate(
-                                                        drive.drive_date ||
-                                                        "",
-                                                    );
-
-                                                    setDeadline(
-                                                        drive.registration_deadline
-                                                            ?.slice(
-                                                                0,
-                                                                16,
-                                                            ) ||
-                                                        "",
-                                                    );
-
                                                     setLowestPackage(
                                                         String(
                                                             drive.lowest_package_lpa ??
@@ -567,10 +553,13 @@ export function AdminDrivesPage() {
 
                                                         if (!eligibility) return;
 
-                                                        setPassingBatch(
-                                                            String(
-                                                                eligibility.passing_out_batch,
-                                                            ),
+                                                        setPassingBatches(
+                                                            eligibility.passing_out_batches
+                                                                ?
+                                                                eligibility.passing_out_batches
+                                                                    .split(",")
+                                                                :
+                                                                []
                                                         );
 
                                                         setMinimumCgpa(
@@ -811,23 +800,6 @@ export function AdminDrivesPage() {
 
                     <div>
                         <label className="mb-1 block font-medium">
-                            Drive Date
-                        </label>
-
-                        <input
-                            type="date"
-                            value={driveDate}
-                            onChange={(e) =>
-                                setDriveDate(
-                                    e.target.value,
-                                )
-                            }
-                            className="w-full rounded border px-4 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block font-medium">
                             Lowest Package (LPA)
                         </label>
 
@@ -870,6 +842,17 @@ export function AdminDrivesPage() {
                             }
                             className="w-full rounded border px-4 py-2"
                         />
+                        {
+                            packageInvalid && (
+
+                                <p className="text-sm text-red-600">
+
+                                    Highest package cannot be lower than lowest package
+
+                                </p>
+
+                            )
+                        }
                     </div>
 
                     <div>
@@ -898,10 +881,6 @@ export function AdminDrivesPage() {
                     <hr />
 
                     <hr />
-
-                    <h2 className="text-xl font-semibold">
-                        Eligibility Mapping
-                    </h2>
 
                     <h2 className="text-xl font-semibold">
                         Eligibility Mapping
@@ -1112,20 +1091,74 @@ export function AdminDrivesPage() {
                     </div>
 
                     <div>
-                        <label className="mb-1 block font-medium">
-                            Passing Out Batch
+
+                        <label className="mb-2 block font-medium">
+                            Eligible Passing Batches
                         </label>
 
-                        <input
-                            type="number"
-                            value={passingBatch}
-                            onChange={(e) =>
-                                setPassingBatch(
-                                    e.target.value,
+
+                        <div className="flex gap-4">
+
+
+                            {[
+                                2024,
+                                2025,
+                                2026,
+                                2027,
+                                2028,
+                                2029,
+                            ].map(
+                                (year) => (
+
+                                    <label
+                                        key={year}
+                                        className="flex gap-2"
+                                    >
+
+                                        <input
+
+                                            type="checkbox"
+
+                                            checked={
+                                                passingBatches.includes(
+                                                    String(year)
+                                                )
+                                            }
+
+                                            onChange={(e) => {
+
+                                                if (
+                                                    e.target.checked
+                                                ) {
+
+                                                    setPassingBatches([
+                                                        ...passingBatches,
+                                                        String(year)
+                                                    ]);
+
+                                                } else {
+
+                                                    setPassingBatches(
+                                                        passingBatches.filter(
+                                                            x => x !== String(year)
+                                                        )
+                                                    );
+
+                                                }
+
+                                            }}
+
+                                        />
+
+                                        {year}
+
+                                    </label>
+
                                 )
-                            }
-                            className="w-full rounded border px-4 py-2"
-                        />
+                            )}
+
+                        </div>
+
                     </div>
 
                     <div>
@@ -1222,8 +1255,24 @@ export function AdminDrivesPage() {
                     </div>
 
                     <button
+
                         type="submit"
-                        className="rounded border px-4 py-2"
+
+                        disabled={
+                            packageInvalid
+                        }
+
+                        className={
+                            `
+rounded border px-4 py-2
+${packageInvalid
+                                ?
+                                "opacity-50 cursor-not-allowed"
+                                :
+                                ""
+                            }
+`
+                        }
                     >
                         {editingDriveId
                             ? "Save Changes"
@@ -1240,16 +1289,13 @@ export function AdminDrivesPage() {
                                 setDriveName("");
                                 setDriveType("");
                                 setDriveMode("Online");
-                                setDriveDate("");
-                                setDeadline("");
                                 setLowestPackage("");
                                 setHighestPackage("");
                                 setBondYears("");
                                 setRemarks("");
-                                setPassingBatch("");
                                 setMinimumCgpa("");
                                 setBacklogs("0");
-
+                                setPassingBatches([]);
                                 setSelectedInstitutes([]);
                                 setSelectedDegrees([]);
                                 setSelectedBranches([]);

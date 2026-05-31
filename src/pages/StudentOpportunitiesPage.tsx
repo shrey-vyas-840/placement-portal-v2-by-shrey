@@ -88,13 +88,64 @@ export function StudentOpportunitiesPage() {
         } =
             await supabase.auth.getUser();
 
-        const studentId =
+
+        const authUserId =
             authData.user?.id;
 
-        if (!studentId) {
+
+        if (!authUserId) {
 
             alert(
                 "User not found",
+            );
+
+            return;
+        }
+
+
+        const { data: account } =
+            await (supabase as any)
+                .from(
+                    "user_accounts",
+                )
+                .select(
+                    "user_id",
+                )
+                .eq(
+                    "auth_provider_id",
+                    authUserId,
+                )
+                .maybeSingle();
+
+
+        if (!account) {
+
+            alert(
+                "Account not found",
+            );
+
+            return;
+        }
+
+
+        const { data: student } =
+            await (supabase as any)
+                .from(
+                    "student_master",
+                )
+                .select(
+                    "student_id",
+                )
+                .eq(
+                    "user_id",
+                    account.user_id,
+                )
+                .maybeSingle();
+
+        if (!student) {
+
+            alert(
+                "Student profile not found",
             );
 
             return;
@@ -104,19 +155,26 @@ export function StudentOpportunitiesPage() {
 
             await studentOpportunityService.apply(
                 opportunityId,
-                studentId,
+                student.student_id,
             );
+
 
             alert(
                 "Application submitted",
             );
+
+
+            await load();
+
 
         } catch {
 
             alert(
                 "Already applied",
             );
+
         }
+
     }
 
     return (
@@ -182,14 +240,29 @@ export function StudentOpportunitiesPage() {
                                     </div>
 
                                     <button
+
+                                        disabled={
+                                            opportunity.alreadyApplied
+                                        }
+
                                         onClick={() =>
                                             apply(
                                                 opportunity.opportunity_id,
                                             )
                                         }
-                                        className="mt-4 rounded border px-4 py-2"
+
+                                        className="mt-4 rounded border px-4 py-2 disabled:opacity-50"
+
                                     >
-                                        Apply
+
+                                        {
+                                            opportunity.alreadyApplied
+                                                ?
+                                                "Already Applied"
+                                                :
+                                                "Apply"
+                                        }
+
                                     </button>
 
                                 </div>

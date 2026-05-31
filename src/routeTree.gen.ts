@@ -22,6 +22,7 @@ import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportuni
 import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
+import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/opportunities.index'
 import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
 
 const ProfileRoute = ProfileRouteImport.update({
@@ -89,6 +90,11 @@ const AdminStudentIdRoute = AdminStudentIdRouteImport.update({
   path: '/admin/$studentId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOpportunitiesIndexRoute = AdminOpportunitiesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminOpportunitiesRoute,
+} as any)
 const AdminOpportunitiesOpportunityIdRoute =
   AdminOpportunitiesOpportunityIdRouteImport.update({
     id: '/$opportunityId',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
+  '/admin/opportunities/': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,11 +129,11 @@ export interface FileRoutesByTo {
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
-  '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin': typeof AdminIndexRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
+  '/admin/opportunities': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -144,6 +151,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
+  '/admin/opportunities/': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -162,6 +170,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/admin/'
     | '/admin/opportunities/$opportunityId'
+    | '/admin/opportunities/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,11 +182,11 @@ export interface FileRouteTypes {
     | '/admin/$studentId'
     | '/admin/companies'
     | '/admin/drives'
-    | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
     | '/admin'
     | '/admin/opportunities/$opportunityId'
+    | '/admin/opportunities'
   id:
     | '__root__'
     | '/'
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/admin/'
     | '/admin/opportunities/$opportunityId'
+    | '/admin/opportunities/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -305,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStudentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/opportunities/': {
+      id: '/admin/opportunities/'
+      path: '/'
+      fullPath: '/admin/opportunities/'
+      preLoaderRoute: typeof AdminOpportunitiesIndexRouteImport
+      parentRoute: typeof AdminOpportunitiesRoute
+    }
     '/admin/opportunities/$opportunityId': {
       id: '/admin/opportunities/$opportunityId'
       path: '/$opportunityId'
@@ -317,10 +334,12 @@ declare module '@tanstack/react-router' {
 
 interface AdminOpportunitiesRouteChildren {
   AdminOpportunitiesOpportunityIdRoute: typeof AdminOpportunitiesOpportunityIdRoute
+  AdminOpportunitiesIndexRoute: typeof AdminOpportunitiesIndexRoute
 }
 
 const AdminOpportunitiesRouteChildren: AdminOpportunitiesRouteChildren = {
   AdminOpportunitiesOpportunityIdRoute: AdminOpportunitiesOpportunityIdRoute,
+  AdminOpportunitiesIndexRoute: AdminOpportunitiesIndexRoute,
 }
 
 const AdminOpportunitiesRouteWithChildren =

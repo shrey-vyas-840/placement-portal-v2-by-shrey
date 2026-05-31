@@ -369,15 +369,17 @@ export const adminOpportunityService = {
         const { data: students } =
             await (supabase as any)
                 .from(
-                    "student_master"
+                    "student_academic_details"
                 )
-                .select(
-                    "student_id"
-                )
-                .eq(
-                    "is_active",
-                    true
-                );
+                .select(`
+            student_id,
+            current_institute_name,
+            current_branch_name,
+            current_degree_level,
+            current_cgpa,
+            active_backlogs,
+            graduation_year
+        `);
 
 
         const { data: applications } =
@@ -386,9 +388,18 @@ export const adminOpportunityService = {
                     "student_opportunity_applications"
                 )
                 .select(
-                    "opportunity_id"
+                    `
+    opportunity_id,
+    student_id
+    `
                 );
 
+        const { data: eligibilityRules } =
+            await (supabase as any)
+                .from(
+                    "drive_eligibility"
+                )
+                .select("*");
 
         return (
             opportunities ?? []
@@ -406,15 +417,146 @@ export const adminOpportunityService = {
 
 
                 const applied =
-                    applications?.filter(
-                        (a: any) =>
-                            a.opportunity_id ===
-                            opp.opportunity_id
-                    ).length ?? 0;
+                    [
+                        ...new Set(
+                            applications
+                                ?.filter(
+                                    (a: any) =>
+                                        a.opportunity_id
+                                        ===
+                                        opp.opportunity_id
+                                )
+                                .map(
+                                    (a: any) =>
+                                        a.student_id
+                                )
+                            ??
+                            []
+                        )
+                    ].length;
+
+
+                const rule =
+                    eligibilityRules?.find(
+                        (r: any) =>
+                            r.drive_id
+                            ===
+                            opp.drive_id
+                    );
 
 
                 const eligible =
-                    students?.length ?? 0;
+                    (
+                        students ?? []
+                    )
+                        .filter(
+                            (student: any) => {
+
+
+                                if (!rule) {
+                                    return true;
+                                }
+
+
+                                const institutes =
+                                    rule.allowed_institutes
+                                        ?.split(",")
+                                        .map(
+                                            (x: string) => x.trim()
+                                        )
+                                    ?? [];
+
+
+                                const branches =
+                                    rule.allowed_branches
+                                        ?.split(",")
+                                        .map(
+                                            (x: string) => x.trim()
+                                        )
+                                    ?? [];
+
+
+                                const degrees =
+                                    rule.allowed_degrees
+                                        ?.split(",")
+                                        .map(
+                                            (x: string) => x.trim()
+                                        )
+                                    ?? [];
+
+
+                                const batches =
+                                    rule.passing_out_batches
+                                        ?.split(",")
+                                        .map(
+                                            (x: string) => x.trim()
+                                        )
+                                    ?? [];
+
+
+
+                                return (
+
+                                    (
+                                        institutes.length === 0 ||
+                                        institutes.includes(
+                                            student.current_institute_name
+                                        )
+                                    )
+
+                                    &&
+
+                                    (
+                                        branches.length === 0 ||
+                                        branches.includes(
+                                            student.current_branch_name
+                                        )
+                                    )
+
+                                    &&
+
+                                    (
+                                        degrees.length === 0 ||
+                                        degrees.includes(
+                                            student.current_degree_level
+                                        )
+                                    )
+
+                                    &&
+
+                                    (
+                                        batches.length === 0 ||
+                                        batches.includes(
+                                            String(student.graduation_year)
+                                        )
+                                    )
+
+                                    &&
+
+                                    Number(
+                                        student.current_cgpa
+                                    )
+                                    >=
+                                    Number(
+                                        rule.minimum_cgpa || 0
+                                    )
+
+                                    &&
+
+                                    Number(
+                                        student.active_backlogs
+                                    )
+                                    <=
+                                    Number(
+                                        rule.maximum_active_backlogs || 0
+                                    )
+
+
+                                );
+
+
+                            }
+                        ).length;
 
 
                 return {
@@ -448,20 +590,13 @@ export const adminOpportunityService = {
         opportunityId: string,
     ) {
 
-        const { data, error } =
+
+        const { data: applications, error } =
             await (supabase as any)
                 .from(
                     "student_opportunity_applications"
                 )
-                .select(`
-                *,
-                student_master(
-                    student_id,
-                    enrollment_no,
-                    first_name,
-                    last_name
-                )
-            `)
+                .select("*")
                 .eq(
                     "opportunity_id",
                     opportunityId
@@ -480,44 +615,76 @@ export const adminOpportunityService = {
 
 
         const studentIds =
-            data?.map(
-                (item: any) =>
-                    item.student_id
+            applications?.map(
+                (x: any) =>
+                    x.student_id
             ) ?? [];
 
 
-        const {
-            data: academics,
-        } =
+
+        const { data: students } =
             await (supabase as any)
                 .from(
-                    "student_academic_details"
+                    "student_master"
                 )
                 .select(`
-                student_id,
-                current_institute_name,
-                current_branch_name,
-                current_cgpa,
-                graduation_year
-            `)
+            student_id,
+            enrollment_no,
+            first_name,
+            last_name
+        `)
                 .in(
                     "student_id",
                     studentIds
                 );
 
 
-        return (
-            data ?? []
-        ).map(
-            (application: any) => ({
 
-                ...application,
+        const { data: academics } =
+            await (supabase as any)
+                .from(
+                    "student_academic_details"
+                )
+                .select(`
+            student_id,
+            current_institute_name,
+            current_branch_name,
+            current_cgpa,
+            graduation_year
+        `)
+                .in(
+                    "student_id",
+                    studentIds
+                );
+
+
+
+        return (
+            applications ?? []
+        ).map(
+            (app: any) => ({
+
+                ...app,
+
+
+                student_master:
+
+                    students?.find(
+                        (s: any) =>
+                            s.student_id
+                            ===
+                            app.student_id
+                    ),
+
+
 
                 academic:
+
                     academics?.find(
-                        (academic: any) =>
-                            academic.student_id ===
-                            application.student_id
+                        (a: any) =>
+                            a.student_id
+                            ===
+                            app.student_id
                     ),
 
             })
@@ -525,16 +692,16 @@ export const adminOpportunityService = {
 
     },
 
-async getOpportunityById(
-    opportunityId: string,
-) {
+    async getOpportunityById(
+        opportunityId: string,
+    ) {
 
-    const { data, error } =
-        await (supabase as any)
-            .from(
-                "opportunity_master"
-            )
-            .select(`
+        const { data, error } =
+            await (supabase as any)
+                .from(
+                    "opportunity_master"
+                )
+                .select(`
                 *,
                 drive_master(
                     drive_id,
@@ -542,43 +709,43 @@ async getOpportunityById(
                     company_id
                 )
             `)
-            .eq(
-                "opportunity_id",
-                opportunityId
-            )
-            .single();
+                .eq(
+                    "opportunity_id",
+                    opportunityId
+                )
+                .single();
 
 
-    if (error) {
-        throw error;
-    }
+        if (error) {
+            throw error;
+        }
 
 
-    const { data: company } =
-        await (supabase as any)
-            .from(
-                "company_master"
-            )
-            .select(
-                "company_name"
-            )
-            .eq(
-                "company_id",
-                data.drive_master.company_id
-            )
-            .single();
+        const { data: company } =
+            await (supabase as any)
+                .from(
+                    "company_master"
+                )
+                .select(
+                    "company_name"
+                )
+                .eq(
+                    "company_id",
+                    data.drive_master.company_id
+                )
+                .single();
 
 
-    return {
+        return {
 
-        ...data,
+            ...data,
 
-        company_name:
-            company?.company_name,
+            company_name:
+                company?.company_name,
 
-    };
+        };
 
-},
+    },
 
 
 

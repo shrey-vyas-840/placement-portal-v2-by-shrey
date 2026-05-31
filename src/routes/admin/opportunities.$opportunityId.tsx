@@ -3,26 +3,22 @@ import {
 } from "@tanstack/react-router";
 
 import {
-    AdminProtectedRoute,
-} from "@/components/AdminProtectedRoute";
-
-import {
     AdminOpportunityApplicantsPage,
 } from "@/pages/AdminOpportunityApplicantsPage";
 
 
 export const Route =
     createFileRoute(
-        "/admin/opportunities/$opportunityId",
+        "/admin/opportunities/$opportunityId"
     )({
 
         component:
-            OpportunityApplicantRoute,
+            AdminOpportunityRoute,
 
     });
 
 
-function OpportunityApplicantRoute() {
+function AdminOpportunityRoute() {
 
     const {
         opportunityId,
@@ -32,16 +28,14 @@ function OpportunityApplicantRoute() {
 
     return (
 
-        <AdminProtectedRoute>
+        <AdminOpportunityApplicantsPage
 
-            <AdminOpportunityApplicantsPage
-                opportunityId={
-                    opportunityId
-                }
-            />
+            opportunityId={
+                opportunityId
+            }
 
-        </AdminProtectedRoute>
+        />
 
     );
 
-}  
+}
