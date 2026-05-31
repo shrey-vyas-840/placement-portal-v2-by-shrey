@@ -39,6 +39,12 @@ export function StudentOpportunitiesPage() {
     ] =
         useState<any>({});
 
+    const [
+        pendingApply,
+        setPendingApply,
+    ] =
+        useState(false);
+
     async function load() {
 
         const {
@@ -105,6 +111,7 @@ export function StudentOpportunitiesPage() {
 
     async function apply(
         opportunityId: string,
+        formAnswers: any[] = []
     ) {
 
         const {
@@ -180,6 +187,24 @@ export function StudentOpportunitiesPage() {
             await studentOpportunityService.apply(
                 opportunityId,
                 student.student_id,
+
+                Object.entries(
+                    answers
+                )
+                    .map(
+                        ([key, value]) => ({
+
+                            question_id: key,
+
+                            answer_value:
+                                Array.isArray(value)
+                                    ?
+                                    value.join(",")
+                                    :
+                                    value,
+
+                        })
+                    )
             );
 
 
@@ -320,125 +345,183 @@ export function StudentOpportunitiesPage() {
                         )}
 
                 </div>
+                {
+                    selectedOpportunity && (
+                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="bg-white p-6 rounded w-[500px] max-h-[80vh] overflow-auto">
+                                <h2>Additional Questions</h2>
 
-            </div>
-            {
-                selectedOpportunity && (
+                                {questions.map((q: any) => (
+                                    <div key={q.question_id} className="mb-4">
 
-                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+                                        <label>
+                                            {q.question_title}
+                                            {q.is_required ? " *" : ""}
+                                        </label>
 
-                        <div className="bg-white p-6 rounded w-[500px]">
-
-                            <h2>
-                                Additional Questions
-                            </h2>
-
-
-                            {
-                                questions.map(
-                                    (q: any) => (
-
-                                        <div key={q.question_id}>
-
-                                            <label>
-                                                {q.question_title}
-
-                                                {
-                                                    q.is_required &&
-                                                    "*"
-                                                }
-
-                                            </label>
-
-
+                                        {q.question_type === "short_answer" && (
                                             <input
-
                                                 className="border w-full"
-
-                                                onChange={
-                                                    (e) =>
-
-                                                        setAnswers({
-                                                            ...answers,
-
-                                                            [q.question_id]:
-                                                                e.target.value,
-
-                                                        })
-
+                                                onChange={(e) =>
+                                                    setAnswers({ ...answers, [q.question_id]: e.target.value })
                                                 }
-
                                             />
+                                        )}
 
-                                        </div>
+                                        {q.question_type === "number" && (
+                                            <input
+                                                className="border w-full"
+                                                onChange={(e) =>
+                                                    setAnswers({ ...answers, [q.question_id]: e.target.value })
+                                                }
+                                            />
+                                        )}
 
-                                    ))
-                            }
+                                        {q.question_type === "paragraph" && (
+                                            <textarea
+                                                className="border w-full"
+                                                onChange={(e) =>
+                                                    setAnswers({ ...answers, [q.question_id]: e.target.value })
+                                                }
+                                            />
+                                        )}
+
+                                        {q.question_type === "date" && (
+                                            <input
+                                                type="date"
+                                                className="border w-full"
+                                                onChange={(e) =>
+                                                    setAnswers({ ...answers, [q.question_id]: e.target.value })
+                                                }
+                                            />
+                                        )}
+
+                                        {q.question_type === "dropdown" && (
+                                            <select
+                                                className="border w-full"
+                                                onChange={(e) =>
+                                                    setAnswers({ ...answers, [q.question_id]: e.target.value })
+                                                }
+                                            >
+                                                <option value="">Select</option>
+
+                                                {q.opportunity_question_options?.map((o: any) => (
+                                                    <option
+                                                        key={o.option_id}
+                                                        value={o.option_text}
+                                                    >
+                                                        {o.option_text}
+                                                    </option>
+                                                ))}
+
+                                            </select>
+                                        )}
+
+                                        {q.question_type === "multiple_choice" && (
+                                            <div>
+                                                {q.opportunity_question_options?.map((o: any) => (
+                                                    <label
+                                                        key={o.option_id}
+                                                        className="block"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={q.question_id}
+                                                            onChange={() =>
+                                                                setAnswers({ ...answers, [q.question_id]: o.option_text })
+                                                            }
+                                                        />
+                                                        {o.option_text}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {q.question_type === "checkbox" && (
+                                            <div>
+                                                {q.opportunity_question_options?.map((o: any) => (
+                                                    <label
+                                                        key={o.option_id}
+                                                        className="block"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            onChange={(e) => {
+                                                                const old = answers[q.question_id] || [];
+
+                                                                setAnswers({
+                                                                    ...answers,
+                                                                    [q.question_id]:
+                                                                        e.target.checked
+                                                                            ? [...old, o.option_text]
+                                                                            : old.filter((x: string) => x !== o.option_text)
+                                                                });
+
+                                                            }}
+                                                        />
+                                                        {o.option_text}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                    </div>
+                                ))}
 
 
-                            <button
+                                <button
+                                    disabled={pendingApply}
+                                    onClick={async () => {
 
-                                onClick={() => {
+                                        for (const q of questions) {
 
+                                            if (
+                                                q.is_required &&
+                                                (
+                                                    !answers[q.question_id] ||
+                                                    answers[q.question_id].length === 0
+                                                )
+                                            ) {
 
-                                    for (
-                                        const q of questions
-                                    ) {
+                                                alert("Please fill required questions");
+                                                return;
 
-                                        if (
-                                            q.is_required
-                                            &&
-                                            !answers[q.question_id]
-                                        ) {
-
-                                            alert(
-                                                "Required questions missing"
-                                            );
-
-                                            return;
+                                            }
 
                                         }
 
-                                    }
+                                        setPendingApply(true);
+
+                                        await apply(
+                                            selectedOpportunity.opportunity_id
+                                        );
+
+                                        setSelectedOpportunity(null);
+                                        setQuestions([]);
+                                        setAnswers({});
+
+                                        setPendingApply(false);
+
+                                    }}
+                                >
+                                    Submit Application
+                                </button>
 
 
-                                    apply(
-                                        selectedOpportunity.opportunity_id
-                                    );
+                                <button
+                                    onClick={() => {
+                                        setSelectedOpportunity(null);
+                                        setAnswers({});
+                                    }}
+                                >
+                                    Cancel
+                                </button>
 
-                                    studentOpportunityService.apply(
-                                        selectedOpportunity.opportunity_id,
-                                        selectedOpportunity.student_id,
-
-                                        Object.entries(
-                                            answers
-                                        )
-                                            .map(
-                                                ([key, value]) => ({
-
-                                                    question_id: key,
-                                                    answer_value: value,
-
-                                                })
-                                            )
-
-                                    );
-
-
-                                }}
-
-                            >
-                                Submit Application
-                            </button>
-
-
+                            </div>
                         </div>
-
-                    </div>
-
-                )
-            }
+                    )
+                }
+            </div>
         </div>
-
     );
 }
