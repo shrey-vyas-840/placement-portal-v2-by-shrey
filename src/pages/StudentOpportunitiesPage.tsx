@@ -3,6 +3,10 @@ import {
     useState,
 } from "react";
 
+import {
+    adminQuestionService,
+} from "@/services/adminQuestionService";
+
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -14,6 +18,26 @@ export function StudentOpportunitiesPage() {
     const [opportunities,
         setOpportunities] =
         useState<any[]>([]);
+
+    const [
+        selectedOpportunity,
+        setSelectedOpportunity,
+    ] =
+        useState<any>(null);
+
+
+    const [
+        questions,
+        setQuestions,
+    ] =
+        useState<any[]>([]);
+
+
+    const [
+        answers,
+        setAnswers,
+    ] =
+        useState<any>({});
 
     async function load() {
 
@@ -245,11 +269,37 @@ export function StudentOpportunitiesPage() {
                                             opportunity.alreadyApplied
                                         }
 
-                                        onClick={() =>
+                                        onClick={async () => {
+
+                                            const qs =
+                                                await adminQuestionService
+                                                    .getQuestions(
+                                                        opportunity.opportunity_id
+                                                    );
+
+
+                                            if (
+                                                qs.length > 0
+                                            ) {
+
+                                                setSelectedOpportunity(
+                                                    opportunity
+                                                );
+
+                                                setQuestions(
+                                                    qs
+                                                );
+
+                                                return;
+
+                                            }
+
+
                                             apply(
-                                                opportunity.opportunity_id,
-                                            )
-                                        }
+                                                opportunity.opportunity_id
+                                            );
+
+                                        }}
 
                                         className="mt-4 rounded border px-4 py-2 disabled:opacity-50"
 
@@ -272,7 +322,123 @@ export function StudentOpportunitiesPage() {
                 </div>
 
             </div>
+            {
+                selectedOpportunity && (
 
+                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+
+                        <div className="bg-white p-6 rounded w-[500px]">
+
+                            <h2>
+                                Additional Questions
+                            </h2>
+
+
+                            {
+                                questions.map(
+                                    (q: any) => (
+
+                                        <div key={q.question_id}>
+
+                                            <label>
+                                                {q.question_title}
+
+                                                {
+                                                    q.is_required &&
+                                                    "*"
+                                                }
+
+                                            </label>
+
+
+                                            <input
+
+                                                className="border w-full"
+
+                                                onChange={
+                                                    (e) =>
+
+                                                        setAnswers({
+                                                            ...answers,
+
+                                                            [q.question_id]:
+                                                                e.target.value,
+
+                                                        })
+
+                                                }
+
+                                            />
+
+                                        </div>
+
+                                    ))
+                            }
+
+
+                            <button
+
+                                onClick={() => {
+
+
+                                    for (
+                                        const q of questions
+                                    ) {
+
+                                        if (
+                                            q.is_required
+                                            &&
+                                            !answers[q.question_id]
+                                        ) {
+
+                                            alert(
+                                                "Required questions missing"
+                                            );
+
+                                            return;
+
+                                        }
+
+                                    }
+
+
+                                    apply(
+                                        selectedOpportunity.opportunity_id
+                                    );
+
+                                    studentOpportunityService.apply(
+                                        selectedOpportunity.opportunity_id,
+                                        selectedOpportunity.student_id,
+
+                                        Object.entries(
+                                            answers
+                                        )
+                                            .map(
+                                                ([key, value]) => ({
+
+                                                    question_id: key,
+                                                    answer_value: value,
+
+                                                })
+                                            )
+
+                                    );
+
+
+                                }}
+
+                            >
+                                Submit Application
+                            </button>
+
+
+                        </div>
+
+                    </div>
+
+                )
+            }
         </div>
+
     );
 }

@@ -23,6 +23,7 @@ import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
 import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/opportunities.index'
+import { Route as AdminQuestionsOpportunityIdRouteImport } from './routes/admin/questions.$opportunityId'
 import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
 
 const ProfileRoute = ProfileRouteImport.update({
@@ -95,6 +96,12 @@ const AdminOpportunitiesIndexRoute = AdminOpportunitiesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminOpportunitiesRoute,
 } as any)
+const AdminQuestionsOpportunityIdRoute =
+  AdminQuestionsOpportunityIdRouteImport.update({
+    id: '/admin/questions/$opportunityId',
+    path: '/admin/questions/$opportunityId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOpportunitiesOpportunityIdRoute =
   AdminOpportunitiesOpportunityIdRouteImport.update({
     id: '/$opportunityId',
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
+  '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
   '/admin/opportunities/': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/admin': typeof AdminIndexRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
+  '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
   '/admin/opportunities': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRoutesById {
@@ -151,6 +160,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
+  '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
   '/admin/opportunities/': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRouteTypes {
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/admin/'
     | '/admin/opportunities/$opportunityId'
+    | '/admin/questions/$opportunityId'
     | '/admin/opportunities/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/admin'
     | '/admin/opportunities/$opportunityId'
+    | '/admin/questions/$opportunityId'
     | '/admin/opportunities'
   id:
     | '__root__'
@@ -203,6 +215,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/admin/'
     | '/admin/opportunities/$opportunityId'
+    | '/admin/questions/$opportunityId'
     | '/admin/opportunities/'
   fileRoutesById: FileRoutesById
 }
@@ -220,6 +233,7 @@ export interface RootRouteChildren {
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminQuestionsOpportunityIdRoute: typeof AdminQuestionsOpportunityIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -322,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOpportunitiesIndexRouteImport
       parentRoute: typeof AdminOpportunitiesRoute
     }
+    '/admin/questions/$opportunityId': {
+      id: '/admin/questions/$opportunityId'
+      path: '/admin/questions/$opportunityId'
+      fullPath: '/admin/questions/$opportunityId'
+      preLoaderRoute: typeof AdminQuestionsOpportunityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/opportunities/$opportunityId': {
       id: '/admin/opportunities/$opportunityId'
       path: '/$opportunityId'
@@ -359,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminQuestionsOpportunityIdRoute: AdminQuestionsOpportunityIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

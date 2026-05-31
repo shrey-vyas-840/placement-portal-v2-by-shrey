@@ -240,13 +240,8 @@ export const studentOpportunityService = {
     async apply(
         opportunityId: string,
         studentId: string,
+        answers: any[] = [],
     ) {
-
-        /*
-            FINAL SAFETY CHECK
-            Do not trust UI visibility.
-            Validate opportunity before inserting application.
-        */
 
         const {
             data: opportunity,
@@ -256,13 +251,11 @@ export const studentOpportunityService = {
                 .from(
                     "opportunity_master",
                 )
-                .select(
-                    `
+                .select(`
                 application_status,
                 application_end_date,
                 visible_to_students
-                `,
-                )
+            `)
                 .eq(
                     "opportunity_id",
                     opportunityId,
@@ -270,20 +263,8 @@ export const studentOpportunityService = {
                 .single();
 
 
-        if (opportunityError) {
+        if (opportunityError)
             throw opportunityError;
-        }
-
-
-        if (
-            !opportunity
-        ) {
-
-            throw new Error(
-                "Opportunity not found",
-            );
-
-        }
 
 
         const deadlinePassed =
@@ -297,32 +278,19 @@ export const studentOpportunityService = {
 
 
         if (
-            opportunity.application_status !==
-            "Open"
+            opportunity.application_status !== "Open"
             ||
-            opportunity.visible_to_students !==
-            true
+            opportunity.visible_to_students !== true
             ||
             deadlinePassed
         ) {
 
             throw new Error(
-                "Application deadline is closed",
+                "Application closed",
             );
 
         }
 
-
-
-        /*
-            DUPLICATE APPLICATION PROTECTION
-    
-            This protects:
-            - refresh delay
-            - double click
-            - slow network
-            - frontend bypass
-        */
 
         const {
             data: existingApplication,
@@ -345,24 +313,17 @@ export const studentOpportunityService = {
                 .maybeSingle();
 
 
-
-        if (
-            existingApplication
-        ) {
+        if (existingApplication) {
 
             throw new Error(
-                "You have already applied for this opportunity",
+                "Already applied",
             );
 
         }
 
 
-
-        /*
-            CREATE APPLICATION
-        */
-
         const {
+            data: application,
             error,
         } =
             await (supabase as any)
@@ -374,21 +335,60 @@ export const studentOpportunityService = {
                     opportunity_id:
                         opportunityId,
 
-
                     student_id:
                         studentId,
 
-                });
+                })
+                .select(
+                    "application_id",
+                )
+                .single();
+
+
+        if (error)
+            throw error;
 
 
 
         if (
-            error
+            answers.length > 0
         ) {
 
-            throw error;
+            const {
+                error: answerError,
+            } =
+                await (supabase as any)
+                    .from(
+                        "opportunity_question_answers",
+                    )
+                    .insert(
+
+                        answers.map(
+                            (answer) => ({
+
+                                application_id:
+                                    application.application_id,
+
+                                question_id:
+                                    answer.question_id,
+
+                                answer_value:
+                                    answer.answer_value,
+
+                            }),
+                        ),
+
+                    );
+
+
+            if (answerError)
+                throw answerError;
 
         }
 
+
+        return application;
+
     },
+
 };

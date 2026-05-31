@@ -146,9 +146,7 @@ export function AdminOpportunitiesPage() {
                                 )
                                     .toISOString(),
                         }
-
                     );
-
 
                 setEditingOpportunity(
                     null
@@ -836,7 +834,6 @@ export function AdminOpportunitiesPage() {
 
                                         </div>
 
-
                                         <Link
 
                                             to="/admin/opportunities/$opportunityId"
@@ -881,7 +878,20 @@ export function AdminOpportunitiesPage() {
                                             Extend Application
 
                                         </button>
+                                        <Link
 
+                                            to="/admin/questions/$opportunityId"
+
+                                            params={{
+                                                opportunityId:
+                                                    opportunity.opportunity_id
+                                            }}
+
+                                            className="ml-3 rounded border px-4 py-2"
+
+                                        >
+                                            Questions
+                                        </Link>
                                     </div>
 
                                 ),
