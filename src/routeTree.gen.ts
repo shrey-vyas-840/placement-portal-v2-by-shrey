@@ -22,6 +22,7 @@ import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportuni
 import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
+import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
 
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
@@ -88,6 +89,12 @@ const AdminStudentIdRoute = AdminStudentIdRouteImport.update({
   path: '/admin/$studentId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOpportunitiesOpportunityIdRoute =
+  AdminOpportunitiesOpportunityIdRouteImport.update({
+    id: '/$opportunityId',
+    path: '/$opportunityId',
+    getParentRoute: () => AdminOpportunitiesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -99,10 +106,11 @@ export interface FileRoutesByFullPath {
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
-  '/admin/opportunities': typeof AdminOpportunitiesRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -114,10 +122,11 @@ export interface FileRoutesByTo {
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
-  '/admin/opportunities': typeof AdminOpportunitiesRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -130,10 +139,11 @@ export interface FileRoutesById {
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
-  '/admin/opportunities': typeof AdminOpportunitiesRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/auth/callback'
     | '/admin/'
+    | '/admin/opportunities/$opportunityId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/auth/callback'
     | '/admin'
+    | '/admin/opportunities/$opportunityId'
   id:
     | '__root__'
     | '/'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/auth/callback'
     | '/admin/'
+    | '/admin/opportunities/$opportunityId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -193,7 +206,7 @@ export interface RootRouteChildren {
   AdminStudentIdRoute: typeof AdminStudentIdRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
   AdminDrivesRoute: typeof AdminDrivesRoute
-  AdminOpportunitiesRoute: typeof AdminOpportunitiesRoute
+  AdminOpportunitiesRoute: typeof AdminOpportunitiesRouteWithChildren
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -292,8 +305,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStudentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/opportunities/$opportunityId': {
+      id: '/admin/opportunities/$opportunityId'
+      path: '/$opportunityId'
+      fullPath: '/admin/opportunities/$opportunityId'
+      preLoaderRoute: typeof AdminOpportunitiesOpportunityIdRouteImport
+      parentRoute: typeof AdminOpportunitiesRoute
+    }
   }
 }
+
+interface AdminOpportunitiesRouteChildren {
+  AdminOpportunitiesOpportunityIdRoute: typeof AdminOpportunitiesOpportunityIdRoute
+}
+
+const AdminOpportunitiesRouteChildren: AdminOpportunitiesRouteChildren = {
+  AdminOpportunitiesOpportunityIdRoute: AdminOpportunitiesOpportunityIdRoute,
+}
+
+const AdminOpportunitiesRouteWithChildren =
+  AdminOpportunitiesRoute._addFileChildren(AdminOpportunitiesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -305,7 +336,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminStudentIdRoute: AdminStudentIdRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
   AdminDrivesRoute: AdminDrivesRoute,
-  AdminOpportunitiesRoute: AdminOpportunitiesRoute,
+  AdminOpportunitiesRoute: AdminOpportunitiesRouteWithChildren,
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AdminIndexRoute: AdminIndexRoute,

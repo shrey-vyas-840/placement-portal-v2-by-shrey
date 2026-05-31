@@ -317,4 +317,269 @@ export const adminOpportunityService = {
         );
     },
 
+    async getOpportunityCards() {
+
+        const { data: opportunities, error } =
+            await (supabase as any)
+                .from("opportunity_master")
+                .select(`
+                *,
+                drive_master(
+                    drive_id,
+                    drive_name,
+                    company_id,
+                    registration_deadline
+                )
+            `)
+                .order(
+                    "created_at",
+                    {
+                        ascending: false,
+                    },
+                );
+
+
+        if (error) throw error;
+
+
+        const companyIds =
+            opportunities
+                ?.map(
+                    (x: any) =>
+                        x.drive_master?.company_id
+                )
+                .filter(Boolean)
+            ?? [];
+
+
+        const { data: companies } =
+            await (supabase as any)
+                .from(
+                    "company_master"
+                )
+                .select(
+                    "company_id, company_name"
+                )
+                .in(
+                    "company_id",
+                    companyIds
+                );
+
+
+        const { data: students } =
+            await (supabase as any)
+                .from(
+                    "student_master"
+                )
+                .select(
+                    "student_id"
+                )
+                .eq(
+                    "is_active",
+                    true
+                );
+
+
+        const { data: applications } =
+            await (supabase as any)
+                .from(
+                    "student_opportunity_applications"
+                )
+                .select(
+                    "opportunity_id"
+                );
+
+
+        return (
+            opportunities ?? []
+        ).map(
+            (opp: any) => {
+
+
+                const company =
+                    companies?.find(
+                        (c: any) =>
+                            c.company_id ===
+                            opp.drive_master
+                                ?.company_id
+                    );
+
+
+                const applied =
+                    applications?.filter(
+                        (a: any) =>
+                            a.opportunity_id ===
+                            opp.opportunity_id
+                    ).length ?? 0;
+
+
+                const eligible =
+                    students?.length ?? 0;
+
+
+                return {
+
+                    ...opp,
+
+                    company:
+                        company?.company_name,
+
+                    deadline:
+                        opp.drive_master
+                            ?.registration_deadline,
+
+                    eligibleCount:
+                        eligible,
+
+                    appliedCount:
+                        applied,
+
+                    unappliedCount:
+                        eligible - applied,
+
+                };
+
+            }
+        );
+
+    },
+
+    async getOpportunityApplicants(
+        opportunityId: string,
+    ) {
+
+        const { data, error } =
+            await (supabase as any)
+                .from(
+                    "student_opportunity_applications"
+                )
+                .select(`
+                *,
+                student_master(
+                    student_id,
+                    enrollment_no,
+                    first_name,
+                    last_name
+                )
+            `)
+                .eq(
+                    "opportunity_id",
+                    opportunityId
+                )
+                .order(
+                    "applied_at",
+                    {
+                        ascending: false,
+                    }
+                );
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        const studentIds =
+            data?.map(
+                (item: any) =>
+                    item.student_id
+            ) ?? [];
+
+
+        const {
+            data: academics,
+        } =
+            await (supabase as any)
+                .from(
+                    "student_academic_details"
+                )
+                .select(`
+                student_id,
+                current_institute_name,
+                current_branch_name,
+                current_cgpa,
+                graduation_year
+            `)
+                .in(
+                    "student_id",
+                    studentIds
+                );
+
+
+        return (
+            data ?? []
+        ).map(
+            (application: any) => ({
+
+                ...application,
+
+                academic:
+                    academics?.find(
+                        (academic: any) =>
+                            academic.student_id ===
+                            application.student_id
+                    ),
+
+            })
+        );
+
+    },
+
+async getOpportunityById(
+    opportunityId: string,
+) {
+
+    const { data, error } =
+        await (supabase as any)
+            .from(
+                "opportunity_master"
+            )
+            .select(`
+                *,
+                drive_master(
+                    drive_id,
+                    drive_name,
+                    company_id
+                )
+            `)
+            .eq(
+                "opportunity_id",
+                opportunityId
+            )
+            .single();
+
+
+    if (error) {
+        throw error;
+    }
+
+
+    const { data: company } =
+        await (supabase as any)
+            .from(
+                "company_master"
+            )
+            .select(
+                "company_name"
+            )
+            .eq(
+                "company_id",
+                data.drive_master.company_id
+            )
+            .single();
+
+
+    return {
+
+        ...data,
+
+        company_name:
+            company?.company_name,
+
+    };
+
+},
+
+
+
 };

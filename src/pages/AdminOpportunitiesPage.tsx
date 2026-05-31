@@ -7,13 +7,17 @@ import {
     adminOpportunityService,
 } from "@/services/adminOpportunityService";
 
+import {
+    Link,
+} from "@tanstack/react-router";
+
 export function AdminOpportunitiesPage() {
 
     const [drives, setDrives] =
         useState<any[]>([]);
 
-    const [opportunities,
-        setOpportunities] =
+    const [opportunityCards,
+        setOpportunityCards] =
         useState<any[]>([]);
 
     const [driveId,
@@ -32,42 +36,25 @@ export function AdminOpportunitiesPage() {
         setRegistrationDeadline] =
         useState("");
 
-    const [applications,
-        setApplications] =
-        useState<any[]>([]);
-
-    const [searchTerm,
-        setSearchTerm] =
-        useState("");
-
-    const [branchFilter,
-        setBranchFilter] =
-        useState("All");
-
-    const [statusFilter,
-        setStatusFilter] =
-        useState("All");
-
     async function load() {
 
         const drivesData =
-            await adminOpportunityService.getDrives();
+            await adminOpportunityService
+                .getDrives();
 
-        const opportunitiesData =
-            await adminOpportunityService.getOpportunities();
 
-        const applicationsData =
-            await adminOpportunityService.getApplicantDetails();
+        const cardsData =
+            await adminOpportunityService
+                .getOpportunityCards();
+
 
         setDrives(
-            drivesData,
+            drivesData
         );
 
-        setOpportunities(
-            opportunitiesData,
-        );
-        setApplications(
-            applicationsData,
+
+        setOpportunityCards(
+            cardsData
         );
 
     }
@@ -119,46 +106,42 @@ export function AdminOpportunitiesPage() {
         }
     }
 
-    const filteredApplications =
-        applications.filter(
-            (application) => {
+    function getTimeLeft(
+        deadline: string,
+    ) {
 
-                const matchesSearch =
-                    searchTerm === "" ||
-                    application.student_master?.first_name
-                        ?.toLowerCase()
-                        .includes(
-                            searchTerm.toLowerCase(),
-                        ) ||
-                    application.student_master?.last_name
-                        ?.toLowerCase()
-                        .includes(
-                            searchTerm.toLowerCase(),
-                        ) ||
-                    application.student_master?.enrollment_no
-                        ?.toLowerCase()
-                        .includes(
-                            searchTerm.toLowerCase(),
-                        );
+        if (!deadline) {
+            return "No deadline";
+        }
 
-                const matchesBranch =
-                    branchFilter === "All" ||
-                    application.academic
-                        ?.current_branch_name ===
-                    branchFilter;
 
-                const matchesStatus =
-                    statusFilter === "All" ||
-                    application.application_status ===
-                    statusFilter;
+        const diff =
+            new Date(deadline).getTime()
+            -
+            new Date().getTime();
 
-                return (
-                    matchesSearch &&
-                    matchesBranch &&
-                    matchesStatus
-                );
-            },
-        );
+
+        if (diff <= 0) {
+            return "Closed";
+        }
+
+
+        const days =
+            Math.floor(
+                diff /
+                (1000 * 60 * 60 * 24)
+            );
+
+
+        const hours =
+            Math.floor(
+                diff /
+                (1000 * 60 * 60)
+            ) % 24;
+
+
+        return `${days}d ${hours}h left`;
+    }
 
     return (
 
@@ -180,7 +163,7 @@ export function AdminOpportunitiesPage() {
                             </div>
 
                             <div className="mt-2 text-2xl font-bold">
-                                {opportunities.length}
+                                {opportunityCards.length}
                             </div>
                         </div>
 
@@ -191,9 +174,9 @@ export function AdminOpportunitiesPage() {
 
                             <div className="mt-2 text-2xl font-bold">
                                 {
-                                    opportunities.filter(
+                                    opportunityCards.filter(
                                         (x) =>
-                                            x.visible_to_students,
+                                            x.visible_to_students
                                     ).length
                                 }
                             </div>
@@ -206,10 +189,9 @@ export function AdminOpportunitiesPage() {
 
                             <div className="mt-2 text-2xl font-bold">
                                 {
-                                    opportunities.filter(
+                                    opportunityCards.filter(
                                         (x) =>
-                                            x.application_status ===
-                                            "Draft",
+                                            x.visible_to_students
                                     ).length
                                 }
                             </div>
@@ -221,7 +203,14 @@ export function AdminOpportunitiesPage() {
                             </div>
 
                             <div className="mt-2 text-2xl font-bold">
-                                {applications.length}
+                                {
+                                    opportunityCards.reduce(
+                                        (sum, item) =>
+                                            sum +
+                                            item.appliedCount,
+                                        0
+                                    )
+                                }
                             </div>
                         </div>
 
@@ -232,145 +221,6 @@ export function AdminOpportunitiesPage() {
                 <p className="mt-2 text-sm text-muted-foreground">
                     Create opportunities from approved drives and publish them to students.
                 </p>
-
-                <div className="mt-6 overflow-hidden rounded-lg border">
-
-                    <table className="w-full">
-
-                        <thead>
-
-                            <tr className="border-b">
-
-                                <th className="p-3 text-left">
-                                    Branch
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    CGPA
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Opportunity
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Resume
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Status
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Action
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {opportunities.map(
-                                (
-                                    opportunity,
-                                ) => (
-
-                                    <tr
-                                        key={
-                                            opportunity.opportunity_id
-                                        }
-                                        className="border-b"
-                                    >
-
-                                        <td className="p-3">
-                                            {
-                                                opportunity.opportunity_title
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-                                            {
-                                                opportunity.drive_master
-                                                    ?.drive_name
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-
-                                            <select
-                                                value={
-                                                    opportunity.application_status
-                                                }
-                                                onChange={async (e) => {
-
-                                                    await adminOpportunityService.updateOpportunityStatus(
-                                                        opportunity.opportunity_id,
-                                                        e.target.value,
-                                                    );
-
-                                                    await load();
-                                                }}
-                                                className="rounded border px-2 py-1"
-                                            >
-
-                                                <option value="Draft">
-                                                    Draft
-                                                </option>
-
-                                                <option value="Open">
-                                                    Open
-                                                </option>
-
-                                                <option value="Closed">
-                                                    Closed
-                                                </option>
-
-                                                <option value="Completed">
-                                                    Completed
-                                                </option>
-
-                                            </select>
-
-                                        </td>
-
-                                        <td className="p-3">
-
-                                            <input
-                                                type="checkbox"
-                                                checked={
-                                                    opportunity.visible_to_students
-                                                }
-                                                onChange={async (e) => {
-
-                                                    await adminOpportunityService.toggleVisibility(
-                                                        opportunity.opportunity_id,
-                                                        e.target.checked,
-                                                    );
-
-                                                    await load();
-                                                }}
-                                            />
-
-                                        </td>
-
-                                        <td className="p-3">
-
-                                            {opportunity.visible_to_students
-                                                ? "Published"
-                                                : "Hidden"}
-
-                                        </td>
-
-                                    </tr>
-                                ),
-                            )}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
 
                 <div className="mt-8 rounded-lg border p-4">
 
@@ -546,292 +396,135 @@ export function AdminOpportunitiesPage() {
                     >
                         Create Opportunity
                     </button>
-
                 </form>
 
-            </div>
+                <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
 
-            <div className="mt-8 flex gap-3 flex-wrap">
+                    {opportunityCards.map(
+                        (opportunity) => (
 
-                <input
-                    value={searchTerm}
-                    onChange={(e) =>
-                        setSearchTerm(
-                            e.target.value,
-                        )
-                    }
-                    placeholder="Search Student"
-                    className="rounded border px-3 py-2"
-                />
+                            <div
+                                key={
+                                    opportunity.opportunity_id
+                                }
+                                className="rounded-xl border bg-background p-5 shadow-sm"
+                            >
 
-                <select
-                    value={statusFilter}
-                    onChange={(e) =>
-                        setStatusFilter(
-                            e.target.value,
-                        )
-                    }
-                    className="rounded border px-3 py-2"
-                >
+                                <h2 className="text-xl font-semibold">
 
-                    <option value="All">
-                        All Status
-                    </option>
+                                    {opportunity.company}
 
-                    <option value="Applied">
-                        Applied
-                    </option>
+                                </h2>
 
-                    <option value="Shortlisted">
-                        Shortlisted
-                    </option>
 
-                    <option value="Interview Scheduled">
-                        Interview Scheduled
-                    </option>
+                                <p className="mt-1">
 
-                    <option value="Selected">
-                        Selected
-                    </option>
+                                    {opportunity.opportunity_title}
 
-                    <option value="Rejected">
-                        Rejected
-                    </option>
+                                </p>
 
-                </select>
 
-                <select
-                    value={branchFilter}
-                    onChange={(e) =>
-                        setBranchFilter(
-                            e.target.value,
-                        )
-                    }
-                    className="rounded border px-3 py-2"
-                >
+                                <div className="mt-5 space-y-2 text-sm">
 
-                    <option value="All">
-                        All Branches
-                    </option>
+                                    <p>
+                                        Role:
+                                        {" "}
+                                        {
+                                            opportunity.drive_master
+                                                ?.drive_name
+                                        }
+                                    </p>
 
-                    {[...new Set(
-                        applications.map(
-                            (x) =>
-                                x.academic
-                                    ?.current_branch_name,
-                        ),
-                    )]
-                        .filter(Boolean)
-                        .map(
-                            (branch) => (
-                                <option
-                                    key={String(branch)}
-                                    value={String(branch)}
+
+                                    <p>
+                                        Eligible Candidates:
+                                        {" "}
+                                        <b>
+                                            {
+                                                opportunity.eligibleCount
+                                            }
+                                        </b>
+                                    </p>
+
+
+                                    <p>
+                                        Applied Students:
+                                        {" "}
+                                        <b>
+                                            {
+                                                opportunity.appliedCount
+                                            }
+                                        </b>
+                                    </p>
+
+
+                                    <p>
+                                        Not Applied:
+                                        {" "}
+                                        <b>
+                                            {
+                                                opportunity.unappliedCount
+                                            }
+                                        </b>
+                                    </p>
+
+
+                                    <p>
+                                        Deadline:
+                                        {" "}
+                                        {
+                                            opportunity.deadline
+                                                ?
+                                                new Date(
+                                                    opportunity.deadline
+                                                )
+                                                    .toLocaleString()
+                                                :
+                                                "-"
+                                        }
+                                    </p>
+
+
+                                    <p className="font-semibold text-red-600">
+
+                                        {
+                                            getTimeLeft(
+                                                opportunity.deadline
+                                            )
+                                        }
+
+                                    </p>
+
+
+                                </div>
+
+
+                                <Link
+
+                                    to="/admin/opportunities/$opportunityId"
+
+                                    params={{
+                                        opportunityId:
+                                            opportunity.opportunity_id,
+                                    }}
+
+                                    className="mt-5 inline-block rounded-lg border px-4 py-2"
+
                                 >
-                                    {String(branch)}
-                                </option>
-                            ),
-                        )}
 
-                </select>
+                                    View Applicants
 
-            </div>
+                                </Link>
 
-            <div className="mt-8 overflow-hidden rounded-lg border">
 
-                <div className="border-b p-4 font-semibold">
-                    Applicant Management
+                            </div>
+
+                        ),
+                    )}
+
                 </div>
 
-                <table className="w-full">
-
-                    <thead>
-
-                        <tr className="border-b">
-
-                            <th className="p-3 text-left">
-                                Student
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Enrollment
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Opportunity
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Applied
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Status
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {filteredApplications.map(
-                            (
-                                application,
-                            ) => (
-
-                                <tr
-                                    key={
-                                        application.application_id
-                                    }
-                                    className="border-b"
-                                >
-
-                                    <td className="p-3">
-
-                                        {application.student_master?.first_name}
-                                        {" "}
-                                        {application.student_master?.last_name}
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {
-                                            application.student_master?.enrollment_no
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {
-                                            application.academic
-                                                ?.current_branch_name
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {
-                                            application.academic
-                                                ?.current_cgpa
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {
-                                            application.opportunity_master
-                                                ?.opportunity_title
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {application.resumeUrl ? (
-
-                                            <a
-                                                href={
-                                                    application.resumeUrl
-                                                }
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-primary underline"
-                                            >
-                                                Open Resume
-                                            </a>
-
-                                        ) : (
-
-                                            "No Resume"
-
-                                        )}
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {
-                                            application.application_status
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        <div className="flex gap-2 items-center">
-
-                                            <a
-                                                href={`/admin/${application.student_id}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="rounded border px-2 py-1"
-                                            >
-                                                Profile
-                                            </a>
-
-                                            <select
-                                                value={
-                                                    application.application_status
-                                                }
-                                                onChange={async (e) => {
-
-                                                    await adminOpportunityService.updateApplicationStatus(
-                                                        application.application_id,
-                                                        e.target.value,
-                                                    );
-
-                                                    await load();
-
-                                                }}
-                                                className="rounded border px-2 py-1"
-                                            >
-
-                                                <option value="Applied">
-                                                    Applied
-                                                </option>
-
-                                                <option value="Shortlisted">
-                                                    Shortlisted
-                                                </option>
-
-                                                <option value="Interview Scheduled">
-                                                    Interview Scheduled
-                                                </option>
-
-                                                <option value="Selected">
-                                                    Selected
-                                                </option>
-
-                                                <option value="Rejected">
-                                                    Rejected
-                                                </option>
-
-                                            </select>
-
-                                        </div>
-
-                                    </td>
-
-                                </tr>
-
-                            ),
-                        )}
-
-                    </tbody>
-
-                </table>
-
             </div>
-
         </div>
     );
 }
