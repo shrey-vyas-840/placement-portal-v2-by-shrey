@@ -59,26 +59,10 @@ export const adminOpportunityService = {
             drive_id: string;
             opportunity_title: string;
             opportunity_description?: string;
-            registration_deadline: string;
+            application_end_date: string;
+            publish: boolean;
         },
     ) {
-
-        const { error: driveError } =
-            await (supabase as any)
-                .from(
-                    "drive_master",
-                )
-                .update({
-                    registration_deadline:
-                        payload.registration_deadline,
-                })
-                .eq(
-                    "drive_id",
-                    payload.drive_id,
-                );
-
-        if (driveError)
-            throw driveError;
 
         const { data, error } =
             await (supabase as any)
@@ -86,6 +70,7 @@ export const adminOpportunityService = {
                     "opportunity_master",
                 )
                 .insert({
+
                     drive_id:
                         payload.drive_id,
 
@@ -93,24 +78,108 @@ export const adminOpportunityService = {
                         payload.opportunity_title,
 
                     opportunity_description:
-                        payload.opportunity_description ||
-                        null,
+                        payload.opportunity_description
+                        || null,
+
+                    application_start_date:
+                        new Date()
+                            .toISOString(),
+
+                    application_end_date:
+                        payload.application_end_date,
 
                     application_status:
-                        "Draft",
+                        payload.publish
+                            ?
+                            "Open"
+                            :
+                            "Draft",
 
                     visible_to_students:
-                        false,
+                        payload.publish,
+
                 })
                 .select()
                 .single();
 
-        if (error)
+
+        if (error) {
             throw error;
+        }
+
 
         return data;
     },
 
+    async publishOpportunity(
+        opportunityId: string,
+    ) {
+
+        const { error } =
+            await (supabase as any)
+                .from(
+                    "opportunity_master"
+                )
+                .update({
+
+                    visible_to_students: true,
+
+                    application_status:
+                        "Open",
+
+                    application_start_date:
+                        new Date()
+                            .toISOString(),
+
+                })
+                .eq(
+                    "opportunity_id",
+                    opportunityId
+                );
+
+
+        if (error) {
+            throw error;
+        }
+
+    },
+
+
+    async extendDeadline(
+        opportunityId: string,
+        newDeadline: string
+    ) {
+
+        const { error } =
+            await (supabase as any)
+
+                .from(
+                    "opportunity_master"
+                )
+
+                .update({
+
+                    application_end_date:
+                        newDeadline,
+
+                    application_status:
+                        "Open",
+
+                    visible_to_students:
+                        true,
+
+                })
+
+                .eq(
+                    "opportunity_id",
+                    opportunityId
+                );
+
+
+        if (error)
+            throw error;
+
+    },
     async updateOpportunityStatus(
         opportunityId: string,
         status: string,
@@ -325,11 +394,10 @@ export const adminOpportunityService = {
                 .select(`
                 *,
                 drive_master(
-                    drive_id,
-                    drive_name,
-                    company_id,
-                    registration_deadline
-                )
+    drive_id,
+    drive_name,
+    company_id
+)
             `)
                 .order(
                     "created_at",
@@ -567,8 +635,7 @@ export const adminOpportunityService = {
                         company?.company_name,
 
                     deadline:
-                        opp.drive_master
-                            ?.registration_deadline,
+                        opp.application_end_date,
 
                     eligibleCount:
                         eligible,
@@ -744,6 +811,44 @@ export const adminOpportunityService = {
                 company?.company_name,
 
         };
+
+    },
+
+    async updateOpportunity(
+        opportunityId: string,
+        payload: {
+            opportunity_title: string;
+            opportunity_description?: string;
+            application_end_date: string;
+        }
+    ) {
+
+        const { error } =
+            await (supabase as any)
+                .from(
+                    "opportunity_master"
+                )
+                .update({
+
+                    opportunity_title:
+                        payload.opportunity_title,
+
+                    opportunity_description:
+                        payload.opportunity_description,
+
+                    application_end_date:
+                        payload.application_end_date,
+
+                })
+                .eq(
+                    "opportunity_id",
+                    opportunityId
+                );
+
+
+        if (error) {
+            throw error;
+        }
 
     },
 

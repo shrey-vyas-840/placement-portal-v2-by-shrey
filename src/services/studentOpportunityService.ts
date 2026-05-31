@@ -44,6 +44,10 @@ export const studentOpportunityService = {
                 .eq(
                     "application_status",
                     "Open",
+                ).gt(
+                    "application_end_date",
+                    new Date()
+                        .toISOString()
                 )
                 .order(
                     "created_at",
@@ -238,19 +242,153 @@ export const studentOpportunityService = {
         studentId: string,
     ) {
 
-        const { error } =
+        /*
+            FINAL SAFETY CHECK
+            Do not trust UI visibility.
+            Validate opportunity before inserting application.
+        */
+
+        const {
+            data: opportunity,
+            error: opportunityError,
+        } =
+            await (supabase as any)
+                .from(
+                    "opportunity_master",
+                )
+                .select(
+                    `
+                application_status,
+                application_end_date,
+                visible_to_students
+                `,
+                )
+                .eq(
+                    "opportunity_id",
+                    opportunityId,
+                )
+                .single();
+
+
+        if (opportunityError) {
+            throw opportunityError;
+        }
+
+
+        if (
+            !opportunity
+        ) {
+
+            throw new Error(
+                "Opportunity not found",
+            );
+
+        }
+
+
+        const deadlinePassed =
+            opportunity.application_end_date
+            &&
+            new Date(
+                opportunity.application_end_date,
+            )
+            <
+            new Date();
+
+
+        if (
+            opportunity.application_status !==
+            "Open"
+            ||
+            opportunity.visible_to_students !==
+            true
+            ||
+            deadlinePassed
+        ) {
+
+            throw new Error(
+                "Application deadline is closed",
+            );
+
+        }
+
+
+
+        /*
+            DUPLICATE APPLICATION PROTECTION
+    
+            This protects:
+            - refresh delay
+            - double click
+            - slow network
+            - frontend bypass
+        */
+
+        const {
+            data: existingApplication,
+        } =
+            await (supabase as any)
+                .from(
+                    "student_opportunity_applications",
+                )
+                .select(
+                    "application_id",
+                )
+                .eq(
+                    "opportunity_id",
+                    opportunityId,
+                )
+                .eq(
+                    "student_id",
+                    studentId,
+                )
+                .maybeSingle();
+
+
+
+        if (
+            existingApplication
+        ) {
+
+            throw new Error(
+                "You have already applied for this opportunity",
+            );
+
+        }
+
+
+
+        /*
+            CREATE APPLICATION
+        */
+
+        const {
+            error,
+        } =
             await (supabase as any)
                 .from(
                     "student_opportunity_applications",
                 )
                 .insert({
+
                     opportunity_id:
                         opportunityId,
 
+
                     student_id:
                         studentId,
+
                 });
 
-        if (error) throw error;
+
+
+        if (
+            error
+        ) {
+
+            throw error;
+
+        }
+
     },
 };
