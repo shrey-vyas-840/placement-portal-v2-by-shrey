@@ -73,7 +73,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PMS by Shrey" },
+      { title: "Customised Placement Portal" },
       { name: "description", content: "Shrey Generated Project" },
       { name: "author", content: "Shrey Vyas" },
       { property: "og:title", content: "Shrey Vyas" },

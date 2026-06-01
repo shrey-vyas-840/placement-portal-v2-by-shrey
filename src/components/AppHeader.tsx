@@ -18,7 +18,7 @@ export function AppHeader() {
           to="/dashboard"
           className="text-base font-semibold text-foreground"
         >
-          Placement Management System By Shrey
+          Custmised Placement Portal For Indus T&P Cell
         </Link>
         <nav className="flex items-center gap-2" aria-label="Primary">
           <Link

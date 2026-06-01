@@ -1,6 +1,6 @@
 import {
     supabase,
-}from "@/lib/supabase";
+} from "@/lib/supabase";
 
 export const adminQuestionService = {
 
@@ -69,7 +69,12 @@ opportunity_question_options(*)
                         question_title:
                             q.question_title,
                         question_type:
-                            q.question_type,
+                            q.question_type
+                                .toLowerCase()
+                                .replaceAll(
+                                    " ",
+                                    "_"
+                                ),
                         is_required:
                             q.is_required,
                         validation:

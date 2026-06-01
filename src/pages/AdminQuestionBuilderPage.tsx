@@ -127,19 +127,31 @@ export function AdminQuestionBuilderPage(
 
     function addQuestion() {
 
-        setQuestions(
-            [
+        const duplicateQuestion = (index: number) => {
+
+            const current =
+                questions[index];
+
+            const copy =
+            {
+                ...current,
+                question_id: crypto.randomUUID(),
+                question_title:
+                    current.question_title + " Copy",
+                options: [
+                    ...(current.options || [])
+                ],
+                opportunity_question_options: [
+                    ...(current.opportunity_question_options || [])
+                ]
+            };
+
+            setQuestions([
                 ...questions,
+                copy
+            ]);
 
-                {
-                    question_title: "",
-                    question_type: "text",
-                    is_required: false,
-                    options: [],
-                }
-
-            ]
-        );
+        };
 
     }
 
