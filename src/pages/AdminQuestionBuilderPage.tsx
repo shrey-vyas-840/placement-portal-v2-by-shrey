@@ -258,6 +258,134 @@ export function AdminQuestionBuilderPage({
       );
     }
 
+    if (q.question_type === "file") {
+      return (
+        <div className="mt-3 space-y-2">
+
+          <label className="block">
+            <input
+              type="checkbox"
+              checked={
+                q.validation?.allowedExtensions?.includes("pdf")
+                || false
+              }
+              onChange={(e) =>
+                updateValidation(
+                  index,
+                  "allowedExtensions",
+                  e.target.checked
+                    ? [...(q.validation?.allowedExtensions || []), "pdf"]
+                    : (q.validation?.allowedExtensions || [])
+                      .filter((x: string) => x !== "pdf")
+                )
+              }
+            />
+            PDF
+          </label>
+
+          <label className="block">
+            <input
+              type="checkbox"
+              checked={
+                q.validation?.allowedExtensions?.includes("docx")
+                || false
+              }
+              onChange={(e) =>
+                updateValidation(
+                  index,
+                  "allowedExtensions",
+                  e.target.checked
+                    ? [...(q.validation?.allowedExtensions || []), "docx"]
+                    : (q.validation?.allowedExtensions || [])
+                      .filter((x: string) => x !== "docx")
+                )
+              }
+            />
+            DOCX
+          </label>
+
+          <label className="block">
+            <input
+              type="checkbox"
+              checked={
+                q.validation?.allowedExtensions?.includes("jpg")
+                || false
+              }
+              onChange={(e) =>
+                updateValidation(
+                  index,
+                  "allowedExtensions",
+                  e.target.checked
+                    ? [...(q.validation?.allowedExtensions || []), "jpg"]
+                    : (q.validation?.allowedExtensions || [])
+                      .filter((x: string) => x !== "jpg")
+                )
+              }
+            />
+            JPG
+          </label>
+
+          <label className="block">
+            <input
+              type="checkbox"
+              checked={
+                q.validation?.allowedExtensions?.includes("png")
+                || false
+              }
+              onChange={(e) =>
+                updateValidation(
+                  index,
+                  "allowedExtensions",
+                  e.target.checked
+                    ? [...(q.validation?.allowedExtensions || []), "png"]
+                    : (q.validation?.allowedExtensions || [])
+                      .filter((x: string) => x !== "png")
+                )
+              }
+            />
+            PNG
+          </label>
+
+          <input
+            className="border p-2 w-full"
+            type="number"
+            placeholder="Maximum File Size (MB)"
+            value={
+              q.validation?.maxSizeMb || ""
+            }
+            onChange={(e) =>
+              updateValidation(
+                index,
+                "maxSizeMb",
+                Number(e.target.value)
+              )
+            }
+          />
+
+        </div>
+      );
+
+      <input
+        className="border p-2 w-full"
+        type="number"
+        placeholder="Maximum File Size (MB)"
+        value={
+          q.validation?.maxSizeMb
+          ||
+          ""
+        }
+        onChange={(e) =>
+          updateValidation(
+            index,
+            "maxSizeMb",
+            Number(
+              e.target.value
+            )
+          )
+        }
+      />
+      }
+      
     if (q.question_type === "paragraph") {
       return (
         <div className="mt-3 space-y-2">

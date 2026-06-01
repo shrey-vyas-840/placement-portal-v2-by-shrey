@@ -215,10 +215,12 @@ export function StudentOpportunitiesPage() {
             await load();
 
 
-        } catch {
+        } catch (error: any) {
 
             alert(
-                "Already applied",
+                error?.message
+                ||
+                "Application failed"
             );
 
         }
@@ -487,6 +489,29 @@ export function StudentOpportunitiesPage() {
                                             </div>
                                         )}
 
+                                        {q.question_type === "file" && (
+                                            <input
+                                                type="file"
+                                                className="border w-full p-2 rounded"
+                                                onChange={(e) => {
+
+                                                    const file =
+                                                        e.target.files?.[0];
+
+                                                    if (!file) {
+                                                        return;
+                                                    }
+
+                                                    setAnswers({
+                                                        ...answers,
+                                                        [q.question_id]:
+                                                            file,
+                                                    });
+
+                                                }}
+                                            />
+                                        )}
+
                                     </div>
                                 ))}
 
@@ -694,6 +719,88 @@ export function StudentOpportunitiesPage() {
 
                                                         alert(
                                                             `${q.question_title}: too many selections`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                } {
+                                                    q.question_type === "file" && (
+                                                        <input
+                                                            type="file"
+                                                            className="border w-full p-2"
+                                                            onChange={async (e) => {
+
+                                                                const file =
+                                                                    e.target.files?.[0];
+
+                                                                if (!file)
+                                                                    return;
+
+                                                                setAnswers({
+                                                                    ...answers,
+                                                                    [q.question_id]:
+                                                                        file,
+                                                                });
+
+                                                            }}
+
+                                                        />
+                                                    )
+                                                } if (
+                                                    q.question_type === "file"
+                                                ) {
+
+                                                    const file =
+                                                        answer as File;
+
+                                                    if (!file)
+                                                        continue;
+
+                                                    const extension =
+                                                        file.name
+                                                            .split(".")
+                                                            .pop()
+                                                            ?.toLowerCase();
+
+                                                    const allowed =
+                                                        q.validation
+                                                            ?.allowedExtensions
+                                                        || [];
+
+                                                    if (
+                                                        allowed.length > 0 &&
+                                                        !allowed.includes(
+                                                            extension
+                                                        )
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title}: invalid file type`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    const maxBytes =
+                                                        (
+                                                            q.validation
+                                                                ?.maxSizeMb
+                                                            || 0
+                                                        )
+                                                        *
+                                                        1024
+                                                        *
+                                                        1024;
+
+                                                    if (
+                                                        maxBytes > 0 &&
+                                                        file.size >
+                                                        maxBytes
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title}: file too large`
                                                         );
 
                                                         return;

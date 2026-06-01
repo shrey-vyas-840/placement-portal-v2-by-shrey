@@ -348,44 +348,117 @@ export const studentOpportunityService = {
         if (error)
             throw error;
 
-
-
         if (
             answers.length > 0
         ) {
+
+            const answerRows = [];
+
+            for (
+                const answer
+                of answers
+            ) {
+
+                let answerValue =
+                    answer.answer_value;
+
+                if (
+                    answer.answer_value
+                    instanceof File
+                ) {
+
+                    const file =
+                        answer.answer_value;
+
+                    const filePath =
+                        `${studentId}/${Date.now()
+                        }_${file.name
+                        }`;
+
+                    const {
+                        error: uploadError,
+                    } =
+                        await supabase
+                            .storage
+                            .from(
+                                "student-question-files"
+                            )
+                            .upload(
+                                filePath,
+                                file
+                            );
+
+                    if (
+                        uploadError
+                    ) {
+                        throw uploadError;
+                    }
+
+                    const {
+                        data: signedUrlData,
+                    } =
+                        await supabase
+                            .storage
+                            .from(
+                                "student-question-files"
+                            )
+                            .createSignedUrl(
+                                filePath,
+                                60 * 60 * 24 * 365
+                            );
+
+                    answerValue = {
+
+                        fileName:
+                            file.name,
+
+                        fileUrl:
+                            signedUrlData
+                                ?.signedUrl
+                            ||
+                            "",
+
+                    };
+
+                }
+
+                answerRows.push({
+
+                    application_id:
+                        application.application_id,
+
+                    question_id:
+                        answer.question_id,
+
+                    answer: {
+
+                        value:
+                            answerValue,
+
+                    },
+
+                });
+
+            }
 
             const {
                 error: answerError,
             } =
                 await (supabase as any)
                     .from(
-                        "opportunity_question_answers",
+                        "opportunity_question_answers"
                     )
                     .insert(
-
-                        answers.map(
-                            (answer) => ({
-
-                                application_id:
-                                    application.application_id,
-
-                                question_id:
-                                    answer.question_id,
-
-                                answer_value:
-                                    answer.answer_value,
-
-                            }),
-                        ),
-
+                        answerRows
                     );
 
-
-            if (answerError)
+            if (
+                answerError
+            ) {
                 throw answerError;
+            }
 
         }
-
 
         return application;
 
