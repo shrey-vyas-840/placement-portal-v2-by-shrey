@@ -460,7 +460,10 @@ export function AdminQuestionBuilderPage({
             placeholder="Maximum File Size (MB)"
             value={q.validation?.maxSizeMb || ""}
             onChange={(e) =>
-              updateValidation(index, "maxSizeMb", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(index, "maxSizeMb", e.target.value === "" ? "" : Math.max(
+                0,
+                Number(e.target.value)
+              ))
             }
           />
         </div>
