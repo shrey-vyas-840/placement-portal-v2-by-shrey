@@ -25,7 +25,6 @@ export function StudentOpportunitiesPage() {
     ] =
         useState<any>(null);
 
-
     const [
         questions,
         setQuestions,
@@ -348,7 +347,7 @@ export function StudentOpportunitiesPage() {
                 {
                     selectedOpportunity && (
                         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-                            <div className="bg-white p-6 rounded w-[500px] max-h-[80vh] overflow-auto">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                                 <h2>Additional Questions</h2>
 
                                 {questions.map((q: any) => (
@@ -359,7 +358,7 @@ export function StudentOpportunitiesPage() {
                                             {q.is_required ? " *" : ""}
                                         </label>
 
-                                        {q.question_type === "short_answer" && (
+                                        {q.question_type === "text" && (
                                             <input
                                                 className="border w-full"
                                                 onChange={(e) =>
@@ -367,12 +366,25 @@ export function StudentOpportunitiesPage() {
                                                 }
                                             />
                                         )}
-
                                         {q.question_type === "number" && (
                                             <input
+                                                type="number"
+                                                min={
+                                                    q.validation?.min
+                                                }
+                                                max={
+                                                    q.validation?.max
+                                                }
                                                 className="border w-full"
+                                                value={
+                                                    answers[q.question_id] || ""
+                                                }
                                                 onChange={(e) =>
-                                                    setAnswers({ ...answers, [q.question_id]: e.target.value })
+                                                    setAnswers({
+                                                        ...answers,
+                                                        [q.question_id]:
+                                                            e.target.value
+                                                    })
                                                 }
                                             />
                                         )}
@@ -389,9 +401,19 @@ export function StudentOpportunitiesPage() {
                                         {q.question_type === "date" && (
                                             <input
                                                 type="date"
+                                                min={
+                                                    q.validation?.minDate
+                                                }
+                                                max={
+                                                    q.validation?.maxDate
+                                                }
                                                 className="border w-full"
                                                 onChange={(e) =>
-                                                    setAnswers({ ...answers, [q.question_id]: e.target.value })
+                                                    setAnswers({
+                                                        ...answers,
+                                                        [q.question_id]:
+                                                            e.target.value
+                                                    })
                                                 }
                                             />
                                         )}
@@ -417,7 +439,7 @@ export function StudentOpportunitiesPage() {
                                             </select>
                                         )}
 
-                                        {q.question_type === "multiple_choice" && (
+                                        {q.question_type === "mcq" && (
                                             <div>
                                                 {q.opportunity_question_options?.map((o: any) => (
                                                     <label
@@ -468,55 +490,247 @@ export function StudentOpportunitiesPage() {
                                     </div>
                                 ))}
 
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        className="px-4 py-2 border rounded"
+                                        disabled={pendingApply}
+                                        onClick={async () => {
 
-                                <button
-                                    disabled={pendingApply}
-                                    onClick={async () => {
+                                            for (const q of questions) {
 
-                                        for (const q of questions) {
+                                                const answer =
+                                                    answers[q.question_id];
 
-                                            if (
-                                                q.is_required &&
-                                                (
-                                                    !answers[q.question_id] ||
-                                                    answers[q.question_id].length === 0
-                                                )
-                                            ) {
+                                                if (
+                                                    q.is_required &&
+                                                    (
+                                                        answer === undefined ||
+                                                        answer === null ||
+                                                        answer === "" ||
+                                                        (
+                                                            Array.isArray(answer) &&
+                                                            answer.length === 0
+                                                        )
+                                                    )
+                                                ) {
 
-                                                alert("Please fill required questions");
-                                                return;
+                                                    alert(
+                                                        `${q.question_title} is required`
+                                                    );
+
+                                                    return;
+                                                }
+
+                                                if (
+                                                    q.question_type === "text"
+                                                ) {
+
+                                                    if (
+                                                        q.validation?.minLength &&
+                                                        answer?.length <
+                                                        q.validation.minLength
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} is too short`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    if (
+                                                        q.validation?.maxLength &&
+                                                        answer?.length >
+                                                        q.validation.maxLength
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} is too long`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    if (
+                                                        q.validation?.alphaOnly &&
+                                                        answer &&
+                                                        !/^[A-Za-z ]+$/.test(answer)
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} allows only alphabets`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                }
+
+                                                if (
+                                                    q.question_type === "paragraph"
+                                                ) {
+
+                                                    if (
+                                                        q.validation?.minLength &&
+                                                        answer?.length <
+                                                        q.validation.minLength
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} is too short`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    if (
+                                                        q.validation?.maxLength &&
+                                                        answer?.length >
+                                                        q.validation.maxLength
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} is too long`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                }
+
+                                                if (
+                                                    q.question_type === "number"
+                                                ) {
+
+                                                    const value =
+                                                        Number(answer);
+
+                                                    const digits =
+                                                        String(answer || "")
+                                                            .replace(/\D/g, "")
+                                                            .length;
+
+                                                    if (
+                                                        q.validation?.min !==
+                                                        undefined &&
+                                                        value <
+                                                        q.validation.min
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} is below minimum value`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    if (
+                                                        q.validation?.max !==
+                                                        undefined &&
+                                                        value >
+                                                        q.validation.max
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} exceeds maximum value`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    if (
+                                                        q.validation?.minDigits &&
+                                                        digits <
+                                                        q.validation.minDigits
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} requires more digits`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    if (
+                                                        q.validation?.maxDigits &&
+                                                        digits >
+                                                        q.validation.maxDigits
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title} exceeds allowed digits`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                }
+
+                                                if (
+                                                    q.question_type === "checkbox"
+                                                ) {
+
+                                                    const count =
+                                                        answer?.length || 0;
+
+                                                    if (
+                                                        q.validation?.minSelection &&
+                                                        count <
+                                                        q.validation.minSelection
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title}: select more options`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                    if (
+                                                        q.validation?.maxSelection &&
+                                                        count >
+                                                        q.validation.maxSelection
+                                                    ) {
+
+                                                        alert(
+                                                            `${q.question_title}: too many selections`
+                                                        );
+
+                                                        return;
+                                                    }
+
+                                                }
 
                                             }
 
-                                        }
+                                            setPendingApply(true);
 
-                                        setPendingApply(true);
+                                            await apply(
+                                                selectedOpportunity.opportunity_id
+                                            );
 
-                                        await apply(
-                                            selectedOpportunity.opportunity_id
-                                        );
+                                            setSelectedOpportunity(null);
+                                            setQuestions([]);
+                                            setAnswers({});
 
-                                        setSelectedOpportunity(null);
-                                        setQuestions([]);
-                                        setAnswers({});
+                                            setPendingApply(false);
 
-                                        setPendingApply(false);
-
-                                    }}
-                                >
-                                    Submit Application
-                                </button>
+                                        }}
+                                    >
+                                        Submit Application
+                                    </button>
 
 
-                                <button
-                                    onClick={() => {
-                                        setSelectedOpportunity(null);
-                                        setAnswers({});
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-
+                                    <button
+                                        className="px-4 py-2 border rounded"
+                                        onClick={() => {
+                                            setSelectedOpportunity(null);
+                                            setAnswers({});
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )
