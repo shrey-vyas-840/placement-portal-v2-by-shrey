@@ -710,7 +710,6 @@ export function StudentOpportunitiesPage() {
 
                                                         return;
                                                     }
-
                                                     if (
                                                         q.validation?.maxSelection &&
                                                         count >
@@ -724,30 +723,9 @@ export function StudentOpportunitiesPage() {
                                                         return;
                                                     }
 
-                                                } {
-                                                    q.question_type === "file" && (
-                                                        <input
-                                                            type="file"
-                                                            className="border w-full p-2"
-                                                            onChange={async (e) => {
+                                                }
 
-                                                                const file =
-                                                                    e.target.files?.[0];
-
-                                                                if (!file)
-                                                                    return;
-
-                                                                setAnswers({
-                                                                    ...answers,
-                                                                    [q.question_id]:
-                                                                        file,
-                                                                });
-
-                                                            }}
-
-                                                        />
-                                                    )
-                                                } if (
+                                                if (
                                                     q.question_type === "file"
                                                 ) {
 
