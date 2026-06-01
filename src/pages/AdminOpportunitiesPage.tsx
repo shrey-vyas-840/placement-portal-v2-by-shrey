@@ -477,6 +477,17 @@ export function AdminOpportunitiesPage() {
 
                                     </button>
 
+                                    <Link
+                                        to="/admin/questions/$opportunityId"
+                                        params={{
+                                            opportunityId:
+                                                opp.opportunity_id,
+                                        }}
+                                        className="rounded border px-3 py-2"
+                                    >
+                                        Questions
+                                    </Link>
+
                                     <button
 
                                         className="rounded border px-3"
@@ -655,6 +666,10 @@ export function AdminOpportunitiesPage() {
                             className="w-full rounded border px-4 py-2"
                             required
                         />
+
+                        <div className="flex items-center gap-2 mt-3">
+
+                        </div>
 
                     </div>
 
@@ -853,45 +868,34 @@ export function AdminOpportunitiesPage() {
 
                                         <button
 
-                                            className="ml-3 rounded border px-4 py-2"
+                                            className="
+mt-3 block
+rounded-lg border
+px-4 py-2
+"
 
-                                            onClick={
-                                                () => {
+                                            onClick={() => {
 
-                                                    setExtendOpportunity(
-                                                        opportunity
-                                                    );
+                                                setExtendOpportunity(
+                                                    opportunity
+                                                );
 
-                                                    setNewDeadline(
-                                                        opportunity.deadline
-                                                            ?
-                                                            opportunity.deadline.slice(0, 16)
-                                                            :
-                                                            ""
-                                                    );
+                                                setNewDeadline(
+                                                    opportunity.deadline
+                                                        ?
+                                                        opportunity.deadline.slice(0, 16)
+                                                        :
+                                                        ""
+                                                );
 
-                                                }
-                                            }
+                                            }}
 
                                         >
 
                                             Extend Application
 
                                         </button>
-                                        <Link
 
-                                            to="/admin/questions/$opportunityId"
-
-                                            params={{
-                                                opportunityId:
-                                                    opportunity.opportunity_id
-                                            }}
-
-                                            className="ml-3 rounded border px-4 py-2"
-
-                                        >
-                                            Questions
-                                        </Link>
                                     </div>
 
                                 ),
