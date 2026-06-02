@@ -8,6 +8,10 @@ import {
 } from "@/services/adminOpportunityService";
 
 import {
+    adminQuestionService,
+} from "@/services/adminQuestionService";
+
+import {
     Link,
 } from "@tanstack/react-router";
 
@@ -19,6 +23,14 @@ export function AdminOpportunitiesPage() {
     const [opportunityCards,
         setOpportunityCards] =
         useState<any[]>([]);
+
+    const [
+        questionCounts,
+        setQuestionCounts
+    ] =
+        useState<
+            Record<string, number>
+        >({});
 
     const [driveId,
         setDriveId] =
@@ -107,6 +119,33 @@ export function AdminOpportunitiesPage() {
 
         setOpportunityCards(
             cardsData
+        );
+
+        const counts:
+            Record<
+                string,
+                number
+            > = {};
+
+        for (
+            const opp
+            of cardsData
+        ) {
+
+            counts[
+                opp.opportunity_id
+            ] =
+
+                await
+                    adminQuestionService
+                        .getQuestionCount(
+                            opp.opportunity_id
+                        );
+
+        }
+
+        setQuestionCounts(
+            counts
         );
 
     }
@@ -433,6 +472,7 @@ export function AdminOpportunitiesPage() {
                             x =>
                                 x.application_status === "Draft"
                         )
+                        .slice(0, 5)
                         .map(
                             opp => (
 
@@ -453,8 +493,38 @@ export function AdminOpportunitiesPage() {
 
                                     </div>
 
+                                    <div
+                                        className="
+text-sm
+text-muted-foreground
+mb-2
+"
+                                    >
+
+                                        Questions:
+                                        {" "}
+
+                                        {
+                                            questionCounts[
+                                            opp.opportunity_id
+                                            ]
+                                            ||
+                                            0
+                                        }
+
+                                    </div>
 
                                     <button
+
+                                        disabled={
+                                            (
+                                                questionCounts[
+                                                opp.opportunity_id
+                                                ]
+                                                ||
+                                                0
+                                            ) === 0
+                                        }
 
                                         onClick={
                                             async () => {
@@ -750,7 +820,7 @@ export function AdminOpportunitiesPage() {
                             .filter(
                                 x =>
                                     x.application_status !== "Draft"
-                            )
+                            ).slice(0, 5)
                             .map(
                                 (opportunity) => (
 
@@ -899,7 +969,37 @@ px-4 py-2
                                     </div>
 
                                 ),
-                            )}
+                            )}{
+                        opportunityCards.length > 5
+                        &&
+
+                        <Link
+
+                            to="/admin/all-opportunities"
+
+                            className="
+rounded-xl
+border
+p-5
+shadow-sm
+flex
+items-center
+justify-center
+font-semibold
+"
+
+                        >
+                            View All (
+                            {
+                                opportunityCards.filter(
+                                    x =>
+                                        x.application_status !== "Draft"
+                                ).length - 5
+                            }
+                            )
+
+                        </Link>
+                    }
 
                 </div>
 

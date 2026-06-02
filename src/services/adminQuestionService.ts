@@ -233,6 +233,37 @@ opportunity_question_options(*)
 
         }
 
-    }
+    },
 
+    async getQuestionCount(
+    opportunityId: string
+) {
+
+    const {
+        count,
+        error,
+    } = await (supabase as any)
+
+        .from(
+            "opportunity_questions"
+        )
+
+        .select(
+            "*",
+            {
+                count: "exact",
+                head: true,
+            }
+        )
+
+        .eq(
+            "opportunity_id",
+            opportunityId
+        );
+
+    if (error)
+        throw error;
+
+    return count || 0;
+},
 };

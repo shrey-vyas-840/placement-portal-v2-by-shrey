@@ -21,6 +21,7 @@ import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
 import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
+import { Route as AdminAllOpportunitiesRouteImport } from './routes/admin/all-opportunities'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
 import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/opportunities.index'
 import { Route as AdminQuestionsOpportunityIdRouteImport } from './routes/admin/questions.$opportunityId'
@@ -86,6 +87,11 @@ const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   path: '/admin/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAllOpportunitiesRoute = AdminAllOpportunitiesRouteImport.update({
+  id: '/admin/all-opportunities',
+  path: '/admin/all-opportunities',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminStudentIdRoute = AdminStudentIdRouteImport.update({
   id: '/admin/$studentId',
   path: '/admin/$studentId',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
+  '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
+  '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/students': typeof AdminStudentsRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
+  '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/profile'
     | '/admin/$studentId'
+    | '/admin/all-opportunities'
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/opportunities'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/profile'
     | '/admin/$studentId'
+    | '/admin/all-opportunities'
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/students'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/profile'
     | '/admin/$studentId'
+    | '/admin/all-opportunities'
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/opportunities'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   OpportunitiesRoute: typeof OpportunitiesRoute
   ProfileRoute: typeof ProfileRoute
   AdminStudentIdRoute: typeof AdminStudentIdRoute
+  AdminAllOpportunitiesRoute: typeof AdminAllOpportunitiesRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
   AdminDrivesRoute: typeof AdminDrivesRoute
   AdminOpportunitiesRoute: typeof AdminOpportunitiesRouteWithChildren
@@ -322,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCompaniesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/all-opportunities': {
+      id: '/admin/all-opportunities'
+      path: '/admin/all-opportunities'
+      fullPath: '/admin/all-opportunities'
+      preLoaderRoute: typeof AdminAllOpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/$studentId': {
       id: '/admin/$studentId'
       path: '/admin/$studentId'
@@ -374,6 +394,7 @@ const rootRouteChildren: RootRouteChildren = {
   OpportunitiesRoute: OpportunitiesRoute,
   ProfileRoute: ProfileRoute,
   AdminStudentIdRoute: AdminStudentIdRoute,
+  AdminAllOpportunitiesRoute: AdminAllOpportunitiesRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
   AdminDrivesRoute: AdminDrivesRoute,
   AdminOpportunitiesRoute: AdminOpportunitiesRouteWithChildren,
