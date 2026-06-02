@@ -10,6 +10,22 @@ import {
     adminExportService,
 } from "@/services/adminExportService";
 
+import {
+    DndContext,
+    closestCenter,
+} from "@dnd-kit/core";
+
+import {
+    arrayMove,
+    SortableContext,
+    verticalListSortingStrategy,
+    useSortable,
+} from "@dnd-kit/sortable";
+
+import {
+    CSS,
+} from "@dnd-kit/utilities";
+
 const FIXED_COLUMNS = [
 
     {
@@ -208,6 +224,61 @@ const COLUMN_LABEL_MAP =
         )
 
     );
+
+function SortableColumn({
+    id,
+    label,
+}: {
+    id: string;
+    label: string;
+}) {
+
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } =
+        useSortable({
+            id,
+        });
+
+    const style = {
+
+        transform:
+            CSS.Transform.toString(
+                transform
+            ),
+
+        transition,
+
+    };
+
+    return (
+
+        <div
+
+            ref={setNodeRef}
+
+            style={style}
+
+            {...attributes}
+
+            {...listeners}
+
+            className="mb-2 cursor-move rounded border p-2"
+
+        >
+
+            {label}
+
+        </div>
+
+    );
+
+}
+
 export function AdminOpportunityExportPage({
     opportunityId,
 }: {
@@ -239,6 +310,14 @@ export function AdminOpportunityExportPage({
     ] =
         useState("");
 
+    const [
+        columnOrder,
+        setColumnOrder,
+    ] =
+        useState<string[]>(
+            []
+        );
+
     async function load() {
 
         const data =
@@ -259,6 +338,61 @@ export function AdminOpportunityExportPage({
             data.dynamicQuestions
         );
 
+        setColumnOrder(
+
+            OPTIONAL_COLUMNS.map(
+                (
+                    x
+                ) =>
+                    x.key
+            )
+
+        );
+    }
+
+    function handleDragEnd(
+        event: any
+    ) {
+
+        const {
+            active,
+            over,
+        } = event;
+
+        if (
+            !over
+            ||
+            active.id
+            ===
+            over.id
+        ) {
+            return;
+        }
+
+        setColumnOrder(
+            (
+                current
+            ) => {
+
+                const oldIndex =
+                    current.indexOf(
+                        active.id
+                    );
+
+                const newIndex =
+                    current.indexOf(
+                        over.id
+                    );
+
+                return arrayMove(
+                    current,
+                    oldIndex,
+                    newIndex
+                );
+
+            }
+        );
+
     }
 
     useEffect(() => {
@@ -276,11 +410,21 @@ export function AdminOpportunityExportPage({
                 );
 
             const custom =
-                selectedColumns.filter(
-                    x =>
-                        !locked.includes(
-                            x
+                columnOrder.filter(
+                    (
+                        column
+                    ) =>
+
+                        selectedColumns.includes(
+                            column
                         )
+
+                        &&
+
+                        !locked.includes(
+                            column
+                        )
+
                 );
 
             return [
@@ -296,6 +440,7 @@ export function AdminOpportunityExportPage({
         }, [
             selectedColumns,
             dynamicQuestions,
+            columnOrder,
         ]);
 
     function getValue(
@@ -718,23 +863,26 @@ export function AdminOpportunityExportPage({
             }
         );
 
+        let rowIndex = 4;
+
         rows.forEach(
             (row) => {
 
-                sheet.addRow(
+                const excelRow =
+                    sheet.getRow(
+                        rowIndex++
+                    );
 
+                excelRow.values =
                     exportColumns.map(
                         (
                             column
                         ) =>
-
                             getValue(
                                 row,
                                 column
                             )
-                    )
-
-                );
+                    );
 
             }
         );
@@ -911,80 +1059,197 @@ export function AdminOpportunityExportPage({
                         Available Columns
                     </h2>
 
-                    {OPTIONAL_COLUMNS.map(
-                        (column) => {
+                    <div className="mb-4 rounded-lg border bg-muted p-3">
 
-                            const selected =
-                                selectedColumns.includes(
-                                    column.key
-                                );
+                        <div className="font-semibold mb-2">
+                            Locked Columns
+                        </div>
 
-                            return (
+                        <div>🔒 Name</div>
+                        <div>🔒 Enrollment No</div>
+                        <div>🔒 Institute Email</div>
 
-                                <label
-                                    key={column.key}
-                                    className="mb-2 flex items-center gap-2"
-                                >
+                    </div>
 
-                                    <input
+                    <DndContext
 
-                                        type="checkbox"
+                        collisionDetection={
+                            closestCenter
+                        }
 
-                                        checked={
-                                            selected
-                                        }
+                        onDragEnd={
+                            handleDragEnd
+                        }
 
-                                        onChange={(
-                                            e
-                                        ) => {
+                    >
 
-                                            if (
-                                                e.target.checked
-                                            ) {
+                        <SortableContext
 
-                                                setSelectedColumns(
-                                                    (
-                                                        prev
-                                                    ) => [
+                            items={
+                                columnOrder
+                            }
 
-                                                            ...prev,
+                            strategy={
+                                verticalListSortingStrategy
+                            }
 
-                                                            column.key,
+                        >
 
-                                                        ]
-                                                );
+                            {columnOrder.map(
+                                (
+                                    columnKey
+                                ) => {
 
-                                            } else {
+                                    const column =
+                                        OPTIONAL_COLUMNS.find(
+                                            (
+                                                x
+                                            ) =>
+                                                x.key
+                                                ===
+                                                columnKey
+                                        );
 
-                                                setSelectedColumns(
-                                                    (
-                                                        prev
-                                                    ) =>
-                                                        prev.filter(
-                                                            (
-                                                                x
-                                                            ) =>
-                                                                x !==
-                                                                column.key
-                                                        )
-                                                );
-
-                                            }
-
-                                        }}
-
-                                    />
-
-                                    {
-                                        column.label
+                                    if (
+                                        !column
+                                    ) {
+                                        return null;
                                     }
 
-                                </label>
+                                    const selected =
+                                        selectedColumns.includes(
+                                            column.key
+                                        );
 
-                            );
+                                    return (
 
-                        }
-                    )}
+                                        <div
+                                            key={
+                                                column.key
+                                            }
+                                        >
+
+                                            <label
+                                                className="mb-1 flex items-center gap-2"
+                                            >
+
+                                                <input
+
+                                                    type="checkbox"
+
+                                                    checked={
+                                                        selected
+                                                    }
+
+                                                    onChange={(
+                                                        e
+                                                    ) => {
+
+                                                        if (
+                                                            e.target.checked
+                                                        ) {
+
+                                                            setSelectedColumns(
+                                                                (
+                                                                    prev
+                                                                ) => [
+
+                                                                        ...prev,
+
+                                                                        column.key,
+
+                                                                    ]
+                                                            );
+
+                                                        } else {
+
+                                                            setSelectedColumns(
+                                                                (
+                                                                    prev
+                                                                ) =>
+                                                                    prev.filter(
+                                                                        (
+                                                                            x
+                                                                        ) =>
+                                                                            x
+                                                                            !==
+                                                                            column.key
+                                                                    )
+                                                            );
+
+                                                        }
+
+                                                    }}
+
+                                                />
+
+                                                <span>
+
+                                                    {
+                                                        column.label
+                                                    }
+
+                                                </span>
+
+                                            </label>
+
+                                            <SortableColumn
+
+                                                id={
+                                                    column.key
+                                                }
+
+                                                label={
+                                                    column.label
+                                                }
+
+                                            />
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )}
+
+                        </SortableContext>
+
+                    </DndContext>
+
+                    <div className="mt-6 border-t pt-4">
+
+                        <h3 className="mb-2 mt-6 font-semibold text-blue-600">
+                            Auto Exported Questions
+                        </h3>
+
+                        <p className="mb-3 text-sm text-muted-foreground">
+
+                            Company specific questions. These columns are automatically appended and always exported.
+                        </p>
+
+                        {dynamicQuestions.map(
+                            (
+                                question
+                            ) => (
+
+                                <div
+
+                                    key={
+                                        question
+                                    }
+
+                                    className="mb-2 rounded border bg-muted p-2 text-sm"
+
+                                >
+
+                                    {question}
+
+                                </div>
+
+                            )
+                        )}
+
+                    </div>
 
                 </div>
 
@@ -1002,15 +1267,21 @@ export function AdminOpportunityExportPage({
                                     ) => (
 
                                         <th
-                                            key={
+                                            key={column}
+                                            className="border p-2 text-left"
+                                        >
+
+                                            {
                                                 COLUMN_LABEL_MAP[
                                                 column
                                                 ]
                                                 ||
                                                 column
+                                                    .replaceAll(
+                                                        "_",
+                                                        " "
+                                                    )
                                             }
-                                            className="border p-2 text-left"
-                                        >
 
                                         </th>
 

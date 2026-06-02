@@ -586,7 +586,7 @@ export function AdminOpportunityApplicantsPage({
 
                                             {
                                                 app.academic
-                                                    ?.current_cgpa
+                                                    ?.current_branch_name
                                             }
 
                                         </td>
@@ -595,7 +595,7 @@ export function AdminOpportunityApplicantsPage({
 
                                             {
                                                 app.academic
-                                                    ?.current_branch_name
+                                                    ?.current_cgpa
                                             }
 
                                         </td>
