@@ -295,15 +295,70 @@ export const adminExportService = {
                 }
             );
 
+        const {
+            data: opportunity,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "opportunity_master"
+                )
+
+                .select(`
+            opportunity_title,
+            drive_master(
+                company_id
+            )
+        `)
+
+                .eq(
+                    "opportunity_id",
+                    opportunityId
+                )
+
+                .single();
+
+        let companyName = "";
+
+        if (
+            opportunity?.drive_master
+                ?.company_id
+        ) {
+
+            const {
+                data: company,
+            } =
+                await (supabase as any)
+
+                    .from(
+                        "company_master"
+                    )
+
+                    .select(
+                        "company_name"
+                    )
+
+                    .eq(
+                        "company_id",
+                        opportunity.drive_master.company_id
+                    )
+
+                    .single();
+
+            companyName =
+                company?.company_name || "";
+
+        }
+
         return {
 
             rows,
 
+            companyName,
+
             dynamicQuestions:
                 questions?.map(
-                    (
-                        q: any
-                    ) =>
+                    (q: any) =>
                         q.question_title
                 ) || [],
 

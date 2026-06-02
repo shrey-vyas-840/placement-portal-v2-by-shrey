@@ -186,6 +186,28 @@ const OPTIONAL_COLUMNS = [
 
 ];
 
+const COLUMN_LABEL_MAP =
+    Object.fromEntries(
+
+        [
+
+            ...FIXED_COLUMNS,
+
+            ...OPTIONAL_COLUMNS,
+
+        ].map(
+            (
+                x
+            ) => [
+
+                    x.key,
+
+                    x.label,
+
+                ]
+        )
+
+    );
 export function AdminOpportunityExportPage({
     opportunityId,
 }: {
@@ -211,6 +233,12 @@ export function AdminOpportunityExportPage({
             "institute_email",
         ]);
 
+    const [
+        companyName,
+        setCompanyName,
+    ] =
+        useState("");
+
     async function load() {
 
         const data =
@@ -221,6 +249,10 @@ export function AdminOpportunityExportPage({
 
         setRows(
             data.rows
+        );
+
+        setCompanyName(
+            data.companyName || ""
         );
 
         setDynamicQuestions(
@@ -238,9 +270,24 @@ export function AdminOpportunityExportPage({
     const exportColumns =
         useMemo(() => {
 
+            const locked =
+                FIXED_COLUMNS.map(
+                    x => x.key
+                );
+
+            const custom =
+                selectedColumns.filter(
+                    x =>
+                        !locked.includes(
+                            x
+                        )
+                );
+
             return [
 
-                ...selectedColumns,
+                ...locked,
+
+                ...custom,
 
                 ...dynamicQuestions,
 
@@ -404,6 +451,91 @@ export function AdminOpportunityExportPage({
 
     }
 
+    function exportCsv() {
+
+        const header =
+            exportColumns.join(
+                ","
+            );
+
+        const body =
+            rows.map(
+                (
+                    row
+                ) =>
+
+                    exportColumns
+
+                        .map(
+                            (
+                                column
+                            ) => {
+
+                                const value =
+                                    getValue(
+                                        row,
+                                        column
+                                    );
+
+                                return `"${String(
+                                    value ??
+                                    ""
+                                )
+                                    .replaceAll(
+                                        `"`,
+                                        `""`
+                                    )}"`;
+
+                            }
+                        )
+
+                        .join(
+                            ","
+                        )
+
+            );
+
+        const csv =
+            [
+                header,
+                ...body,
+            ].join(
+                "\n"
+            );
+
+        const blob =
+            new Blob(
+                [csv],
+                {
+                    type:
+                        "text/csv;charset=utf-8;",
+                }
+            );
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+        const a =
+            document.createElement(
+                "a"
+            );
+
+        a.href =
+            url;
+
+        a.download =
+            `${companyName || "Applicants"}.csv`;
+
+        a.click();
+
+        URL.revokeObjectURL(
+            url
+        );
+
+    }
+
     async function exportExcel() {
 
         const workbook =
@@ -414,30 +546,302 @@ export function AdminOpportunityExportPage({
                 "Applicants"
             );
 
-        sheet.addRow(
-            exportColumns
+        const totalColumns =
+            Math.max(
+                exportColumns.length,
+                1
+            );
+
+        sheet.mergeCells(
+            1,
+            1,
+            1,
+            totalColumns
+        );
+
+        sheet.mergeCells(
+            2,
+            1,
+            2,
+            totalColumns
+        );
+
+        const titleCell =
+            sheet.getCell(
+                "A1"
+            );
+
+        titleCell.value =
+            "INDUS UNIVERSITY";
+
+        titleCell.font = {
+
+            bold: true,
+
+            size: 18,
+
+            color: {
+                argb: "FFFFFFFF",
+            },
+
+        };
+
+        titleCell.alignment = {
+
+            horizontal:
+                "center",
+
+            vertical:
+                "middle",
+
+        };
+
+        titleCell.fill = {
+
+            type: "pattern",
+
+            pattern: "solid",
+
+            fgColor: {
+                argb: "FF1E3A8A",
+            },
+
+        };
+
+        const companyCell =
+            sheet.getCell(
+                "A2"
+            );
+
+        companyCell.value =
+            companyName ||
+            "COMPANY";
+
+        companyCell.font = {
+
+            bold: true,
+
+            size: 14,
+
+            color: {
+                argb: "FFFFFFFF",
+            },
+
+        };
+
+        companyCell.alignment = {
+
+            horizontal:
+                "center",
+
+            vertical:
+                "middle",
+
+        };
+
+        companyCell.fill = {
+
+            type: "pattern",
+
+            pattern: "solid",
+
+            fgColor: {
+                argb: "FF2563EB",
+            },
+
+        };
+
+        sheet.getRow(
+            1
+        ).height = 30;
+
+        sheet.getRow(
+            2
+        ).height = 24;
+
+        sheet.getRow(
+            3
+        ).height = 22;
+
+        const headerRow =
+            sheet.getRow(3);
+
+        headerRow.values =
+            exportColumns.map(
+                (
+                    column
+                ) =>
+
+                    COLUMN_LABEL_MAP[
+                    column
+                    ]
+
+                    ||
+
+                    column
+                        .replaceAll(
+                            "_",
+                            " "
+                        )
+
+            )
+
+        headerRow.eachCell(
+            (cell) => {
+
+                cell.font = {
+                    bold: true,
+                };
+
+                cell.alignment = {
+                    horizontal:
+                        "center",
+                    vertical:
+                        "middle",
+                };
+
+                cell.fill = {
+
+                    type:
+                        "pattern",
+
+                    pattern:
+                        "solid",
+
+                    fgColor: {
+                        argb:
+                            "FFDDEBF7",
+                    },
+
+                };
+
+            }
         );
 
         rows.forEach(
             (row) => {
 
                 sheet.addRow(
+
                     exportColumns.map(
                         (
-                            col
+                            column
                         ) =>
+
                             getValue(
                                 row,
-                                col
+                                column
                             )
                     )
+
                 );
 
             }
         );
 
+        sheet.views = [
+
+            {
+                state: "frozen",
+                ySplit: 3,
+            },
+
+        ];
+
+        sheet.autoFilter = {
+
+            from:
+                "A3",
+
+            to:
+                `${String.fromCharCode(
+                    64 +
+                    exportColumns.length
+                )}3`,
+
+        };
+
+        sheet.columns.forEach(
+            (
+                column
+            ) => {
+
+                let max =
+                    15;
+
+                column.eachCell?.(
+                    {
+                        includeEmpty:
+                            true,
+                    },
+                    (
+                        cell
+                    ) => {
+
+                        const len =
+                            String(
+                                cell.value
+                                ??
+                                ""
+                            ).length;
+
+                        max =
+                            Math.max(
+                                max,
+                                len
+                            );
+
+                    }
+                );
+
+                column.width =
+                    Math.min(
+                        max + 4,
+                        60
+                    );
+
+            }
+        );
+
+        sheet.eachRow(
+            (row) => {
+
+                row.eachCell(
+                    (cell) => {
+
+                        cell.border = {
+
+                            top: {
+                                style:
+                                    "thin",
+                            },
+
+                            left: {
+                                style:
+                                    "thin",
+                            },
+
+                            right: {
+                                style:
+                                    "thin",
+                            },
+
+                            bottom: {
+                                style:
+                                    "thin",
+                            },
+
+                        };
+
+                    }
+                );
+            }
+        );
+
         const buffer =
-            await workbook.xlsx.writeBuffer();
+            await workbook
+                .xlsx
+                .writeBuffer();
 
         const blob =
             new Blob(
@@ -457,7 +861,7 @@ export function AdminOpportunityExportPage({
         a.href = url;
 
         a.download =
-            "applicants.xlsx";
+            `${companyName || "Applicants"}.xlsx`;
 
         a.click();
 
@@ -471,11 +875,19 @@ export function AdminOpportunityExportPage({
 
         <div className="mx-auto max-w-7xl p-6">
 
-            <div className="flex items-center justify-between">
+            <div className="flex gap-2">
 
-                <h1 className="text-2xl font-bold">
-                    Export Builder
-                </h1>
+                <button
+
+                    onClick={exportCsv}
+
+                    className="rounded-lg border px-4 py-2"
+
+                >
+
+                    Export CSV
+
+                </button>
 
                 <button
 
@@ -590,11 +1002,15 @@ export function AdminOpportunityExportPage({
                                     ) => (
 
                                         <th
-                                            key={column}
+                                            key={
+                                                COLUMN_LABEL_MAP[
+                                                column
+                                                ]
+                                                ||
+                                                column
+                                            }
                                             className="border p-2 text-left"
                                         >
-
-                                            {column}
 
                                         </th>
 
@@ -661,7 +1077,7 @@ export function AdminOpportunityExportPage({
 
             </div>
 
-        </div>
+        </div >
 
     );
 
