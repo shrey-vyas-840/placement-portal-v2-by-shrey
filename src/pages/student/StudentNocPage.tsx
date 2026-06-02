@@ -18,6 +18,11 @@ export function StudentNocPage() {
     ] = useState<any>(null);
 
     const [
+        requests,
+        setRequests,
+    ] = useState<any[]>([]);
+
+    const [
         loading,
         setLoading,
     ] = useState(true);
@@ -149,6 +154,16 @@ export function StudentNocPage() {
                 data
             );
 
+            const nocRequests =
+                await nocService
+                    .getStudentRequests(
+                        student.student_id
+                    );
+
+            setRequests(
+                nocRequests
+            );
+
         } finally {
 
             setLoading(
@@ -242,7 +257,11 @@ export function StudentNocPage() {
                 "NOC Request Submitted Successfully"
             );
 
-            window.location.reload();
+            await loadProfile();
+
+            setReviewMode(
+                false
+            );
 
         } catch (
         error: any
@@ -794,6 +813,126 @@ export function StudentNocPage() {
                 </div>
 
             )}
+
+            <div className="mt-8">
+
+                <h2 className="mb-4 text-xl font-semibold">
+
+                    My NOC Requests
+
+                </h2>
+
+                <div className="overflow-hidden rounded-lg border">
+
+                    <table className="w-full">
+
+                        <thead>
+
+                            <tr className="border-b">
+
+                                <th className="p-3 text-left">
+                                    Type
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Status
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Submitted
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Approval Deadline
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {requests.map(
+                                (
+                                    request
+                                ) => (
+
+                                    <tr
+                                        key={
+                                            request.noc_request_id
+                                        }
+                                        className="border-b"
+                                    >
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.noc_type
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.status
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                new Date(
+                                                    request.submitted_at
+                                                ).toLocaleDateString()
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.hod_approval_deadline
+                                                    ?
+                                                    new Date(
+                                                        request.hod_approval_deadline
+                                                    ).toLocaleString()
+                                                    :
+                                                    "-"
+                                            }
+
+                                        </td>
+
+                                    </tr>
+
+                                )
+                            )}
+
+                            {requests.length === 0 && (
+
+                                <tr>
+
+                                    <td
+                                        colSpan={4}
+                                        className="p-6 text-center text-muted-foreground"
+                                    >
+
+                                        No NOC requests found
+
+                                    </td>
+
+                                </tr>
+
+                            )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
 
         </div>
 

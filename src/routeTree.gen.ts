@@ -20,6 +20,7 @@ import { Route as StudentNocRouteImport } from './routes/student/noc'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
+import { Route as AdminNocRouteImport } from './routes/admin/noc'
 import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
 import { Route as AdminAllOpportunitiesRouteImport } from './routes/admin/all-opportunities'
@@ -84,6 +85,11 @@ const AdminOpportunitiesRoute = AdminOpportunitiesRouteImport.update({
   path: '/admin/opportunities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminNocRoute = AdminNocRouteImport.update({
+  id: '/admin/noc',
+  path: '/admin/noc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDrivesRoute = AdminDrivesRouteImport.update({
   id: '/admin/drives',
   path: '/admin/drives',
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
+  '/admin/noc': typeof AdminNocRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
+  '/admin/noc': typeof AdminNocRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
+  '/admin/noc': typeof AdminNocRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/admin/all-opportunities'
     | '/admin/companies'
     | '/admin/drives'
+    | '/admin/noc'
     | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/admin/all-opportunities'
     | '/admin/companies'
     | '/admin/drives'
+    | '/admin/noc'
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/admin/all-opportunities'
     | '/admin/companies'
     | '/admin/drives'
+    | '/admin/noc'
     | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
@@ -267,6 +279,7 @@ export interface RootRouteChildren {
   AdminAllOpportunitiesRoute: typeof AdminAllOpportunitiesRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
   AdminDrivesRoute: typeof AdminDrivesRoute
+  AdminNocRoute: typeof AdminNocRoute
   AdminOpportunitiesRoute: typeof AdminOpportunitiesRouteWithChildren
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -355,6 +368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOpportunitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/noc': {
+      id: '/admin/noc'
+      path: '/admin/noc'
+      fullPath: '/admin/noc'
+      preLoaderRoute: typeof AdminNocRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/drives': {
       id: '/admin/drives'
       path: '/admin/drives'
@@ -438,6 +458,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAllOpportunitiesRoute: AdminAllOpportunitiesRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
   AdminDrivesRoute: AdminDrivesRoute,
+  AdminNocRoute: AdminNocRoute,
   AdminOpportunitiesRoute: AdminOpportunitiesRouteWithChildren,
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
