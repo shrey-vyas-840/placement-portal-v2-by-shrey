@@ -185,15 +185,35 @@ export function AdminOpportunityApplicantsPage({
                 </p>
 
 
-                <p className="mt-3 text-sm">
+                <div className="mt-3 flex items-center justify-between">
 
-                    Total Applications:
-                    {" "}
-                    <b>
-                        {apps.length}
-                    </b>
+                    <p className="text-sm">
 
-                </p>
+                        Total Applications:
+                        {" "}
+                        <b>
+                            {apps.length}
+                        </b>
+
+                    </p>
+
+                    <Link
+
+                        to="/admin/export/$opportunityId"
+
+                        params={{
+                            opportunityId,
+                        }}
+
+                        className="rounded-lg border px-4 py-2 text-sm hover:bg-muted"
+
+                    >
+
+                        Export Data
+
+                    </Link>
+
+                </div>
 
 
             </div>
