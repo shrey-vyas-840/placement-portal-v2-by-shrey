@@ -39,6 +39,14 @@ export function AdminNocDashboardPage() {
     ] =
         useState<any[]>([]);
 
+    const [
+        selectedRequest,
+        setSelectedRequest,
+    ] =
+        useState<any>(
+            null
+        );
+
     async function load() {
 
         const [
@@ -103,14 +111,6 @@ export function AdminNocDashboardPage() {
         load();
     }, []);
 
-    const [
-        selectedRequest,
-        setSelectedRequest,
-    ] =
-        useState<any>(
-            null
-        );
-
     return (
 
         <div className="mx-auto max-w-7xl p-6">
@@ -120,6 +120,96 @@ export function AdminNocDashboardPage() {
                 NOC Dashboard
 
             </h1>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-5">
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Pending Approval
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {pendingApproval.length}
+
+                    </div>
+
+                </div>
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Pending Print
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {pendingPrint.length}
+
+                    </div>
+
+                </div>
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Printed
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {printed.length}
+
+                    </div>
+
+                </div>
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Issued
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {issued.length}
+
+                    </div>
+
+                </div>
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Cancelled
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {cancelled.length}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <h2 className="mt-8 mb-4 text-xl font-semibold">
+
+                Pending HOD Approval
+
+            </h2>
 
             <div className="mt-6 overflow-hidden rounded-lg border">
 
@@ -151,9 +241,9 @@ export function AdminNocDashboardPage() {
 
                     <tbody>
 
-                        {requests.map(
+                        {pendingApproval.map(
                             (
-                                request
+                                request: any
                             ) => (
 
                                 <tr
@@ -263,6 +353,135 @@ export function AdminNocDashboardPage() {
                     </tbody>
 
                 </table>
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Pending Print
+
+            </h2>
+
+            <div className="overflow-hidden rounded-lg border">
+
+                <table className="w-full">
+
+                    <thead>
+
+                        <tr className="border-b">
+
+                            <th className="p-3 text-left">
+                                Type
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Approval Source
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {pendingPrint.map(
+                            (
+                                request: any
+                            ) => (
+
+                                <tr
+                                    key={
+                                        request.noc_request_id
+                                    }
+                                    className="border-b"
+                                >
+
+                                    <td className="p-3">
+
+                                        {
+                                            request.noc_type
+                                        }
+
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        {
+                                            request.approval_source
+                                            ||
+                                            "-"
+                                        }
+
+                                    </td>
+
+                                    <td className="p-3">
+
+                                        <button
+
+                                            onClick={() =>
+                                                setSelectedRequest(
+                                                    request
+                                                )
+                                            }
+
+                                            className="rounded border px-3 py-1"
+
+                                        >
+
+                                            Review
+
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            )
+                        )}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Printed
+
+            </h2>
+
+            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+
+                Printed NOCs will appear here.
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Issued
+
+            </h2>
+
+            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+
+                Issued NOCs will appear here.
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Cancelled
+
+            </h2>
+
+            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+
+                Cancelled NOCs will appear here.
 
             </div>
 
