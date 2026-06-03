@@ -133,4 +133,140 @@ export const adminNocService = {
 
     },
 
+    async saveCustomization(
+        nocRequestId: string,
+        customization: any
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    noc_customization:
+                        customization,
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+    async markPrinted(
+        nocRequestId: string
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "PRINTED",
+
+                    printed_at:
+                        new Date()
+                            .toISOString(),
+
+                    print_count:
+                        1,
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+    async markIssued(
+        nocRequestId: string
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "ISSUED",
+
+                    issued_at:
+                        new Date()
+                            .toISOString(),
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+    async markCancelled(
+        nocRequestId: string
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "CANCELLED",
+
+                    cancelled_at:
+                        new Date()
+                            .toISOString(),
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
 };
