@@ -268,5 +268,129 @@ export const adminNocService = {
             throw error;
 
     },
+    async saveReferenceNumber(
+        nocRequestId: string,
+        referenceNumber: string
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    reference_number:
+                        referenceNumber,
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+    async markCompletedTenure(
+        nocRequestId: string
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "COMPLETED_TENURE",
+
+                    tenure_completed_at:
+                        new Date()
+                            .toISOString(),
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+
+    async incrementPrintCount(
+        nocRequestId: string
+    ) {
+
+        const {
+            data,
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .select(
+                    "print_count"
+                )
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+
+                .single();
+
+        if (error)
+            throw error;
+
+        const currentCount =
+            Number(
+                data?.print_count ?? 0
+            );
+
+        const {
+            error: updateError,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    print_count:
+                        currentCount + 1,
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (updateError)
+            throw updateError;
+
+    },
 
 };

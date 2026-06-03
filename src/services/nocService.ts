@@ -293,4 +293,61 @@ export const nocService = {
 
     },
 
+    async hasActiveNoc(
+        studentId: string
+    ) {
+
+        const {
+            data,
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .select(
+                    "*"
+                )
+
+                .eq(
+                    "student_id",
+                    studentId
+                )
+
+                .eq(
+                    "status",
+                    "ISSUED"
+                );
+
+        if (error)
+            throw error;
+
+        const today =
+            new Date();
+
+        const activeNoc =
+            (
+                data ?? []
+            ).find(
+                (noc: any) => {
+
+                    const endDate =
+                        new Date(
+                            noc.snapshot?.end_date
+                        );
+
+                    return (
+                        endDate >=
+                        today
+                    );
+
+                }
+            );
+
+        return activeNoc;
+
+    },
+
 };

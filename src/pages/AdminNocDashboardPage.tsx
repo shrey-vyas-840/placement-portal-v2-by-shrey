@@ -347,6 +347,18 @@ export function AdminNocDashboardPage() {
         );
 
     const [
+        reviewMode,
+        setReviewMode,
+    ] =
+        useState<
+            "VIEW"
+            |
+            "PRINT"
+            |
+            null
+        >(null);
+
+    const [
         editableSnapshot,
         setEditableSnapshot,
     ] =
@@ -361,6 +373,23 @@ export function AdminNocDashboardPage() {
         useState<any>(
             {}
         );
+
+    const [
+        referenceNumbers,
+        setReferenceNumbers,
+    ] =
+        useState<
+            Record<
+                string,
+                string
+            >
+        >({});
+
+    const [
+        searchTerm,
+        setSearchTerm,
+    ] =
+        useState("");
 
     async function load() {
 
@@ -478,6 +507,41 @@ export function AdminNocDashboardPage() {
                 )
         );
 
+    const matchesSearch =
+        (
+            request: any
+        ) => {
+
+            if (
+                !searchTerm.trim()
+            )
+                return true;
+
+            const search =
+                searchTerm
+                    .toLowerCase();
+
+            return [
+
+                request.snapshot?.student_name,
+
+                request.snapshot?.enrollment_no,
+
+                request.snapshot?.company_name,
+
+                request.reference_number,
+
+            ]
+                .join(" ")
+
+                .toLowerCase()
+
+                .includes(
+                    search
+                );
+
+        };
+
     return (
 
         <div className="mx-auto max-w-7xl p-6">
@@ -572,6 +636,35 @@ export function AdminNocDashboardPage() {
 
             </div>
 
+            <div className="mb-6">
+
+                <input
+
+                    value={
+                        searchTerm
+                    }
+
+                    onChange={(e) =>
+                        setSearchTerm(
+                            e.target.value
+                        )
+                    }
+
+                    placeholder="
+Search Name / Enrollment / Company / Ref No
+"
+
+                    className="
+w-full
+rounded-lg
+border
+p-3
+"
+
+                />
+
+            </div>
+
             <h2 className="mt-8 mb-4 text-xl font-semibold">
 
                 Pending HOD Approval
@@ -585,6 +678,22 @@ export function AdminNocDashboardPage() {
                     <thead>
 
                         <tr className="border-b">
+
+                            <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Branch
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
 
                             <th className="p-3 text-left">
                                 Type
@@ -608,127 +717,167 @@ export function AdminNocDashboardPage() {
 
                     <tbody>
 
-                        {pendingApproval.map(
-                            (
-                                request: any
-                            ) => (
+                        {pendingApproval.filter(
+                            matchesSearch
+                        )
 
-                                <tr
-                                    key={
-                                        request.noc_request_id
-                                    }
-                                    className="border-b"
-                                >
+                            .map(
+                                (
+                                    request: any
+                                ) => (
 
-                                    <td className="p-3">
-
-                                        {
-                                            request.noc_type
+                                    <tr
+                                        key={
+                                            request.noc_request_id
                                         }
+                                        className="border-b"
+                                    >
 
-                                    </td>
+                                        <td className="p-3">
 
-                                    <td className="p-3">
-
-                                        {
-                                            request.status
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {
-                                            request.approval_source
-                                            ||
-                                            "-"
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3 flex gap-2">
-
-                                        <button
-
-                                            onClick={() => {
-
-                                                setSelectedRequest(
-                                                    request
-                                                );
-
-                                                setEditableSnapshot(
-                                                    structuredClone(
-                                                        request.snapshot
-                                                    )
-                                                );
-
-                                                setCustomFields(
-                                                    request.noc_customization
-                                                    ??
-                                                    {}
-                                                );
-                                            }}
-
-                                            className="rounded border px-3 py-1"
-
-                                        >
-
-                                            View
-
-                                        </button>
-
-                                        <button
-
-                                            onClick={
-                                                async () => {
-
-                                                    await adminNocService
-                                                        .moveToPendingPrint(
-                                                            request.noc_request_id
-                                                        );
-
-                                                    load();
-
-                                                }
+                                            {
+                                                request.snapshot?.student_name
                                             }
 
-                                            className="rounded border px-3 py-1"
+                                        </td>
 
-                                        >
+                                        <td className="p-3">
 
-                                            Override
-
-                                        </button>
-
-                                        <button
-
-                                            onClick={
-                                                async () => {
-
-                                                    await adminNocService
-                                                        .rejectRequest(
-                                                            request.noc_request_id
-                                                        );
-
-                                                    load();
-
-                                                }
+                                            {
+                                                request.snapshot?.enrollment_no
                                             }
 
-                                            className="rounded border px-3 py-1"
+                                        </td>
 
-                                        >
+                                        <td className="p-3">
 
-                                            Reject
+                                            {
+                                                request.snapshot?.branch
+                                            }
 
-                                        </button>
+                                        </td>
 
-                                    </td>
+                                        <td className="p-3">
 
-                                </tr>
+                                            {
+                                                request.snapshot?.company_name
+                                            }
 
-                            )
-                        )}
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.noc_type
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.status
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.approval_source
+                                                ||
+                                                "-"
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3 flex gap-2">
+
+                                            <button
+
+                                                onClick={() => {
+
+                                                    setSelectedRequest(
+                                                        request
+                                                    );
+
+                                                    setReviewMode(
+                                                        "VIEW"
+                                                    );
+
+                                                    setEditableSnapshot(
+                                                        structuredClone(
+                                                            request.snapshot
+                                                        )
+                                                    );
+
+                                                    setCustomFields(
+                                                        request.noc_customization
+                                                        ??
+                                                        {}
+                                                    );
+                                                }}
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                View
+
+                                            </button>
+
+                                            <button
+
+                                                onClick={
+                                                    async () => {
+
+                                                        await adminNocService
+                                                            .moveToPendingPrint(
+                                                                request.noc_request_id
+                                                            );
+
+                                                        load();
+
+                                                    }
+                                                }
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                Override
+
+                                            </button>
+
+                                            <button
+
+                                                onClick={
+                                                    async () => {
+
+                                                        await adminNocService
+                                                            .rejectRequest(
+                                                                request.noc_request_id
+                                                            );
+
+                                                        load();
+
+                                                    }
+                                                }
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                Reject
+
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+
+                                )
+                            )}
 
                     </tbody>
 
@@ -751,6 +900,22 @@ export function AdminNocDashboardPage() {
                         <tr className="border-b">
 
                             <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Branch
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
+
+                            <th className="p-3 text-left">
                                 Type
                             </th>
 
@@ -768,68 +933,110 @@ export function AdminNocDashboardPage() {
 
                     <tbody>
 
-                        {pendingPrint.map(
-                            (
-                                request: any
-                            ) => (
+                        {pendingPrint
 
-                                <tr
-                                    key={
-                                        request.noc_request_id
-                                    }
-                                    className="border-b"
-                                >
-
-                                    <td className="p-3">
-
-                                        {
-                                            request.noc_type
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        {
-                                            request.approval_source
-                                            ||
-                                            "-"
-                                        }
-
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        <button
-
-                                            onClick={() => {
-
-                                                setSelectedRequest(
-                                                    request
-                                                );
-
-                                                setEditableSnapshot(
-                                                    structuredClone(
-                                                        request.snapshot
-                                                    )
-                                                );
-
-                                            }}
-
-                                            className="rounded border px-3 py-1"
-
-                                        >
-
-                                            Review
-
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-
+                            .filter(
+                                matchesSearch
                             )
-                        )}
+
+                            .map(
+                                (
+                                    request: any
+                                ) => (
+
+                                    <tr
+                                        key={
+                                            request.noc_request_id
+                                        }
+                                        className="border-b"
+                                    >
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.student_name
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.enrollment_no
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.branch
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.company_name
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.noc_type
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.approval_source
+                                                ||
+                                                "-"
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            <button
+
+                                                onClick={() => {
+
+                                                    setSelectedRequest(
+                                                        request
+                                                    );
+
+                                                    setReviewMode(
+                                                        "PRINT"
+                                                    );
+
+                                                    setEditableSnapshot(
+                                                        structuredClone(
+                                                            request.snapshot
+                                                        )
+                                                    );
+
+                                                }}
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                Review
+
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+
+                                )
+                            )}
 
                     </tbody>
 
@@ -845,7 +1052,382 @@ export function AdminNocDashboardPage() {
 
             <div className="rounded-lg border p-6 text-sm text-muted-foreground">
 
-                Printed NOCs will appear here.
+                <div className="overflow-hidden rounded-lg border">
+
+                    <table className="w-full">
+
+                        <thead>
+
+                            <tr className="border-b">
+
+                                <th className="p-3 text-left">
+                                    Student
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Enrollment
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Branch
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Company
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Type
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Ref No
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Printed At
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {printed
+
+                                .filter(
+                                    matchesSearch
+                                )
+
+                                .map(
+                                    (
+                                        request: any
+                                    ) => (
+
+                                        <tr
+                                            key={
+                                                request.noc_request_id
+                                            }
+                                        >
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.student_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.enrollment_no
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.branch
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.company_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.noc_type
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <input
+
+                                                    type="number"
+
+                                                    min="1"
+
+                                                    value={
+                                                        referenceNumbers[
+                                                        request.noc_request_id
+                                                        ]
+                                                        ??
+                                                        request.reference_number
+                                                        ??
+                                                        ""
+                                                    }
+
+                                                    onChange={(e) => {
+
+                                                        const value =
+                                                            e.target.value
+                                                                .replace(
+                                                                    /\D/g,
+                                                                    ""
+                                                                );
+
+                                                        setReferenceNumbers(
+                                                            (prev) => ({
+
+                                                                ...prev,
+
+                                                                [
+                                                                    request.noc_request_id
+                                                                ]:
+                                                                    value,
+
+                                                            })
+                                                        );
+
+                                                    }}
+
+                                                    className="rounded border p-2"
+
+                                                />
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.printed_at
+                                                        ?
+                                                        new Date(
+                                                            request.printed_at
+                                                        ).toLocaleString()
+                                                        :
+                                                        "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3 flex gap-2">
+
+                                                <button
+
+                                                    onClick={() => {
+
+                                                        setSelectedRequest(
+                                                            request
+                                                        );
+
+                                                        setReviewMode(
+                                                            "VIEW"
+                                                        );
+
+                                                        setEditableSnapshot(
+                                                            structuredClone(
+                                                                request.snapshot
+                                                            )
+                                                        );
+
+                                                        setCustomFields(
+                                                            request.noc_customization
+                                                            ??
+                                                            {}
+                                                        );
+
+                                                    }}
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    View
+
+                                                </button>
+
+                                                <button
+                                                    onClick={async () => {
+
+                                                        await adminNocService
+                                                            .incrementPrintCount(
+                                                                request.noc_request_id
+                                                            );
+
+                                                        setSelectedRequest(
+                                                            request
+                                                        );
+
+                                                        setReviewMode(
+                                                            "PRINT"
+                                                        );
+
+                                                        setEditableSnapshot(
+                                                            structuredClone(
+                                                                request.snapshot
+                                                            )
+                                                        );
+
+                                                        setCustomFields(
+                                                            request.noc_customization
+                                                            ??
+                                                            {}
+                                                        );
+
+                                                    }}
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    Reprint
+
+                                                </button>
+
+                                                <button
+                                                    onClick={
+                                                        async () => {
+
+                                                            const refNumber =
+                                                                referenceNumbers[
+                                                                    request.noc_request_id
+                                                                ]?.trim();
+
+                                                            if (!refNumber) {
+
+                                                                alert(
+                                                                    "Enter Reference Number"
+                                                                );
+
+                                                                return;
+                                                            }
+
+                                                            await adminNocService
+                                                                .saveReferenceNumber(
+
+                                                                    request.noc_request_id,
+
+                                                                    refNumber
+
+                                                                );
+
+                                                            await load();
+
+                                                            alert(
+                                                                "Reference Number Saved"
+                                                            );
+
+                                                        }
+                                                    }
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    Save Ref
+
+                                                </button>
+
+                                                <button
+
+                                                    onClick={
+                                                        async () => {
+
+                                                            if (
+                                                                !(
+                                                                    request.reference_number
+                                                                    ||
+                                                                    referenceNumbers[
+                                                                    request.noc_request_id
+                                                                    ]
+                                                                )
+                                                            ) {
+
+                                                                alert(
+                                                                    "Reference Number Required"
+                                                                );
+
+                                                                return;
+                                                            }
+
+                                                            await adminNocService
+                                                                .markIssued(
+                                                                    request.noc_request_id
+                                                                );
+
+
+                                                            await load();
+
+                                                        }
+                                                    }
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    Issue
+
+                                                </button>
+
+                                                <button
+
+                                                    onClick={
+                                                        async () => {
+
+                                                            if (
+                                                                !(
+                                                                    request.reference_number
+                                                                    ||
+                                                                    referenceNumbers[
+                                                                    request.noc_request_id
+                                                                    ]
+                                                                )
+                                                            ) {
+
+                                                                alert(
+                                                                    "Reference Number Required"
+                                                                );
+
+                                                                return;
+                                                            }
+
+                                                            await adminNocService
+                                                                .markCancelled(
+                                                                    request.noc_request_id
+                                                                );
+
+                                                            await load();
+
+                                                        }
+                                                    }
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    Cancel
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    )
+                                )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </div>
 
@@ -857,7 +1439,163 @@ export function AdminNocDashboardPage() {
 
             <div className="rounded-lg border p-6 text-sm text-muted-foreground">
 
-                Issued NOCs will appear here.
+                <div className="overflow-hidden rounded-lg border">
+
+                    <table className="w-full">
+
+                        <thead>
+
+                            <tr>
+
+                                <th className="p-3 text-left">
+                                    Student
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Enrollment
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Company
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Type
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Ref No
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Issued At
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {issued.filter(
+                                matchesSearch
+                            )
+
+                                .map(
+                                    (
+                                        request: any
+                                    ) => (
+
+                                        <tr
+                                            key={
+                                                request.noc_request_id
+                                            }
+                                        >
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.student_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.enrollment_no
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.company_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.noc_type
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.reference_number
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.issued_at
+                                                        ?
+                                                        new Date(
+                                                            request.issued_at
+                                                        ).toLocaleString()
+                                                        :
+                                                        "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <button
+
+                                                    onClick={() => {
+
+                                                        setSelectedRequest(
+                                                            request
+                                                        );
+
+                                                        setReviewMode(
+                                                            "VIEW"
+                                                        );
+
+                                                        setEditableSnapshot(
+                                                            structuredClone(
+                                                                request.snapshot
+                                                            )
+                                                        );
+
+                                                        setCustomFields(
+                                                            request.noc_customization
+                                                            ??
+                                                            {}
+                                                        );
+
+                                                    }}
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    View
+
+                                                </button>
+
+                                            </td>
+                                        </tr>
+                                    )
+                                )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </div>
 
@@ -869,11 +1607,168 @@ export function AdminNocDashboardPage() {
 
             <div className="rounded-lg border p-6 text-sm text-muted-foreground">
 
-                Cancelled NOCs will appear here.
+                <div className="overflow-hidden rounded-lg border">
+
+                    <table className="w-full">
+
+                        <thead>
+
+                            <tr>
+
+                                <th className="p-3 text-left">
+                                    Student
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Enrollment
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Company
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Type
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Ref No
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Cancelled At
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {cancelled.filter(
+                                matchesSearch
+                            )
+
+                                .map(
+                                    (
+                                        request: any
+                                    ) => (
+
+                                        <tr
+                                            key={
+                                                request.noc_request_id
+                                            }
+                                        >
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.student_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.enrollment_no
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.company_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.noc_type
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.reference_number
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.cancelled_at
+                                                        ?
+                                                        new Date(
+                                                            request.cancelled_at
+                                                        ).toLocaleString()
+                                                        :
+                                                        "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <button
+
+                                                    onClick={() => {
+
+                                                        setSelectedRequest(
+                                                            request
+                                                        );
+
+                                                        setReviewMode(
+                                                            "VIEW"
+                                                        );
+
+                                                        setEditableSnapshot(
+                                                            structuredClone(
+                                                                request.snapshot
+                                                            )
+                                                        );
+
+                                                        setCustomFields(
+                                                            request.noc_customization
+                                                            ??
+                                                            {}
+                                                        );
+
+                                                    }}
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    View
+
+                                                </button>
+
+                                            </td>
+                                        </tr>
+
+                                    )
+                                )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </div>
 
-                        {selectedRequest && (
+            {selectedRequest && (
                 <>
                     <style>{`
                         @media print {
@@ -935,40 +1830,44 @@ export function AdminNocDashboardPage() {
                                 >
                                     Save Changes
                                 </button>
+                                {
+                                    reviewMode === "PRINT" && (
+                                        <button
+                                            onClick={async () => {
+                                                const diff: Record<string, any> = {};
 
-                                <button
-                                    onClick={async () => {
-                                        const diff: Record<string, any> = {};
+                                                editableKeys.forEach((key) => {
+                                                    const currentValue = currentSnapshot?.[key] ?? "";
+                                                    const baseValue = editableSnapshot?.[key] ?? "";
 
-                                        editableKeys.forEach((key) => {
-                                            const currentValue = currentSnapshot?.[key] ?? "";
-                                            const baseValue = editableSnapshot?.[key] ?? "";
+                                                    if (String(currentValue) !== String(baseValue)) {
+                                                        diff[key] = currentValue;
+                                                    }
+                                                });
 
-                                            if (String(currentValue) !== String(baseValue)) {
-                                                diff[key] = currentValue;
-                                            }
-                                        });
+                                                if (Object.keys(diff).length > 0) {
+                                                    await adminNocService.saveCustomization(
+                                                        selectedRequest.noc_request_id,
+                                                        diff
+                                                    );
+                                                }
 
-                                        if (Object.keys(diff).length > 0) {
-                                            await adminNocService.saveCustomization(
-                                                selectedRequest.noc_request_id,
-                                                diff
-                                            );
-                                        }
+                                                await adminNocService.markPrinted(
+                                                    selectedRequest.noc_request_id
+                                                );
 
-                                        await adminNocService.markPrinted(
-                                            selectedRequest.noc_request_id
-                                        );
+                                                window.print();
 
-                                        window.print();
+                                                await load();
 
-                                        await load();
-                                        setSelectedRequest(null);
-                                    }}
-                                    className="rounded border px-4 py-2"
-                                >
-                                    Print &amp; Move To Printed
-                                </button>
+                                                setSelectedRequest(null);
+                                            }}
+                                            className="rounded border px-4 py-2"
+                                        >
+                                            Print &amp; Move To Printed
+                                        </button>
+                                    )
+                                }
 
                                 <button
                                     onClick={() =>
@@ -982,14 +1881,19 @@ export function AdminNocDashboardPage() {
                         </div>
                     </div>
 
-                    <div className="print-area">
-                        <NocLetterBlock
-                            snapshot={editableSnapshot}
-                            approvedAt={selectedRequest?.approved_at}
-                            editable={false}
-                            customFields={customFields}
-                        />
-                    </div>
+                    {
+                        reviewMode ===
+                        "PRINT" && (
+
+                            <div className="print-area">
+                                <NocLetterBlock
+                                    snapshot={editableSnapshot}
+                                    approvedAt={selectedRequest?.approved_at}
+                                    editable={false}
+                                    customFields={customFields}
+                                />
+                            </div>
+                        )}
                 </>
             )}
 
