@@ -47,6 +47,14 @@ export function AdminNocDashboardPage() {
             null
         );
 
+    const [
+        editableSnapshot,
+        setEditableSnapshot,
+    ] =
+        useState<any>(
+            null
+        );
+
     async function load() {
 
         const [
@@ -110,6 +118,32 @@ export function AdminNocDashboardPage() {
     useEffect(() => {
         load();
     }, []);
+
+    function getDurationMonths(
+        startDate: string,
+        endDate: string
+    ) {
+
+        const start =
+            new Date(startDate);
+
+        const end =
+            new Date(endDate);
+
+        const months =
+            (
+                (end.getFullYear() - start.getFullYear()) * 12
+            ) +
+            (
+                end.getMonth() - start.getMonth()
+            );
+
+        return Math.max(
+            1,
+            months || 1
+        );
+
+    }
 
     return (
 
@@ -283,11 +317,19 @@ export function AdminNocDashboardPage() {
 
                                         <button
 
-                                            onClick={() =>
+                                            onClick={() => {
+
                                                 setSelectedRequest(
                                                     request
-                                                )
-                                            }
+                                                );
+
+                                                setEditableSnapshot(
+                                                    structuredClone(
+                                                        request.snapshot
+                                                    )
+                                                );
+
+                                            }}
 
                                             className="rounded border px-3 py-1"
 
@@ -422,11 +464,19 @@ export function AdminNocDashboardPage() {
 
                                         <button
 
-                                            onClick={() =>
+                                            onClick={() => {
+
                                                 setSelectedRequest(
                                                     request
-                                                )
-                                            }
+                                                );
+
+                                                setEditableSnapshot(
+                                                    structuredClone(
+                                                        request.snapshot
+                                                    )
+                                                );
+
+                                            }}
 
                                             className="rounded border px-3 py-1"
 
@@ -497,38 +547,270 @@ export function AdminNocDashboardPage() {
 
                         </h2>
 
-                        <div className="grid gap-3 md:grid-cols-2">
+                        {editableSnapshot && (
 
-                            {Object.entries(
-                                selectedRequest.snapshot
-                            ).map(
-                                ([key, value]) => (
+                            <div className="mx-auto max-w-4xl bg-white px-16 py-8 text-sm leading-6"
+                                style={{
+                                    fontFamily: "Arial"
+                                }}>
 
-                                    <div
-                                        key={key}
-                                        className="rounded border p-3"
-                                    >
+                                <div className="flex justify-between">
 
-                                        <div className="text-xs text-muted-foreground">
+                                    <div className="font-bold">
 
-                                            {key}
+                                        Ref.: T&P/INTERNSHIPS/
 
-                                        </div>
+                                        {editableSnapshot.institute_name}
 
-                                        <div>
+                                        /
 
-                                            {String(
-                                                value
-                                            )}
+                                        {editableSnapshot.branch}
 
-                                        </div>
+                                        /2025-26
 
                                     </div>
 
-                                )
-                            )}
+                                    <div className="font-bold">
 
-                        </div>
+                                        Date:
+
+                                        {" "}
+
+                                        {
+                                            selectedRequest?.approved_at
+                                                ?
+                                                new Date(
+                                                    selectedRequest.approved_at
+                                                ).toLocaleDateString(
+                                                    "en-GB"
+                                                )
+                                                :
+                                                "-"
+                                        }
+
+                                    </div>
+
+                                </div>
+
+                                <br />
+
+                                <div>
+
+                                    {editableSnapshot.hr_prefix}
+
+                                    {" "}
+
+                                    {editableSnapshot.hr_name},
+
+                                </div>
+
+                                <div>
+
+                                    {editableSnapshot.hr_position}
+
+                                </div>
+
+                                <div>
+
+                                    {editableSnapshot.company_name}
+
+                                </div>
+
+                                <div>
+
+                                    {editableSnapshot.company_address_1}
+
+                                </div>
+
+                                <div>
+
+                                    {editableSnapshot.company_address_2}
+
+                                </div>
+
+                                <br />
+
+                                <div className="text-center font-bold">
+
+                                    Sub.: NOC for {editableSnapshot.noc_type}
+
+                                </div>
+
+                                <br />
+
+                                <div>
+
+                                    Dear Sir/Ma'am,
+
+                                </div>
+
+                                <br />
+
+                                <div>
+
+                                    Greetings!!!
+
+                                </div>
+
+                                <br />
+
+                                <div>
+
+                                    <strong>
+                                        Mr./Ms. {editableSnapshot.student_name}
+                                    </strong>
+
+                                    , currently pursuing
+
+                                    {" "}
+
+                                    <strong>
+                                        {editableSnapshot.branch}
+                                    </strong>
+
+                                    ,
+
+                                    Semester
+
+                                    {" "}
+
+                                    <strong>
+                                        {editableSnapshot.semester}
+                                    </strong>
+
+                                    ,
+
+                                    with Enrollment No.
+
+                                    {" "}
+
+                                    <strong>
+                                        {editableSnapshot.enrollment_no}
+                                    </strong>
+
+                                    {" "}
+
+                                    in our constituent Institute -
+
+                                    {" "}
+
+                                    <strong>
+                                        {editableSnapshot.institute_name}
+                                    </strong>
+
+                                    ,
+
+                                    has been selected for
+
+                                    {" "}
+
+                                    <strong>
+                                        {getDurationMonths(
+                                            editableSnapshot.start_date,
+                                            editableSnapshot.end_date
+                                        )}
+                                    </strong>
+                                    {" "}
+                                    month/s internship in your organization from
+
+                                    {" "}
+
+                                    <strong>
+                                        {editableSnapshot.start_date}
+                                    </strong>
+
+                                    {" "}
+
+                                    to
+
+                                    {" "}
+
+                                    <strong>
+                                        {editableSnapshot.end_date}
+                                    </strong>
+
+                                    .
+
+                                    As per our University (NAAC Accredited, UGC & AICTE approved)
+                                    academic policy, students must do the internship.
+
+                                    The Internship project is monitored by the HOD and a Faculty Member regularly.
+
+                                    Students are required to attend all Practical, Mid-Semester,
+                                    and End-Semester examinations conducted by the university
+                                    during the internship period.
+
+                                </div>
+
+                                <br />
+
+                                <div>
+
+                                    <strong>
+                                        The Institute/Indus University will have NO OBJECTION for the student
+                                        doing his/her Internship.
+                                    </strong>
+
+                                    Your organization is requested to give him/her a project
+                                    (which he/she can submit it to the University authorities)
+                                    as a part fulfillment of his/her course curriculum.
+
+                                    Kindly note that the Student must be issued a Certificate
+                                    confirming the successful completion of the project duly signed
+                                    and sealed, by the competent authorities on your organization's
+                                    letterhead.
+
+                                </div>
+
+                                <br />
+
+                                He/She has been instructed to strictly
+
+                                <strong>
+
+                                    adhere to the rules,
+                                    regulations,
+                                    policies and guidelines of your organization
+                                    during the internship period.
+
+                                </strong>
+
+                                <br />
+
+                                <div>
+
+                                    We solicit your kind support in this regard.
+
+                                </div>
+
+                                <br />
+
+                                <div>
+
+                                    Best regards
+
+                                </div>
+
+                                <br />
+                                <br />
+
+                                <div className="text-right">
+                                    <div className="font-bold">
+
+                                        Training & Placement Officer
+
+                                    </div>
+
+                                    <div className="font-bold">
+
+                                        Indus University, Ahmedabad
+
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        )}
 
                         <div className="mt-6">
 
