@@ -27,7 +27,7 @@ function NocLetterBlock({
 
     return (
         <div
-            className="mx-auto max-w-4xl bg-white px-12 py-80 text-sm leading-6"
+            className="mx-auto max-w-4xl bg-white px-12 py-75 text-sm leading-6"
             style={{
                 fontFamily: "Arial",
             }}
@@ -391,6 +391,12 @@ export function AdminNocDashboardPage() {
     ] =
         useState("");
 
+    const [
+        printing,
+        setPrinting,
+    ] =
+        useState(false);
+
     async function load() {
 
         const [
@@ -545,95 +551,76 @@ export function AdminNocDashboardPage() {
     return (
 
         <div className="mx-auto max-w-7xl p-6">
-
             <h1 className="text-3xl font-bold">
-
                 NOC Dashboard
-
             </h1>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-5">
+            <div className="mt-6 grid gap-4 md:grid-cols-6">
+                <div className="rounded-lg border p-4">
+                    <div className="text-sm text-muted-foreground">
+                        Total NOCs
+                    </div>
+
+                    <div className="text-2xl font-bold">
+                        {
+                            pendingApproval.length +
+                            pendingPrint.length +
+                            printed.length +
+                            issued.length +
+                            cancelled.length
+                        }
+                    </div>
+                </div>
 
                 <div className="rounded-lg border p-4">
-
                     <div className="text-sm text-muted-foreground">
-
                         Pending Approval
-
                     </div>
 
                     <div className="text-2xl font-bold">
-
                         {pendingApproval.length}
-
                     </div>
-
                 </div>
 
                 <div className="rounded-lg border p-4">
-
                     <div className="text-sm text-muted-foreground">
-
                         Pending Print
-
                     </div>
 
                     <div className="text-2xl font-bold">
-
                         {pendingPrint.length}
-
                     </div>
-
                 </div>
 
                 <div className="rounded-lg border p-4">
-
                     <div className="text-sm text-muted-foreground">
-
                         Printed
-
                     </div>
 
                     <div className="text-2xl font-bold">
-
                         {printed.length}
-
                     </div>
-
                 </div>
 
                 <div className="rounded-lg border p-4">
-
                     <div className="text-sm text-muted-foreground">
-
                         Issued
-
                     </div>
 
                     <div className="text-2xl font-bold">
-
                         {issued.length}
-
                     </div>
-
                 </div>
 
                 <div className="rounded-lg border p-4">
-
                     <div className="text-sm text-muted-foreground">
-
                         Cancelled
-
                     </div>
 
                     <div className="text-2xl font-bold">
-
                         {cancelled.length}
-
                     </div>
-
                 </div>
-
             </div>
 
             <div className="mb-6">
@@ -837,7 +824,9 @@ p-3
                                         <td className="p-3">
 
                                             {
-                                                request.status
+                                                request.status === "PENDING_HOD_APPROVAL"
+                                                    ? "Pending HOD"
+                                                    : request.status
                                             }
 
                                         </td>
@@ -1471,8 +1460,7 @@ p-3
                                                                     request.reference_number
                                                                     ??
                                                                     ""
-                                                                )
-                                                                    .trim();
+                                                                ).trim();
 
                                                             if (!refNumber) {
 
@@ -1481,7 +1469,6 @@ p-3
                                                                 );
 
                                                                 return;
-
                                                             }
 
                                                             if (
@@ -1506,7 +1493,7 @@ p-3
 
                                                         }
                                                     }
-
+                                                    className="rounded border px-3 py-1"
                                                 >
 
                                                     Issue
@@ -2034,6 +2021,7 @@ p-3
                                     reviewMode === "PRINT" && (
                                         <button
                                             onClick={async () => {
+
                                                 const diff: Record<string, any> = {};
 
                                                 editableKeys.forEach((key) => {
@@ -2052,15 +2040,24 @@ p-3
                                                     );
                                                 }
 
-                                                await adminNocService.markPrinted(
-                                                    selectedRequest.noc_request_id
-                                                );
+                                                try {
 
-                                                window.print();
+                                                    await adminNocService.markPrinted(
+                                                        selectedRequest.noc_request_id
+                                                    );
 
-                                                await load();
+                                                    window.print();
 
-                                                setSelectedRequest(null);
+                                                    await load();
+
+                                                    setSelectedRequest(null);
+
+                                                }
+                                                finally {
+
+                                                    setPrinting(false);
+
+                                                }
                                             }}
                                             className="rounded border px-4 py-2"
                                         >
@@ -2070,9 +2067,17 @@ p-3
                                 }
 
                                 <button
-                                    onClick={() =>
+
+                                    disabled={printing}
+
+                                    onClick={async () => {
+
+                                        if (printing)
+                                            return;
+
+                                        setPrinting(true);
                                         setSelectedRequest(null)
-                                    }
+                                    }}
                                     className="rounded border px-4 py-2"
                                 >
                                     Close

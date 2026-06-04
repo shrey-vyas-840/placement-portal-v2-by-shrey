@@ -175,7 +175,13 @@ export function StudentNocPage() {
                     );
 
             setRequests(
-                nocRequests
+
+                nocRequests.filter(
+                    (request: any) =>
+                        request.status !==
+                        "COMPLETED_TENURE"
+                )
+
             );
 
             const active =
@@ -506,9 +512,8 @@ ${[
                                                 "PENDING_PRINT",
                                                 "PRINTED",
                                                 "ISSUED",
-                                            ].includes(
-                                                selectedRequest.status
-                                            )
+                                            ].includes(selectedRequest.status) ||
+                                                selectedRequest.approval_source === "HOD_APPROVED"
                                                 ? "bg-green-100 text-green-800"
                                                 : "bg-gray-100 text-gray-600"
                                             }
@@ -1228,11 +1233,19 @@ ${[
                                             >
 
                                                 {
-                                                    request.status
-                                                        .replaceAll(
-                                                            "_",
-                                                            " "
-                                                        )
+                                                    request.status === "PENDING_HOD_APPROVAL"
+                                                        ? "Pending HOD"
+                                                        : request.status === "PENDING_PRINT"
+                                                            ? "Pending Print"
+                                                            : request.status === "PRINTED"
+                                                                ? "Printed"
+                                                                : request.status === "ISSUED"
+                                                                    ? "Issued"
+                                                                    : request.status === "CANCELLED"
+                                                                        ? "Cancelled"
+                                                                        : request.status === "HOD_REJECTED"
+                                                                            ? "Rejected"
+                                                                            : request.status
                                                 }
 
                                             </span>
@@ -1407,13 +1420,15 @@ p-6
                             <div>
 
                                 <strong>
-                                    Current Status
+                                    Approval Source
                                 </strong>
 
                                 <br />
 
                                 {
-                                    selectedRequest.status
+                                    selectedRequest.approval_source
+                                    ??
+                                    "-"
                                 }
 
                             </div>
