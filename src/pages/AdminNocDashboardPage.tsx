@@ -1177,12 +1177,6 @@ p-3
                                 </th>
 
                                 <th className="p-3 text-left">
-                                    Actions
-                                </th><th className="p-3 text-left">
-                                    Printed At
-                                </th>
-
-                                <th className="p-3 text-left">
                                     Prints
                                 </th>
 
@@ -1497,14 +1491,18 @@ p-3
 
                                                                 await adminNocService
                                                                     .saveReferenceNumber(
-
                                                                         request.noc_request_id,
-
                                                                         refNumber
-
                                                                     );
 
                                                             }
+
+                                                            await adminNocService
+                                                                .issueRequest(
+                                                                    request.noc_request_id
+                                                                );
+
+                                                            await load();
 
                                                         }
                                                     }
@@ -1549,14 +1547,18 @@ p-3
 
                                                                 await adminNocService
                                                                     .saveReferenceNumber(
-
                                                                         request.noc_request_id,
-
                                                                         refNumber
-
                                                                     );
 
                                                             }
+
+                                                            await adminNocService
+                                                                .cancelRequest(
+                                                                    request.noc_request_id
+                                                                );
+
+                                                            await load();
                                                         }
                                                     }
 
@@ -1991,7 +1993,9 @@ p-3
                                 <NocLetterBlock
                                     snapshot={editableSnapshot}
                                     approvedAt={selectedRequest?.approved_at}
-                                    editable={true}
+                                    editable={
+                                        reviewMode === "PRINT"
+                                    }
                                     customFields={customFields}
                                     setCustomFields={setCustomFields}
                                 />

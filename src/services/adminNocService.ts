@@ -299,6 +299,70 @@ export const adminNocService = {
 
     },
 
+    async issueRequest(
+        nocRequestId: string
+    ) {
+
+        const { error } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "ISSUED",
+
+                    issued_at:
+                        new Date()
+                            .toISOString(),
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+    async cancelRequest(
+        nocRequestId: string
+    ) {
+
+        const { error } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "CANCELLED",
+
+                    cancelled_at:
+                        new Date()
+                            .toISOString(),
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
     async markCompletedTenure(
         nocRequestId: string
     ) {
