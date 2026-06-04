@@ -23,6 +23,13 @@ export function StudentNocPage() {
     ] = useState<any[]>([]);
 
     const [
+        selectedRequest,
+        setSelectedRequest,
+    ] = useState<any>(
+        null
+    );
+
+    const [
         loading,
         setLoading,
     ] = useState(true);
@@ -176,6 +183,28 @@ export function StudentNocPage() {
 
     async function submitRequest() {
 
+        if (
+
+            new Date(
+                form.end_date
+            )
+
+            <=
+
+            new Date(
+                form.start_date
+            )
+
+        ) {
+
+            alert(
+                "End Date must be after Start Date"
+            );
+
+            return;
+
+        }
+
         try {
 
             setSubmitting(
@@ -246,6 +275,26 @@ export function StudentNocPage() {
                 throw new Error(
                     "Student profile not found"
                 );
+            }
+
+            const activeNoc =
+                await nocService
+                    .hasActiveNoc(
+                        student.student_id
+                    );
+
+            if (
+                activeNoc
+            ) {
+
+                alert(
+
+                    `You already have an active NOC until ${activeNoc.snapshot?.end_date}`
+
+                );
+
+                return;
+
             }
 
             await nocService.createRequest(
@@ -429,7 +478,57 @@ export function StudentNocPage() {
 
                         </div>
 
-                    </div>
+                    </div>{
+                        form.start_date
+                        &&
+                        form.end_date
+                        && (
+
+                            <div className="rounded border p-3 bg-muted">
+
+                                Duration:
+
+                                {" "}
+
+                                <strong>
+
+                                    {
+
+                                        Math.max(
+                                            1,
+                                            (
+                                                (
+                                                    new Date(
+                                                        form.end_date
+                                                    ).getFullYear()
+                                                    -
+                                                    new Date(
+                                                        form.start_date
+                                                    ).getFullYear()
+                                                ) * 12
+                                            )
+                                            +
+                                            (
+                                                new Date(
+                                                    form.end_date
+                                                ).getMonth()
+                                                -
+                                                new Date(
+                                                    form.start_date
+                                                ).getMonth()
+                                            )
+                                        )
+
+                                    }
+
+                                </strong>
+
+                                {" "}Month(s)
+
+                            </div>
+
+                        )
+                    }
 
                     <div>
 
@@ -831,7 +930,23 @@ export function StudentNocPage() {
                             <tr className="border-b">
 
                                 <th className="p-3 text-left">
+                                    Company
+                                </th>
+
+                                <th className="p-3 text-left">
                                     Type
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Duration
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Applied On
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Approval Deadline
                                 </th>
 
                                 <th className="p-3 text-left">
@@ -839,11 +954,7 @@ export function StudentNocPage() {
                                 </th>
 
                                 <th className="p-3 text-left">
-                                    Submitted
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Approval Deadline
+                                    Actions
                                 </th>
 
                             </tr>
@@ -867,6 +978,14 @@ export function StudentNocPage() {
                                         <td className="p-3">
 
                                             {
+                                                request.snapshot?.company_name
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
                                                 request.noc_type
                                             }
 
@@ -875,17 +994,46 @@ export function StudentNocPage() {
                                         <td className="p-3">
 
                                             {
-                                                request.status
+                                                Math.max(
+                                                    1,
+                                                    (
+                                                        (
+                                                            new Date(
+                                                                request.snapshot?.end_date
+                                                            ).getFullYear()
+                                                            -
+                                                            new Date(
+                                                                request.snapshot?.start_date
+                                                            ).getFullYear()
+                                                        ) * 12
+                                                    )
+                                                    +
+                                                    (
+                                                        new Date(
+                                                            request.snapshot?.end_date
+                                                        ).getMonth()
+                                                        -
+                                                        new Date(
+                                                            request.snapshot?.start_date
+                                                        ).getMonth()
+                                                    )
+                                                )
                                             }
+
+                                            {" "}Month(s)
 
                                         </td>
 
                                         <td className="p-3">
 
                                             {
-                                                new Date(
-                                                    request.submitted_at
-                                                ).toLocaleDateString()
+                                                request.created_at
+                                                    ?
+                                                    new Date(
+                                                        request.created_at
+                                                    ).toLocaleDateString()
+                                                    :
+                                                    "-"
                                             }
 
                                         </td>
@@ -904,6 +1052,61 @@ export function StudentNocPage() {
 
                                         </td>
 
+                                        <td className="p-3">
+
+                                            <span
+                                                className={`
+            rounded-full
+            px-3
+            py-1
+            text-xs
+            font-medium
+            ${request.status === "PENDING_HOD_APPROVAL"
+                                                        ? "bg-yellow-100 text-yellow-800"
+                                                        : request.status === "PENDING_PRINT"
+                                                            ? "bg-blue-100 text-blue-800"
+                                                            : request.status === "PRINTED"
+                                                                ? "bg-purple-100 text-purple-800"
+                                                                : request.status === "ISSUED"
+                                                                    ? "bg-green-100 text-green-800"
+                                                                    : request.status === "CANCELLED"
+                                                                        ? "bg-red-100 text-red-800"
+                                                                        : "bg-gray-100 text-gray-800"
+                                                    }
+        `}
+                                            >
+
+                                                {
+                                                    request.status
+                                                        .replaceAll(
+                                                            "_",
+                                                            " "
+                                                        )
+                                                }
+
+                                            </span>
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            <button
+
+                                                onClick={() =>
+                                                    setSelectedRequest(
+                                                        request
+                                                    )
+                                                }
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                View
+
+                                            </button>
+                                        </td>
+
                                     </tr>
 
                                 )
@@ -914,7 +1117,7 @@ export function StudentNocPage() {
                                 <tr>
 
                                     <td
-                                        colSpan={4}
+                                        colSpan={7}
                                         className="p-6 text-center text-muted-foreground"
                                     >
 
@@ -933,6 +1136,185 @@ export function StudentNocPage() {
                 </div>
 
             </div>
+
+            {selectedRequest && (
+
+                <div
+                    className="
+fixed
+inset-0
+z-50
+flex
+items-center
+justify-center
+bg-black/50
+"
+                >
+
+                    <div
+                        className="
+w-full
+max-w-4xl
+rounded-lg
+bg-white
+p-6
+"
+                    >
+
+                        <h2 className="mb-4 text-xl font-semibold">
+
+                            NOC Details
+
+                        </h2>
+
+                        <div className="grid grid-cols-2 gap-4">
+
+                            <div>
+
+                                <strong>
+                                    Company
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.snapshot?.company_name
+                                }
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    NOC Type
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.noc_type
+                                }
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Start Date
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.snapshot?.start_date
+                                }
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    End Date
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.snapshot?.end_date
+                                }
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    HR Name
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.snapshot?.hr_name
+                                }
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    HR Position
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.snapshot?.hr_position
+                                }
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Current Status
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.status
+                                }
+
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Reference Number
+                                </strong>
+
+                                <br />
+
+                                {
+                                    selectedRequest.reference_number
+                                    ??
+                                    "-"
+                                }
+
+                            </div>
+
+                        </div>
+
+                        <div className="mt-6">
+
+                            <button
+
+                                onClick={() =>
+                                    setSelectedRequest(
+                                        null
+                                    )
+                                }
+
+                                className="
+rounded
+border
+px-4
+py-2
+"
+
+                            >
+
+                                Close
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
 
         </div>
 

@@ -316,11 +316,14 @@ export const nocService = {
                     studentId
                 )
 
-                .eq(
+                .in(
                     "status",
-                    "ISSUED"
+                    [
+                        "ISSUED",
+                        "PRINTED",
+                    ]
                 );
-
+                
         if (error)
             throw error;
 

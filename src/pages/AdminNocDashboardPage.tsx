@@ -660,8 +660,47 @@ rounded-lg
 border
 p-3
 "
-
                 />
+
+                <button
+
+                    onClick={() =>
+                        setSearchTerm("")
+                    }
+
+                    className="
+        mt-2
+        rounded
+        border
+        px-3
+        py-1
+    "
+
+                >
+
+                    Clear Search
+
+                </button>
+
+                <div className="mb-4 text-sm text-muted-foreground">
+
+                    Search Result:
+
+                    {" "}
+
+                    <strong>
+
+                        {
+                            searchTerm
+                                ?
+                                searchTerm
+                                :
+                                "All Records"
+                        }
+
+                    </strong>
+
+                </div>
 
             </div>
 
@@ -717,9 +756,31 @@ p-3
 
                     <tbody>
 
-                        {pendingApproval.filter(
-                            matchesSearch
-                        )
+                        {pendingApproval
+
+                            .slice()
+
+                            .sort(
+                                (
+                                    a,
+                                    b
+                                ) =>
+
+                                    new Date(
+                                        b.created_at
+                                    ).getTime()
+
+                                    -
+
+                                    new Date(
+                                        a.created_at
+                                    ).getTime()
+
+                            )
+
+                            .filter(
+                                matchesSearch
+                            )
 
                             .map(
                                 (
@@ -831,16 +892,23 @@ p-3
                                                 onClick={
                                                     async () => {
 
+                                                        const confirmed =
+                                                            window.confirm(
+                                                                "Override HOD approval and move directly to Pending Print?"
+                                                            );
+
+                                                        if (!confirmed)
+                                                            return;
+
                                                         await adminNocService
                                                             .moveToPendingPrint(
                                                                 request.noc_request_id
                                                             );
 
-                                                        load();
+                                                        await load();
 
                                                     }
                                                 }
-
                                                 className="rounded border px-3 py-1"
 
                                             >
@@ -934,6 +1002,26 @@ p-3
                     <tbody>
 
                         {pendingPrint
+
+                            .slice()
+
+                            .sort(
+                                (
+                                    a,
+                                    b
+                                ) =>
+
+                                    new Date(
+                                        b.created_at
+                                    ).getTime()
+
+                                    -
+
+                                    new Date(
+                                        a.created_at
+                                    ).getTime()
+
+                            )
 
                             .filter(
                                 matchesSearch
@@ -1090,6 +1178,16 @@ p-3
 
                                 <th className="p-3 text-left">
                                     Actions
+                                </th><th className="p-3 text-left">
+                                    Printed At
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Prints
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Actions
                                 </th>
 
                             </tr>
@@ -1099,6 +1197,26 @@ p-3
                         <tbody>
 
                             {printed
+
+                                .slice()
+
+                                .sort(
+                                    (
+                                        a,
+                                        b
+                                    ) =>
+
+                                        new Date(
+                                            b.created_at
+                                        ).getTime()
+
+                                        -
+
+                                        new Date(
+                                            a.created_at
+                                        ).getTime()
+
+                                )
 
                                 .filter(
                                     matchesSearch
@@ -1213,6 +1331,16 @@ p-3
                                                         ).toLocaleString()
                                                         :
                                                         "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.print_count
+                                                    ??
+                                                    0
                                                 }
 
                                             </td>
@@ -1340,35 +1468,46 @@ p-3
                                                     onClick={
                                                         async () => {
 
-                                                            if (
-                                                                !(
-                                                                    request.reference_number
-                                                                    ||
+                                                            const refNumber =
+                                                                (
                                                                     referenceNumbers[
                                                                     request.noc_request_id
                                                                     ]
+                                                                    ??
+                                                                    request.reference_number
+                                                                    ??
+                                                                    ""
                                                                 )
-                                                            ) {
+                                                                    .trim();
+
+                                                            if (!refNumber) {
 
                                                                 alert(
-                                                                    "Reference Number Required"
+                                                                    "Save Reference Number First"
                                                                 );
 
                                                                 return;
+
                                                             }
 
-                                                            await adminNocService
-                                                                .markIssued(
-                                                                    request.noc_request_id
-                                                                );
+                                                            if (
+                                                                refNumber !==
+                                                                request.reference_number
+                                                            ) {
 
+                                                                await adminNocService
+                                                                    .saveReferenceNumber(
 
-                                                            await load();
+                                                                        request.noc_request_id,
+
+                                                                        refNumber
+
+                                                                    );
+
+                                                            }
 
                                                         }
                                                     }
-
-                                                    className="rounded border px-3 py-1"
 
                                                 >
 
@@ -1381,30 +1520,43 @@ p-3
                                                     onClick={
                                                         async () => {
 
-                                                            if (
-                                                                !(
-                                                                    request.reference_number
-                                                                    ||
+                                                            const refNumber =
+                                                                (
                                                                     referenceNumbers[
                                                                     request.noc_request_id
                                                                     ]
+                                                                    ??
+                                                                    request.reference_number
+                                                                    ??
+                                                                    ""
                                                                 )
-                                                            ) {
+                                                                    .trim();
+
+                                                            if (!refNumber) {
 
                                                                 alert(
-                                                                    "Reference Number Required"
+                                                                    "Save Reference Number First"
                                                                 );
 
                                                                 return;
+
                                                             }
 
-                                                            await adminNocService
-                                                                .markCancelled(
-                                                                    request.noc_request_id
-                                                                );
+                                                            if (
+                                                                refNumber !==
+                                                                request.reference_number
+                                                            ) {
 
-                                                            await load();
+                                                                await adminNocService
+                                                                    .saveReferenceNumber(
 
+                                                                        request.noc_request_id,
+
+                                                                        refNumber
+
+                                                                    );
+
+                                                            }
                                                         }
                                                     }
 
@@ -1481,9 +1633,31 @@ p-3
 
                         <tbody>
 
-                            {issued.filter(
-                                matchesSearch
-                            )
+                            {issued
+
+                                .slice()
+
+                                .sort(
+                                    (
+                                        a,
+                                        b
+                                    ) =>
+
+                                        new Date(
+                                            b.created_at
+                                        ).getTime()
+
+                                        -
+
+                                        new Date(
+                                            a.created_at
+                                        ).getTime()
+
+                                )
+
+                                .filter(
+                                    matchesSearch
+                                )
 
                                 .map(
                                     (
@@ -1649,9 +1823,31 @@ p-3
 
                         <tbody>
 
-                            {cancelled.filter(
-                                matchesSearch
-                            )
+                            {cancelled
+
+                                .slice()
+
+                                .sort(
+                                    (
+                                        a,
+                                        b
+                                    ) =>
+
+                                        new Date(
+                                            b.created_at
+                                        ).getTime()
+
+                                        -
+
+                                        new Date(
+                                            a.created_at
+                                        ).getTime()
+
+                                )
+
+                                .filter(
+                                    matchesSearch
+                                )
 
                                 .map(
                                     (
