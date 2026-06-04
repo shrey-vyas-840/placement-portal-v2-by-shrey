@@ -397,6 +397,12 @@ export function AdminNocDashboardPage() {
     ] =
         useState(false);
 
+    const [
+        pendingTenureVerification,
+        setPendingTenureVerification,
+    ] =
+        useState<any[]>([]);
+
     async function load() {
 
         const [
@@ -405,6 +411,7 @@ export function AdminNocDashboardPage() {
             printedData,
             issuedData,
             cancelledData,
+            tenureVerification,
         ] =
             await Promise.all([
 
@@ -433,6 +440,11 @@ export function AdminNocDashboardPage() {
                         "CANCELLED"
                     ),
 
+                adminNocService
+                    .getByStatus(
+                        "COMPLETED_TENURE_PENDING_VERIFICATION"
+                    ),
+
             ]);
 
         setPendingApproval(
@@ -453,6 +465,10 @@ export function AdminNocDashboardPage() {
 
         setCancelled(
             cancelledData
+        );
+
+        setPendingTenureVerification(
+            tenureVerification
         );
 
     }
@@ -555,7 +571,7 @@ export function AdminNocDashboardPage() {
                 NOC Dashboard
             </h1>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-6">
+            <div className="mt-6 grid gap-4 md:grid-cols-7  ">
                 <div className="rounded-lg border p-4">
                     <div className="text-sm text-muted-foreground">
                         Total NOCs
@@ -621,6 +637,25 @@ export function AdminNocDashboardPage() {
                         {cancelled.length}
                     </div>
                 </div>
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Tenure Verification
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {
+                            pendingTenureVerification.length
+                        }
+
+                    </div>
+
+                </div>
+
             </div>
 
             <div className="mb-6">
@@ -1367,10 +1402,21 @@ p-3
                                                 <button
                                                     onClick={async () => {
 
-                                                        await adminNocService
-                                                            .incrementPrintCount(
-                                                                request.noc_request_id
-                                                            );
+                                                        setSelectedRequest(request);
+
+                                                        setReviewMode("PRINT");
+
+                                                        setEditableSnapshot(
+                                                            structuredClone(
+                                                                request.snapshot
+                                                            )
+                                                        );
+
+                                                        setCustomFields(
+                                                            request.noc_customization
+                                                            ??
+                                                            {}
+                                                        );
 
                                                         setSelectedRequest(
                                                             request
@@ -1574,6 +1620,219 @@ p-3
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
+                Tenure Verification Pending
+
+            </h2>
+
+            <div className="overflow-hidden rounded-lg border">
+
+                <table className="w-full">
+
+                    <thead>
+
+                        <tr className="border-b">
+
+                            <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
+
+                            <th className="p-3 text-left">
+                                End Date
+                            </th>
+
+                            <th className="p-3 text-left">
+                                HR Email
+                            </th>
+
+                            <th className="p-3 text-left">
+                                HR Contact
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {pendingTenureVerification
+
+                            .slice()
+
+                            .sort(
+                                (
+                                    a,
+                                    b
+                                ) =>
+
+                                    new Date(
+                                        b.created_at
+                                    ).getTime()
+
+                                    -
+
+                                    new Date(
+                                        a.created_at
+                                    ).getTime()
+
+                            )
+
+                            .filter(
+                                matchesSearch
+                            )
+
+                            .map(
+                                (
+                                    request: any
+                                ) => (
+
+                                    <tr
+                                        key={
+                                            request.noc_request_id
+                                        }
+                                        className="border-b"
+                                    >
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.student_name
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.enrollment_no
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.company_name
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.end_date
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.completion_hr_email
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.completion_hr_contact
+                                            }
+                                        </td>
+
+                                        <td className="p-3 flex gap-2">
+
+                                            <button
+
+                                                onClick={() => {
+
+                                                    setSelectedRequest(
+                                                        request
+                                                    );
+
+                                                    setReviewMode(
+                                                        "VIEW"
+                                                    );
+
+                                                    setEditableSnapshot(
+                                                        structuredClone(
+                                                            request.snapshot
+                                                        )
+                                                    );
+
+                                                    setCustomFields(
+                                                        request.noc_customization
+                                                        ??
+                                                        {}
+                                                    );
+
+                                                }}
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                View
+
+                                            </button>
+
+                                            <button
+
+                                                onClick={async () => {
+
+                                                    await adminNocService
+                                                        .approveTenureCompletion(
+                                                            request.noc_request_id
+                                                        );
+
+                                                    await load();
+
+                                                }}
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                Approve
+
+                                            </button>
+
+                                            <button
+
+                                                onClick={async () => {
+
+                                                    await adminNocService
+                                                        .rejectTenureCompletion(
+                                                            request.noc_request_id
+                                                        );
+
+                                                    await load();
+
+                                                }}
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                Reject
+
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+
+                                )
+                            )}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
                 Issued
 
             </h2>
@@ -1598,6 +1857,10 @@ p-3
 
                                 <th className="p-3 text-left">
                                     Company
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Duration
                                 </th>
 
                                 <th className="p-3 text-left">
@@ -1680,6 +1943,19 @@ p-3
                                                 {
                                                     request.snapshot?.company_name
                                                 }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    getDurationMonths(
+                                                        request.snapshot?.start_date,
+                                                        request.snapshot?.end_date
+                                                    )
+                                                }
+
+                                                Month(s)
 
                                             </td>
 
@@ -1791,6 +2067,10 @@ p-3
                                 </th>
 
                                 <th className="p-3 text-left">
+                                    Duration
+                                </th>
+
+                                <th className="p-3 text-left">
                                     Type
                                 </th>
 
@@ -1870,6 +2150,19 @@ p-3
                                                 {
                                                     request.snapshot?.company_name
                                                 }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    getDurationMonths(
+                                                        request.snapshot?.start_date,
+                                                        request.snapshot?.end_date
+                                                    )
+                                                }
+
+                                                Month(s)
 
                                             </td>
 
@@ -2020,7 +2313,13 @@ p-3
                                 {
                                     reviewMode === "PRINT" && (
                                         <button
+                                            disabled={printing}
                                             onClick={async () => {
+
+                                                if (printing)
+                                                    return;
+
+                                                setPrinting(true);
 
                                                 const diff: Record<string, any> = {};
 
@@ -2045,6 +2344,17 @@ p-3
                                                     await adminNocService.markPrinted(
                                                         selectedRequest.noc_request_id
                                                     );
+                                                    if (
+                                                        selectedRequest.status ===
+                                                        "PRINTED"
+                                                    ) {
+
+                                                        await adminNocService
+                                                            .incrementPrintCount(
+                                                                selectedRequest.noc_request_id
+                                                            );
+
+                                                    }
 
                                                     window.print();
 
@@ -2067,16 +2377,8 @@ p-3
                                 }
 
                                 <button
-
-                                    disabled={printing}
-
-                                    onClick={async () => {
-
-                                        if (printing)
-                                            return;
-
-                                        setPrinting(true);
-                                        setSelectedRequest(null)
+                                    onClick={() => {
+                                        setSelectedRequest(null);
                                     }}
                                     className="rounded border px-4 py-2"
                                 >
@@ -2100,9 +2402,10 @@ p-3
                             </div>
                         )}
                 </>
-            )}
+            )
+            }
 
-        </div>
+        </div >
 
     );
 

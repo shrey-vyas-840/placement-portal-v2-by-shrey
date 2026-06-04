@@ -26,6 +26,12 @@ export const NOC_STATUSES = {
     CANCELLED:
         "CANCELLED",
 
+    COMPLETED_TENURE_PENDING_VERIFICATION:
+        "COMPLETED_TENURE_PENDING_VERIFICATION",
+
+    TENURE_COMPLETED:
+        "TENURE_COMPLETED",
+
 } as const;
 
 export type NocType =
@@ -321,9 +327,10 @@ export const nocService = {
                     [
                         "ISSUED",
                         "PRINTED",
+                        "COMPLETED_TENURE_PENDING_VERIFICATION",
                     ]
-                );
-                
+                )   
+
         if (error)
             throw error;
 
@@ -349,7 +356,130 @@ export const nocService = {
                 }
             );
 
+        for (
+            const noc of
+            data ?? []
+        ) {
+
+            const endDate =
+                new Date(
+                    noc.snapshot?.end_date
+                );
+
+            if (
+                endDate <
+                today
+            ) {
+
+                await (
+                    supabase as any
+                )
+
+                    .from(
+                        "noc_requests"
+                    )
+
+                    .update({
+
+                        status:
+                            "COMPLETED_TENURE_PENDING_VERIFICATION",
+
+                    })
+
+                    .eq(
+                        "noc_request_id",
+                        noc.noc_request_id
+                    );
+
+            }
+
+        }
+
         return activeNoc;
+
+    },
+
+    async uploadCompletionCertificate(
+        file: File
+    ) {
+
+        const fileExt =
+            file.name
+                .split(".")
+                .pop();
+
+        const fileName =
+            `${crypto.randomUUID()}.${fileExt}`;
+
+        const {
+            error,
+        } =
+            await supabase.storage
+
+                .from(
+                    "noc-completion-documents"
+                )
+
+                .upload(
+                    fileName,
+                    file
+                );
+
+        if (error)
+            throw error;
+
+        return fileName;
+
+    },
+
+    async submitCompletionDetails(
+
+        nocRequestId: string,
+
+        payload: {
+
+            completion_certificate_url: string;
+
+            completion_hr_email: string;
+
+            completion_hr_contact: string;
+
+            completion_same_hr: boolean;
+
+            completion_hr_name: string;
+
+            completion_hr_designation: string;
+
+        }
+
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    ...payload,
+
+                    completion_submitted_at:
+                        new Date()
+                            .toISOString(),
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
 
     },
 

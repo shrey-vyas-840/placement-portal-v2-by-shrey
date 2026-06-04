@@ -23,6 +23,14 @@ export function StudentNocPage() {
     ] = useState<any[]>([]);
 
     const [
+        completionRequest,
+        setCompletionRequest,
+    ] =
+        useState<any>(
+            null
+        );
+
+    const [
         selectedRequest,
         setSelectedRequest,
     ] = useState<any>(
@@ -85,6 +93,51 @@ export function StudentNocPage() {
 
     });
 
+    const [
+        completionForm,
+        setCompletionForm,
+    ] =
+        useState<{
+
+            certificate:
+            File | null;
+
+            hr_email:
+            string;
+
+            hr_contact:
+            string;
+
+            same_hr:
+            boolean;
+
+            hr_name:
+            string;
+
+            hr_designation:
+            string;
+
+        }>({
+
+            certificate:
+                null,
+
+            hr_email:
+                "",
+
+            hr_contact:
+                "",
+
+            same_hr:
+                true,
+
+            hr_name:
+                "",
+
+            hr_designation:
+                "",
+
+        });
     useEffect(() => {
 
         document.title =
@@ -179,8 +232,29 @@ export function StudentNocPage() {
                 nocRequests.filter(
                     (request: any) =>
                         request.status !==
-                        "COMPLETED_TENURE"
+                        "TENURE_COMPLETED"
                 )
+
+            );
+
+            const pendingVerification =
+                nocRequests.find(
+                    (
+                        request: any
+                    ) =>
+                        request.status ===
+                        "COMPLETED_TENURE_PENDING_VERIFICATION"
+                );
+
+            setCompletionRequest(
+
+                pendingVerification &&
+                    !pendingVerification
+                        .completion_submitted_at
+                    ?
+                    pendingVerification
+                    :
+                    null
 
             );
 
@@ -363,6 +437,88 @@ export function StudentNocPage() {
 
     }
 
+    async function submitCompletion() {
+
+        if (
+            !completionRequest
+        )
+            return;
+
+        if (
+            !completionForm.certificate
+        ) {
+
+            alert(
+                "Upload Completion Certificate"
+            );
+
+            return;
+
+        }
+
+        const certificatePath =
+            await nocService
+                .uploadCompletionCertificate(
+                    completionForm.certificate
+                );
+
+        await nocService
+            .submitCompletionDetails(
+
+                completionRequest
+                    .noc_request_id,
+
+                {
+
+                    completion_certificate_url:
+                        certificatePath,
+
+                    completion_hr_email:
+                        completionForm.hr_email,
+
+                    completion_hr_contact:
+                        completionForm.hr_contact,
+
+                    completion_same_hr:
+                        completionForm.same_hr,
+
+                    completion_hr_name:
+                        completionForm.hr_name,
+
+                    completion_hr_designation:
+                        completionForm.hr_designation,
+
+                }
+
+            );
+
+        alert(
+            "Completion Details Submitted"
+        );
+
+        await loadProfile();
+
+    }
+
+    <button
+
+        onClick={
+            submitCompletion
+        }
+
+        className="
+rounded
+border
+px-4
+py-2
+"
+
+    >
+
+        Submit Completion Details
+
+    </button>
+
     return (
 
         <div className="mx-auto max-w-7xl p-6">
@@ -388,7 +544,12 @@ export function StudentNocPage() {
             </div>
 
             {
-                activeNoc && (
+                (
+                    activeNoc
+                    ||
+                    completionRequest
+                )
+                && (
 
                     <div
                         className="
@@ -424,6 +585,36 @@ p-4
                         .
 
                         New NOC requests are restricted until completion.
+
+                    </div>
+
+                )
+            }
+
+            {
+                completionRequest && (
+
+                    <div
+                        className="
+mb-6
+rounded-lg
+border
+border-red-300
+bg-red-50
+p-4
+"
+                    >
+
+                        <strong>
+
+                            Previous NOC Completion Required
+
+                        </strong>
+
+                        <br />
+
+                        Submit internship/job completion details
+                        before applying for a new NOC.
 
                     </div>
 
@@ -1066,6 +1257,221 @@ ${[
 
             <div className="mt-8">
 
+                {
+                    completionRequest && (
+
+                        <div className="mb-8 rounded-lg border p-6">
+
+                            <h2 className="mb-4 text-xl font-semibold">
+
+                                Complete Previous NOC
+
+                            </h2>
+
+                            <div className="space-y-4">
+
+                                <input
+
+                                    type="file"
+
+                                    accept="
+.pdf,
+.jpg,
+.jpeg,
+.png
+"
+
+                                    onChange={(e) =>
+
+                                        setCompletionForm({
+
+                                            ...completionForm,
+
+                                            certificate:
+                                                e.target.files?.[0]
+                                                ?? null,
+
+                                        })
+
+                                    }
+
+                                />
+
+                            </div>
+
+                            <input
+
+                                placeholder="HR Email"
+
+                                className="
+w-full
+rounded
+border
+p-2
+"
+
+                                value={
+                                    completionForm.hr_email
+                                }
+
+                                onChange={(e) =>
+
+                                    setCompletionForm({
+
+                                        ...completionForm,
+
+                                        hr_email:
+                                            e.target.value,
+
+                                    })
+
+                                }
+
+                            />
+
+                            <input
+
+                                placeholder="HR Contact Number"
+
+                                className="
+w-full
+rounded
+border
+p-2
+"
+
+                                value={
+                                    completionForm.hr_contact
+                                }
+
+                                onChange={(e) =>
+
+                                    setCompletionForm({
+
+                                        ...completionForm,
+
+                                        hr_contact:
+                                            e.target.value,
+
+                                    })
+
+                                }
+
+                            />
+
+                            <label className="flex gap-2">
+
+                                <input
+
+                                    type="checkbox"
+
+                                    checked={
+                                        completionForm.same_hr
+                                    }
+
+                                    onChange={(e) =>
+
+                                        setCompletionForm({
+
+                                            ...completionForm,
+
+                                            same_hr:
+                                                e.target.checked,
+
+                                        })
+
+                                    }
+
+                                />
+
+                                Same HR as NOC
+
+                                (
+                                {
+                                    completionRequest
+                                        ?.snapshot
+                                        ?.hr_name
+                                }
+
+                                )
+
+                            </label>
+
+                            {
+                                !completionForm.same_hr && (
+
+                                    <>
+
+                                        <input
+
+                                            placeholder="New HR Name"
+
+                                            className="
+w-full
+rounded
+border
+p-2
+"
+
+                                            value={
+                                                completionForm.hr_name
+                                            }
+
+                                            onChange={(e) =>
+
+                                                setCompletionForm({
+
+                                                    ...completionForm,
+
+                                                    hr_name:
+                                                        e.target.value,
+
+                                                })
+
+                                            }
+
+                                        />
+
+                                        <input
+
+                                            placeholder="New HR Designation"
+
+                                            className="
+w-full
+rounded
+border
+p-2
+"
+
+                                            value={
+                                                completionForm.hr_designation
+                                            }
+
+                                            onChange={(e) =>
+
+                                                setCompletionForm({
+
+                                                    ...completionForm,
+
+                                                    hr_designation:
+                                                        e.target.value,
+
+                                                })
+
+                                            }
+
+                                        />
+
+                                    </>
+
+                                )
+                            }
+
+                        </div>
+
+                    )
+                }
+
                 <h2 className="mb-4 text-xl font-semibold">
 
                     My NOC Requests
@@ -1435,9 +1841,33 @@ p-6
 
                             <div>
 
+                                <strong>
+                                    Approved At
+                                </strong>
+
+                                <br />
+
                                 {
-                                    selectedRequest.status ===
-                                    "ISSUED" && (
+                                    selectedRequest.approved_at
+                                        ?
+                                        new Date(
+                                            selectedRequest.approved_at
+                                        ).toLocaleString()
+                                        :
+                                        "-"
+                                }
+
+                            </div>
+
+                            <div>
+
+                                {
+                                    [
+                                        "ISSUED",
+                                        "CANCELLED"
+                                    ].includes(
+                                        selectedRequest.status
+                                    ) && (
 
                                         <>
 
@@ -1459,6 +1889,25 @@ p-6
                                 }
 
                             </div>
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Issued At
+                            </strong>
+
+                            <br />
+
+                            {
+                                selectedRequest.issued_at
+                                    ?
+                                    new Date(
+                                        selectedRequest.issued_at
+                                    ).toLocaleString()
+                                    :
+                                    "-"
+                            }
 
                         </div>
 

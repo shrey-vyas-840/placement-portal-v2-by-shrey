@@ -457,4 +457,71 @@ export const adminNocService = {
 
     },
 
+    async approveTenureCompletion(
+        nocRequestId: string
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "TENURE_COMPLETED",
+
+                    completion_verified_at:
+                        new Date()
+                            .toISOString(),
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+    async rejectTenureCompletion(
+        nocRequestId: string
+    ) {
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .update({
+
+                    status:
+                        "ISSUED",
+
+                    completion_submitted_at:
+                        null,
+
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
 };
