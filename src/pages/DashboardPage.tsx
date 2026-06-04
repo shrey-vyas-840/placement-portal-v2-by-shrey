@@ -6,6 +6,7 @@ import { ensureUserProvisioned } from "@/services/provisionService";
 import { profileCompletionService } from "@/services/profileCompletionService";
 import { studentService } from "@/services/studentService";
 import { rbacService } from "@/services/rbacService";
+import { useNavigate } from "@tanstack/react-router";
 
 
 export function DashboardPage() {
@@ -45,6 +46,9 @@ export function DashboardPage() {
           await studentService.getProfileByUserId(
             user.id,
           );
+
+        const navigate =
+          useNavigate();
 
         if (profile) {
           setCompletionName(
@@ -152,6 +156,19 @@ export function DashboardPage() {
 
             <p className="mt-1 text-sm text-muted-foreground">
               Track your placement applications.
+            </p>
+          </Link>
+
+          <Link
+            to="/student/noc"
+            className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+          >
+            <h2 className="text-base font-medium text-foreground">
+              NOC Requests
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Submit and track your NOC requests.
             </p>
           </Link>
 

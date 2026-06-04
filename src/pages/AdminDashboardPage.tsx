@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { adminStudentService } from "@/services/adminStudentService";
+import { useNavigate } from "@tanstack/react-router";
 
 export function AdminDashboardPage() {
     const [metrics, setMetrics] =
@@ -10,6 +11,9 @@ export function AdminDashboardPage() {
             unplacedStudents: 0,
             placedStudents: 0,
         });
+
+    const navigate =
+        useNavigate();
 
     useEffect(() => {
         async function load() {
@@ -125,6 +129,18 @@ export function AdminDashboardPage() {
 
                         <p className="mt-2 text-sm text-muted-foreground">
                             Manage published opportunities and applications.
+                        </p>
+                    </Link>
+                    <Link
+                        to="/admin/noc"
+                        className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+                    >
+                        <h2 className="text-base font-medium text-foreground">
+                            NOC Dashboard
+                        </h2>
+
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Review, manage, and approve NOC requests.
                         </p>
                     </Link>
                 </div>

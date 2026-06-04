@@ -30,6 +30,13 @@ export function StudentNocPage() {
     );
 
     const [
+        activeNoc,
+        setActiveNoc,
+    ] = useState<any>(
+        null
+    );
+
+    const [
         loading,
         setLoading,
     ] = useState(true);
@@ -169,6 +176,16 @@ export function StudentNocPage() {
 
             setRequests(
                 nocRequests
+            );
+
+            const active =
+                await nocService
+                    .hasActiveNoc(
+                        student.student_id
+                    );
+
+            setActiveNoc(
+                active
             );
 
         } finally {
@@ -364,6 +381,49 @@ export function StudentNocPage() {
 
             </div>
 
+            {
+                activeNoc && (
+
+                    <div
+                        className="
+mb-6
+rounded-lg
+border
+border-yellow-300
+bg-yellow-50
+p-4
+"
+                    >
+
+                        <strong>
+
+                            Active NOC Exists
+
+                        </strong>
+
+                        <br />
+
+                        You already have an active NOC until
+
+                        {" "}
+
+                        <strong>
+
+                            {
+                                activeNoc.snapshot?.end_date
+                            }
+
+                        </strong>
+
+                        .
+
+                        New NOC requests are restricted until completion.
+
+                    </div>
+
+                )
+            }
+
             {!reviewMode && (
 
                 <div className="rounded-lg border p-6 space-y-4">
@@ -417,6 +477,88 @@ export function StudentNocPage() {
                         </select>
 
                     </div>
+                    {
+                        selectedRequest && (
+
+
+                            <div className="mb-6">
+
+                                <div className="flex flex-wrap gap-2">
+
+                                    <span
+                                        className="
+px-3
+py-1
+rounded
+bg-green-100
+text-green-800
+"
+                                    >
+                                        ✓ Submitted
+                                    </span>
+
+                                    <span
+                                        className={`
+px-3
+py-1
+rounded
+${[
+                                                "PENDING_PRINT",
+                                                "PRINTED",
+                                                "ISSUED",
+                                            ].includes(
+                                                selectedRequest.status
+                                            )
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-gray-100 text-gray-600"
+                                            }
+`}
+                                    >
+                                        ✓ HOD Approved
+                                    </span>
+
+                                    <span
+                                        className={`
+px-3
+py-1
+rounded
+${[
+                                                "PRINTED",
+                                                "ISSUED",
+                                            ].includes(
+                                                selectedRequest.status
+                                            )
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-gray-100 text-gray-600"
+                                            }
+`}
+                                    >
+                                        ✓ Ready For Print
+                                    </span>
+
+                                    <span
+                                        className={`
+px-3
+py-1
+rounded
+${[
+                                                "ISSUED",
+                                            ].includes(
+                                                selectedRequest.status
+                                            )
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-gray-100 text-gray-600"
+                                            }
+`}
+                                    >
+                                        ✓ Issued
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        )}
 
                     <div className="grid grid-cols-2 gap-4">
 
@@ -692,13 +834,17 @@ export function StudentNocPage() {
 
                     <button
 
+                        disabled={
+                            !!activeNoc
+                        }
+
                         onClick={() =>
                             setReviewMode(
                                 true
                             )
                         }
 
-                        className="rounded border px-4 py-2"
+                        className="rounded border px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
 
                     >
 
@@ -1041,12 +1187,17 @@ export function StudentNocPage() {
                                         <td className="p-3">
 
                                             {
-                                                request.hod_approval_deadline
+                                                request.status ===
+                                                    "PENDING_HOD_APPROVAL"
+
                                                     ?
+
                                                     new Date(
                                                         request.hod_approval_deadline
                                                     ).toLocaleString()
+
                                                     :
+
                                                     "-"
                                             }
 
@@ -1269,16 +1420,27 @@ p-6
 
                             <div>
 
-                                <strong>
-                                    Reference Number
-                                </strong>
-
-                                <br />
-
                                 {
-                                    selectedRequest.reference_number
-                                    ??
-                                    "-"
+                                    selectedRequest.status ===
+                                    "ISSUED" && (
+
+                                        <>
+
+                                            <strong>
+                                                Reference Number
+                                            </strong>
+
+                                            <br />
+
+                                            {
+                                                selectedRequest.reference_number
+                                                ??
+                                                "-"
+                                            }
+
+                                        </>
+
+                                    )
                                 }
 
                             </div>
