@@ -1507,6 +1507,18 @@ p-2
                                 </th>
 
                                 <th className="p-3 text-left">
+                                    Reference No
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Issued Date
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Prints
+                                </th>
+
+                                <th className="p-3 text-left">
                                     Status
                                 </th>
 
@@ -1616,6 +1628,40 @@ p-2
 
                                         <td className="p-3">
 
+                                            {
+                                                request.reference_number
+                                                ??
+                                                "-"
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.issued_at
+                                                    ?
+                                                    new Date(
+                                                        request.issued_at
+                                                    ).toLocaleDateString()
+                                                    :
+                                                    "-"
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.print_count
+                                                ??
+                                                0
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
                                             <span
                                                 className={`
             rounded-full
@@ -1633,7 +1679,12 @@ p-2
                                                                     ? "bg-green-100 text-green-800"
                                                                     : request.status === "CANCELLED"
                                                                         ? "bg-red-100 text-red-800"
-                                                                        : "bg-gray-100 text-gray-800"
+                                                                        : request.status ===
+                                                                            "TENURE_COMPLETED"
+                                                                            ?
+                                                                            "bg-green-100 text-green-800"
+                                                                            :
+                                                                            "bg-gray-100 text-gray-800"
                                                     }
         `}
                                             >
@@ -1646,12 +1697,16 @@ p-2
                                                             : request.status === "PRINTED"
                                                                 ? "Printed"
                                                                 : request.status === "ISSUED"
-                                                                    ? "Issued"
-                                                                    : request.status === "CANCELLED"
-                                                                        ? "Cancelled"
-                                                                        : request.status === "HOD_REJECTED"
-                                                                            ? "Rejected"
-                                                                            : request.status
+                                                                    ? "Issued - Active"
+                                                                    : request.status === "COMPLETED_TENURE_PENDING_VERIFICATION"
+                                                                        ? "Completion Verification Pending"
+                                                                        : request.status === "TENURE_COMPLETED"
+                                                                            ? "Eligible For New NOC"
+                                                                            : request.status === "CANCELLED"
+                                                                                ? "Cancelled"
+                                                                                : request.status === "HOD_REJECTED"
+                                                                                    ? "Rejected"
+                                                                                    : request.status
                                                 }
 
                                             </span>
@@ -1898,6 +1953,45 @@ p-6
                             </strong>
 
                             <br />
+
+                            {
+                                selectedRequest
+                                    ?.completion_certificate_url
+                                && (
+
+                                    <div>
+
+                                        <strong>
+
+                                            Completion Certificate
+
+                                        </strong>
+
+                                        <br />
+
+                                        <a
+
+                                            href={
+                                                selectedRequest
+                                                    .completion_certificate_url
+                                            }
+
+                                            target="_blank"
+
+                                            rel="noreferrer"
+
+                                            className="text-blue-600 underline"
+
+                                        >
+
+                                            View Certificate
+
+                                        </a>
+
+                                    </div>
+
+                                )
+                            }
 
                             {
                                 selectedRequest.issued_at

@@ -403,6 +403,12 @@ export function AdminNocDashboardPage() {
     ] =
         useState<any[]>([]);
 
+    const [
+        completedTenure,
+        setCompletedTenure,
+    ] =
+        useState<any[]>([]);
+
     async function load() {
 
         const [
@@ -412,6 +418,7 @@ export function AdminNocDashboardPage() {
             issuedData,
             cancelledData,
             tenureVerification,
+            completedTenureData,
         ] =
             await Promise.all([
 
@@ -445,6 +452,11 @@ export function AdminNocDashboardPage() {
                         "COMPLETED_TENURE_PENDING_VERIFICATION"
                     ),
 
+                adminNocService
+                    .getByStatus(
+                        "TENURE_COMPLETED"
+                    ),
+
             ]);
 
         setPendingApproval(
@@ -469,6 +481,10 @@ export function AdminNocDashboardPage() {
 
         setPendingTenureVerification(
             tenureVerification
+        );
+
+        setCompletedTenure(
+            completedTenureData
         );
 
     }
@@ -571,7 +587,7 @@ export function AdminNocDashboardPage() {
                 NOC Dashboard
             </h1>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-7  ">
+            <div className="mt-6 grid gap-4 md:grid-cols-8 ">
                 <div className="rounded-lg border p-4">
                     <div className="text-sm text-muted-foreground">
                         Total NOCs
@@ -650,6 +666,24 @@ export function AdminNocDashboardPage() {
 
                         {
                             pendingTenureVerification.length
+                        }
+
+                    </div>
+
+                </div>
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Completed Tenure
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {
+                            completedTenure.length
                         }
 
                     </div>
@@ -1657,6 +1691,22 @@ p-3
                             </th>
 
                             <th className="p-3 text-left">
+                                Certificate
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Same HR
+                            </th>
+
+                            <th className="p-3 text-left">
+                                New HR Name
+                            </th>
+
+                            <th className="p-3 text-left">
+                                New Designation
+                            </th>
+
+                            <th className="p-3 text-left">
                                 Actions
                             </th>
 
@@ -1738,6 +1788,57 @@ p-3
                                             {
                                                 request.completion_hr_contact
                                             }
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.completion_certificate_url
+                                                    ? (
+                                                        <a
+                                                            href={
+                                                                request.completion_certificate_url
+                                                            }
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="text-blue-600 underline"
+                                                        >
+                                                            View
+                                                        </a>
+                                                    )
+                                                    : "-"
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.same_hr
+                                                    ? "Yes"
+                                                    : "No"
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.new_hr_name
+                                                ??
+                                                "-"
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.new_hr_designation
+                                                ??
+                                                "-"
+                                            }
+
                                         </td>
 
                                         <td className="p-3 flex gap-2">
@@ -2038,6 +2139,206 @@ p-3
 
             </div>
 
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Completed Tenure
+
+            </h2>
+
+            <div className="overflow-hidden rounded-lg border">
+
+                <table className="w-full">
+
+                    <thead>
+
+                        <tr className="border-b">
+
+                            <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Verified At
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Certificate
+                            </th>
+
+                            <th className="p-3 text-left">
+                                HR Email
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {
+                            completedTenure
+
+                                .slice()
+
+                                .sort(
+                                    (
+                                        a,
+                                        b
+                                    ) =>
+
+                                        new Date(
+                                            b.completion_verified_at
+                                        ).getTime()
+
+                                        -
+
+                                        new Date(
+                                            a.completion_verified_at
+                                        ).getTime()
+
+                                )
+
+                                .filter(
+                                    matchesSearch
+                                )
+
+                                .map(
+                                    (
+                                        request: any
+                                    ) => (
+
+                                        <tr
+                                            key={
+                                                request.noc_request_id
+                                            }
+                                            className="border-b"
+                                        >
+
+                                            <td className="p-3">
+                                                {
+                                                    request.snapshot?.student_name
+                                                }
+                                            </td>
+
+                                            <td className="p-3">
+                                                {
+                                                    request.snapshot?.enrollment_no
+                                                }
+                                            </td>
+
+                                            <td className="p-3">
+                                                {
+                                                    request.snapshot?.company_name
+                                                }
+                                            </td>
+
+                                            <td className="p-3">
+                                                {
+                                                    request.completion_verified_at
+                                                        ?
+                                                        new Date(
+                                                            request.completion_verified_at
+                                                        ).toLocaleString()
+                                                        :
+                                                        "-"
+                                                }
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.completion_certificate_url
+                                                        ? (
+                                                            <a
+                                                                href={
+                                                                    request.completion_certificate_url
+                                                                }
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="text-blue-600 underline"
+                                                            >
+                                                                View
+                                                            </a>
+                                                        )
+                                                        : "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.completion_hr_email
+                                                    ??
+                                                    "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <button
+
+                                                    onClick={() => {
+
+                                                        setSelectedRequest(
+                                                            request
+                                                        );
+
+                                                        setReviewMode(
+                                                            "VIEW"
+                                                        );
+
+                                                        setEditableSnapshot(
+                                                            structuredClone(
+                                                                request.snapshot
+                                                            )
+                                                        );
+
+                                                        setCustomFields(
+                                                            request.noc_customization
+                                                            ??
+                                                            {}
+                                                        );
+
+                                                    }}
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    View
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    )
+                                )
+
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
                 Cancelled
@@ -2280,6 +2581,77 @@ p-3
                                     setCustomFields={setCustomFields}
                                 />
                             </div>
+
+                            {
+                                selectedRequest?.completion_submitted_at && (
+
+                                    <div className="mb-4 rounded border p-4">
+
+                                        <div>
+
+                                            <strong>
+                                                Completion HR Email:
+                                            </strong>
+
+                                            {" "}
+
+                                            {
+                                                selectedRequest.completion_hr_email
+                                                ??
+                                                "-"
+                                            }
+
+                                        </div>
+
+                                        <div>
+
+                                            <strong>
+                                                Completion HR Contact:
+                                            </strong>
+
+                                            {" "}
+
+                                            {
+                                                selectedRequest.completion_hr_contact
+                                                ??
+                                                "-"
+                                            }
+
+                                        </div>
+
+                                        <div>
+
+                                            <strong>
+                                                Certificate:
+                                            </strong>
+
+                                            {" "}
+
+                                            <a
+
+                                                href={
+                                                    selectedRequest
+                                                        .completion_certificate_url
+                                                }
+
+                                                target="_blank"
+
+                                                rel="noreferrer"
+
+                                                className="text-blue-600 underline"
+
+                                            >
+
+                                                View Certificate
+
+                                            </a>
+
+                                        </div>
+
+                                    </div>
+
+                                )
+                            }
 
                             <div className="mt-6 flex items-center gap-3 whitespace-nowrap no-print">
                                 <button
