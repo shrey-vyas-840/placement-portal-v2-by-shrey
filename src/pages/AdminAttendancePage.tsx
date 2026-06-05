@@ -50,6 +50,7 @@ export function AdminAttendancePage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [rowsPerView, setRowsPerView] = useState(10);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
 
   useEffect(() => {
     void loadDrives();
@@ -227,6 +228,32 @@ export function AdminAttendancePage() {
     [rows],
   );
 
+  function toggleStudentSelection(studentId: string) {
+    setSelectedStudentIds((current) =>
+      current.includes(studentId)
+        ? current.filter((id) => id !== studentId)
+        : [...current, studentId],
+    );
+  }
+
+  function toggleSelectAllVisible() {
+    const visibleIds = visibleRows.map((row) => row.student_id);
+
+    const allSelected = visibleIds.every((id) =>
+      selectedStudentIds.includes(id),
+    );
+
+    if (allSelected) {
+      setSelectedStudentIds((current) =>
+        current.filter((id) => !visibleIds.includes(id)),
+      );
+    } else {
+      setSelectedStudentIds((current) => [
+        ...new Set([...current, ...visibleIds]),
+      ]);
+    }
+  }
+
   function updateRow(studentId: string, patch: Partial<AttendanceDraftRow>) {
     setRows((current) =>
       current.map((row) =>
@@ -235,11 +262,14 @@ export function AdminAttendancePage() {
     );
   }
 
-  function applyBulkStatus(status: AttendanceDraftRow["attendance_status"]) {
-    const selectedIds = new Set(filteredRows.map((row) => row.student_id));
+  function applyBulkStatus(
+    status: AttendanceDraftRow["attendance_status"],
+  ) {
+    const selected = new Set(selectedStudentIds);
+
     setRows((current) =>
       current.map((row) =>
-        selectedIds.has(row.student_id)
+        selected.has(row.student_id)
           ? {
             ...row,
             attendance_status: status,
@@ -311,6 +341,7 @@ export function AdminAttendancePage() {
 
       await loadRows(selectedOpportunityId, selectedRoundId);
       setNotice("Attendance saved successfully.");
+      setSelectedStudentIds([]);
     } catch (err) {
       console.error(err);
       alert("Failed to save attendance.");
@@ -626,24 +657,22 @@ export function AdminAttendancePage() {
                 onClick={() => applyBulkStatus("PRESENT")}
                 className="rounded border px-4 py-2 text-sm font-medium"
               >
-                Mark Filtered Present
+                Mark Selected Present
               </button>
               <button
                 type="button"
                 onClick={() => applyBulkStatus("ABSENT")}
                 className="rounded border px-4 py-2 text-sm font-medium"
               >
-                Mark Filtered Absent
+                Mark Selected Absent
               </button>
               <button
                 type="button"
                 onClick={() => applyBulkStatus("NOT_MARKED")}
                 className="rounded border px-4 py-2 text-sm font-medium"
               >
-                Clear Filtered
+                Clear Selected
               </button>
-
-
             </div>
           </div>
         </div>
@@ -670,6 +699,18 @@ export function AdminAttendancePage() {
             <table className="min-w-full text-left text-sm">
               <thead className="bg-muted/40">
                 <tr>
+                  <th className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={
+                        visibleRows.length > 0 &&
+                        visibleRows.every((row) =>
+                          selectedStudentIds.includes(row.student_id),
+                        )
+                      }
+                      onChange={toggleSelectAllVisible}
+                    />
+                  </th>
                   <th className="px-4 py-3">Enrollment</th>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Institute</th>
@@ -684,6 +725,15 @@ export function AdminAttendancePage() {
               <tbody>
                 {visibleRows.map((row) => (
                   <tr key={row.student_id} className="border-t">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedStudentIds.includes(row.student_id)}
+                        onChange={() =>
+                          toggleStudentSelection(row.student_id)
+                        }
+                      />
+                    </td>
                     <td className="px-4 py-3">{row.student_master?.enrollment_no ?? "-"}</td>
                     <td className="px-4 py-3">{getFullName(row)}</td>
                     <td className="px-4 py-3">{row.academic?.current_institute_name ?? "-"}</td>
