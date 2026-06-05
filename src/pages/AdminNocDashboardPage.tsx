@@ -595,6 +595,155 @@ export function AdminNocDashboardPage() {
 
         };
 
+
+    const lifecycleRequests = [
+        ...pendingApproval,
+        ...pendingPrint,
+        ...printed,
+        ...issued,
+        ...cancelled,
+        ...pendingTenureVerification,
+        ...completedTenure,
+    ];
+
+    const analyticsNocTypes = [
+        "Internship",
+        "Off Campus Placement",
+        "On Campus Placement",
+    ];
+
+    function getAverageApprovalHours(records: any[]) {
+
+        const values = records
+            .map((request) => {
+
+                if (
+                    !request.submitted_at
+                    ||
+                    !request.approved_at
+                )
+                    return null;
+
+                const diff =
+                    new Date(
+                        request.approved_at
+                    ).getTime()
+                    -
+                    new Date(
+                        request.submitted_at
+                    ).getTime();
+
+                return diff > 0
+                    ? diff / (1000 * 60 * 60)
+                    : null;
+
+            })
+            .filter(
+                (
+                    value
+                ): value is number =>
+                    typeof value === "number"
+            );
+
+        if (!values.length)
+            return 0;
+
+        return (
+            values.reduce(
+                (
+                    sum,
+                    value
+                ) => sum + value,
+                0
+            ) / values.length
+        );
+
+    }
+
+    const totalLifecycleRequests =
+        lifecycleRequests.length;
+
+    const openWorkflowCount =
+        pendingApproval.length
+        +
+        pendingPrint.length
+        +
+        pendingTenureVerification.length;
+
+    const issuedAndCompletedCount =
+        issued.length
+        +
+        completedTenure.length;
+
+    const cancellationRate =
+        totalLifecycleRequests
+            ? Math.round(
+                (
+                    cancelled.length
+                    /
+                    totalLifecycleRequests
+                ) * 100
+            )
+            : 0;
+
+    const averageApprovalHours =
+        getAverageApprovalHours(
+            lifecycleRequests
+        );
+
+    const mostCommonType =
+        analyticsNocTypes
+            .map(
+                (
+                    type
+                ) => ({
+                    type,
+                    count:
+                        lifecycleRequests.filter(
+                            (
+                                request: any
+                            ) =>
+                                request.noc_type === type
+                        ).length,
+                })
+            )
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    b.count - a.count
+            )[0];
+
+    const approvalSourceBuckets =
+        Object.entries(
+            lifecycleRequests.reduce(
+                (
+                    acc: Record<string, number>,
+                    request: any
+                ) => {
+
+                    const key =
+                        request.approval_source
+                        ??
+                        "UNSET";
+
+                    acc[key] =
+                        (acc[key] ?? 0) + 1;
+
+                    return acc;
+
+                },
+                {}
+            )
+        )
+        .sort(
+            (
+                a,
+                b
+            ) => b[1] - a[1]
+        );
+
     return (
 
         <div className="mx-auto max-w-7xl p-6">
@@ -700,6 +849,260 @@ export function AdminNocDashboardPage() {
                         {
                             completedTenure.length
                         }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div className="mt-10 rounded-lg border bg-slate-50 p-6">
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+
+                    <div>
+
+                        <h2 className="text-xl font-semibold">
+
+                            NOC Analytics Dashboard
+
+                        </h2>
+
+                        <p className="text-sm text-muted-foreground">
+
+                            Live snapshot from the current NOC queues and lifecycle timestamps.
+
+                        </p>
+
+                    </div>
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Last refreshed:
+
+                        {" "}
+
+                        {new Date().toLocaleString()}
+
+                    </div>
+
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+                    <div className="rounded-lg border bg-white p-4">
+
+                        <div className="text-sm text-muted-foreground">
+
+                            Open workflow items
+
+                        </div>
+
+                        <div className="text-2xl font-bold">
+
+                            {openWorkflowCount}
+
+                        </div>
+
+                    </div>
+
+                    <div className="rounded-lg border bg-white p-4">
+
+                        <div className="text-sm text-muted-foreground">
+
+                            Issued / completed
+
+                        </div>
+
+                        <div className="text-2xl font-bold">
+
+                            {issuedAndCompletedCount}
+
+                        </div>
+
+                    </div>
+
+                    <div className="rounded-lg border bg-white p-4">
+
+                        <div className="text-sm text-muted-foreground">
+
+                            Cancelled rate
+
+                        </div>
+
+                        <div className="text-2xl font-bold">
+
+                            {cancellationRate}%
+
+                        </div>
+
+                    </div>
+
+                    <div className="rounded-lg border bg-white p-4">
+
+                        <div className="text-sm text-muted-foreground">
+
+                            Avg. approval time
+
+                        </div>
+
+                        <div className="text-2xl font-bold">
+
+                            {averageApprovalHours
+                                ? `${averageApprovalHours.toFixed(1)} hrs`
+                                : "-"}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div className="mt-6 grid gap-6 lg:grid-cols-2">
+
+                    <div className="rounded-lg border bg-white p-4">
+
+                        <h3 className="mb-4 text-base font-semibold">
+
+                            NOC Type Mix
+
+                        </h3>
+
+                        <div className="space-y-4">
+
+                            {analyticsNocTypes.map(
+                                (type) => {
+
+                                    const count =
+                                        lifecycleRequests.filter(
+                                            (request: any) =>
+                                                request.noc_type === type
+                                        ).length;
+
+                                    const percent =
+                                        totalLifecycleRequests
+                                            ? Math.round(
+                                                (count / totalLifecycleRequests) * 100
+                                            )
+                                            : 0;
+
+                                    return (
+
+                                        <div key={type}>
+
+                                            <div className="mb-1 flex items-center justify-between text-sm">
+
+                                                <span>{type}</span>
+
+                                                <span>{count}</span>
+
+                                            </div>
+
+                                            <div className="h-2 rounded bg-slate-200">
+
+                                                <div
+                                                    className="h-2 rounded bg-slate-900"
+                                                    style={{
+                                                        width: `${percent}%`,
+                                                    }}
+                                                />
+
+                                            </div>
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )}
+
+                            {mostCommonType && (
+                                <div className="pt-2 text-sm text-muted-foreground">
+
+                                    Most common:
+
+                                    {" "}
+
+                                    <strong>
+
+                                        {mostCommonType.type}
+
+                                    </strong>
+
+                                    {" "}
+
+                                    ({mostCommonType.count})
+
+                                </div>
+                            )}
+
+                        </div>
+
+                    </div>
+
+                    <div className="rounded-lg border bg-white p-4">
+
+                        <h3 className="mb-4 text-base font-semibold">
+
+                            Approval Source Mix
+
+                        </h3>
+
+                        <div className="space-y-4">
+
+                            {approvalSourceBuckets.length ? (
+                                approvalSourceBuckets.map(
+                                    (
+                                        [label, count]
+                                    ) => {
+
+                                        const percent =
+                                            totalLifecycleRequests
+                                                ? Math.round(
+                                                    (count / totalLifecycleRequests) * 100
+                                                )
+                                                : 0;
+
+                                        return (
+
+                                            <div key={label}>
+
+                                                <div className="mb-1 flex items-center justify-between text-sm">
+
+                                                    <span>
+                                                        {label === "UNSET" ? "Not set yet" : label}
+                                                    </span>
+
+                                                    <span>{count}</span>
+
+                                                </div>
+
+                                                <div className="h-2 rounded bg-slate-200">
+
+                                                    <div
+                                                        className="h-2 rounded bg-slate-900"
+                                                        style={{
+                                                            width: `${percent}%`,
+                                                        }}
+                                                    />
+
+                                                </div>
+
+                                            </div>
+
+                                        );
+
+                                    }
+                                )
+                            ) : (
+                                <div className="text-sm text-muted-foreground">
+
+                                    No approval source data yet.
+
+                                </div>
+                            )}
+
+                        </div>
 
                     </div>
 

@@ -500,24 +500,169 @@ export function StudentNocPage() {
 
     }
 
-    <button
+    function formatNocTimelineTime(value?: string | null) {
 
-        onClick={
-            submitCompletion
-        }
+        return value
+            ? new Date(value).toLocaleString()
+            : "Pending";
 
-        className="
-rounded
-border
-px-4
-py-2
-"
+    }
 
-    >
+    function getStudentNocTimeline(request: any) {
 
-        Submit Completion Details
+        return [
 
-    </button>
+            {
+                title:
+                    "Request submitted",
+                time:
+                    request.submitted_at
+                    ??
+                    request.created_at,
+                description:
+                    `NOC request created for ${request.noc_type}.`,
+                done:
+                    true,
+            },
+
+            {
+                title:
+                    request.status === "HOD_REJECTED"
+                        ? "Rejected by HOD"
+                        : "HOD review",
+                time:
+                    request.approved_at
+                    ??
+                    request.hod_approval_deadline,
+                description:
+                    request.status === "PENDING_HOD_APPROVAL"
+                        ? "Waiting for HOD approval."
+                        : request.status === "HOD_REJECTED"
+                            ? "Request was rejected."
+                            : request.approval_source === "ADMIN_OVERRIDE"
+                                ? "Moved forward by admin override."
+                                : "Approved and forwarded to print queue.",
+                done:
+                    [
+                        "HOD_REJECTED",
+                        "PENDING_PRINT",
+                        "PRINTED",
+                        "ISSUED",
+                        "CANCELLED",
+                        "COMPLETED_TENURE_PENDING_VERIFICATION",
+                        "TENURE_COMPLETED",
+                    ].includes(
+                        request.status
+                    ),
+            },
+
+            {
+                title:
+                    "Moved to print queue",
+                time:
+                    request.approved_at,
+                description:
+                    "Ready for print processing.",
+                done:
+                    [
+                        "PENDING_PRINT",
+                        "PRINTED",
+                        "ISSUED",
+                        "CANCELLED",
+                        "COMPLETED_TENURE_PENDING_VERIFICATION",
+                        "TENURE_COMPLETED",
+                    ].includes(
+                        request.status
+                    ),
+            },
+
+            {
+                title:
+                    "Printed",
+                time:
+                    request.printed_at,
+                description:
+                    Number(
+                        request.print_count ?? 0
+                    ) > 1
+                        ? `Printed ${request.print_count} times.`
+                        : "Printed once.",
+                done:
+                    [
+                        "PRINTED",
+                        "ISSUED",
+                        "CANCELLED",
+                        "COMPLETED_TENURE_PENDING_VERIFICATION",
+                        "TENURE_COMPLETED",
+                    ].includes(
+                        request.status
+                    ),
+            },
+
+            {
+                title:
+                    "Issued",
+                time:
+                    request.issued_at,
+                description:
+                    request.reference_number
+                        ? `Reference No. ${request.reference_number}`
+                        : "Issued to student.",
+                done:
+                    [
+                        "ISSUED",
+                        "CANCELLED",
+                        "COMPLETED_TENURE_PENDING_VERIFICATION",
+                        "TENURE_COMPLETED",
+                    ].includes(
+                        request.status
+                    ),
+            },
+
+            {
+                title:
+                    "Cancelled",
+                time:
+                    request.cancelled_at,
+                description:
+                    "Request was cancelled.",
+                done:
+                    request.status === "CANCELLED",
+            },
+
+            {
+                title:
+                    "Completion details submitted",
+                time:
+                    request.completion_submitted_at,
+                description:
+                    request.completion_same_hr
+                        ? "Same HR was used for verification."
+                        : "New HR details were submitted.",
+                done:
+                    !!request.completion_submitted_at
+                    ||
+                    request.status === "TENURE_COMPLETED",
+            },
+
+            {
+                title:
+                    "Tenure verified",
+                time:
+                    request.completion_verified_at
+                    ??
+                    request.tenure_completed_at,
+                description:
+                    request.completion_remark
+                    ||
+                    "Verification completed.",
+                done:
+                    request.status === "TENURE_COMPLETED",
+            },
+
+        ];
+
+    }
 
     return (
 
@@ -1467,6 +1612,29 @@ p-2
                                 )
                             }
 
+                            <div className="mt-4">
+
+                                <button
+
+                                    onClick={
+                                        submitCompletion
+                                    }
+
+                                    className="
+rounded
+border
+px-4
+py-2
+"
+
+                                >
+
+                                    Submit Completion Details
+
+                                </button>
+
+                            </div>
+
                         </div>
 
                     )
@@ -2002,6 +2170,77 @@ p-6
                                     :
                                     "-"
                             }
+
+                        </div>
+
+                        <div className="mt-6 rounded-lg border bg-slate-50 p-4">
+
+                            <h3 className="mb-4 text-lg font-semibold">
+
+                                NOC Timeline History
+
+                            </h3>
+
+                            <div className="space-y-4">
+
+                                {getStudentNocTimeline(
+                                    selectedRequest
+                                ).map(
+                                    (
+                                        step: any,
+                                        index: number
+                                    ) => (
+
+                                        <div
+                                            key={
+                                                step.title
+                                                +
+                                                index
+                                            }
+                                            className="flex gap-3"
+                                        >
+
+                                            <div
+                                                className={`
+mt-1 h-3 w-3 rounded-full
+${step.done ? "bg-green-600" : "bg-gray-300"}
+`}
+                                            />
+
+                                            <div className="flex-1">
+
+                                                <div className="flex flex-wrap items-center justify-between gap-3">
+
+                                                    <div className="font-medium">
+
+                                                        {step.title}
+
+                                                    </div>
+
+                                                    <div className="text-xs text-muted-foreground">
+
+                                                        {formatNocTimelineTime(
+                                                            step.time
+                                                        )}
+
+                                                    </div>
+
+                                                </div>
+
+                                                <div className="text-sm text-muted-foreground">
+
+                                                    {step.description}
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    )
+                                )}
+
+                            </div>
 
                         </div>
 
