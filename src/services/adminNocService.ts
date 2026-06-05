@@ -523,6 +523,32 @@ export const adminNocService = {
             throw error;
 
     },
-    
+
+    async getCompletedTenureAudit() {
+
+        const { data } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .select("*")
+
+                .eq(
+                    "status",
+                    "TENURE_COMPLETED"
+                )
+
+                .order(
+                    "completion_verified_at",
+                    {
+                        ascending: false,
+                    }
+                );
+
+        return data ?? [];
+
+    },
 
 };

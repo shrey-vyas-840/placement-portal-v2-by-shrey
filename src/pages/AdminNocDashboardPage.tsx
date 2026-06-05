@@ -409,6 +409,13 @@ export function AdminNocDashboardPage() {
     ] =
         useState<any[]>([]);
 
+    const [
+        tenureAudit,
+        setTenureAudit,
+    ]
+        =
+        useState<any[]>([]);
+
     async function load() {
 
         const [
@@ -419,6 +426,7 @@ export function AdminNocDashboardPage() {
             cancelledData,
             tenureVerification,
             completedTenureData,
+            auditTrailData,
         ] =
             await Promise.all([
 
@@ -457,6 +465,9 @@ export function AdminNocDashboardPage() {
                         "TENURE_COMPLETED"
                     ),
 
+                adminNocService
+                    .getCompletedTenureAudit(),
+
             ]);
 
         setPendingApproval(
@@ -485,6 +496,10 @@ export function AdminNocDashboardPage() {
 
         setCompletedTenure(
             completedTenureData
+        );
+
+        setTenureAudit(
+            auditTrailData
         );
 
     }
@@ -2341,6 +2356,135 @@ p-3
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
+                Tenure Audit Trail
+
+            </h2>
+
+            <div className="overflow-hidden rounded-lg border">
+
+                <table className="w-full">
+
+                    <thead>
+
+                        <tr className="border-b">
+
+                            <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
+
+                            <th className="p-3 text-left">
+                                End Date
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Verified At
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Certificate
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {
+                            tenureAudit.map(
+                                (request: any) => (
+
+                                    <tr
+                                        key={
+                                            request.noc_request_id
+                                        }
+                                        className="border-b"
+                                    >
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.student_name
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.enrollment_no
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.company_name
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.snapshot?.end_date
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+                                            {
+                                                request.completion_verified_at
+                                                    ?
+                                                    new Date(
+                                                        request.completion_verified_at
+                                                    ).toLocaleString()
+                                                    :
+                                                    "-"
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.completion_certificate_url
+                                                    ?
+
+                                                    <a
+                                                        href={
+                                                            request.completion_certificate_url
+                                                        }
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-blue-600 underline"
+                                                    >
+
+                                                        Download
+
+                                                    </a>
+
+                                                    :
+
+                                                    "-"
+                                            }
+
+                                        </td>
+
+                                    </tr>
+
+                                )
+                            )
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
                 Cancelled
 
             </h2>
@@ -2622,32 +2766,46 @@ p-3
                                         <div>
 
                                             <strong>
-                                                Certificate:
+
+                                                Completion Certificate:
+
                                             </strong>
 
                                             {" "}
 
-                                            <a
+                                            {
+                                                selectedRequest
+                                                    ?.completion_certificate_url
+                                                    ?
 
-                                                href={
-                                                    selectedRequest
-                                                        .completion_certificate_url
-                                                }
+                                                    <a
 
-                                                target="_blank"
+                                                        href={
+                                                            selectedRequest
+                                                                .completion_certificate_url
+                                                        }
 
-                                                rel="noreferrer"
+                                                        target="_blank"
 
-                                                className="text-blue-600 underline"
+                                                        rel="noreferrer"
 
-                                            >
+                                                        className="
+text-blue-600
+underline
+"
 
-                                                View Certificate
+                                                    >
 
-                                            </a>
+                                                        Download Certificate
+
+                                                    </a>
+
+                                                    :
+
+                                                    "-"
+                                            }
 
                                         </div>
-
                                     </div>
 
                                 )
