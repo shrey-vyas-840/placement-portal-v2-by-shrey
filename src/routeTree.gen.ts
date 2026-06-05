@@ -23,6 +23,7 @@ import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportuni
 import { Route as AdminNocRouteImport } from './routes/admin/noc'
 import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
+import { Route as AdminAttendanceRouteImport } from './routes/admin/attendance'
 import { Route as AdminAllOpportunitiesRouteImport } from './routes/admin/all-opportunities'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
 import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/opportunities.index'
@@ -100,6 +101,11 @@ const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   path: '/admin/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
+  id: '/admin/attendance',
+  path: '/admin/attendance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAllOpportunitiesRoute = AdminAllOpportunitiesRouteImport.update({
   id: '/admin/all-opportunities',
   path: '/admin/all-opportunities',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
+  '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/noc': typeof AdminNocRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
+  '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/noc': typeof AdminNocRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
+  '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/noc': typeof AdminNocRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/admin/$studentId'
     | '/admin/all-opportunities'
+    | '/admin/attendance'
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/noc'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/admin/$studentId'
     | '/admin/all-opportunities'
+    | '/admin/attendance'
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/noc'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/admin/$studentId'
     | '/admin/all-opportunities'
+    | '/admin/attendance'
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/noc'
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   AdminStudentIdRoute: typeof AdminStudentIdRoute
   AdminAllOpportunitiesRoute: typeof AdminAllOpportunitiesRoute
+  AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
   AdminDrivesRoute: typeof AdminDrivesRoute
   AdminNocRoute: typeof AdminNocRoute
@@ -389,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCompaniesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/attendance': {
+      id: '/admin/attendance'
+      path: '/admin/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AdminAttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/all-opportunities': {
       id: '/admin/all-opportunities'
       path: '/admin/all-opportunities'
@@ -456,6 +476,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   AdminStudentIdRoute: AdminStudentIdRoute,
   AdminAllOpportunitiesRoute: AdminAllOpportunitiesRoute,
+  AdminAttendanceRoute: AdminAttendanceRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
   AdminDrivesRoute: AdminDrivesRoute,
   AdminNocRoute: AdminNocRoute,

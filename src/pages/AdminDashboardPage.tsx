@@ -143,6 +143,19 @@ export function AdminDashboardPage() {
                             Review, manage, and approve NOC requests.
                         </p>
                     </Link>
+
+                    <Link
+                        to="/admin/attendance"
+                        className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/40"
+                    >
+                        <h2 className="text-base font-medium text-foreground">
+                            Attendance Management
+                        </h2>
+
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Manage rounds, attendance, bulk updates and exports.
+                        </p>
+                    </Link>
                 </div>
             </div>
         </div>
