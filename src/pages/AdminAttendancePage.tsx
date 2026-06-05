@@ -49,6 +49,7 @@ export function AdminAttendancePage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [rowsPerView, setRowsPerView] = useState(10);
 
   useEffect(() => {
     void loadDrives();
@@ -188,6 +189,10 @@ export function AdminAttendancePage() {
     attendanceStatusFilter,
   ]);
 
+  const visibleRows = useMemo(() => {
+    return filteredRows.slice(0, rowsPerView);
+  }, [filteredRows, rowsPerView]);
+
   const summary = useMemo(() => {
     return rows.reduce(
       (acc, row) => {
@@ -236,9 +241,9 @@ export function AdminAttendancePage() {
       current.map((row) =>
         selectedIds.has(row.student_id)
           ? {
-              ...row,
-              attendance_status: status,
-            }
+            ...row,
+            attendance_status: status,
+          }
           : row,
       ),
     );
@@ -366,7 +371,7 @@ export function AdminAttendancePage() {
               Download Consolidated Sheet
             </button>
             <Link
-              to="/admin/"
+              to="/admin"
               className="rounded border px-4 py-2 text-sm font-medium"
             >
               Back to Admin
@@ -502,11 +507,10 @@ export function AdminAttendancePage() {
                 key={round.round_id}
                 type="button"
                 onClick={() => setSelectedRoundId(round.round_id)}
-                className={`rounded-full border px-4 py-2 text-sm ${
-                  selectedRoundId === round.round_id
-                    ? "bg-foreground text-background"
-                    : ""
-                }`}
+                className={`rounded-full border px-4 py-2 text-sm ${selectedRoundId === round.round_id
+                  ? "bg-foreground text-background"
+                  : ""
+                  }`}
               >
                 {round.round_number}. {round.round_name}
               </button>
@@ -593,6 +597,29 @@ export function AdminAttendancePage() {
               <option value="NOT_MARKED">Not Marked</option>
             </select>
 
+            <div className="flex items-center gap-3 lg:col-span-4">
+              <span className="text-sm font-medium">
+                Show Rows
+              </span>
+
+              <select
+                className="rounded border bg-background px-3 py-2"
+                value={rowsPerView}
+                onChange={(e) => setRowsPerView(Number(e.target.value))}
+              >
+                <option value={10}>10</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={150}>150</option>
+                <option value={200}>200</option>
+                <option value={999999}>All</option>
+              </select>
+
+              <span className="text-sm text-muted-foreground">
+                Showing {Math.min(filteredRows.length, rowsPerView)} of {filteredRows.length}
+              </span>
+            </div>
+
             <div className="flex flex-wrap gap-2 lg:col-span-4">
               <button
                 type="button"
@@ -615,14 +642,8 @@ export function AdminAttendancePage() {
               >
                 Clear Filtered
               </button>
-              <button
-                type="button"
-                onClick={handleSaveAttendance}
-                disabled={!selectedRoundId || saving}
-                className="rounded border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save Attendance"}
-              </button>
+
+
             </div>
           </div>
         </div>
@@ -635,7 +656,17 @@ export function AdminAttendancePage() {
             </p>
           </div>
 
-          <div className="overflow-auto">
+          <div
+            className="overflow-auto"
+            style={{
+              maxHeight:
+                rowsPerView <= 10
+                  ? "500px"
+                  : rowsPerView <= 50
+                    ? "700px"
+                    : "900px",
+            }}
+          >
             <table className="min-w-full text-left text-sm">
               <thead className="bg-muted/40">
                 <tr>
@@ -651,7 +682,7 @@ export function AdminAttendancePage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map((row) => (
+                {visibleRows.map((row) => (
                   <tr key={row.student_id} className="border-t">
                     <td className="px-4 py-3">{row.student_master?.enrollment_no ?? "-"}</td>
                     <td className="px-4 py-3">{getFullName(row)}</td>
@@ -702,6 +733,20 @@ export function AdminAttendancePage() {
             </table>
           </div>
         </div>
+
+        <div className="border-t px-5 py-4">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveAttendance}
+              disabled={!selectedRoundId || saving}
+              className="rounded border px-6 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Attendance"}
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
