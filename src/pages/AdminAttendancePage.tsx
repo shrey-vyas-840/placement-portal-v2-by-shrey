@@ -51,6 +51,7 @@ export function AdminAttendancePage() {
   const [notice, setNotice] = useState("");
   const [rowsPerView, setRowsPerView] = useState(10);
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     void loadDrives();
@@ -63,6 +64,14 @@ export function AdminAttendancePage() {
       setRounds([]);
       setSelectedRoundId("");
       setRows([]);
+      setSearch("");
+      setInstituteFilter(DEFAULT_FILTER);
+      setDegreeFilter(DEFAULT_FILTER);
+      setBranchFilter(DEFAULT_FILTER);
+      setYearFilter(DEFAULT_FILTER);
+      setApplicationStatusFilter(DEFAULT_FILTER);
+      setAttendanceStatusFilter(DEFAULT_FILTER);
+      setSelectedStudentIds([]);
       return;
     }
 
@@ -74,6 +83,14 @@ export function AdminAttendancePage() {
       setRounds([]);
       setSelectedRoundId("");
       setRows([]);
+      setSearch("");
+      setInstituteFilter(DEFAULT_FILTER);
+      setDegreeFilter(DEFAULT_FILTER);
+      setBranchFilter(DEFAULT_FILTER);
+      setYearFilter(DEFAULT_FILTER);
+      setApplicationStatusFilter(DEFAULT_FILTER);
+      setAttendanceStatusFilter(DEFAULT_FILTER);
+      setSelectedStudentIds([]);
       return;
     }
 
@@ -85,6 +102,7 @@ export function AdminAttendancePage() {
 
   useEffect(() => {
     if (!selectedOpportunityId || !selectedRoundId) {
+      setSelectedStudentIds([]);
       setRows([]);
       return;
     }
@@ -194,6 +212,8 @@ export function AdminAttendancePage() {
     return filteredRows.slice(0, rowsPerView);
   }, [filteredRows, rowsPerView]);
 
+  const selectedCount = selectedStudentIds.length;
+
   const summary = useMemo(() => {
     return rows.reduce(
       (acc, row) => {
@@ -204,6 +224,27 @@ export function AdminAttendancePage() {
       },
       { present: 0, absent: 0, notMarked: 0 },
     );
+  }, [rows]);
+
+  const completionStats = useMemo(() => {
+    const total = rows.length;
+
+    const marked = rows.filter(
+      (row) =>
+        row.attendance_status === "PRESENT" ||
+        row.attendance_status === "ABSENT",
+    ).length;
+
+    const percentage =
+      total === 0
+        ? 0
+        : Math.round((marked / total) * 100);
+
+    return {
+      total,
+      marked,
+      percentage,
+    };
   }, [rows]);
 
   const institutes = useMemo(
@@ -227,6 +268,45 @@ export function AdminAttendancePage() {
     () => getDistinct(rows.map((row) => row.application_status ?? null)),
     [rows],
   );
+
+  const filteredDegrees = useMemo(() => {
+    if (instituteFilter === DEFAULT_FILTER) {
+      return degrees;
+    }
+
+    return getDistinct(
+      rows
+        .filter(
+          (row) =>
+            row.academic?.current_institute_name === instituteFilter,
+        )
+        .map((row) => row.academic?.current_degree_level),
+    );
+  }, [rows, instituteFilter, degrees]);
+
+  const filteredBranches = useMemo(() => {
+    let source = rows;
+
+    if (instituteFilter !== DEFAULT_FILTER) {
+      source = source.filter(
+        (row) =>
+          row.academic?.current_institute_name === instituteFilter,
+      );
+    }
+
+    if (degreeFilter !== DEFAULT_FILTER) {
+      source = source.filter(
+        (row) =>
+          row.academic?.current_degree_level === degreeFilter,
+      );
+    }
+
+    return getDistinct(
+      source.map(
+        (row) => row.academic?.current_branch_name,
+      ),
+    );
+  }, [rows, instituteFilter, degreeFilter]);
 
   function toggleStudentSelection(studentId: string) {
     setSelectedStudentIds((current) =>
@@ -254,12 +334,19 @@ export function AdminAttendancePage() {
     }
   }
 
-  function updateRow(studentId: string, patch: Partial<AttendanceDraftRow>) {
+  function updateRow(
+    studentId: string,
+    patch: Partial<AttendanceDraftRow>,
+  ) {
     setRows((current) =>
       current.map((row) =>
-        row.student_id === studentId ? { ...row, ...patch } : row,
+        row.student_id === studentId
+          ? { ...row, ...patch }
+          : row,
       ),
     );
+
+    setHasUnsavedChanges(true);
   }
 
   function applyBulkStatus(
@@ -277,6 +364,7 @@ export function AdminAttendancePage() {
           : row,
       ),
     );
+    setHasUnsavedChanges(true);
   }
 
   async function handleCreateRound(e: React.FormEvent) {
@@ -341,6 +429,7 @@ export function AdminAttendancePage() {
 
       await loadRows(selectedOpportunityId, selectedRoundId);
       setNotice("Attendance saved successfully.");
+      setHasUnsavedChanges(false);
       setSelectedStudentIds([]);
     } catch (err) {
       console.error(err);
@@ -362,7 +451,14 @@ export function AdminAttendancePage() {
   }
 
   async function handleDownloadConsolidated() {
-    if (!selectedDriveId) {
+    if (
+      hasUnsavedChanges &&
+      !window.confirm(
+        "You have unsaved attendance changes. Continue and discard them?",
+      )
+    ) {
+      return;
+    } if (!selectedDriveId) {
       alert("Select a drive first.");
       return;
     }
@@ -410,13 +506,19 @@ export function AdminAttendancePage() {
           </div>
         </div>
 
+        {hasUnsavedChanges ? (
+          <div className="mt-4 rounded-lg border border-yellow-500 p-4 text-sm">
+            You have unsaved attendance changes.
+          </div>
+        ) : null}
+
         {notice ? (
           <div className="mt-4 rounded-lg border border-border bg-card p-4 text-sm">
             {notice}
           </div>
         ) : null}
 
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
+        <div className="mt-6 grid gap-4 md:grid-cols-6">
           <div className="rounded-lg border p-4">
             <div className="text-sm text-muted-foreground">Marked Present</div>
             <div className="mt-2 text-3xl font-bold">{summary.present}</div>
@@ -433,6 +535,25 @@ export function AdminAttendancePage() {
             <div className="text-sm text-muted-foreground">Rows Loaded</div>
             <div className="mt-2 text-3xl font-bold">{rows.length}</div>
           </div>
+          <div className="rounded-lg border p-4">
+            <div className="text-sm text-muted-foreground">
+              Selected Students
+            </div>
+
+            <div className="mt-2 text-3xl font-bold">
+              {selectedCount}
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-4">
+            <div className="text-sm text-muted-foreground">
+              Attendance Completion
+            </div>
+
+            <div className="mt-2 text-3xl font-bold">
+              {completionStats.percentage}%
+            </div>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-4 rounded-lg border p-5 lg:grid-cols-3">
@@ -441,7 +562,19 @@ export function AdminAttendancePage() {
             <select
               className="rounded border bg-background px-3 py-2"
               value={selectedDriveId}
-              onChange={(e) => setSelectedDriveId(e.target.value)}
+              onChange={(e) => {
+                if (
+                  hasUnsavedChanges &&
+                  !window.confirm(
+                    "You have unsaved attendance changes. Discard them?",
+                  )
+                ) {
+                  return;
+                }
+
+                setHasUnsavedChanges(false);
+                setSelectedDriveId(e.target.value);
+              }}
             >
               <option value="">Select drive</option>
               {drives.map((drive) => (
@@ -457,7 +590,19 @@ export function AdminAttendancePage() {
             <select
               className="rounded border bg-background px-3 py-2"
               value={selectedOpportunityId}
-              onChange={(e) => setSelectedOpportunityId(e.target.value)}
+              onChange={(e) => {
+                if (
+                  hasUnsavedChanges &&
+                  !window.confirm(
+                    "You have unsaved attendance changes. Discard them?",
+                  )
+                ) {
+                  return;
+                }
+
+                setHasUnsavedChanges(false);
+                setSelectedOpportunityId(e.target.value);
+              }}
               disabled={!selectedDriveId}
             >
               <option value="">Select opportunity</option>
@@ -477,7 +622,19 @@ export function AdminAttendancePage() {
             <select
               className="rounded border bg-background px-3 py-2"
               value={selectedRoundId}
-              onChange={(e) => setSelectedRoundId(e.target.value)}
+              onChange={(e) => {
+                if (
+                  hasUnsavedChanges &&
+                  !window.confirm(
+                    "You have unsaved attendance changes. Discard them?",
+                  )
+                ) {
+                  return;
+                }
+
+                setHasUnsavedChanges(false);
+                setSelectedRoundId(e.target.value);
+              }}
               disabled={!selectedOpportunityId}
             >
               <option value="">Select round</option>
@@ -488,6 +645,33 @@ export function AdminAttendancePage() {
               ))}
             </select>
           </label>
+        </div>
+
+        <div className="mt-6 rounded-lg border p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold">
+                Round Progress
+              </h2>
+
+              <p className="text-sm text-muted-foreground">
+                {completionStats.marked} of {completionStats.total} students marked
+              </p>
+            </div>
+
+            <div className="font-semibold">
+              {completionStats.percentage}%
+            </div>
+          </div>
+
+          <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{
+                width: `${completionStats.percentage}%`,
+              }}
+            />
+          </div>
         </div>
 
         <div className="mt-6 rounded-lg border p-5">
@@ -560,7 +744,11 @@ export function AdminAttendancePage() {
             <select
               className="rounded border bg-background px-3 py-2"
               value={instituteFilter}
-              onChange={(e) => setInstituteFilter(e.target.value)}
+              onChange={(e) => {
+                setInstituteFilter(e.target.value);
+                setDegreeFilter(DEFAULT_FILTER);
+                setBranchFilter(DEFAULT_FILTER);
+              }}
             >
               <option value={DEFAULT_FILTER}>All Institutes</option>
               {institutes.map((item) => (
@@ -572,10 +760,13 @@ export function AdminAttendancePage() {
             <select
               className="rounded border bg-background px-3 py-2"
               value={degreeFilter}
-              onChange={(e) => setDegreeFilter(e.target.value)}
+              onChange={(e) => {
+                setDegreeFilter(e.target.value);
+                setBranchFilter(DEFAULT_FILTER);
+              }}
             >
               <option value={DEFAULT_FILTER}>All Degrees</option>
-              {degrees.map((item) => (
+              {filteredDegrees.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
@@ -587,7 +778,7 @@ export function AdminAttendancePage() {
               onChange={(e) => setBranchFilter(e.target.value)}
             >
               <option value={DEFAULT_FILTER}>All Branches</option>
-              {branches.map((item) => (
+              {filteredBranches.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
@@ -649,6 +840,10 @@ export function AdminAttendancePage() {
               <span className="text-sm text-muted-foreground">
                 Showing {Math.min(filteredRows.length, rowsPerView)} of {filteredRows.length}
               </span>
+            </div>
+
+            <div className="lg:col-span-4 text-sm font-medium">
+              Selected Students: {selectedCount}
             </div>
 
             <div className="flex flex-wrap gap-2 lg:col-span-4">
