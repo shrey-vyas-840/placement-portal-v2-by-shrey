@@ -232,48 +232,81 @@ export const adminStudentService = {
             (completed / 4) * 100,
         );
     },
+
     async getDashboardMetrics() {
-        const { data: students } =
-            await (supabase as any)
+        const [
+            studentsResult,
+            drivesResult,
+            opportunitiesResult,
+            applicationsResult,
+            attendanceResult,
+        ] = await Promise.all([
+            (supabase as any)
                 .from("student_master")
-                .select(`
-        student_id,
-        placement_preference,
-        placement_status
-      `);
+                .select("student_id, placement_preference, placement_status"),
 
-        const totalStudents =
-            students?.length ?? 0;
+            (supabase as any)
+                .from("drive_master")
+                .select("drive_id")
+                .eq("is_active", true)
+                .eq("is_deleted", false),
 
-        const interestedStudents =
-            students?.filter(
-                (s: any) =>
-                    s.placement_preference ===
-                    "Interested",
-            ).length ?? 0;
+            (supabase as any)
+                .from("opportunity_master")
+                .select("opportunity_id, application_status"),
 
-        const unplacedStudents =
-            students?.filter(
-                (s: any) =>
-                    s.placement_status ===
-                    "Unplaced",
-            ).length ?? 0;
+            (supabase as any)
+                .from("student_opportunity_applications")
+                .select("application_id, application_status"),
 
-        const placedStudents =
-            students?.filter(
-                (s: any) =>
-                    s.placement_status ===
-                    "Placed",
-            ).length ?? 0;
+            (supabase as any)
+                .from("attendance_records")
+                .select("attendance_id"),
+        ]);
+
+        const students = studentsResult.data ?? [];
+        const drives = drivesResult.data ?? [];
+        const opportunities = opportunitiesResult.data ?? [];
+        const applications = applicationsResult.data ?? [];
+        const attendance = attendanceResult.data ?? [];
+
+        const totalStudents = students.length;
+        const interestedStudents = students.filter(
+            (s: any) => s.placement_preference === "Interested",
+        ).length;
+
+        const unplacedStudents = students.filter(
+            (s: any) => s.placement_status === "Unplaced",
+        ).length;
+
+        const placedStudents = students.filter(
+            (s: any) => s.placement_status === "Placed",
+        ).length;
+
+        const totalDrives = drives.length;
+        const totalApplications = applications.length;
+        const shortlistedApplications = applications.filter(
+            (a: any) => a.application_status === "Shortlisted",
+        ).length;
+
+        const openOpportunities = opportunities.filter(
+            (o: any) => o.application_status === "Open",
+        ).length;
+
+        const attendanceRecords = attendance.length;
 
         return {
             totalStudents,
             interestedStudents,
             unplacedStudents,
             placedStudents,
+            totalDrives,
+            totalApplications,
+            shortlistedApplications,
+            openOpportunities,
+            attendanceRecords,
         };
     },
-
 
     async searchStudents(
         searchTerm: string,
