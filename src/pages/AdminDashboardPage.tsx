@@ -5,6 +5,17 @@ import {
     useState,
     type ReactNode,
 } from "react";
+
+import {
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    Cell,
+} from "recharts";
+
 import {
     adminDashboardAnalyticsService,
     type DashboardSnapshot,
@@ -407,6 +418,7 @@ export function AdminDashboardPage() {
     const [selectedDriveId, setSelectedDriveId] = useState<string | null>(null);
     const [studentSearchValue, setStudentSearchValue] = useState("");
     const [activeEnrollmentNo, setActiveEnrollmentNo] = useState("");
+    const [activityFilter, setActivityFilter] = useState("ALL");
 
     const loadDashboard = async (silent = false) => {
         if (silent) {
@@ -479,6 +491,14 @@ export function AdminDashboardPage() {
 
     const studentReport: StudentDrilldownReport | null = snapshot?.studentDrilldown ?? null;
 
+    const filteredActivity =
+        (snapshot?.recentActivity ?? []).filter(
+            (item) =>
+                activityFilter === "ALL"
+                    ? true
+                    : item.type === activityFilter
+        );
+
     const studentPieData = useMemo(() => {
         if (studentReport) {
             return [
@@ -507,6 +527,27 @@ export function AdminDashboardPage() {
 
         return [];
     }, [pipeline, studentReport]);
+
+    const studentStatusData = useMemo(() => {
+
+        if (!studentReport) return [];
+
+        return [
+            {
+                label: "Applied",
+                value: studentReport.applications_count,
+            },
+            {
+                label: "Shortlisted",
+                value: studentReport.shortlisted_count,
+            },
+            {
+                label: "Selected",
+                value: studentReport.selected_count,
+            },
+        ];
+
+    }, [studentReport]);
 
     const selectedDriveLabel = selectedDrive
         ? `${selectedDrive?.drive_name}${selectedDrive?.company_name ? ` • ${selectedDrive?.company_name}` : ""}`
@@ -663,6 +704,54 @@ export function AdminDashboardPage() {
                             />
                         }
                     >
+
+                        <SectionCard
+                            title="Admin Insights"
+                            subtitle="Automatically generated from live dashboard data"
+                        >
+                            <div className="grid gap-4 md:grid-cols-4">
+
+                                <SmallStatCard
+                                    title="Most Active Drive"
+                                    value={
+                                        driveTrend.sort(
+                                            (a, b) =>
+                                                b.registered_students -
+                                                a.registered_students
+                                        )[0]?.drive_name ?? "-"
+                                    }
+                                />
+
+                                <SmallStatCard
+                                    title="Highest Attendance"
+                                    value={
+                                        driveTrend.sort(
+                                            (a, b) =>
+                                                b.present_students -
+                                                a.present_students
+                                        )[0]?.drive_name ?? "-"
+                                    }
+                                />
+
+                                <SmallStatCard
+                                    title="Highest Selection"
+                                    value={
+                                        driveTrend.sort(
+                                            (a, b) =>
+                                                b.selected_students -
+                                                a.selected_students
+                                        )[0]?.drive_name ?? "-"
+                                    }
+                                />
+
+                                <SmallStatCard
+                                    title="Total Drives"
+                                    value={driveTrend.length}
+                                />
+
+                            </div>
+                        </SectionCard>
+                        
                         {driveTrendFallback ? (
                             <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
                                 No drive trend data found yet.
@@ -670,92 +759,105 @@ export function AdminDashboardPage() {
                         ) : (
                             <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                                 <div className="space-y-4">
-                                    {driveTrend.map((point) => {
-                                        const isActive = point.drive_id === selectedDrive?.drive_id;
-                                        const widthPct = Math.max(
-                                            8,
-                                            percent(point.registered_students, trendMax),
-                                        );
 
-                                        return (
-                                            <button
-                                                key={point.drive_id}
-                                                type="button"
-                                                onClick={() => setSelectedDriveId(point.drive_id)}
-                                                className={[
-                                                    "w-full rounded-2xl border p-4 text-left transition",
-                                                    isActive
-                                                        ? "border-primary bg-primary/5 shadow-sm"
-                                                        : "border-border bg-background hover:border-primary/40 hover:bg-muted/30",
-                                                ].join(" ")}
+                                    <div className="h-[500px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart
+                                                data={driveTrend}
+                                                layout="vertical"
+                                                margin={{
+                                                    top: 10,
+                                                    right: 20,
+                                                    left: 20,
+                                                    bottom: 10,
+                                                }}
                                             >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <div className="font-semibold">
-                                                            {point.drive_name}
-                                                        </div>
-                                                        <div className="mt-1 text-xs text-muted-foreground">
-                                                            {point.company_name ?? "Unknown company"}
-                                                            {point.drive_date ? ` • ${formatDateTime(point.drive_date)}` : ""}
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right text-sm font-semibold">
-                                                        {formatNumber(point.registered_students)}
-                                                        <div className="text-xs font-normal text-muted-foreground">
-                                                            registrations
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <XAxis
+                                                    type="number"
+                                                    allowDecimals={false}
+                                                />
 
-                                                <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-muted">
-                                                    <div
-                                                        className={[
-                                                            "h-full rounded-full transition-all",
-                                                            isActive ? "bg-primary" : "bg-slate-500",
-                                                        ].join(" ")}
-                                                        style={{ width: `${widthPct}%` }}
-                                                    />
-                                                </div>
+                                                <YAxis
+                                                    type="category"
+                                                    dataKey="drive_name"
+                                                    width={140}
+                                                />
 
-                                                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                    <span>{formatNumber(point.opportunity_count)} opportunities</span>
-                                                    <span>•</span>
-                                                    <span>{formatNumber(point.application_count)} applications</span>
-                                                    <span>•</span>
-                                                    <span>{formatNumber(point.present_students)} present</span>
-                                                    <span>•</span>
-                                                    <span>{formatNumber(point.selected_students)} selected</span>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                                <Tooltip />
 
-                                <div className="rounded-2xl border border-border bg-background p-4">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                            <div className="text-sm font-semibold">Selected Drive Summary</div>
-                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                {selectedDrive?.company_name ?? "-"}
-                                            </div>
-                                        </div>
-                                        <div className="text-right text-xs text-muted-foreground">
-                                            {selectedDrive ? formatDateTime(selectedDrive?.drive_date) : ""}
-                                        </div>
+                                                <Bar
+                                                    dataKey="registered_students"
+                                                    radius={[0, 6, 6, 0]}
+                                                    onClick={(data) => {
+                                                        if (data?.drive_id) {
+                                                            setSelectedDriveId(data.drive_id);
+                                                        }
+                                                    }}
+                                                >
+                                                    {driveTrend.map((entry) => (
+                                                        <Cell
+                                                            key={entry.drive_id}
+                                                            fill={
+                                                                entry.drive_id === selectedDrive?.drive_id
+                                                                    ? "#2563eb"
+                                                                    : "#94a3b8"
+                                                            }
+                                                        />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
                                     </div>
 
-                                    {selectedDrive ? (
-                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                            <SmallStatCard title="Registrations" value={formatNumber(selectedDrive?.registered_students)} subtitle="Unique student registrations" />
-                                            <SmallStatCard title="Applications" value={formatNumber(selectedDrive?.application_count)} subtitle="Across all opportunities" />
-                                            <SmallStatCard title="Present" value={formatNumber(selectedDrive?.present_students)} subtitle="Attendance marked present" />
-                                            <SmallStatCard title="Selected" value={formatNumber(selectedDrive?.selected_students)} subtitle="Students moved forward" />
-                                        </div>
-                                    ) : (
-                                        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
-                                            Select a drive bar to see its detailed analytics.
-                                        </div>
-                                    )}
+                                </div>
+
+
+                                {selectedDrive ? (
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                        <SmallStatCard title="Registrations" value={formatNumber(selectedDrive?.registered_students)} subtitle="Unique student registrations" />
+                                        <SmallStatCard title="Applications" value={formatNumber(selectedDrive?.application_count)} subtitle="Across all opportunities" />
+                                        <SmallStatCard title="Present" value={formatNumber(selectedDrive?.present_students)} subtitle="Attendance marked present" />
+                                        <SmallStatCard title="Selected" value={formatNumber(selectedDrive?.selected_students)} subtitle="Students moved forward" />
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
+                                        Select a drive bar to see its detailed analytics.
+                                    </div>
+                                )}
+
+                                <div className="rounded-2xl border border-border bg-background p-4">
+                                    <h3 className="font-semibold mb-4">
+                                        Drive Comparison
+                                    </h3>
+
+                                    <div className="space-y-3">
+
+                                        <SmallStatCard
+                                            title="Registrations"
+                                            value={selectedDrive?.registered_students ?? 0}
+                                            subtitle={`Average ${Math.round(
+                                                driveTrend.reduce(
+                                                    (s, d) => s + d.registered_students,
+                                                    0
+                                                ) / Math.max(driveTrend.length, 1)
+                                            )}`}
+                                        />
+
+                                        <SmallStatCard
+                                            title="Applications"
+                                            value={selectedDrive?.application_count ?? 0}
+                                        />
+
+                                        <SmallStatCard
+                                            title="Present"
+                                            value={selectedDrive?.present_students ?? 0}
+                                        />
+
+                                        <SmallStatCard
+                                            title="Selected"
+                                            value={selectedDrive?.selected_students ?? 0}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -802,7 +904,7 @@ export function AdminDashboardPage() {
                                         />
                                         <SmallStatCard
                                             title="Application Count"
-                                            value={formatNumber(selectedDrive?.application_count ?? 0)} 
+                                            value={formatNumber(selectedDrive?.application_count ?? 0)}
                                             subtitle="Across all opportunities"
                                         />
                                     </div>
@@ -816,7 +918,7 @@ export function AdminDashboardPage() {
 
                         <SectionCard
                             title="Opportunity Pipeline Analysis"
-                            subtitle="Eligible → Registered → Present → Round Cleared → Selected"
+                            subtitle="Eligible → Registered → Present → Round Cleared → Shortlisted → Selected"
                         >
                             {pipeline ? (
                                 <div className="space-y-4">
@@ -867,6 +969,15 @@ export function AdminDashboardPage() {
                                             value={pipeline.round_cleared_students}
                                             total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
                                             tone="bg-violet-600"
+                                        />
+                                        <ProgressRow
+                                            label="Shortlisted"
+                                            value={pipeline.shortlisted_students}
+                                            total={Math.max(
+                                                Math.max(pipeline.registered_students, 1),
+                                                registrationBase
+                                            )}
+                                            tone="bg-indigo-600"
                                         />
                                         <ProgressRow
                                             label="Selected"
@@ -1012,20 +1123,41 @@ export function AdminDashboardPage() {
 
                             <div className="mt-5">
                                 {studentPieData.length ? (
-                                    <DonutChart
-                                        items={studentPieData.map((item, index) => ({
-                                            label: item.label,
-                                            value: item.value,
-                                            color: CHART_COLORS[index % CHART_COLORS.length],
-                                        }))}
-                                        centerTitle={activeEnrollmentNo.trim() ? "Enrollment" : "Drive"}
-                                        centerValue={
-                                            activeEnrollmentNo.trim()
-                                                ? activeEnrollmentNo.trim()
-                                                : selectedDrive?.drive_name ?? "Selected drive"
-                                        }
-                                        emptyText="No student or drive data available yet."
-                                    />
+                                    <div className="grid gap-6 lg:grid-cols-2">
+
+                                        <DonutChart
+                                            items={studentPieData.map((item, index) => ({
+                                                label: item.label,
+                                                value: item.value,
+                                                color:
+                                                    CHART_COLORS[
+                                                    index %
+                                                    CHART_COLORS.length
+                                                    ],
+                                            }))}
+                                            centerTitle="Participation"
+                                            centerValue={
+                                                activeEnrollmentNo ||
+                                                selectedDrive?.drive_name ||
+                                                "-"
+                                            }
+                                        />
+
+                                        <DonutChart
+                                            items={studentStatusData.map((item, index) => ({
+                                                label: item.label,
+                                                value: item.value,
+                                                color:
+                                                    CHART_COLORS[
+                                                    (index + 4) %
+                                                    CHART_COLORS.length
+                                                    ],
+                                            }))}
+                                            centerTitle="Status"
+                                            centerValue="Applications"
+                                        />
+
+                                    </div>
                                 ) : (
                                     <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
                                         Search a student enrollment number or select a drive to render the pie chart.
@@ -1047,10 +1179,28 @@ export function AdminDashboardPage() {
                             title="Recent Activity Feed"
                             subtitle="Live latest events across applications, attendance, drives, opportunities, rounds and NOC activity."
                             right={
-                                <StatusChip
-                                    label="Updated"
-                                    value={refreshLabel}
-                                />
+                                <div className="flex gap-2 flex-wrap">
+                                    <StatusChip
+                                        label="Updated"
+                                        value={refreshLabel}
+                                    />
+                                    {[
+                                        "ALL",
+                                        "APPLICATION",
+                                        "ATTENDANCE",
+                                        "DRIVE",
+                                        "OPPORTUNITY",
+                                        "NOC"
+                                    ].map((type) => (
+                                        <button
+                                            key={type}
+                                            onClick={() => setActivityFilter(type)}
+                                            className="rounded-lg border px-2 py-1 text-xs"
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
                             }
                         >
                             {snapshot?.recentActivity?.length ? (
