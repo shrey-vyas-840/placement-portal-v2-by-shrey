@@ -23,6 +23,7 @@ import {
     adminDashboardAnalyticsService,
     type DashboardSnapshot,
     type DriveBranchDistributionPoint,
+    type BranchAnalyticsItem,
     type DriveTrendPoint,
     type OpportunityPipelineReport,
     type RecentActivityItem,
@@ -517,6 +518,11 @@ export function AdminDashboardPage() {
             ? snapshot.branchDistribution
             : [];
 
+    const branchAnalytics: BranchAnalyticsItem[] =
+        selectedDriveAnalyticsReady && snapshot?.branchAnalytics
+            ? snapshot.branchAnalytics
+            : [];
+
     const pipeline: OpportunityPipelineReport | null =
         selectedDriveAnalyticsReady ? snapshot?.pipeline ?? null : null;
 
@@ -854,9 +860,10 @@ export function AdminDashboardPage() {
                         )}
                     </SectionCard>
 
-                    <section className="mt-6 grid gap-6 xl:grid-cols-3">
-                        <SectionCard
-                            title="Drive Analytics"
+                    <section className="mt-6 grid gap-6 xl:grid-cols-[0.65fr_0.35fr]">
+                        <div className="space-y-6">
+                            <SectionCard
+                                title="Drive Analytics"
                             subtitle="Branch distribution for the selected drive."
                             right={
                                 <StatusChip
@@ -870,42 +877,76 @@ export function AdminDashboardPage() {
                                     <div className="rounded-2xl border border-border bg-background p-5">
                                         <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
                                             <div className="min-w-0">
-                                                <DonutChart
-                                                    items={branchDistribution.map((item, index) => ({
-                                                        label: item.branch_name,
-                                                        value: item.student_count,
-                                                        color: CHART_COLORS[index % CHART_COLORS.length],
-                                                    }))}
-                                                    centerTitle="Drive"
-                                                    centerValue={selectedDrive?.drive_name ?? "Drive"}
-                                                    size={220}
-                                                    outerRadius={82}
-                                                    innerRadius={50}
-                                                    legendPosition="bottom"
-                                                />
+                                                <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-4">
+                                                    <DonutChart
+                                                        items={branchDistribution.map((item, index) => ({
+                                                            label: item.branch_name,
+                                                            value: item.student_count,
+                                                            color: CHART_COLORS[index % CHART_COLORS.length],
+                                                        }))}
+                                                        centerTitle="Drive"
+                                                        centerValue={selectedDrive?.drive_name ?? "Drive"}
+                                                        size={220}
+                                                        outerRadius={82}
+                                                        innerRadius={50}
+                                                        legendPosition="bottom"
+                                                    />
+                                                </div>
                                             </div>
 
-                                            <div className="grid gap-3 sm:grid-cols-2">
-                                                <SmallStatCard
-                                                    title="Eligible Branches"
-                                                    value={formatNumber(snapshot?.eligibility?.allowed_branches?.length ?? branchDistribution.length)}
-                                                    subtitle="Configured in eligibility"
-                                                />
-                                                <SmallStatCard
-                                                    title="Eligible Degrees"
-                                                    value={formatNumber(snapshot?.eligibility?.allowed_degrees?.length ?? 0)}
-                                                    subtitle="Configured in eligibility"
-                                                />
-                                                <SmallStatCard
-                                                    title="Opportunity Count"
-                                                    value={formatNumber(selectedDrive?.opportunity_count ?? 0)}
-                                                    subtitle="Drive opportunities"
-                                                />
-                                                <SmallStatCard
-                                                    title="Application Count"
-                                                    value={formatNumber(selectedDrive?.application_count ?? 0)}
-                                                    subtitle="Total applications"
-                                                />
+                                            <div className="space-y-4">
+                                                <div className="grid gap-3 sm:grid-cols-2">
+                                                    <SmallStatCard
+                                                        title="Eligible Branches"
+                                                        value={formatNumber(snapshot?.eligibility?.allowed_branches?.length ?? branchDistribution.length)}
+                                                        subtitle="Configured in eligibility"
+                                                    />
+                                                    <SmallStatCard
+                                                        title="Eligible Degrees"
+                                                        value={formatNumber(snapshot?.eligibility?.allowed_degrees?.length ?? 0)}
+                                                        subtitle="Configured in eligibility"
+                                                    />
+                                                    <SmallStatCard
+                                                        title="Opportunity Count"
+                                                        value={formatNumber(selectedDrive?.opportunity_count ?? 0)}
+                                                        subtitle="Drive opportunities"
+                                                    />
+                                                    <SmallStatCard
+                                                        title="Application Count"
+                                                        value={formatNumber(selectedDrive?.application_count ?? 0)}
+                                                        subtitle="Total applications"
+                                                    />
+                                                </div>
+
+                                                <div className="overflow-hidden rounded-2xl border border-border bg-card p-4">
+                                                    <div className="mb-4 text-sm font-semibold">Branch Analytics</div>
+                                                    <div className="overflow-x-auto">
+                                                        <table className="min-w-full text-sm">
+                                                            <thead className="border-b border-border text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                                                                <tr>
+                                                                    <th className="px-2 py-3">Branch</th>
+                                                                    <th className="px-2 py-3 text-right">Eligible</th>
+                                                                    <th className="px-2 py-3 text-right">Registered</th>
+                                                                    <th className="px-2 py-3 text-right">Present</th>
+                                                                    <th className="px-2 py-3 text-right">Shortlisted</th>
+                                                                    <th className="px-2 py-3 text-right">Selected</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {branchAnalytics.map((item) => (
+                                                                    <tr key={item.branch_name} className="border-b border-border last:border-b-0">
+                                                                        <td className="px-2 py-3 font-medium text-sm">{item.branch_name}</td>
+                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.eligible_students)}</td>
+                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.registered_students)}</td>
+                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.present_students)}</td>
+                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.shortlisted_students)}</td>
+                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.selected_students)}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -920,11 +961,13 @@ export function AdminDashboardPage() {
                                 </div>
                             )}
                         </SectionCard>
+                    </div>
 
-                        <SectionCard
-                            title="Opportunity Pipeline Analysis"
-                            subtitle="Eligible → Registered → Present → Round Cleared → Shortlisted → Selected"
-                        >
+                        <div className="space-y-6">
+                            <SectionCard
+                                title="Opportunity Pipeline Analysis"
+                                subtitle="Eligible → Registered → Present → Round Cleared → Shortlisted → Selected"
+                            >
                             {pipeline ? (
                                 <div className="space-y-4">
                                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1076,9 +1119,63 @@ export function AdminDashboardPage() {
                                 </div>
                             )}
                         </SectionCard>
+                    </div>
+
+                        <SectionCard
+                            title="Recent Activity Feed"
+                            subtitle="Live latest events across applications, attendance, drives, opportunities, rounds and NOC activity."
+                            right={
+                                <div className="flex gap-2 flex-wrap">
+                                    <StatusChip
+                                        label="Updated"
+                                        value={refreshLabel}
+                                    />
+                                    {[
+                                        "ALL",
+                                        "APPLICATION",
+                                        "ATTENDANCE",
+                                        "DRIVE",
+                                        "OPPORTUNITY",
+                                        "NOC"
+                                    ].map((type) => (
+                                        <button
+                                            key={type}
+                                            onClick={() => setActivityFilter(type)}
+                                            className="rounded-lg border px-2 py-1 text-xs"
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
+                            }
+                        >
+                            {recentItems.length ? (
+                                <div className="mt-4 h-[700px] min-h-0 overflow-y-auto overscroll-contain pr-2">
+                                    {recentItems
+                                        .filter((item) => (activityFilter === "ALL" ? true : item.type === activityFilter))
+                                        .map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4"
+                                            >
+                                                <ActivityBadge type={item.type} />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <div className="font-semibold">{item.title}</div>
+                                                        <div className="text-xs text-muted-foreground">{formatRelativeTime(item.occurred_at)}</div>
+                                                    </div>
+                                                    <div className="mt-1 text-sm text-muted-foreground">{item.description}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">No recent activity available yet.</div>
+                            )}
+                        </SectionCard>
                     </section>
 
-                    <section className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+                    <section className="mt-6">
                         <SectionCard
                             title="Student Drilldown"
                             subtitle="Enter an enrollment number for a student-level participation pie. Leave blank to use the selected drive snapshot."
@@ -1181,67 +1278,55 @@ export function AdminDashboardPage() {
                             </div>
 
                             {studentReport ? (
-                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                                    <SmallStatCard title="Registered Drives" value={formatNumber(studentReport.registered_drives)} subtitle="Drive-wise participation" />
-                                    <SmallStatCard title="Present Drives" value={formatNumber(studentReport.present_drives)} subtitle="Marked present" />
-                                    <SmallStatCard title="Absent Drives" value={formatNumber(studentReport.absent_drives)} subtitle="Marked absent" />
-                                    <SmallStatCard title="Attendance %" value={`${studentReport.attendance_percentage}%`} subtitle="Present / participated" />
+                                <div className="space-y-6">
+                                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                        <SmallStatCard title="Registered Drives" value={formatNumber(studentReport.registered_drives)} subtitle="Drive-wise participation" />
+                                        <SmallStatCard title="Present Drives" value={formatNumber(studentReport.present_drives)} subtitle="Marked present" />
+                                        <SmallStatCard title="Absent Drives" value={formatNumber(studentReport.absent_drives)} subtitle="Marked absent" />
+                                        <SmallStatCard title="Attendance %" value={`${studentReport.attendance_percentage}%`} subtitle="Present / participated" />
+                                    </div>
+
+                                    {studentReport.drive_breakdown?.length ? (
+                                        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                                            <div className="border-b border-border bg-background px-4 py-3 text-sm font-semibold">Participation History</div>
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-full text-sm">
+                                                    <thead className="border-b border-border bg-muted/20 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                                                        <tr>
+                                                            <th className="px-3 py-3">Drive</th>
+                                                            <th className="px-3 py-3">Company</th>
+                                                            <th className="px-3 py-3">Status</th>
+                                                            <th className="px-3 py-3 text-right">Applied</th>
+                                                            <th className="px-3 py-3 text-right">Eligible</th>
+                                                            <th className="px-3 py-3 text-right">Registered</th>
+                                                            <th className="px-3 py-3 text-right">Present</th>
+                                                            <th className="px-3 py-3 text-right">Shortlisted</th>
+                                                            <th className="px-3 py-3 text-right">Selected</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {studentReport.drive_breakdown.map((item) => (
+                                                            <tr key={item.drive_id} className="border-b border-border last:border-b-0">
+                                                                <td className="px-3 py-3 font-medium">{item.drive_name}</td>
+                                                                <td className="px-3 py-3">{item.company_name ?? "-"}</td>
+                                                                <td className="px-3 py-3">{item.status}</td>
+                                                                <td className="px-3 py-3 text-right">{formatNumber(item.application_count)}</td>
+                                                                <td className="px-3 py-3 text-right">{item.eligible ? "Yes" : "No"}</td>
+                                                                <td className="px-3 py-3 text-right">{item.registered ? "Yes" : "No"}</td>
+                                                                <td className="px-3 py-3 text-right">{item.present ? "Yes" : "No"}</td>
+                                                                <td className="px-3 py-3 text-right">{item.shortlisted ? "Yes" : "No"}</td>
+                                                                <td className="px-3 py-3 text-right">{item.selected ? "Yes" : "No"}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    ) : null}
                                 </div>
                             ) : null}
                         </SectionCard>
 
-                        <SectionCard
-                            title="Recent Activity Feed"
-                            subtitle="Live latest events across applications, attendance, drives, opportunities, rounds and NOC activity."
-                            right={
-                                <div className="flex gap-2 flex-wrap">
-                                    <StatusChip
-                                        label="Updated"
-                                        value={refreshLabel}
-                                    />
-                                    {[
-                                        "ALL",
-                                        "APPLICATION",
-                                        "ATTENDANCE",
-                                        "DRIVE",
-                                        "OPPORTUNITY",
-                                        "NOC"
-                                    ].map((type) => (
-                                        <button
-                                            key={type}
-                                            onClick={() => setActivityFilter(type)}
-                                            className="rounded-lg border px-2 py-1 text-xs"
-                                        >
-                                            {type}
-                                        </button>
-                                    ))}
-                                </div>
-                            }
-                        >
-                            {recentItems.length ? (
-                                <div className="mt-4 h-[520px] min-h-0 overflow-y-auto overscroll-contain pr-2">
-                                    {recentItems
-                                        .filter((item) => (activityFilter === "ALL" ? true : item.type === activityFilter))
-                                        .map((item) => (
-                                            <div
-                                                key={item.id}
-                                                className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4"
-                                            >
-                                                <ActivityBadge type={item.type} />
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <div className="font-semibold">{item.title}</div>
-                                                        <div className="text-xs text-muted-foreground">{formatRelativeTime(item.occurred_at)}</div>
-                                                    </div>
-                                                    <div className="mt-1 text-sm text-muted-foreground">{item.description}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            ) : (
-                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">No recent activity available yet.</div>
-                            )}
-                        </SectionCard>
                     </section>
 
                     <div className="pb-6" />

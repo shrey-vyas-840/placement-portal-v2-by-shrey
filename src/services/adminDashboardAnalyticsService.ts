@@ -60,6 +60,15 @@ export interface DriveBranchDistributionPoint {
   percentage: number;
 }
 
+export interface BranchAnalyticsItem {
+  branch_name: string;
+  eligible_students: number;
+  registered_students: number;
+  present_students: number;
+  shortlisted_students: number;
+  selected_students: number;
+}
+
 export interface OpportunityPipelineItem {
   opportunity_id: string;
   opportunity_title: string;
@@ -94,6 +103,12 @@ export interface StudentDriveBreakdownItem {
   company_name: string | null;
   status: "PRESENT" | "ABSENT" | "REGISTERED" | "UNREGISTERED";
   application_count: number;
+  eligible: boolean;
+  registered: boolean;
+  present: boolean;
+  absent: boolean;
+  shortlisted: boolean;
+  selected: boolean;
 }
 
 export interface StudentDrilldownReport {
@@ -130,6 +145,7 @@ export interface DashboardSnapshot {
   driveTrend: DriveTrendPoint[];
   selectedDriveId: string | null;
   branchDistribution: DriveBranchDistributionPoint[];
+  branchAnalytics: BranchAnalyticsItem[];
   pipeline: OpportunityPipelineReport | null;
   studentDrilldown: StudentDrilldownReport | null;
   recentActivity: RecentActivityItem[];
@@ -166,6 +182,10 @@ function uniqueStrings(values: Array<string | null | undefined>) {
 function percent(part: number, total: number) {
   if (!total) return 0;
   return Math.min(100, Math.round((part / total) * 100));
+}
+
+function normalizeBranchName(value: string | null | undefined) {
+  return String(value ?? "").trim().toLowerCase();
 }
 
 function safeDate(value: unknown): string | null {
@@ -530,10 +550,10 @@ function buildDriveTrendPoint(
   };
 }
 
-function buildBranchDistributionPoint(
+async function buildBranchAnalytics(
   driveId: string,
   ctx: Awaited<ReturnType<typeof loadDriveAnalyticsContext>>,
-): DriveBranchDistributionPoint[] {
+): Promise<BranchAnalyticsItem[]> {
   const eligibilityRow = ctx.eligibility?.find(
     (e: AnyRecord) => e.drive_id === driveId,
   );
@@ -555,15 +575,171 @@ function buildBranchDistributionPoint(
     return [];
   }
 
-  const base = Math.floor(100 / branches.length);
-  const remainder = 100 % branches.length;
+  const branchLookup = new Map(
+    branches.map((branch_name) => [normalizeBranchName(branch_name), branch_name]),
+  );
 
-  return branches.map((branch_name, index) => ({
+  const branchAnalytics = branches.map((branch_name) => ({
     branch_name,
-    student_count: 1,
-    percentage: base + (index < remainder ? 1 : 0),
+    eligible_students: 0,
+    registered_students: 0,
+    present_students: 0,
+    shortlisted_students: 0,
+    selected_students: 0,
   }));
-} function buildOpportunityPipelineReport(
+
+  const branchAnalyticsMap = new Map(
+    branchAnalytics.map((item) => [normalizeBranchName(item.branch_name), item]),
+  );
+
+  // Determine eligible counts from student academic details and student master records.
+  const branchStudentRows = branches.length
+    ? toArray<any>(
+        (await db
+          .from("student_academic_details")
+          .select("student_id, current_branch_name")
+          .in("current_branch_name", branches)).data,
+      )
+    : [];
+
+  const branchStudentIds = uniqueStrings(
+    branchStudentRows
+      .map((item) => ({
+        student_id: item.student_id,
+        branch_name: normalizeBranchName(item.current_branch_name),
+      }))
+      .filter((item) => item.student_id && branchAnalyticsMap.has(item.branch_name))
+      .map((item) => item.student_id),
+  );
+
+  const validStudentIds = branchStudentIds.length
+    ? new Set(
+        toArray<any>(
+          (await db
+            .from("student_master")
+            .select("student_id")
+            .in("student_id", branchStudentIds)).data,
+        ).map((item) => item.student_id),
+      )
+    : new Set<string>();
+
+  branchStudentRows.forEach((item) => {
+    const branchName = normalizeBranchName(item.current_branch_name);
+    const branch = branchAnalyticsMap.get(branchName);
+    if (!branch || !item.student_id || !validStudentIds.has(item.student_id)) return;
+    branch.eligible_students += 1;
+  });
+
+  const driveOpportunities = ctx.opportunities.filter(
+    (item) => item.drive_id === driveId,
+  );
+  const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
+  const driveApplications = ctx.applications.filter((item) =>
+    opportunityIds.includes(item.opportunity_id),
+  );
+  const driveRounds = ctx.rounds.filter((item) =>
+    opportunityIds.includes(item.opportunity_id),
+  );
+  const driveAttendance = ctx.attendance.filter((item) =>
+    driveRounds.some((round) => round.round_id === item.round_id),
+  );
+
+  const driveAttendanceByStudent = new Map<string, { present: boolean; absent: boolean }>();
+  driveAttendance.forEach((record) => {
+    const branchName = normalizeBranchName(
+      ctx.academics.find((item) => item.student_id === record.student_id)
+        ?.current_branch_name,
+    );
+    const branch = branchAnalyticsMap.get(branchName);
+    if (!branch || !record.student_id) return;
+
+    const stats = driveAttendanceByStudent.get(record.student_id) ?? { present: false, absent: false };
+    if (record.attendance_status === "PRESENT") {
+      stats.present = true;
+    } else if (record.attendance_status === "ABSENT") {
+      stats.absent = true;
+    }
+    driveAttendanceByStudent.set(record.student_id, stats);
+  });
+
+  driveAttendanceByStudent.forEach((stats, studentId) => {
+    const branchName = normalizeBranchName(
+      ctx.academics.find((item) => item.student_id === studentId)?.current_branch_name,
+    );
+    const branch = branchAnalyticsMap.get(branchName);
+    if (!branch) return;
+    if (stats.present) {
+      branch.present_students += 1;
+    }
+  });
+
+  const branchApplicationStats = new Map<string, Set<string>>();
+  const branchShortlistedSet = new Map<string, Set<string>>();
+  const branchSelectedSet = new Map<string, Set<string>>();
+
+  driveApplications.forEach((application) => {
+    const branchName = normalizeBranchName(
+      ctx.academics.find((item) => item.student_id === application.student_id)
+        ?.current_branch_name,
+    );
+    const branch = branchAnalyticsMap.get(branchName);
+    if (!branch || !application.student_id) return;
+
+    if (!branchApplicationStats.has(branchName)) {
+      branchApplicationStats.set(branchName, new Set());
+    }
+    branchApplicationStats.get(branchName)?.add(application.student_id);
+
+    if (isShortlistedStatus(application.application_status)) {
+      const set = branchShortlistedSet.get(branchName) ?? new Set<string>();
+      set.add(application.student_id);
+      branchShortlistedSet.set(branchName, set);
+    }
+
+    if (isSelectedStatus(application.application_status)) {
+      const set = branchSelectedSet.get(branchName) ?? new Set<string>();
+      set.add(application.student_id);
+      branchSelectedSet.set(branchName, set);
+    }
+  });
+
+  branchAnalyticsMap.forEach((branch, branchName) => {
+    const registeredIds = branchApplicationStats.get(branchName);
+    branch.registered_students = registeredIds?.size ?? 0;
+    branch.shortlisted_students = branchShortlistedSet.get(branchName)?.size ?? 0;
+    branch.selected_students = branchSelectedSet.get(branchName)?.size ?? 0;
+
+    const presentCount = Array.from(driveAttendanceByStudent.entries())
+      .filter(([studentId, stats]) => {
+        const studentBranch = normalizeBranchName(
+          ctx.academics.find((item) => item.student_id === studentId)?.current_branch_name,
+        );
+        return studentBranch === branchName && stats.present;
+      }).length;
+
+    branch.present_students = presentCount;
+  });
+
+  return branchAnalytics;
+}
+
+async function buildBranchDistributionPoint(
+  driveId: string,
+  ctx: Awaited<ReturnType<typeof loadDriveAnalyticsContext>>,
+): Promise<DriveBranchDistributionPoint[]> {
+  const analytics = await buildBranchAnalytics(driveId, ctx);
+  const totalEligible = analytics.reduce((sum, item) => sum + item.eligible_students, 0);
+
+  if (!analytics.length) return [];
+
+  return analytics.map((item) => ({
+    branch_name: item.branch_name,
+    student_count: item.eligible_students,
+    percentage: totalEligible ? Math.round((item.eligible_students / totalEligible) * 100) : 0,
+  }));
+}
+
+function buildOpportunityPipelineReport(
   driveId: string,
   ctx: Awaited<ReturnType<typeof loadDriveAnalyticsContext>>,
 ): OpportunityPipelineReport | null {
@@ -902,13 +1078,17 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
     const hasPresent = driveAttendance.some((record) => record.attendance_status === "PRESENT");
     const hasAbsent = driveAttendance.some((record) => record.attendance_status === "ABSENT");
+    const shortlisted = driveApplications.some((item) => isShortlistedStatus(item.application_status));
+    const selected = driveApplications.some((item) => isSelectedStatus(item.application_status));
+    const registered = driveApplications.length > 0;
+    const eligible = eligibilityRows.some((item) => item.drive_id === drive.drive_id);
 
     let status: StudentDriveBreakdownItem["status"] = "UNREGISTERED";
     if (hasPresent) {
       status = "PRESENT";
     } else if (hasAbsent) {
       status = "ABSENT";
-    } else if (driveApplications.length > 0) {
+    } else if (registered) {
       status = "REGISTERED";
     }
 
@@ -918,6 +1098,12 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
       company_name: drive.company_master?.company_name ?? null,
       status,
       application_count: driveApplications.length,
+      eligible,
+      registered,
+      present: hasPresent,
+      absent: !hasPresent && hasAbsent,
+      shortlisted,
+      selected,
     };
   });
 
@@ -1208,6 +1394,11 @@ export async function getDriveBranchDistribution(driveId: string) {
   return buildBranchDistributionPoint(driveId, ctx);
 }
 
+export async function getDriveBranchAnalytics(driveId: string) {
+  const ctx = await loadDriveAnalyticsContext([driveId]);
+  return buildBranchAnalytics(driveId, ctx);
+}
+
 export async function getDriveEligibility(driveId: string) {
   const ctx = await loadDriveAnalyticsContext([driveId]);
   const eligibilityRow = ctx.eligibility?.find((e: AnyRecord) => e.drive_id === driveId);
@@ -1274,6 +1465,9 @@ export async function getDashboardSnapshot(options: DashboardSnapshotOptions = {
   const branchDistribution = selectedDriveId
     ? await getDriveBranchDistribution(selectedDriveId)
     : [];
+  const branchAnalytics = selectedDriveId
+    ? await getDriveBranchAnalytics(selectedDriveId)
+    : [];
   const pipeline = selectedDriveId
     ? await getOpportunityPipeline(selectedDriveId)
     : null;
@@ -1288,6 +1482,7 @@ export async function getDashboardSnapshot(options: DashboardSnapshotOptions = {
     driveTrend,
     selectedDriveId,
     branchDistribution,
+    branchAnalytics,
     pipeline,
     eligibility,
     studentDrilldown,
@@ -1300,6 +1495,7 @@ export const adminDashboardAnalyticsService = {
   getDashboardKpis,
   getDriveTrend,
   getDriveBranchDistribution,
+  getDriveBranchAnalytics,
   getOpportunityPipeline,
   getStudentDrilldown,
   getSuccessMetrics,
