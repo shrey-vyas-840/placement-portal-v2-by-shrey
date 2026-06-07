@@ -14,6 +14,9 @@ import {
     YAxis,
     Tooltip,
     Cell,
+    LabelList,
+    PieChart,
+    Pie,
 } from "recharts";
 
 import {
@@ -290,11 +293,21 @@ function DonutChart({
     centerTitle,
     centerValue,
     emptyText = "No data available",
+    size = 240,
+    outerRadius,
+    innerRadius,
+    legendPosition = "right",
+    hideLegend = false,
 }: {
     items: Array<{ label: string; value: number; color?: string }>;
     centerTitle: string;
     centerValue: string;
     emptyText?: string;
+    size?: number;
+    outerRadius?: number;
+    innerRadius?: number;
+    legendPosition?: "right" | "bottom";
+    hideLegend?: boolean;
 }) {
     const validItems = items.filter((item) => item.value > 0);
     const total = validItems.reduce((sum, item) => sum + item.value, 0);
@@ -307,64 +320,82 @@ function DonutChart({
         );
     }
 
-    let cursor = 0;
-    const segments = validItems.map((item, index) => {
-        const share = (item.value / total) * 100;
-        const start = cursor;
-        const end = cursor + share;
-        cursor = end;
+    const chartData = validItems.map((item, index) => ({
+        ...item,
+        color: item.color ?? CHART_COLORS[index % CHART_COLORS.length],
+    }));
 
-        const color = item.color ?? CHART_COLORS[index % CHART_COLORS.length];
-        return `${color} ${start}% ${end}%`;
-    });
+    const resolvedOuterRadius = outerRadius ?? Math.max(0, size / 2 - 20);
+    const resolvedInnerRadius = innerRadius ?? Math.max(0, size / 2 - 60);
 
-    return (
-        <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-center">
-            <div className="flex justify-center">
-                <div className="relative h-64 w-64">
-                    <div
-                        className="h-full w-full rounded-full"
-                        style={{ background: `conic-gradient(${segments.join(", ")})` }}
-                    />
-                    <div className="absolute inset-[18%] rounded-full bg-card shadow-inner" />
-                    <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
-                        <div>
-                            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                                {centerTitle}
-                            </div>
-                            <div className="mt-2 text-2xl font-bold">{centerValue}</div>
-                        </div>
+    const legend = hideLegend ? null : (
+        <div
+            className={`grid gap-2 text-sm ${legendPosition === "right" ? "lg:max-w-[260px]" : ""}`}
+        >
+            {chartData.map((item) => (
+                <div
+                    key={item.label}
+                    className="flex items-center justify-between rounded-xl border border-border bg-background p-3"
+                >
+                    <div className="flex items-center gap-2">
+                        <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                        />
+                        <span className="font-medium">{item.label}</span>
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                        {Math.round((item.value / total) * 100)}%
+                    </span>
                 </div>
-            </div>
+            ))}
+        </div>
+    );
 
+    const chartContent = (
+        <div className="flex justify-center">
+            <ResponsiveContainer width={size} height={size}>
+                <PieChart>
+                    <Pie
+                        data={chartData}
+                        dataKey="value"
+                        nameKey="label"
+                        outerRadius={resolvedOuterRadius}
+                        innerRadius={resolvedInnerRadius}
+                        paddingAngle={3}
+                        stroke="transparent"
+                    >
+                        {chartData.map((entry) => (
+                            <Cell key={entry.label} fill={entry.color} />
+                        ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatNumber(value)} />
+                </PieChart>
+            </ResponsiveContainer>
+        </div>
+    );
+
+    const centerBlock = (
+        <div className="text-center">
+            {centerTitle ? (
+                <div className="text-sm text-muted-foreground">{centerTitle}</div>
+            ) : null}
+            {centerValue ? <div className="text-2xl font-bold">{centerValue}</div> : null}
+        </div>
+    );
+
+    return legendPosition === "bottom" ? (
+        <div className="grid gap-4 min-w-[250px]">
+            {chartContent}
+            {centerBlock}
+            {legend}
+        </div>
+    ) : (
+        <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center min-w-[250px]">
+            {chartContent}
             <div className="space-y-3">
-                {validItems.map((item, index) => {
-                    const color = item.color ?? CHART_COLORS[index % CHART_COLORS.length];
-                    const itemPct = percent(item.value, total);
-                    return (
-                        <div
-                            key={item.label}
-                            className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-4 py-3"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className="h-3 w-3 rounded-full"
-                                    style={{ backgroundColor: color }}
-                                />
-                                <div>
-                                    <div className="font-medium">{item.label}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                        {formatNumber(item.value)} students
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="text-sm font-semibold text-muted-foreground">
-                                {itemPct}%
-                            </div>
-                        </div>
-                    );
-                })}
+                {centerBlock}
+                {legend}
             </div>
         </div>
     );
@@ -498,6 +529,21 @@ export function AdminDashboardPage() {
                     ? true
                     : item.type === activityFilter
         );
+
+    // Recent activity UI state: keep a capped FIFO buffer (newest first), max 100 items
+    const [recentItems, setRecentItems] = useState<RecentActivityItem[]>([]);
+
+    useEffect(() => {
+        if (!snapshot?.recentActivity) return;
+
+        const incoming = Array.isArray(snapshot.recentActivity) ? snapshot.recentActivity : [];
+
+        setRecentItems((prev) => {
+            const incomingIds = new Set(incoming.map((i) => i.id));
+            const merged = [...incoming, ...prev.filter((i) => !incomingIds.has(i.id))];
+            return merged.slice(0, 100);
+        });
+    }, [snapshot?.recentActivity]);
 
     const studentPieData = useMemo(() => {
         if (studentReport) {
@@ -710,37 +756,27 @@ export function AdminDashboardPage() {
                             subtitle="Automatically generated from live dashboard data"
                         >
                             <div className="grid gap-4 md:grid-cols-4">
-
                                 <SmallStatCard
-                                    title="Most Active Drive"
+                                    title="Most Applications Drive"
                                     value={
-                                        driveTrend.sort(
-                                            (a, b) =>
-                                                b.registered_students -
-                                                a.registered_students
-                                        )[0]?.drive_name ?? "-"
+                                        ([...driveTrend].sort((a, b) => b.application_count - a.application_count)[0]
+                                            ?.drive_name ?? "-")
                                     }
                                 />
 
                                 <SmallStatCard
-                                    title="Highest Attendance"
+                                    title="Most Attendance Drive"
                                     value={
-                                        driveTrend.sort(
-                                            (a, b) =>
-                                                b.present_students -
-                                                a.present_students
-                                        )[0]?.drive_name ?? "-"
+                                        ([...driveTrend].sort((a, b) => b.present_students - a.present_students)[0]
+                                            ?.drive_name ?? "-")
                                     }
                                 />
 
                                 <SmallStatCard
-                                    title="Highest Selection"
+                                    title="Most Shortlisted Drive"
                                     value={
-                                        driveTrend.sort(
-                                            (a, b) =>
-                                                b.selected_students -
-                                                a.selected_students
-                                        )[0]?.drive_name ?? "-"
+                                        ([...driveTrend].sort((a, b) => b.shortlisted_students - a.shortlisted_students)[0]
+                                            ?.drive_name ?? "-")
                                     }
                                 />
 
@@ -748,60 +784,41 @@ export function AdminDashboardPage() {
                                     title="Total Drives"
                                     value={driveTrend.length}
                                 />
-
                             </div>
                         </SectionCard>
-                        
+
                         {driveTrendFallback ? (
                             <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
                                 No drive trend data found yet.
                             </div>
                         ) : (
-                            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                                <div className="space-y-4">
+                            <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+                                <div className="space-y-2">
 
-                                    <div className="h-[500px]">
+                                    <div className="h-[380px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart
                                                 data={driveTrend}
                                                 layout="vertical"
-                                                margin={{
-                                                    top: 10,
-                                                    right: 20,
-                                                    left: 20,
-                                                    bottom: 10,
-                                                }}
+                                                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
                                             >
-                                                <XAxis
-                                                    type="number"
-                                                    allowDecimals={false}
-                                                />
-
-                                                <YAxis
-                                                    type="category"
-                                                    dataKey="drive_name"
-                                                    width={140}
-                                                />
-
-                                                <Tooltip />
+                                                <XAxis type="number" allowDecimals={false} stroke="#94a3b8" />
+                                                <YAxis type="category" dataKey="drive_name" width={180} stroke="#94a3b8" />
+                                                <Tooltip formatter={(value: any) => formatNumber(Number(value))} />
 
                                                 <Bar
                                                     dataKey="registered_students"
                                                     radius={[0, 6, 6, 0]}
-                                                    onClick={(data) => {
-                                                        if (data?.drive_id) {
-                                                            setSelectedDriveId(data.drive_id);
-                                                        }
+                                                    onClick={(payload) => {
+                                                        const driveId = payload?.payload?.drive_id ?? payload?.drive_id;
+                                                        if (driveId) setSelectedDriveId(driveId);
                                                     }}
                                                 >
+                                                    <LabelList dataKey="registered_students" position="right" formatter={(v: number) => formatNumber(v)} />
                                                     {driveTrend.map((entry) => (
                                                         <Cell
                                                             key={entry.drive_id}
-                                                            fill={
-                                                                entry.drive_id === selectedDrive?.drive_id
-                                                                    ? "#2563eb"
-                                                                    : "#94a3b8"
-                                                            }
+                                                            fill={entry.drive_id === selectedDrive?.drive_id ? "#2563eb" : "#94a3b8"}
                                                         />
                                                     ))}
                                                 </Bar>
@@ -811,52 +828,26 @@ export function AdminDashboardPage() {
 
                                 </div>
 
-
-                                {selectedDrive ? (
-                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                        <SmallStatCard title="Registrations" value={formatNumber(selectedDrive?.registered_students)} subtitle="Unique student registrations" />
-                                        <SmallStatCard title="Applications" value={formatNumber(selectedDrive?.application_count)} subtitle="Across all opportunities" />
-                                        <SmallStatCard title="Present" value={formatNumber(selectedDrive?.present_students)} subtitle="Attendance marked present" />
-                                        <SmallStatCard title="Selected" value={formatNumber(selectedDrive?.selected_students)} subtitle="Students moved forward" />
-                                    </div>
-                                ) : (
-                                    <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-5 text-sm text-muted-foreground">
-                                        Select a drive bar to see its detailed analytics.
-                                    </div>
-                                )}
-
                                 <div className="rounded-2xl border border-border bg-background p-4">
-                                    <h3 className="font-semibold mb-4">
-                                        Drive Comparison
-                                    </h3>
+                                    <h3 className="font-semibold mb-3">Drive Comparison</h3>
 
-                                    <div className="space-y-3">
-
-                                        <SmallStatCard
-                                            title="Registrations"
-                                            value={selectedDrive?.registered_students ?? 0}
-                                            subtitle={`Average ${Math.round(
-                                                driveTrend.reduce(
-                                                    (s, d) => s + d.registered_students,
-                                                    0
-                                                ) / Math.max(driveTrend.length, 1)
-                                            )}`}
-                                        />
-
-                                        <SmallStatCard
-                                            title="Applications"
-                                            value={selectedDrive?.application_count ?? 0}
-                                        />
-
-                                        <SmallStatCard
-                                            title="Present"
-                                            value={selectedDrive?.present_students ?? 0}
-                                        />
-
-                                        <SmallStatCard
-                                            title="Selected"
-                                            value={selectedDrive?.selected_students ?? 0}
-                                        />
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="rounded-2xl border border-border bg-card p-4">
+                                            <div className="text-sm text-muted-foreground">Registrations</div>
+                                            <div className="mt-2 text-2xl font-semibold">{formatNumber(selectedDrive?.registered_students ?? 0)}</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-border bg-card p-4">
+                                            <div className="text-sm text-muted-foreground">Applications</div>
+                                            <div className="mt-2 text-2xl font-semibold">{formatNumber(selectedDrive?.application_count ?? 0)}</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-border bg-card p-4">
+                                            <div className="text-sm text-muted-foreground">Present</div>
+                                            <div className="mt-2 text-2xl font-semibold">{formatNumber(selectedDrive?.present_students ?? 0)}</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-border bg-card p-4">
+                                            <div className="text-sm text-muted-foreground">Selected</div>
+                                            <div className="mt-2 text-2xl font-semibold">{formatNumber(selectedDrive?.selected_students ?? 0)}</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -875,40 +866,54 @@ export function AdminDashboardPage() {
                             }
                         >
                             {selectedDriveAnalyticsReady ? (
-                                <div className="space-y-5">
-                                    <DonutChart
-                                        items={branchDistribution.map((item) => ({
-                                            label: item.branch_name,
-                                            value: item.student_count,
-                                        }))}
-                                        centerTitle="Branches"
-                                        centerValue={selectedDrive?.drive_name ?? "Selected drive"}
-                                        emptyText="No branch distribution available for the selected drive."
-                                    />
+                                branchDistribution.length ? (
+                                    <div className="rounded-2xl border border-border bg-background p-5">
+                                        <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
+                                            <div className="min-w-0">
+                                                <DonutChart
+                                                    items={branchDistribution.map((item, index) => ({
+                                                        label: item.branch_name,
+                                                        value: item.student_count,
+                                                        color: CHART_COLORS[index % CHART_COLORS.length],
+                                                    }))}
+                                                    centerTitle="Drive"
+                                                    centerValue={selectedDrive?.drive_name ?? "Drive"}
+                                                    size={220}
+                                                    outerRadius={82}
+                                                    innerRadius={50}
+                                                    legendPosition="bottom"
+                                                />
+                                            </div>
 
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <SmallStatCard
-                                            title="Eligible Students"
-                                            value={eligibleStudents != null ? formatNumber(eligibleStudents) : "N/A"}
-                                            subtitle="From drive eligibility"
-                                        />
-                                        <SmallStatCard
-                                            title="Eligibility Gap"
-                                            value={eligibleGap != null ? formatNumber(eligibleGap) : "N/A"}
-                                            subtitle="Eligible minus registered"
-                                        />
-                                        <SmallStatCard
-                                            title="Opportunity Count"
-                                            value={formatNumber(selectedDrive?.opportunity_count ?? 0)}
-                                            subtitle="Opportunities inside the drive"
-                                        />
-                                        <SmallStatCard
-                                            title="Application Count"
-                                            value={formatNumber(selectedDrive?.application_count ?? 0)}
-                                            subtitle="Across all opportunities"
-                                        />
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                <SmallStatCard
+                                                    title="Eligible Branches"
+                                                    value={formatNumber(snapshot?.eligibility?.allowed_branches?.length ?? branchDistribution.length)}
+                                                    subtitle="Configured in eligibility"
+                                                />
+                                                <SmallStatCard
+                                                    title="Eligible Degrees"
+                                                    value={formatNumber(snapshot?.eligibility?.allowed_degrees?.length ?? 0)}
+                                                    subtitle="Configured in eligibility"
+                                                />
+                                                <SmallStatCard
+                                                    title="Opportunity Count"
+                                                    value={formatNumber(selectedDrive?.opportunity_count ?? 0)}
+                                                    subtitle="Drive opportunities"
+                                                />
+                                                <SmallStatCard
+                                                    title="Application Count"
+                                                    value={formatNumber(selectedDrive?.application_count ?? 0)}
+                                                    subtitle="Total applications"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+                                        No eligibility configured for this drive.
+                                    </div>
+                                )
                             ) : (
                                 <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
                                     Choose a drive from the registration trend above to load branch analytics.
@@ -1123,40 +1128,50 @@ export function AdminDashboardPage() {
 
                             <div className="mt-5">
                                 {studentPieData.length ? (
-                                    <div className="grid gap-6 lg:grid-cols-2">
+                                    <div className="flex flex-col gap-6">
+                                        <div className="w-full overflow-hidden rounded-2xl border border-border bg-background p-4">
+                                            <DonutChart
+                                                items={studentPieData.map((item, index) => ({
+                                                    label: item.label,
+                                                    value: item.value,
+                                                    color: CHART_COLORS[index % CHART_COLORS.length],
+                                                }))}
+                                                centerTitle="Participation"
+                                                centerValue=""
+                                                size={160}
+                                                outerRadius={60}
+                                                innerRadius={36}
+                                                legendPosition="bottom"
+                                            />
+                                            <div className="mt-4 text-center">
+                                                <div className="text-sm font-semibold">Enrollment</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {activeEnrollmentNo || selectedDrive?.drive_name || "-"}
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                        <DonutChart
-                                            items={studentPieData.map((item, index) => ({
-                                                label: item.label,
-                                                value: item.value,
-                                                color:
-                                                    CHART_COLORS[
-                                                    index %
-                                                    CHART_COLORS.length
-                                                    ],
-                                            }))}
-                                            centerTitle="Participation"
-                                            centerValue={
-                                                activeEnrollmentNo ||
-                                                selectedDrive?.drive_name ||
-                                                "-"
-                                            }
-                                        />
-
-                                        <DonutChart
-                                            items={studentStatusData.map((item, index) => ({
-                                                label: item.label,
-                                                value: item.value,
-                                                color:
-                                                    CHART_COLORS[
-                                                    (index + 4) %
-                                                    CHART_COLORS.length
-                                                    ],
-                                            }))}
-                                            centerTitle="Status"
-                                            centerValue="Applications"
-                                        />
-
+                                        <div className="w-full overflow-hidden rounded-2xl border border-border bg-background p-4">
+                                            <DonutChart
+                                                items={studentStatusData.map((item, index) => ({
+                                                    label: item.label,
+                                                    value: item.value,
+                                                    color: CHART_COLORS[(index + 4) % CHART_COLORS.length],
+                                                }))}
+                                                centerTitle="Applications"
+                                                centerValue=""
+                                                size={160}
+                                                outerRadius={60}
+                                                innerRadius={36}
+                                                legendPosition="bottom"
+                                            />
+                                            <div className="mt-4 text-center">
+                                                <div className="text-sm font-semibold">Status</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    Applied / Shortlisted / Selected
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
@@ -1203,32 +1218,28 @@ export function AdminDashboardPage() {
                                 </div>
                             }
                         >
-                            {snapshot?.recentActivity?.length ? (
-                                <div className="space-y-3">
-                                    {snapshot.recentActivity.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4"
-                                        >
-                                            <ActivityBadge type={item.type} />
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                                    <div className="font-semibold">{item.title}</div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        {formatRelativeTime(item.occurred_at)}
+                            {recentItems.length ? (
+                                <div className="mt-4 h-[520px] min-h-0 overflow-y-auto overscroll-contain pr-2">
+                                    {recentItems
+                                        .filter((item) => (activityFilter === "ALL" ? true : item.type === activityFilter))
+                                        .map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4"
+                                            >
+                                                <ActivityBadge type={item.type} />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <div className="font-semibold">{item.title}</div>
+                                                        <div className="text-xs text-muted-foreground">{formatRelativeTime(item.occurred_at)}</div>
                                                     </div>
-                                                </div>
-                                                <div className="mt-1 text-sm text-muted-foreground">
-                                                    {item.description}
+                                                    <div className="mt-1 text-sm text-muted-foreground">{item.description}</div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                 </div>
                             ) : (
-                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
-                                    No recent activity available yet.
-                                </div>
+                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">No recent activity available yet.</div>
                             )}
                         </SectionCard>
                     </section>

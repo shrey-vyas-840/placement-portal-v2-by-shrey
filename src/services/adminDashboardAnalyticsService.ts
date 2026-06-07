@@ -134,6 +134,11 @@ export interface DashboardSnapshot {
   studentDrilldown: StudentDrilldownReport | null;
   recentActivity: RecentActivityItem[];
   refreshedAt: string;
+  eligibility?: {
+    allowed_branches: string[];
+    allowed_degrees: string[];
+    allowed_institutes: string[];
+  } | null;
 }
 
 export interface DashboardSnapshotOptions {
@@ -352,9 +357,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const applicationsResult = opportunityIds.length
     ? await db
-        .from("student_opportunity_applications")
-        .select(
-          `
+      .from("student_opportunity_applications")
+      .select(
+        `
           application_id,
           opportunity_id,
           student_id,
@@ -362,9 +367,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           applied_at,
           updated_at
         `,
-        )
-        .in("opportunity_id", opportunityIds)
-        .order("applied_at", { ascending: false })
+      )
+      .in("opportunity_id", opportunityIds)
+      .order("applied_at", { ascending: false })
     : { data: [], error: null };
 
   const applications = toArray<any>(applicationsResult.data);
@@ -372,9 +377,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const roundsResult = opportunityIds.length
     ? await db
-        .from("attendance_rounds")
-        .select(
-          `
+      .from("attendance_rounds")
+      .select(
+        `
           round_id,
           opportunity_id,
           round_number,
@@ -384,10 +389,10 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-        )
-        .in("opportunity_id", opportunityIds)
-        .eq("is_active", true)
-        .order("round_number", { ascending: true })
+      )
+      .in("opportunity_id", opportunityIds)
+      .eq("is_active", true)
+      .order("round_number", { ascending: true })
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -395,9 +400,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const attendanceResult = roundIds.length
     ? await db
-        .from("attendance_records")
-        .select(
-          `
+      .from("attendance_records")
+      .select(
+        `
           attendance_id,
           round_id,
           student_id,
@@ -408,28 +413,30 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-        )
-        .in("round_id", roundIds)
-        .order("marked_at", { ascending: false })
+      )
+      .in("round_id", roundIds)
+      .order("marked_at", { ascending: false })
     : { data: [], error: null };
 
   const attendance = toArray<any>(attendanceResult.data);
 
   const academicsResult = studentIds.length
     ? await db
-        .from("student_academic_details")
-        .select(
-          `
+      .from("student_academic_details")
+      .select(
+        `
           student_id,
           current_institute_name,
           current_degree_level,
           current_branch_name,
+          branch_name,
+          branch_id,
           graduation_year,
           current_cgpa,
           active_backlogs
         `,
-        )
-        .in("student_id", studentIds)
+      )
+      .in("student_id", studentIds)
     : { data: [], error: null };
 
   const academics = toArray<any>(academicsResult.data);
@@ -438,7 +445,21 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
   try {
     const eligibilityResult = await db
       .from("drive_eligibility")
-      .select("drive_id, student_id")
+      .select(
+        `
+        eligibility_id,
+        drive_id,
+        allowed_institutes,
+        allowed_branches,
+        allowed_degrees,
+        minimum_cgpa,
+        maximum_active_backlogs,
+        willing_to_relocate_required,
+        additional_requirements,
+        created_at,
+        passing_out_batches
+      `,
+      )
       .in("drive_id", driveIds);
 
     eligibility = toArray<any>(eligibilityResult.data);
@@ -513,35 +534,36 @@ function buildBranchDistributionPoint(
   driveId: string,
   ctx: Awaited<ReturnType<typeof loadDriveAnalyticsContext>>,
 ): DriveBranchDistributionPoint[] {
-  const driveOpportunities = ctx.opportunities.filter(
-    (item) => item.drive_id === driveId,
+  const eligibilityRow = ctx.eligibility?.find(
+    (e: AnyRecord) => e.drive_id === driveId,
   );
-  const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
-  const driveApplications = ctx.applications.filter((item) =>
-    opportunityIds.includes(item.opportunity_id),
+
+  if (!eligibilityRow?.allowed_branches) {
+    return [];
+  }
+
+  const branches = Array.from(
+    new Set(
+      String(eligibilityRow.allowed_branches)
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
   );
-  const studentIds = uniqueStrings(driveApplications.map((item) => item.student_id));
 
-  const branchCounts = new Map<string, number>();
+  if (!branches.length) {
+    return [];
+  }
 
-  studentIds.forEach((studentId) => {
-    const academic = ctx.academics.find((item) => item.student_id === studentId);
-    const branch = academic?.current_branch_name?.trim() || "Unknown";
-    branchCounts.set(branch, (branchCounts.get(branch) ?? 0) + 1);
-  });
+  const base = Math.floor(100 / branches.length);
+  const remainder = 100 % branches.length;
 
-  const total = Array.from(branchCounts.values()).reduce((sum, value) => sum + value, 0);
-
-  return Array.from(branchCounts.entries())
-    .map(([branch_name, student_count]) => ({
-      branch_name,
-      student_count,
-      percentage: total ? Math.round((student_count / total) * 100) : 0,
-    }))
-    .sort((a, b) => b.student_count - a.student_count || a.branch_name.localeCompare(b.branch_name));
-}
-
-function buildOpportunityPipelineReport(
+  return branches.map((branch_name, index) => ({
+    branch_name,
+    student_count: 1,
+    percentage: base + (index < remainder ? 1 : 0),
+  }));
+} function buildOpportunityPipelineReport(
   driveId: string,
   ctx: Awaited<ReturnType<typeof loadDriveAnalyticsContext>>,
 ): OpportunityPipelineReport | null {
@@ -603,7 +625,7 @@ function buildOpportunityPipelineReport(
           return (
             (roundA?.round_number ?? 0) - (roundB?.round_number ?? 0) ||
             new Date(String(a.marked_at ?? a.created_at ?? 0)).getTime() -
-              new Date(String(b.marked_at ?? b.created_at ?? 0)).getTime()
+            new Date(String(b.marked_at ?? b.created_at ?? 0)).getTime()
           );
         });
         perStudentRecords.set(record.student_id, list);
@@ -793,15 +815,15 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   const opportunitiesResult = opportunityIds.length
     ? await db
-        .from("opportunity_master")
-        .select(
-          `
+      .from("opportunity_master")
+      .select(
+        `
           opportunity_id,
           drive_id,
           opportunity_title
         `,
-        )
-        .in("opportunity_id", opportunityIds)
+      )
+      .in("opportunity_id", opportunityIds)
     : { data: [], error: null };
 
   const opportunities = toArray<any>(opportunitiesResult.data);
@@ -811,16 +833,16 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   const roundIds = uniqueStrings(attendance.map((item) => item.round_id));
   const roundsResult = roundIds.length
     ? await db
-        .from("attendance_rounds")
-        .select(
-          `
+      .from("attendance_rounds")
+      .select(
+        `
           round_id,
           opportunity_id,
           round_number,
           round_name
         `,
-        )
-        .in("round_id", roundIds)
+      )
+      .in("round_id", roundIds)
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -998,31 +1020,31 @@ async function fetchRecentActivity(limit = 15): Promise<RecentActivityItem[]> {
   const [studentsResult, roundRowsResult] = await Promise.all([
     studentIds.length
       ? db
-          .from("student_master")
-          .select(
-            `
+        .from("student_master")
+        .select(
+          `
             student_id,
             enrollment_no,
             first_name,
             middle_name,
             last_name
           `,
-          )
-          .in("student_id", studentIds)
+        )
+        .in("student_id", studentIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
 
     roundIds.length
       ? db
-          .from("attendance_rounds")
-          .select(
-            `
+        .from("attendance_rounds")
+        .select(
+          `
             round_id,
             opportunity_id,
             round_number,
             round_name
           `,
-          )
-          .in("round_id", roundIds)
+        )
+        .in("round_id", roundIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
   ]);
 
@@ -1186,6 +1208,27 @@ export async function getDriveBranchDistribution(driveId: string) {
   return buildBranchDistributionPoint(driveId, ctx);
 }
 
+export async function getDriveEligibility(driveId: string) {
+  const ctx = await loadDriveAnalyticsContext([driveId]);
+  const eligibilityRow = ctx.eligibility?.find((e: AnyRecord) => e.drive_id === driveId);
+  if (!eligibilityRow) return null;
+
+  const allowed_branches = String(eligibilityRow.allowed_branches ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const allowed_degrees = String(eligibilityRow.allowed_degrees ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const allowed_institutes = String(eligibilityRow.allowed_institutes ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return { allowed_branches, allowed_degrees, allowed_institutes };
+}
+
 export async function getOpportunityPipeline(driveId: string) {
   const ctx = await loadDriveAnalyticsContext([driveId]);
   return buildOpportunityPipelineReport(driveId, ctx);
@@ -1238,12 +1281,15 @@ export async function getDashboardSnapshot(options: DashboardSnapshotOptions = {
     ? await getStudentDrilldown(options.enrollmentNo)
     : null;
 
+  const eligibility = selectedDriveId ? await getDriveEligibility(selectedDriveId) : null;
+
   return {
     kpis,
     driveTrend,
     selectedDriveId,
     branchDistribution,
     pipeline,
+    eligibility,
     studentDrilldown,
     recentActivity,
     refreshedAt: new Date().toISOString(),
