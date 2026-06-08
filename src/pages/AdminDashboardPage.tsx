@@ -878,7 +878,7 @@ export function AdminDashboardPage() {
                     <section className="mt-6 space-y-6">
                         <div className="grid gap-6 xl:grid-cols-2">
                             <SectionCard
-                                className="h-[650px]"
+                                className="h-[700px]"
                                 title="Drive Analytics"
                                 subtitle="Branch distribution for the selected drive."
                                 right={
@@ -890,7 +890,7 @@ export function AdminDashboardPage() {
                             >
                                 {selectedDriveAnalyticsReady ? (
                                     branchDistribution.length ? (
-                                        <div className="h-[800px] space-y-2 overflow-y-auto pr-2">
+                                        <div className="h-[590px] space-y-2 overflow-y-auto pr-2">
                                             <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start">
                                                 <div className="min-w-0">
                                                     <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-1">
@@ -902,9 +902,9 @@ export function AdminDashboardPage() {
                                                             }))}
                                                             centerTitle="Drive"
                                                             centerValue={selectedDrive?.drive_name ?? "Drive"}
-                                                            size={120}
-                                                            outerRadius={40}
-                                                            innerRadius={20}
+                                                            size={180}
+outerRadius={60}
+innerRadius={35}
                                                             legendPosition="bottom"
                                                         />
                                                     </div>
@@ -948,7 +948,7 @@ export function AdminDashboardPage() {
                                                     ) : null}
                                                 </div>
 
-                                                <div className="max-h-[175px] overflow-y-auto">
+                                                <div className="max-h-[260px] overflow-y-auto">
                                                     <table className="min-w-full text-sm">
                                                         <thead className="border-b border-border text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
                                                             <tr>
@@ -989,12 +989,12 @@ export function AdminDashboardPage() {
                             </SectionCard>
 
                             <SectionCard
-                                className="h-[650px]"
+                                className="h-[700px]"
                                 title="Opportunity Pipeline Analysis"
                                 subtitle="Eligible → Registered → Present → Round Cleared → Shortlisted → Selected"
                             >
                                 {pipeline ? (
-                                    <div className="h-[1000px] space-y-7 overflow-y-auto pr-2">
+                                    <div className="h-[560px] space-y-7 overflow-y-auto pr-2">
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <SmallStatCard
                                                 title="Eligible Students"
