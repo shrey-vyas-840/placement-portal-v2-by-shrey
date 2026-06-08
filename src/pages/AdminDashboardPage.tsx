@@ -267,14 +267,18 @@ function SectionCard({
     subtitle,
     right,
     children,
+    className = "",
 }: {
     title: string;
     subtitle?: string;
     right?: ReactNode;
     children: ReactNode;
+    className?: string;
 }) {
     return (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <section
+            className={`rounded-2xl border border-border bg-card p-5 shadow-sm ${className}`}
+        >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 className="text-lg font-semibold">{title}</h2>
@@ -451,6 +455,7 @@ export function AdminDashboardPage() {
     const [studentSearchValue, setStudentSearchValue] = useState("");
     const [activeEnrollmentNo, setActiveEnrollmentNo] = useState("");
     const [activityFilter, setActivityFilter] = useState("ALL");
+    const [showAllBranches, setShowAllBranches] = useState(false);
 
     const loadDashboard = async (silent = false) => {
         if (silent) {
@@ -522,6 +527,14 @@ export function AdminDashboardPage() {
         selectedDriveAnalyticsReady && snapshot?.branchAnalytics
             ? snapshot.branchAnalytics
             : [];
+
+    const visibleBranches = showAllBranches
+        ? branchAnalytics
+        : branchAnalytics.slice(0, 2);
+
+    useEffect(() => {
+        setShowAllBranches(false);
+    }, [selectedDriveId]);
 
     const pipeline: OpportunityPipelineReport | null =
         selectedDriveAnalyticsReady ? snapshot?.pipeline ?? null : null;
@@ -734,7 +747,7 @@ export function AdminDashboardPage() {
                         </div>
                     ) : null}
 
-                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <section className="grid gap-7 space- x-10 y-20 md:grid-cols-2 xl:grid-cols-4">
                         <MetricCard title="Total Students" value={formatNumber(kpis.totalStudents)} subtitle="Registered in the portal" />
                         <MetricCard title="Interested" value={formatNumber(kpis.interestedStudents)} subtitle="Students marked interested" />
                         <MetricCard title="Applications" value={formatNumber(kpis.totalApplications)} subtitle="All opportunity applications" />
@@ -758,10 +771,11 @@ export function AdminDashboardPage() {
                     >
 
                         <SectionCard
+                            className="h-[200px]"
                             title="Admin Insights"
                             subtitle="Automatically generated from live dashboard data"
                         >
-                            <div className="grid gap-4 md:grid-cols-4">
+                            <div className="grid gap-6 md:grid-cols-4">
                                 <SmallStatCard
                                     title="Most Applications Drive"
                                     value={
@@ -798,10 +812,10 @@ export function AdminDashboardPage() {
                                 No drive trend data found yet.
                             </div>
                         ) : (
-                            <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-                                <div className="space-y-2">
+                            <div className="grid gap-15 xl:grid-cols-[1.25fr_0.75fr]">
+                                <div className="space-y-3">
 
-                                    <div className="h-[380px]">
+                                    <div className="h-[400px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart
                                                 data={driveTrend}
@@ -834,8 +848,8 @@ export function AdminDashboardPage() {
 
                                 </div>
 
-                                <div className="rounded-2xl border border-border bg-background p-4">
-                                    <h3 className="font-semibold mb-3">Drive Comparison</h3>
+                                <div className="h-[400px] rounded-2xl border border-border bg-background p-2">
+                                    <h3 className="h-[80px] font-semibold mb-3">Drive Comparison</h3>
 
                                     <div className="grid gap-3 sm:grid-cols-2">
                                         <div className="rounded-2xl border border-border bg-card p-4">
@@ -860,42 +874,43 @@ export function AdminDashboardPage() {
                         )}
                     </SectionCard>
 
-                    <section className="mt-6 grid gap-6 xl:grid-cols-[0.65fr_0.35fr]">
-                        <div className="space-y-6">
-                            <SectionCard
-                                title="Drive Analytics"
-                            subtitle="Branch distribution for the selected drive."
-                            right={
-                                <StatusChip
-                                    label="Drive"
-                                    value={selectedDrive?.drive_name ?? "-"}
-                                />
-                            }
-                        >
-                            {selectedDriveAnalyticsReady ? (
-                                branchDistribution.length ? (
-                                    <div className="rounded-2xl border border-border bg-background p-5">
-                                        <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
-                                            <div className="min-w-0">
-                                                <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-4">
-                                                    <DonutChart
-                                                        items={branchDistribution.map((item, index) => ({
-                                                            label: item.branch_name,
-                                                            value: item.student_count,
-                                                            color: CHART_COLORS[index % CHART_COLORS.length],
-                                                        }))}
-                                                        centerTitle="Drive"
-                                                        centerValue={selectedDrive?.drive_name ?? "Drive"}
-                                                        size={220}
-                                                        outerRadius={82}
-                                                        innerRadius={50}
-                                                        legendPosition="bottom"
-                                                    />
-                                                </div>
-                                            </div>
 
-                                            <div className="space-y-4">
-                                                <div className="grid gap-3 sm:grid-cols-2">
+                    <section className="mt-6 space-y-6">
+                        <div className="grid gap-6 xl:grid-cols-2">
+                            <SectionCard
+                                className="h-[650px]"
+                                title="Drive Analytics"
+                                subtitle="Branch distribution for the selected drive."
+                                right={
+                                    <StatusChip
+                                        label="Drive"
+                                        value={selectedDrive?.drive_name ?? "-"}
+                                    />
+                                }
+                            >
+                                {selectedDriveAnalyticsReady ? (
+                                    branchDistribution.length ? (
+                                        <div className="h-[800px] space-y-2 overflow-y-auto pr-2">
+                                            <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start">
+                                                <div className="min-w-0">
+                                                    <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-1">
+                                                        <DonutChart
+                                                            items={branchDistribution.map((item, index) => ({
+                                                                label: item.branch_name,
+                                                                value: item.student_count,
+                                                                color: CHART_COLORS[index % CHART_COLORS.length],
+                                                            }))}
+                                                            centerTitle="Drive"
+                                                            centerValue={selectedDrive?.drive_name ?? "Drive"}
+                                                            size={120}
+                                                            outerRadius={40}
+                                                            innerRadius={20}
+                                                            legendPosition="bottom"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid gap-3 sm:grid-cols-2 min-w-0">
                                                     <SmallStatCard
                                                         title="Eligible Branches"
                                                         value={formatNumber(snapshot?.eligibility?.allowed_branches?.length ?? branchDistribution.length)}
@@ -917,262 +932,276 @@ export function AdminDashboardPage() {
                                                         subtitle="Total applications"
                                                     />
                                                 </div>
+                                            </div>
 
-                                                <div className="overflow-hidden rounded-2xl border border-border bg-card p-4">
-                                                    <div className="mb-4 text-sm font-semibold">Branch Analytics</div>
-                                                    <div className="overflow-x-auto">
-                                                        <table className="min-w-full text-sm">
-                                                            <thead className="border-b border-border text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                                                                <tr>
-                                                                    <th className="px-2 py-3">Branch</th>
-                                                                    <th className="px-2 py-3 text-right">Eligible</th>
-                                                                    <th className="px-2 py-3 text-right">Registered</th>
-                                                                    <th className="px-2 py-3 text-right">Present</th>
-                                                                    <th className="px-2 py-3 text-right">Shortlisted</th>
-                                                                    <th className="px-2 py-3 text-right">Selected</th>
+                                            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                                                <div className="flex items-center justify-between border-b border-border px-5 py-2">
+                                                    <div className="text-sm font-semibold">Branch Analytics</div>
+                                                    {branchAnalytics.length > 1 ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowAllBranches((current) => !current)}
+                                                            className="rounded-full border border-border bg-background px-3 py-2 text-xs font-medium transition hover:border-primary/60 hover:text-primary"
+                                                        >
+                                                            {showAllBranches ? "Collapse" : "View All Branches"}
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="max-h-[175px] overflow-y-auto">
+                                                    <table className="min-w-full text-sm">
+                                                        <thead className="border-b border-border text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                                                            <tr>
+                                                                <th className="px-2 py-2">Branch</th>
+                                                                <th className="px-2 py-3 text-right">Eligible</th>
+                                                                <th className="px-2 py-3 text-right">Registered</th>
+                                                                <th className="px-2 py-3 text-right">Present</th>
+                                                                <th className="px-2 py-3 text-right">Shortlisted</th>
+                                                                <th className="px-2 py-3 text-right">Selected</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {visibleBranches.map((item) => (
+                                                                <tr key={item.branch_name} className="border-b border-border last:border-b-0">
+                                                                    <td className="px-3 py-2 font-medium text-sm">{item.branch_name}</td>
+                                                                    <td className="px-3 py-2 text-right">{formatNumber(item.eligible_students)}</td>
+                                                                    <td className="px-3 py-2 text-right">{formatNumber(item.registered_students)}</td>
+                                                                    <td className="px-3 py-2 text-right">{formatNumber(item.present_students)}</td>
+                                                                    <td className="px-3 py-2 text-right">{formatNumber(item.shortlisted_students)}</td>
+                                                                    <td className="px-3 py-2 text-right">{formatNumber(item.selected_students)}</td>
                                                                 </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {branchAnalytics.map((item) => (
-                                                                    <tr key={item.branch_name} className="border-b border-border last:border-b-0">
-                                                                        <td className="px-2 py-3 font-medium text-sm">{item.branch_name}</td>
-                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.eligible_students)}</td>
-                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.registered_students)}</td>
-                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.present_students)}</td>
-                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.shortlisted_students)}</td>
-                                                                        <td className="px-2 py-3 text-right">{formatNumber(item.selected_students)}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+                                            No eligibility configured for this drive.
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+                                        Choose a drive from the registration trend above to load branch analytics.
+                                    </div>
+                                )}
+                            </SectionCard>
+
+                            <SectionCard
+                                className="h-[650px]"
+                                title="Opportunity Pipeline Analysis"
+                                subtitle="Eligible → Registered → Present → Round Cleared → Shortlisted → Selected"
+                            >
+                                {pipeline ? (
+                                    <div className="h-[1000px] space-y-7 overflow-y-auto pr-2">
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <SmallStatCard
+                                                title="Eligible Students"
+                                                value={formatNumber(pipeline.eligible_students ?? pipeline.registered_students)}
+                                                subtitle="From drive eligibility"
+                                            />
+                                            <SmallStatCard
+                                                title="Registered"
+                                                value={formatNumber(pipeline.registered_students)}
+                                                subtitle="Unique registrations"
+                                            />
+                                            <SmallStatCard
+                                                title="Present"
+                                                value={formatNumber(pipeline.present_students)}
+                                                subtitle="Attendance present"
+                                            />
+                                            <SmallStatCard
+                                                title="Shortlisted"
+                                                value={formatNumber(pipeline.shortlisted_students)}
+                                                subtitle="Moved to shortlist"
+                                            />
+                                        </div>
+
+                                        <div className="space- x-5 y-8 rounded-2xl border border-border bg-background p-3">
+                                            <ProgressRow
+                                                label="Eligible Students"
+                                                value={pipeline.eligible_students ?? pipeline.registered_students}
+                                                total={Math.max(registrationBase, 1)}
+                                                tone="bg-slate-600"
+                                            />
+                                            <ProgressRow
+                                                label="Registered"
+                                                value={pipeline.registered_students}
+                                                total={Math.max(registrationBase, 1)}
+                                                tone="bg-blue-600"
+                                            />
+                                            <ProgressRow
+                                                label="Present"
+                                                value={pipeline.present_students}
+                                                total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
+                                                tone="bg-emerald-600"
+                                            />
+                                            <ProgressRow
+                                                label="Round Cleared"
+                                                value={pipeline.round_cleared_students}
+                                                total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
+                                                tone="bg-violet-600"
+                                            />
+                                            <ProgressRow
+                                                label="Shortlisted"
+                                                value={pipeline.shortlisted_students}
+                                                total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
+                                                tone="bg-indigo-600"
+                                            />
+                                            <ProgressRow
+                                                label="Selected"
+                                                value={pipeline.selected_students}
+                                                total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
+                                                tone="bg-amber-600"
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+                                        Select a drive to see the pipeline for that opportunity set.
+                                    </div>
+                                )}
+                            </SectionCard>
+                        </div>
+
+                        <div className="grid gap-6 xl:grid-cols-2 items-start">
+                            <SectionCard
+                                className="h-[700px]"
+                                title="Opportunity Probability Widget"
+                                subtitle="Live ratios showing registration, attendance, shortlisting and selection chances."
+                            >
+                                {pipeline ? (
+                                    <div className="h-[600px] space-y-4 overflow-y-auto pr-1">
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                            <MetricCard
+                                                title="Registration Rate"
+                                                value={`${pipeline.registration_rate}%`}
+                                                subtitle="Registered / eligible"
+                                            />
+                                            <MetricCard
+                                                title="Attendance Rate"
+                                                value={`${pipeline.attendance_rate}%`}
+                                                subtitle="Present / registered"
+                                            />
+                                            <MetricCard
+                                                title="Shortlisting Rate"
+                                                value={`${pipeline.shortlisting_rate}%`}
+                                                subtitle="Shortlisted / registered"
+                                            />
+                                            <MetricCard
+                                                title="Selection Rate"
+                                                value={`${pipeline.selection_rate}%`}
+                                                subtitle="Selected / registered"
+                                            />
+                                        </div>
+
+                                        <div className="rounded-2xl border border-border bg-background p-4">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="font-medium">Pipeline Counts</span>
+                                                <span className="text-muted-foreground">{pipeline.drive_name}</span>
+                                            </div>
+
+                                            <div className="mt-4 space-y-3 text-sm">
+                                                <div className="flex items-center justify-between">
+                                                    <span>Eligible Students</span>
+                                                    <span className="font-semibold">
+                                                        {formatNumber(pipeline.eligible_students ?? pipeline.registered_students)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span>Registered</span>
+                                                    <span className="font-semibold">{formatNumber(pipeline.registered_students)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span>Present</span>
+                                                    <span className="font-semibold">{formatNumber(pipeline.present_students)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span>Shortlisted</span>
+                                                    <span className="font-semibold">{formatNumber(pipeline.shortlisted_students)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span>Selected</span>
+                                                    <span className="font-semibold">{formatNumber(pipeline.selected_students)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between border-t border-border pt-3">
+                                                    <span>Success Index</span>
+                                                    <span className="font-semibold text-foreground">
+                                                        {percent(
+                                                            pipeline.selected_students,
+                                                            Math.max(eligibleStudents ?? pipeline.registered_students, 1),
+                                                        )}%
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
-                                        No eligibility configured for this drive.
+                                        Select a drive to calculate registration, attendance and selection probability.
                                     </div>
-                                )
-                            ) : (
-                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
-                                    Choose a drive from the registration trend above to load branch analytics.
-                                </div>
-                            )}
-                        </SectionCard>
-                    </div>
+                                )}
+                            </SectionCard>
 
-                        <div className="space-y-6">
                             <SectionCard
-                                title="Opportunity Pipeline Analysis"
-                                subtitle="Eligible → Registered → Present → Round Cleared → Shortlisted → Selected"
-                            >
-                            {pipeline ? (
-                                <div className="space-y-4">
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <SmallStatCard
-                                            title="Eligible Students"
-                                            value={formatNumber(pipeline.eligible_students ?? pipeline.registered_students)}
-                                            subtitle="From drive eligibility"
-                                        />
-                                        <SmallStatCard
-                                            title="Registered"
-                                            value={formatNumber(pipeline.registered_students)}
-                                            subtitle="Unique registrations"
-                                        />
-                                        <SmallStatCard
-                                            title="Present"
-                                            value={formatNumber(pipeline.present_students)}
-                                            subtitle="Attendance present"
-                                        />
-                                        <SmallStatCard
-                                            title="Shortlisted"
-                                            value={formatNumber(pipeline.shortlisted_students)}
-                                            subtitle="Moved to shortlist"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-4 rounded-2xl border border-border bg-background p-4">
-                                        <ProgressRow
-                                            label="Eligible Students"
-                                            value={pipeline.eligible_students ?? pipeline.registered_students}
-                                            total={Math.max(registrationBase, 1)}
-                                            tone="bg-slate-700"
-                                        />
-                                        <ProgressRow
-                                            label="Registered"
-                                            value={pipeline.registered_students}
-                                            total={Math.max(registrationBase, 1)}
-                                            tone="bg-blue-600"
-                                        />
-                                        <ProgressRow
-                                            label="Present"
-                                            value={pipeline.present_students}
-                                            total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
-                                            tone="bg-emerald-600"
-                                        />
-                                        <ProgressRow
-                                            label="Round Cleared"
-                                            value={pipeline.round_cleared_students}
-                                            total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
-                                            tone="bg-violet-600"
-                                        />
-                                        <ProgressRow
-                                            label="Shortlisted"
-                                            value={pipeline.shortlisted_students}
-                                            total={Math.max(
-                                                Math.max(pipeline.registered_students, 1),
-                                                registrationBase
-                                            )}
-                                            tone="bg-indigo-600"
-                                        />
-                                        <ProgressRow
-                                            label="Selected"
-                                            value={pipeline.selected_students}
-                                            total={Math.max(Math.max(pipeline.registered_students, 1), registrationBase)}
-                                            tone="bg-amber-500"
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
-                                    Select a drive to see the pipeline for that opportunity set.
-                                </div>
-                            )}
-                        </SectionCard>
-
-                        <SectionCard
-                            title="Opportunity Probability Widget"
-                            subtitle="Live ratios showing registration, attendance, shortlisting and selection chances."
-                        >
-                            {pipeline ? (
-                                <div className="space-y-4">
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <MetricCard
-                                            title="Registration Rate"
-                                            value={`${pipeline.registration_rate}%`}
-                                            subtitle="Registered / eligible"
-                                        />
-                                        <MetricCard
-                                            title="Attendance Rate"
-                                            value={`${pipeline.attendance_rate}%`}
-                                            subtitle="Present / registered"
-                                        />
-                                        <MetricCard
-                                            title="Shortlisting Rate"
-                                            value={`${pipeline.shortlisting_rate}%`}
-                                            subtitle="Shortlisted / registered"
-                                        />
-                                        <MetricCard
-                                            title="Selection Rate"
-                                            value={`${pipeline.selection_rate}%`}
-                                            subtitle="Selected / registered"
-                                        />
-                                    </div>
-
-                                    <div className="rounded-2xl border border-border bg-background p-4">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="font-medium">Pipeline Counts</span>
-                                            <span className="text-muted-foreground">
-                                                {pipeline.drive_name}
-                                            </span>
-                                        </div>
-                                        <div className="mt-4 space-y-3 text-sm">
-                                            <div className="flex items-center justify-between">
-                                                <span>Eligible Students</span>
-                                                <span className="font-semibold">
-                                                    {formatNumber(pipeline.eligible_students ?? pipeline.registered_students)}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span>Registered</span>
-                                                <span className="font-semibold">{formatNumber(pipeline.registered_students)}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span>Present</span>
-                                                <span className="font-semibold">{formatNumber(pipeline.present_students)}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span>Shortlisted</span>
-                                                <span className="font-semibold">{formatNumber(pipeline.shortlisted_students)}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span>Selected</span>
-                                                <span className="font-semibold">{formatNumber(pipeline.selected_students)}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between border-t border-border pt-3">
-                                                <span>Success Index</span>
-                                                <span className="font-semibold text-foreground">
-                                                    {percent(
-                                                        pipeline.selected_students,
-                                                        Math.max(eligibleStudents ?? pipeline.registered_students, 1),
-                                                    )}%
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
-                                    Select a drive to calculate registration, attendance and selection probability.
-                                </div>
-                            )}
-                        </SectionCard>
-                    </div>
-
-                        <SectionCard
-                            title="Recent Activity Feed"
-                            subtitle="Live latest events across applications, attendance, drives, opportunities, rounds and NOC activity."
-                            right={
-                                <div className="flex gap-2 flex-wrap">
-                                    <StatusChip
-                                        label="Updated"
-                                        value={refreshLabel}
-                                    />
-                                    {[
-                                        "ALL",
-                                        "APPLICATION",
-                                        "ATTENDANCE",
-                                        "DRIVE",
-                                        "OPPORTUNITY",
-                                        "NOC"
-                                    ].map((type) => (
-                                        <button
-                                            key={type}
-                                            onClick={() => setActivityFilter(type)}
-                                            className="rounded-lg border px-2 py-1 text-xs"
-                                        >
-                                            {type}
-                                        </button>
-                                    ))}
-                                </div>
-                            }
-                        >
-                            {recentItems.length ? (
-                                <div className="mt-4 h-[700px] min-h-0 overflow-y-auto overscroll-contain pr-2">
-                                    {recentItems
-                                        .filter((item) => (activityFilter === "ALL" ? true : item.type === activityFilter))
-                                        .map((item) => (
-                                            <div
-                                                key={item.id}
-                                                className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4"
+                                className="h-[700px]"
+                                title="Recent Activity Feed"
+                                subtitle="Live latest events across applications, attendance, drives, opportunities, rounds and NOC activity."
+                                right={
+                                    <div className="flex gap-1 flex-wrap">
+                                        <StatusChip label="Updated" value={refreshLabel} />
+                                        {[
+                                            "ALL",
+                                            "APPLICATION",
+                                            "ATTENDANCE",
+                                            "DRIVE",
+                                            "OPPORTUNITY",
+                                            "NOC"
+                                        ].map((type) => (
+                                            <button
+                                                key={type}
+                                                type="button"
+                                                onClick={() => setActivityFilter(type)}
+                                                className="rounded-lg border px-2 py-2 text-xs"
                                             >
-                                                <ActivityBadge type={item.type} />
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <div className="font-semibold">{item.title}</div>
-                                                        <div className="text-xs text-muted-foreground">{formatRelativeTime(item.occurred_at)}</div>
-                                                    </div>
-                                                    <div className="mt-1 text-sm text-muted-foreground">{item.description}</div>
-                                                </div>
-                                            </div>
+                                                {type}
+                                            </button>
                                         ))}
-                                </div>
-                            ) : (
-                                <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">No recent activity available yet.</div>
-                            )}
-                        </SectionCard>
+                                    </div>
+                                }
+                            >
+                                {recentItems.length ? (
+                                    <div className="mt-4 h-[480px] overflow-y-auto overscroll-contain pr-5">
+                                        {recentItems
+                                            .filter((item) => (activityFilter === "ALL" ? true : item.type === activityFilter))
+                                            .map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="flex items-start gap-3 space- x-20 y-20 rounded-2xl border border-border bg-background p-4"
+                                                >
+                                                    <ActivityBadge type={item.type} />
+                                                    <div className="min-w-0 flex-2">
+                                                        <div className="flex flex-wrap items-center justify-between gap-12">
+                                                            <div className="font-semibold">{item.title}</div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {formatRelativeTime(item.occurred_at)}
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-1 text-sm text-muted-foreground">
+                                                            {item.description}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-border bg-background p-6 text-sm text-muted-foreground">
+                                        No recent activity available yet.
+                                    </div>
+                                )}
+                            </SectionCard>
+                        </div>
                     </section>
 
                     <section className="mt-6">
@@ -1335,3 +1364,4 @@ export function AdminDashboardPage() {
         </div>
     );
 }
+
