@@ -435,9 +435,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const applicationsResult = opportunityIds.length
     ? await db
-        .from("student_opportunity_applications")
-        .select(
-          `
+      .from("student_opportunity_applications")
+      .select(
+        `
           application_id,
           opportunity_id,
           student_id,
@@ -445,9 +445,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           applied_at,
           updated_at
         `,
-        )
-        .in("opportunity_id", opportunityIds)
-        .order("applied_at", { ascending: false })
+      )
+      .in("opportunity_id", opportunityIds)
+      .order("applied_at", { ascending: false })
     : { data: [], error: null };
 
   const applications = toArray<any>(applicationsResult.data);
@@ -455,9 +455,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const roundsResult = opportunityIds.length
     ? await db
-        .from("attendance_rounds")
-        .select(
-          `
+      .from("attendance_rounds")
+      .select(
+        `
           round_id,
           opportunity_id,
           round_number,
@@ -467,10 +467,10 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-        )
-        .in("opportunity_id", opportunityIds)
-        .eq("is_active", true)
-        .order("round_number", { ascending: true })
+      )
+      .in("opportunity_id", opportunityIds)
+      .eq("is_active", true)
+      .order("round_number", { ascending: true })
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -478,9 +478,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const attendanceResult = roundIds.length
     ? await db
-        .from("attendance_records")
-        .select(
-          `
+      .from("attendance_records")
+      .select(
+        `
           attendance_id,
           round_id,
           student_id,
@@ -491,9 +491,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-        )
-        .in("round_id", roundIds)
-        .order("marked_at", { ascending: false })
+      )
+      .in("round_id", roundIds)
+      .order("marked_at", { ascending: false })
     : { data: [], error: null };
 
   const attendance = toArray<any>(attendanceResult.data);
@@ -815,15 +815,15 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   const opportunityIds = uniqueStrings(applications.map((item) => item.opportunity_id));
   const opportunitiesResult = opportunityIds.length
     ? await db
-        .from("opportunity_master")
-        .select(
-          `
+      .from("opportunity_master")
+      .select(
+        `
           opportunity_id,
           drive_id,
           opportunity_title
         `,
-        )
-        .in("opportunity_id", opportunityIds)
+      )
+      .in("opportunity_id", opportunityIds)
     : { data: [], error: null };
 
   const opportunities = toArray<any>(opportunitiesResult.data);
@@ -833,16 +833,16 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   const roundIds = uniqueStrings(attendance.map((item) => item.round_id));
   const roundsResult = roundIds.length
     ? await db
-        .from("attendance_rounds")
-        .select(
-          `
+      .from("attendance_rounds")
+      .select(
+        `
           round_id,
           opportunity_id,
           round_number,
           round_name
         `,
-        )
-        .in("round_id", roundIds)
+      )
+      .in("round_id", roundIds)
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -1015,30 +1015,30 @@ async function fetchRecentActivity(limit = 10): Promise<RecentActivityItem[]> {
   const [studentsResult, roundRowsResult] = await Promise.all([
     studentIds.length
       ? db
-          .from("student_master")
-          .select(
-            `
+        .from("student_master")
+        .select(
+          `
             student_id,
             enrollment_no,
             first_name,
             middle_name,
             last_name
           `,
-          )
-          .in("student_id", studentIds)
+        )
+        .in("student_id", studentIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
     roundIds.length
       ? db
-          .from("attendance_rounds")
-          .select(
-            `
+        .from("attendance_rounds")
+        .select(
+          `
             round_id,
             opportunity_id,
             round_number,
             round_name
           `,
-          )
-          .in("round_id", roundIds)
+        )
+        .in("round_id", roundIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
   ]);
 
@@ -1231,6 +1231,249 @@ export async function getRecentActivity(limit = 10) {
   return fetchRecentActivity(limit);
 }
 
+
+export const adminStudentService = {
+  async getAllStudents() {
+    const { data, error } = await db
+      .from("student_master")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const students = data ?? [];
+
+    const enriched = await Promise.all(
+      students.map(async (student: any) => {
+        const { data: account } = await db
+          .from("user_accounts")
+          .select("auth_provider_id")
+          .eq("user_id", student.user_id)
+          .maybeSingle();
+
+        const percentage = account?.auth_provider_id
+          ? await this.getStudentCompletion(account.auth_provider_id)
+          : 0;
+
+        return {
+          ...student,
+          completion_percentage: percentage,
+        };
+      }),
+    );
+
+    return enriched;
+  },
+
+  async getStudentById(studentId: string) {
+    const { data: profile, error: profileError } = await db
+      .from("student_master")
+      .select("*")
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    const { data: academics } = await db
+      .from("student_academic_details")
+      .select("*")
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    const { data: skills } = await db
+      .from("student_skill_profile")
+      .select("*")
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    const { data: documents } = await db
+      .from("student_documents")
+      .select(`
+        *,
+        document_metadata:document_metadata_id (
+          document_metadata_id,
+          document_name,
+          document_type,
+          storage_url,
+          version_number,
+          created_at,
+          is_active
+        )
+      `)
+      .eq("student_id", studentId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    return {
+      profile,
+      academics,
+      skills,
+      documents,
+    };
+  },
+
+  async getStudentCompletion(authUserId: string) {
+    const { data: account } = await db
+      .from("user_accounts")
+      .select("user_id")
+      .eq("auth_provider_id", authUserId)
+      .maybeSingle();
+
+    if (!account) return 0;
+
+    const { data: profile } = await db
+      .from("student_master")
+      .select("*")
+      .eq("user_id", account.user_id)
+      .maybeSingle();
+
+    if (!profile) return 0;
+
+    const { data: academics } = await db
+      .from("student_academic_details")
+      .select("*")
+      .eq("student_id", profile.student_id)
+      .maybeSingle();
+
+    const { data: skills } = await db
+      .from("student_skill_profile")
+      .select("*")
+      .eq("student_id", profile.student_id)
+      .maybeSingle();
+
+    const { data: resumeDocuments } = await db
+      .from("student_documents")
+      .select(`
+        *,
+        document_metadata (
+          storage_url,
+          document_type
+        )
+      `)
+      .eq("student_id", profile.student_id)
+      .eq("is_active", true);
+
+    const resume = resumeDocuments?.find(
+      (doc: any) => doc.document_metadata?.document_type === "Resume",
+    );
+
+    const profileComplete =
+      !!profile.first_name &&
+      !!profile.last_name &&
+      !!profile.enrollment_no &&
+      !!profile.contact_number;
+
+    const academicsComplete = !!academics?.current_cgpa && !!academics?.graduation_year;
+
+    const skillsComplete =
+      !!skills?.technical_skills &&
+      !!skills?.programming_languages &&
+      !!skills?.linkedin_url;
+
+    const resumeComplete = !!resume?.document_metadata?.storage_url;
+
+    const completed = [profileComplete, academicsComplete, skillsComplete, resumeComplete].filter(Boolean).length;
+
+    return Math.round((completed / 4) * 100);
+  },
+
+  async getDashboardMetrics() {
+    return getDashboardKpis();
+  },
+
+  async searchStudents(searchTerm: string) {
+    const search = searchTerm.trim();
+
+    // Show all students by default
+    const students = await this.getAllStudents();
+
+    // No search text = return full list
+    if (!search) {
+      return students;
+    }
+
+    const normalizedSearch = normalize(search);
+
+    return students
+      .map((student: any) => {
+        const matches: string[] = [];
+
+        if (normalize(student.enrollment_no).includes(normalizedSearch)) {
+          matches.push("enrollment");
+        }
+
+        const name = fullName(student);
+        if (normalize(name).includes(normalizedSearch)) {
+          matches.push("name");
+        }
+
+        if (normalize(student.institute_email).includes(normalizedSearch)) {
+          matches.push("institute_email");
+        }
+
+        if (normalize(student.personal_email).includes(normalizedSearch)) {
+          matches.push("personal_email");
+        }
+
+        return {
+          ...student,
+          match_sources: matches,
+        };
+      })
+      .filter((student: any) => student.match_sources.length > 0);
+  },
+
+  async getFilterOptions() {
+    const { data: academics } = await db
+      .from("student_academic_details")
+      .select(`
+        current_institute_name,
+        current_branch_name,
+        graduation_year
+      `);
+
+    const institutes: string[] = [...new Set((academics ?? []).map((a: any) => a.current_institute_name))]
+      .filter(Boolean) as string[];
+
+    const branches: string[] = [...new Set((academics ?? []).map((a: any) => a.current_branch_name))]
+      .filter(Boolean) as string[];
+
+    const graduationYears: number[] = [...new Set((academics ?? []).map((a: any) => a.graduation_year))]
+      .filter(Boolean) as number[];
+
+    return {
+      institutes,
+      branches,
+      graduationYears,
+   
+    };
+    
+  },
+
+  async getAcademicMap() {
+    const { data, error } = await db
+      .from("student_academic_details")
+      .select(`
+        student_id,
+        current_cgpa,
+        current_branch_name,
+        current_institute_name,
+        graduation_year
+      `);
+
+      if (error) {
+    console.error(
+        "Academic Map Error:",
+        error,
+    );
+    throw error;
+}
+    if (error) throw error;
+    return data ?? [];
+  },
+};
+
+
 // ===== PART 2 =====
 // APPEND DIRECTLY AFTER PART 1
 // DO NOT MODIFY PART 1
@@ -1323,7 +1566,7 @@ export async function searchStudents(
     .sort((a, b) => {
       return (
         b.match_sources.length -
-          a.match_sources.length ||
+        a.match_sources.length ||
         a.enrollment_no.localeCompare(
           b.enrollment_no,
         )
@@ -1386,17 +1629,17 @@ export async function getDashboardSnapshot(
   const studentDrilldown =
     options.enrollmentNo?.trim()
       ? await fetchStudentDrilldown(
-          options.enrollmentNo,
-        )
+        options.enrollmentNo,
+      )
       : null;
 
   const studentSearchResults =
     options.studentSearchQuery?.trim()
       ? await searchStudents(
-          options.studentSearchQuery,
-          options.studentSearchLimit ??
-            10,
-        )
+        options.studentSearchQuery,
+        options.studentSearchLimit ??
+        10,
+      )
       : [];
 
   return {
@@ -1414,19 +1657,18 @@ export async function getDashboardSnapshot(
 }
 
 export const adminDashboardAnalyticsService =
-  {
-    getDashboardKpis,
-    getDriveTrend,
-    getDriveBranchDistribution,
-    getOpportunityPipeline,
-    getStudentDrilldown,
-    getSuccessMetrics,
-    getRecentActivity,
-    searchStudents,
-    getDashboardSnapshot,
-  };
+{
+  getDashboardKpis,
+  getDriveTrend,
+  getDriveBranchDistribution,
+  getOpportunityPipeline,
+  getStudentDrilldown,
+  getSuccessMetrics,
+  getRecentActivity,
+  searchStudents,
+  getDashboardSnapshot,
+};
 
-export default
-  adminDashboardAnalyticsService;
+export default adminStudentService;
 
 // ===== END PART 2 =====

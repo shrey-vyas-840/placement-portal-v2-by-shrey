@@ -443,19 +443,15 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
   const academicsResult = studentIds.length
     ? await db
       .from("student_academic_details")
-      .select(
-        `
-          student_id,
-          current_institute_name,
-          current_degree_level,
-          current_branch_name,
-          branch_name,
-          branch_id,
-          graduation_year,
-          current_cgpa,
-          active_backlogs
-        `,
-      )
+      .select(`
+    student_id,
+    current_institute_name,
+    current_degree_level,
+    current_branch_name,
+    graduation_year,
+    current_cgpa,
+    active_backlogs
+`)
       .in("student_id", studentIds)
     : { data: [], error: null };
 
@@ -595,11 +591,11 @@ async function buildBranchAnalytics(
   // Determine eligible counts from student academic details and student master records.
   const branchStudentRows = branches.length
     ? toArray<any>(
-        (await db
-          .from("student_academic_details")
-          .select("student_id, current_branch_name")
-          .in("current_branch_name", branches)).data,
-      )
+      (await db
+        .from("student_academic_details")
+        .select("student_id, current_branch_name")
+        .in("current_branch_name", branches)).data,
+    )
     : [];
 
   const branchStudentIds = uniqueStrings(
@@ -614,13 +610,13 @@ async function buildBranchAnalytics(
 
   const validStudentIds = branchStudentIds.length
     ? new Set(
-        toArray<any>(
-          (await db
-            .from("student_master")
-            .select("student_id")
-            .in("student_id", branchStudentIds)).data,
-        ).map((item) => item.student_id),
-      )
+      toArray<any>(
+        (await db
+          .from("student_master")
+          .select("student_id")
+          .in("student_id", branchStudentIds)).data,
+      ).map((item) => item.student_id),
+    )
     : new Set<string>();
 
   branchStudentRows.forEach((item) => {

@@ -45,10 +45,17 @@ export function AdminStudentsPage() {
 
                 setFilterOptions(options);
 
-                const data =
-                    await adminStudentService.searchStudents(
-                        searchTerm,
-                    );
+                let data;
+
+                if (searchTerm.trim()) {
+                    data =
+                        await adminStudentService.searchStudents(
+                            searchTerm,
+                        );
+                } else {
+                    data =
+                        await adminStudentService.getAllStudents();
+                }
 
                 const academics =
                     await adminStudentService.getAcademicMap();

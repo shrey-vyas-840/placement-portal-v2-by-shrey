@@ -227,15 +227,7 @@ export function StudentNocPage() {
                         student.student_id
                     );
 
-            setRequests(
-
-                nocRequests.filter(
-                    (request: any) =>
-                        request.status !==
-                        "TENURE_COMPLETED"
-                )
-
-            );
+            setRequests(nocRequests);
 
             const pendingVerification =
                 nocRequests.find(
@@ -380,14 +372,20 @@ export function StudentNocPage() {
                         student.student_id
                     );
 
-            if (
-                activeNoc
-            ) {
+            if (activeNoc) {
 
                 alert(
+                    `You already have an active NOC until ${activeNoc?.snapshot?.end_date}`
+                );
 
-                    `You already have an active NOC until ${activeNoc.snapshot?.end_date}`
+                return;
 
+            }
+
+            if (completionRequest) {
+
+                alert(
+                    "Complete your previous NOC and submit certificate before applying for a new NOC."
                 );
 
                 return;
@@ -446,7 +444,62 @@ export function StudentNocPage() {
 
         if (
             !completionForm.certificate
+        )
+            if (
+                !completionForm.hr_email.trim()
+            ) {
+
+                alert(
+                    "Enter HR Email"
+                );
+
+                return;
+
+            }
+
+        if (
+            !completionForm.hr_contact.trim()
         ) {
+
+            alert(
+                "Enter HR Contact Number"
+            );
+
+            return;
+
+        }
+
+        if (
+            !completionForm.same_hr
+        ) {
+
+            if (
+                !completionForm.hr_name.trim()
+            ) {
+
+                alert(
+                    "Enter New HR Name"
+                );
+
+                return;
+
+            }
+
+            if (
+                !completionForm.hr_designation.trim()
+            ) {
+
+                alert(
+                    "Enter New HR Designation"
+                );
+
+                return;
+
+            }
+
+        }
+
+        {
 
             alert(
                 "Upload Completion Certificate"
@@ -456,11 +509,11 @@ export function StudentNocPage() {
 
         }
 
-        const certificatePath =
-            await nocService
-                .uploadCompletionCertificate(
-                    completionForm.certificate
-                );
+       const certificatePath =
+    await nocService
+        .uploadCompletionCertificate(
+            completionForm.certificate!
+        );
 
         await nocService
             .submitCompletionDetails(
@@ -689,12 +742,7 @@ export function StudentNocPage() {
             </div>
 
             {
-                (
-                    activeNoc
-                    ||
-                    completionRequest
-                )
-                && (
+                activeNoc && (
 
                     <div
                         className="
@@ -722,7 +770,7 @@ p-4
                         <strong>
 
                             {
-                                activeNoc.snapshot?.end_date
+                                activeNoc?.snapshot?.end_date ?? "-"
                             }
 
                         </strong>
@@ -760,6 +808,15 @@ p-4
 
                         Submit internship/job completion details
                         before applying for a new NOC.
+
+                        <br />
+                        <br />
+
+                        Certificate Upload is Mandatory.
+
+                        HR Verification Details are Mandatory.
+
+                        New NOC requests remain blocked until completion verification.
 
                     </div>
 
@@ -1176,7 +1233,8 @@ ${[
                     <button
 
                         disabled={
-                            !!activeNoc
+                            !!activeNoc ||
+                            !!completionRequest
                         }
 
                         onClick={() =>
@@ -1426,19 +1484,63 @@ ${[
 .png
 "
 
-                                    onChange={(e) =>
+                                    onChange={(e) => {
+
+                                        const file =
+                                            e.target.files?.[0];
+
+                                        if (!file)
+                                            return;
+
+                                        const allowedTypes = [
+
+                                            "application/pdf",
+
+                                            "image/jpeg",
+
+                                            "image/jpg",
+
+                                            "image/png",
+
+                                        ];
+
+                                        if (
+                                            !allowedTypes.includes(
+                                                file.type
+                                            )
+                                        ) {
+
+                                            alert(
+                                                "Only PDF, JPG, JPEG and PNG allowed"
+                                            );
+
+                                            return;
+
+                                        }
+
+                                        if (
+                                            file.size >
+                                            5 * 1024 * 1024
+                                        ) {
+
+                                            alert(
+                                                "Maximum file size is 5 MB"
+                                            );
+
+                                            return;
+
+                                        }
 
                                         setCompletionForm({
 
                                             ...completionForm,
 
                                             certificate:
-                                                e.target.files?.[0]
-                                                ?? null,
+                                                file,
 
-                                        })
+                                        });
 
-                                    }
+                                    }}
 
                                 />
 
@@ -1615,6 +1717,10 @@ p-2
                             <div className="mt-4">
 
                                 <button
+
+                                    disabled={
+                                        !!completionRequest?.completion_submitted_at
+                                    }
 
                                     onClick={
                                         submitCompletion

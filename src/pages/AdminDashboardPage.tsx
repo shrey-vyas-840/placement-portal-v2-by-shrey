@@ -876,7 +876,7 @@ export function AdminDashboardPage() {
 
 
                     <section className="mt-6 space-y-6">
-                        <div className="grid gap-6 xl:grid-cols-2">
+                        <div className="grid gap-6 xl:grid-cols-2 items-stretch">
                             <SectionCard
                                 className="h-[700px]"
                                 title="Drive Analytics"
@@ -1065,7 +1065,7 @@ innerRadius={35}
                             </SectionCard>
                         </div>
 
-                        <div className="grid gap-6 xl:grid-cols-2 items-start">
+                        <div className="grid gap-6 xl:grid-cols-2 items-stretch">
                             <SectionCard
                                 className="h-[700px]"
                                 title="Opportunity Probability Widget"
@@ -1181,7 +1181,7 @@ innerRadius={35}
                                                     className="flex items-start gap-3 space- x-20 y-20 rounded-2xl border border-border bg-background p-4"
                                                 >
                                                     <ActivityBadge type={item.type} />
-                                                    <div className="min-w-0 flex-2">
+                                                    <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center justify-between gap-12">
                                                             <div className="font-semibold">{item.title}</div>
                                                             <div className="text-xs text-muted-foreground">
