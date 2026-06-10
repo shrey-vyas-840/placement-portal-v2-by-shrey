@@ -32,6 +32,9 @@ export const NOC_STATUSES = {
     COMPLETED_TENURE_PENDING_VERIFICATION:
         "COMPLETED_TENURE_PENDING_VERIFICATION",
 
+    TENURE_REJECTED:
+        "TENURE_REJECTED",
+
     TENURE_COMPLETED:
         "TENURE_COMPLETED",
 
@@ -316,22 +319,12 @@ export const nocService = {
                     "noc_requests"
                 )
 
-                .select(
-                    "*"
-                )
+                .select("*")
 
                 .eq(
                     "student_id",
                     studentId
-                )
-
-                .in(
-                    "status",
-                    [
-                        "ISSUED",
-                        "COMPLETED_TENURE_PENDING_VERIFICATION",
-                    ]
-                )
+                );
 
         if (error)
             throw error;
@@ -339,25 +332,48 @@ export const nocService = {
         const today =
             new Date();
 
-        const activeNoc =
-            (
-                data ?? []
-            ).find(
-                (noc: any) => {
+        const blockingRequest =
+            (data ?? []).find(
+                (request: any) => {
 
                     const endDate =
                         new Date(
-                            noc.snapshot?.end_date
+                            request.snapshot?.end_date
                         );
 
+                    const expiredIssuedWithoutSubmission =
+
+                        request.status ===
+                        "ISSUED"
+
+                        &&
+
+                        endDate <= today
+
+                        &&
+
+                        !request.completion_submitted_at;
+
                     return (
-                        endDate >= today
+
+                        expiredIssuedWithoutSubmission
+
+                        ||
+
+                        request.status ===
+                        "COMPLETED_TENURE_PENDING_VERIFICATION"
+
+                        ||
+
+                        request.status ===
+                        "TENURE_REJECTED"
+
                     );
 
                 }
             );
 
-        return activeNoc;
+        return blockingRequest ?? null;
 
     },
 
@@ -440,9 +456,21 @@ export const nocService = {
 
                     ...payload,
 
+                    status:
+                        "COMPLETED_TENURE_PENDING_VERIFICATION",
+
                     completion_submitted_at:
                         new Date()
                             .toISOString(),
+
+                    tenure_rejection_reason:
+                        null,
+
+                    tenure_rejected_by:
+                        null,
+
+                    tenure_rejected_at:
+                        null,
 
                 })
 

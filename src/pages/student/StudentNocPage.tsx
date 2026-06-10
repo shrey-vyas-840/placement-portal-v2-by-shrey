@@ -144,7 +144,6 @@ export function StudentNocPage() {
             "NOC Request";
 
         loadProfile();
-
     }, []);
 
     async function loadProfile() {
@@ -229,17 +228,14 @@ export function StudentNocPage() {
 
             setRequests(nocRequests);
 
-            const pendingVerification =
-                nocRequests.find(
-                    (
-                        request: any
-                    ) =>
-                        request.status ===
-                        "COMPLETED_TENURE_PENDING_VERIFICATION"
-                );
+            const blockingRequest =
+                await nocService
+                    .hasActiveNoc(
+                        student.student_id
+                    );
 
             setCompletionRequest(
-                pendingVerification ?? null
+                blockingRequest ?? null
             );
 
             const active =
@@ -374,7 +370,10 @@ export function StudentNocPage() {
 
             }
 
-            if (completionRequest) {
+            const blockingRequest =
+                activeNoc;
+
+            if (blockingRequest) {
 
                 alert(
                     "Complete your previous NOC and submit certificate before applying for a new NOC."
@@ -682,6 +681,16 @@ export function StudentNocPage() {
                     !!request.completion_submitted_at
                     ||
                     request.status === "TENURE_COMPLETED",
+            },
+
+            {
+                title: "Tenure verification rejected",
+                time: request.tenure_rejected_at,
+                description:
+                    request.tenure_rejection_reason ||
+                    "Completion verification was rejected.",
+                done:
+                    request.status === "TENURE_REJECTED",
             },
 
             {
@@ -1729,28 +1738,41 @@ p-2
                             <div className="mt-4">
 
                                 {
-                                    completionRequest
-                                        ?.completion_submitted_at
+                                    completionRequest?.status ===
+                                        "TENURE_REJECTED"
+
                                         ? (
 
-                                            <div className="rounded bg-yellow-50 border border-yellow-300 p-3 text-sm">
+                                            <div className="space-y-3">
 
-                                                Completion details submitted.
+                                                <div className="rounded border border-red-300 bg-red-50 p-3">
 
-                                                Waiting for Admin verification.
+                                                    <div className="font-semibold text-red-700">
 
-                                            </div>
+                                                        Completion Verification Rejected
 
-                                        )
-                                        : (
+                                                    </div>
 
-                                            <button
+                                                    <div className="mt-2 text-sm">
 
-                                                onClick={
-                                                    submitCompletion
-                                                }
+                                                        {
+                                                            completionRequest
+                                                                ?.tenure_rejection_reason
+                                                            ??
+                                                            "No reason provided."
+                                                        }
 
-                                                className="
+                                                    </div>
+
+                                                </div>
+
+                                                <button
+
+                                                    onClick={
+                                                        submitCompletion
+                                                    }
+
+                                                    className="
 bg-red-600
 text-white
 px-4
@@ -1758,13 +1780,54 @@ py-2
 rounded
 "
 
-                                            >
+                                                >
 
-                                                Submit Completion Details
+                                                    Re-submit Completion Details
 
-                                            </button>
+                                                </button>
+
+                                            </div>
 
                                         )
+
+                                        : completionRequest
+                                            ?.completion_submitted_at
+
+                                            ? (
+
+                                                <div className="rounded bg-yellow-50 border border-yellow-300 p-3 text-sm">
+
+                                                    Completion details submitted.
+
+                                                    Waiting for Admin verification.
+
+                                                </div>
+
+                                            )
+
+                                            : (
+
+                                                <button
+
+                                                    onClick={
+                                                        submitCompletion
+                                                    }
+
+                                                    className="
+bg-red-600
+text-white
+px-4
+py-2
+rounded
+"
+
+                                                >
+
+                                                    Submit Completion Details
+
+                                                </button>
+
+                                            )
                                 }
 
                             </div>
@@ -1980,12 +2043,11 @@ rounded
                                                                     ? "bg-green-100 text-green-800"
                                                                     : request.status === "CANCELLED"
                                                                         ? "bg-red-100 text-red-800"
-                                                                        : request.status ===
-                                                                            "TENURE_COMPLETED"
-                                                                            ?
-                                                                            "bg-green-100 text-green-800"
-                                                                            :
-                                                                            "bg-gray-100 text-gray-800"
+                                                                        : request.status === "TENURE_REJECTED"
+                                                                            ? "bg-red-100 text-red-800"
+                                                                            : request.status === "TENURE_COMPLETED"
+                                                                                ? "bg-green-100 text-green-800"
+                                                                                : "bg-gray-100 text-gray-800"
                                                     }
         `}
                                             >
@@ -2008,7 +2070,9 @@ rounded
                                                                                     ? "Rejected by HOD"
                                                                                     : request.status === "ADMIN_REJECTED"
                                                                                         ? "Rejected by Admin"
-                                                                                        : request.status
+                                                                                        : request.status === "TENURE_REJECTED"
+                                                                                            ? "Tenure Rejected"
+                                                                                            : request.status
                                                 }
 
                                             </span>

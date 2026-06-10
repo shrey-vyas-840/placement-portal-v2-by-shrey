@@ -417,11 +417,15 @@ export function AdminNocDashboardPage() {
         useState<any[]>([]);
 
     const [
-        tenureAudit,
-        setTenureAudit,
-    ]
-        =
+        history,
+        setHistory,
+    ] =
         useState<any[]>([]);
+
+    const [
+        completionPending,
+        setCompletionPending,
+    ] = useState<any[]>([]);
 
     async function load() {
 
@@ -434,7 +438,6 @@ export function AdminNocDashboardPage() {
             rejectedData,
             tenureVerification,
             completedTenureData,
-            auditTrailData,
         ] =
             await Promise.all([
 
@@ -463,9 +466,9 @@ export function AdminNocDashboardPage() {
                         "CANCELLED"
                     ),
 
-             adminNocService.
-             getByStatus
-             ("ADMIN_REJECTED"),
+                adminNocService.
+                    getByStatus
+                    ("ADMIN_REJECTED"),
 
                 adminNocService
                     .getByStatus(
@@ -476,9 +479,6 @@ export function AdminNocDashboardPage() {
                     .getByStatus(
                         "TENURE_COMPLETED"
                     ),
-
-                adminNocService
-                    .getCompletedTenureAudit(),
 
             ]);
 
@@ -510,14 +510,79 @@ export function AdminNocDashboardPage() {
             tenureVerification
         );
 
+        const completionPendingRecords =
+            issuedData.filter(
+                (request: any) => {
+
+                    const endDate =
+                        new Date(
+                            request.snapshot?.end_date
+                        );
+
+                    return (
+
+                        endDate <= new Date()
+
+                        &&
+
+                        !request.completion_submitted_at
+
+                    );
+
+                }
+            );
+
+        setCompletionPending(
+            completionPendingRecords
+        );
+
         setCompletedTenure(
             completedTenureData
         );
 
-        setTenureAudit(
-            auditTrailData
+        setHistory(
+
+            [
+
+                ...pendingApproval,
+
+                ...pendingPrint,
+
+                ...printed,
+
+                ...issued,
+
+                ...completionPendingRecords,
+
+                ...tenureVerification,
+
+                ...completedTenureData,
+
+                ...rejectedData,
+
+                ...cancelledData,
+
+            ]
+
         );
 
+        const completionPending =
+            issuedData.filter(
+                (request: any) => {
+
+                    const endDate =
+                        new Date(
+                            request.snapshot?.end_date
+                        );
+
+                    return (
+                        endDate <= new Date()
+                        &&
+                        !request.completion_submitted_at
+                    );
+
+                }
+            );
     }
 
     useEffect(() => {
@@ -685,6 +750,8 @@ export function AdminNocDashboardPage() {
         +
         pendingPrint.length
         +
+        completionPending.length
+        +
         pendingTenureVerification.length;
 
     const issuedAndCompletedCount =
@@ -833,6 +900,24 @@ export function AdminNocDashboardPage() {
                     <div className="text-2xl font-bold">
                         {cancelled.length}
                     </div>
+                </div>
+
+                <div className="rounded-lg border p-4">
+
+                    <div className="text-sm text-muted-foreground">
+
+                        Completion Pending
+
+                    </div>
+
+                    <div className="text-2xl font-bold">
+
+                        {
+                            completionPending.length
+                        }
+
+                    </div>
+
                 </div>
 
                 <div className="rounded-lg border p-4">
@@ -1192,6 +1277,16 @@ p-3
                     </strong>
 
                 </div>
+
+            </div>
+
+            <div className="mt-10 mb-6">
+
+                <h1 className="text-2xl font-bold">
+
+                    ACTIVE WORKFLOW
+
+                </h1>
 
             </div>
 
@@ -2119,6 +2214,109 @@ p-3
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
+                Completion Pending
+
+            </h2>
+
+            <div className="overflow-hidden rounded-lg border">
+
+                <table className="w-full">
+
+                    <thead>
+
+                        <tr className="border-b">
+
+                            <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
+
+                            <th className="p-3 text-left">
+                                End Date
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Status
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {
+                            completionPending.map(
+                                (
+                                    request: any
+                                ) => (
+
+                                    <tr
+                                        key={
+                                            request.noc_request_id
+                                        }
+                                        className="border-b"
+                                    >
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.student_name
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.enrollment_no
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.company_name
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            {
+                                                request.snapshot?.end_date
+                                            }
+
+                                        </td>
+
+                                        <td className="p-3 text-red-600 font-medium">
+
+                                            Waiting For Student Completion Submission
+
+                                        </td>
+
+                                    </tr>
+
+                                )
+                            )
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
                 Tenure Verification Pending
 
             </h2>
@@ -2641,6 +2839,15 @@ p-3
 
             </div>
 
+            <div className="mt-16 mb-6">
+
+                <h1 className="text-2xl font-bold">
+
+                    CLOSED WORKFLOW
+
+                </h1>
+
+            </div>
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
@@ -2842,135 +3049,6 @@ p-3
             </div>
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
-
-                Tenure Audit Trail
-
-            </h2>
-
-            <div className="overflow-hidden rounded-lg border">
-
-                <table className="w-full">
-
-                    <thead>
-
-                        <tr className="border-b">
-
-                            <th className="p-3 text-left">
-                                Student
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Enrollment
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Company
-                            </th>
-
-                            <th className="p-3 text-left">
-                                End Date
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Verified At
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Certificate
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {
-                            tenureAudit.map(
-                                (request: any) => (
-
-                                    <tr
-                                        key={
-                                            request.noc_request_id
-                                        }
-                                        className="border-b"
-                                    >
-
-                                        <td className="p-3">
-                                            {
-                                                request.snapshot?.student_name
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-                                            {
-                                                request.snapshot?.enrollment_no
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-                                            {
-                                                request.snapshot?.company_name
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-                                            {
-                                                request.snapshot?.end_date
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-                                            {
-                                                request.completion_verified_at
-                                                    ?
-                                                    new Date(
-                                                        request.completion_verified_at
-                                                    ).toLocaleString()
-                                                    :
-                                                    "-"
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-
-                                            {
-                                                request.completion_certificate_url
-                                                    ?
-
-                                                    <a
-                                                        href={
-                                                            request.completion_certificate_url
-                                                        }
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="text-blue-600 underline"
-                                                    >
-
-                                                        Download
-
-                                                    </a>
-
-                                                    :
-
-                                                    "-"
-                                            }
-
-                                        </td>
-
-                                    </tr>
-
-                                )
-                            )
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-            <h2 className="mt-10 mb-4 text-xl font-semibold">
                 Rejected
             </h2>
 
@@ -2996,6 +3074,18 @@ p-3
 
                             <th className="p-3 text-left">
                                 Type
+                            </th>
+
+                            <th className="p-3 text-left">
+
+                                Rejected By
+
+                            </th>
+
+                            <th className="p-3 text-left">
+
+                                Reason
+
                             </th>
 
                             <th className="p-3 text-left">
@@ -3029,6 +3119,26 @@ p-3
 
                                 <td className="p-3">
                                     {request.noc_type}
+                                </td>
+
+                                <td className="p-3">
+
+                                    {
+                                        request.rejected_by
+                                        ??
+                                        "-"
+                                    }
+
+                                </td>
+
+                                <td className="p-3">
+
+                                    {
+                                        request.rejection_reason
+                                        ??
+                                        "-"
+                                    }
+
                                 </td>
 
                                 <td className="p-3">
@@ -3268,6 +3378,137 @@ p-3
 
                                     )
                                 )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div className="mt-16 mb-6">
+
+                    <h1 className="text-2xl font-bold">
+
+                        AUDIT & REPORTS
+
+                    </h1>
+
+                </div>
+
+                <h2 className="mb-4 text-xl font-semibold">
+
+                    History
+
+                </h2>
+
+                <div className="overflow-hidden rounded-lg border">
+
+                    <table className="w-full">
+
+                        <thead>
+
+                            <tr className="border-b">
+
+                                <th className="p-3 text-left">
+
+                                    Student
+
+                                </th>
+
+                                <th className="p-3 text-left">
+
+                                    Enrollment
+
+                                </th>
+
+                                <th className="p-3 text-left">
+
+                                    Company
+
+                                </th>
+
+                                <th className="p-3 text-left">
+
+                                    Status
+
+                                </th>
+
+                                <th className="p-3 text-left">
+
+                                    Created
+
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {
+
+                                history.map(
+                                    (
+                                        request: any
+                                    ) => (
+
+                                        <tr
+                                            key={
+                                                request.noc_request_id
+                                            }
+                                            className="border-b"
+                                        >
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.student_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.enrollment_no
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.snapshot?.company_name
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.status
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    new Date(
+                                                        request.created_at
+                                                    )
+                                                        .toLocaleDateString()
+                                                }
+
+                                            </td>
+
+                                        </tr>
+
+                                    )
+
+                                )
+
+                            }
 
                         </tbody>
 
