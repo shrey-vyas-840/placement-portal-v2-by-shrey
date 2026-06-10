@@ -326,10 +326,9 @@ export const nocService = {
                     "status",
                     [
                         "ISSUED",
-                        "PRINTED",
                         "COMPLETED_TENURE_PENDING_VERIFICATION",
                     ]
-                )   
+                )
 
         if (error)
             throw error;
@@ -349,51 +348,11 @@ export const nocService = {
                         );
 
                     return (
-                        endDate >=
-                        today
+                        endDate >= today
                     );
 
                 }
             );
-
-        for (
-            const noc of
-            data ?? []
-        ) {
-
-            const endDate =
-                new Date(
-                    noc.snapshot?.end_date
-                );
-
-            if (
-                endDate <
-                today
-            ) {
-
-                await (
-                    supabase as any
-                )
-
-                    .from(
-                        "noc_requests"
-                    )
-
-                    .update({
-
-                        status:
-                            "COMPLETED_TENURE_PENDING_VERIFICATION",
-
-                    })
-
-                    .eq(
-                        "noc_request_id",
-                        noc.noc_request_id
-                    );
-
-            }
-
-        }
 
         return activeNoc;
 
@@ -428,7 +387,18 @@ export const nocService = {
         if (error)
             throw error;
 
-        return fileName;
+        const { data } =
+            supabase.storage
+
+                .from(
+                    "noc-completion-documents"
+                )
+
+                .getPublicUrl(
+                    fileName
+                );
+
+        return data.publicUrl;
 
     },
 

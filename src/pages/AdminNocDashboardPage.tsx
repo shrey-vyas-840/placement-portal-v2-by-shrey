@@ -339,6 +339,13 @@ export function AdminNocDashboardPage() {
         useState<any[]>([]);
 
     const [
+        rejected,
+        setRejected,
+    ]
+        =
+        useState<any[]>([]);
+
+    const [
         selectedRequest,
         setSelectedRequest,
     ] =
@@ -424,6 +431,7 @@ export function AdminNocDashboardPage() {
             printedData,
             issuedData,
             cancelledData,
+            rejectedData,
             tenureVerification,
             completedTenureData,
             auditTrailData,
@@ -453,6 +461,11 @@ export function AdminNocDashboardPage() {
                 adminNocService
                     .getByStatus(
                         "CANCELLED"
+                    ),
+
+                adminNocService
+                    .getByStatus(
+                        "HOD_REJECTED"
                     ),
 
                 adminNocService
@@ -488,6 +501,10 @@ export function AdminNocDashboardPage() {
 
         setCancelled(
             cancelledData
+        );
+
+        setRejected(
+            rejectedData
         );
 
         setPendingTenureVerification(
@@ -597,14 +614,15 @@ export function AdminNocDashboardPage() {
 
 
     const lifecycleRequests = [
-        ...pendingApproval,
-        ...pendingPrint,
-        ...printed,
-        ...issued,
-        ...cancelled,
-        ...pendingTenureVerification,
-        ...completedTenure,
-    ];
+    ...pendingApproval,
+    ...pendingPrint,
+    ...printed,
+    ...issued,
+    ...cancelled,
+    ...rejected,
+    ...pendingTenureVerification,
+    ...completedTenure,
+];
 
     const analyticsNocTypes = [
         "Internship",
@@ -737,12 +755,12 @@ export function AdminNocDashboardPage() {
                 {}
             )
         )
-        .sort(
-            (
-                a,
-                b
-            ) => b[1] - a[1]
-        );
+            .sort(
+                (
+                    a,
+                    b
+                ) => b[1] - a[1]
+            );
 
     return (
 
@@ -2232,7 +2250,7 @@ p-3
                                         <td className="p-3">
 
                                             {
-                                                request.same_hr
+                                                request.completion_same_hr
                                                     ? "Yes"
                                                     : "No"
                                             }
@@ -2242,7 +2260,7 @@ p-3
                                         <td className="p-3">
 
                                             {
-                                                request.new_hr_name
+                                                request.completion_hr_name
                                                 ??
                                                 "-"
                                             }
@@ -2252,91 +2270,113 @@ p-3
                                         <td className="p-3">
 
                                             {
-                                                request.new_hr_designation
+                                                request.completion_hr_designation
                                                 ??
                                                 "-"
                                             }
 
                                         </td>
 
-                                        <td className="p-3 flex gap-2">
+                                        <td className="p-3">
+                                            <div className="flex flex-wrap gap-2">
 
-                                            <button
+                                                <button
 
-                                                onClick={() => {
+                                                    onClick={() => {
 
-                                                    setSelectedRequest(
-                                                        request
-                                                    );
-
-                                                    setReviewMode(
-                                                        "VIEW"
-                                                    );
-
-                                                    setEditableSnapshot(
-                                                        structuredClone(
-                                                            request.snapshot
-                                                        )
-                                                    );
-
-                                                    setCustomFields(
-                                                        request.noc_customization
-                                                        ??
-                                                        {}
-                                                    );
-
-                                                }}
-
-                                                className="rounded border px-3 py-1"
-
-                                            >
-
-                                                View
-
-                                            </button>
-
-                                            <button
-
-                                                onClick={async () => {
-
-                                                    await adminNocService
-                                                        .approveTenureCompletion(
-                                                            request.noc_request_id
+                                                        setSelectedRequest(
+                                                            request
                                                         );
 
-                                                    await load();
-
-                                                }}
-
-                                                className="rounded border px-3 py-1"
-
-                                            >
-
-                                                Approve
-
-                                            </button>
-
-                                            <button
-
-                                                onClick={async () => {
-
-                                                    await adminNocService
-                                                        .rejectTenureCompletion(
-                                                            request.noc_request_id
+                                                        setReviewMode(
+                                                            "VIEW"
                                                         );
 
-                                                    await load();
+                                                        setEditableSnapshot(
+                                                            structuredClone(
+                                                                request.snapshot
+                                                            )
+                                                        );
 
-                                                }}
+                                                        setCustomFields(
+                                                            request.noc_customization
+                                                            ??
+                                                            {}
+                                                        );
 
-                                                className="rounded border px-3 py-1"
+                                                    }}
 
-                                            >
+                                                    className="rounded border px-3 py-1"
 
-                                                Reject
+                                                >
 
-                                            </button>
+                                                    View
 
+                                                </button>
+
+                                                <button
+
+                                                    onClick={async () => {
+
+                                                        if (
+
+                                                            !request.completion_submitted_at ||
+
+                                                            !request.completion_certificate_url ||
+
+                                                            !request.completion_hr_email ||
+
+                                                            !request.completion_hr_contact
+
+                                                        ) {
+
+                                                            alert(
+                                                                "Student has not submitted completion details."
+                                                            );
+
+                                                            return;
+
+                                                        }
+
+                                                        await adminNocService
+                                                            .approveTenureCompletion(
+                                                                request.noc_request_id
+                                                            );
+
+                                                        await load();
+
+                                                    }}
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    Approve
+
+                                                </button>
+
+                                                <button
+
+                                                    onClick={async () => {
+
+                                                        await adminNocService
+                                                            .rejectTenureCompletion(
+                                                                request.noc_request_id
+                                                            );
+
+                                                        await load();
+
+                                                    }}
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    Reject
+
+                                                </button>
+
+                                            </div>
                                         </td>
 
                                     </tr>
@@ -2879,6 +2919,105 @@ p-3
                                 )
                             )
                         }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+                Rejected
+            </h2>
+
+            <div className="overflow-hidden rounded-lg border">
+
+                <table className="w-full">
+
+                    <thead>
+
+                        <tr className="border-b">
+
+                            <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Enrollment
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Type
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {rejected.map((request: any) => (
+
+                            <tr
+                                key={request.noc_request_id}
+                                className="border-b"
+                            >
+
+                                <td className="p-3">
+                                    {request.snapshot?.student_name}
+                                </td>
+
+                                <td className="p-3">
+                                    {request.snapshot?.enrollment_no}
+                                </td>
+
+                                <td className="p-3">
+                                    {request.snapshot?.company_name}
+                                </td>
+
+                                <td className="p-3">
+                                    {request.noc_type}
+                                </td>
+
+                                <td className="p-3">
+
+                                    <button
+
+                                        onClick={() => {
+
+                                            setSelectedRequest(request);
+
+                                            setReviewMode("VIEW");
+
+                                            setEditableSnapshot(
+                                                structuredClone(
+                                                    request.snapshot
+                                                )
+                                            );
+
+                                        }}
+
+                                        className="rounded border px-3 py-1"
+
+                                    >
+
+                                        View
+
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+                        ))}
 
                     </tbody>
 

@@ -437,29 +437,31 @@ export function StudentNocPage() {
 
     async function submitCompletion() {
 
-        if (
-            !completionRequest
-        )
+        if (!completionRequest) {
+            return;
+        }
+
+        if (!completionForm.certificate) {
+
+            alert(
+                "Upload Completion Certificate"
+            );
+
             return;
 
-        if (
-            !completionForm.certificate
-        )
-            if (
-                !completionForm.hr_email.trim()
-            ) {
+        }
 
-                alert(
-                    "Enter HR Email"
-                );
+        if (!completionForm.hr_email.trim()) {
 
-                return;
+            alert(
+                "Enter HR Email"
+            );
 
-            }
+            return;
 
-        if (
-            !completionForm.hr_contact.trim()
-        ) {
+        }
+
+        if (!completionForm.hr_contact.trim()) {
 
             alert(
                 "Enter HR Contact Number"
@@ -469,13 +471,9 @@ export function StudentNocPage() {
 
         }
 
-        if (
-            !completionForm.same_hr
-        ) {
+        if (!completionForm.same_hr) {
 
-            if (
-                !completionForm.hr_name.trim()
-            ) {
+            if (!completionForm.hr_name.trim()) {
 
                 alert(
                     "Enter New HR Name"
@@ -485,9 +483,7 @@ export function StudentNocPage() {
 
             }
 
-            if (
-                !completionForm.hr_designation.trim()
-            ) {
+            if (!completionForm.hr_designation.trim()) {
 
                 alert(
                     "Enter New HR Designation"
@@ -499,21 +495,11 @@ export function StudentNocPage() {
 
         }
 
-        {
-
-            alert(
-                "Upload Completion Certificate"
-            );
-
-            return;
-
-        }
-
-       const certificatePath =
-    await nocService
-        .uploadCompletionCertificate(
-            completionForm.certificate!
-        );
+        const certificatePath =
+            await nocService
+                .uploadCompletionCertificate(
+                    completionForm.certificate!
+                );
 
         await nocService
             .submitCompletionDetails(
@@ -536,10 +522,14 @@ export function StudentNocPage() {
                         completionForm.same_hr,
 
                     completion_hr_name:
-                        completionForm.hr_name,
+                        completionForm.same_hr
+                            ? completionRequest?.snapshot?.hr_name
+                            : completionForm.hr_name,
 
                     completion_hr_designation:
-                        completionForm.hr_designation,
+                        completionForm.same_hr
+                            ? completionRequest?.snapshot?.hr_position
+                            : completionForm.hr_designation,
 
                 }
 
@@ -1437,15 +1427,14 @@ ${[
                         <button
 
                             disabled={
-                                submitting
+                                submitting ||
+                                !!activeNoc ||
+                                !!completionRequest
                             }
 
                             onClick={
                                 submitRequest
                             }
-
-                            className="rounded border px-4 py-2"
-
                         >
 
                             Submit Request
@@ -1545,6 +1534,36 @@ ${[
                                 />
 
                             </div>
+
+                            {
+                                completionForm.certificate && (
+
+                                    <div className="text-sm text-green-600">
+
+                                        Uploaded:
+
+                                        {" "}
+
+                                        {completionForm.certificate.name}
+
+                                        {" "}
+
+                                        (
+
+                                        {
+                                            (
+                                                completionForm.certificate.size
+                                                / 1024
+                                                / 1024
+                                            ).toFixed(2)
+                                        }
+
+                                        MB)
+
+                                    </div>
+
+                                )
+                            }
 
                             <input
 

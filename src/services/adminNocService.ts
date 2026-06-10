@@ -462,6 +462,46 @@ export const adminNocService = {
     ) {
 
         const {
+            data: request,
+            error: fetchError,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .select("*")
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+
+                .single();
+
+        if (fetchError)
+            throw fetchError;
+
+        if (
+
+            !request.completion_submitted_at ||
+
+            !request.completion_certificate_url ||
+
+            !request.completion_hr_email ||
+
+            !request.completion_hr_contact
+
+        ) {
+
+            throw new Error(
+                "Completion details missing."
+            );
+
+        }
+
+        const {
             error,
         } =
             await (supabase as any)
@@ -512,6 +552,9 @@ export const adminNocService = {
                     completion_submitted_at:
                         null,
 
+                    completion_verified_at:
+                        null,
+
                 })
 
                 .eq(
@@ -548,7 +591,7 @@ export const adminNocService = {
             throw error;
 
         return data ?? [];
-        
+
     },
 
 };
