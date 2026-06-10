@@ -69,12 +69,38 @@ export const adminNocService = {
     },
 
     async rejectRequest(
-        nocRequestId: string
+        nocRequestId: string,
+        reason: string
     ) {
 
-        const {
-            error,
-        } =
+        const { error } =
+            await (supabase as any)
+
+                .from("noc_requests")
+
+                .update({
+                    status: "ADMIN_REJECTED",
+                    rejection_reason: reason,
+                    rejected_by: "ADMIN",
+                    rejection_at: new Date().toISOString(),
+                })
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error)
+            throw error;
+
+    },
+
+    async rejectTenureCompletion(
+        nocRequestId: string,
+        reason: string
+    ) {
+
+        const { error } =
             await (supabase as any)
 
                 .from(
@@ -84,7 +110,17 @@ export const adminNocService = {
                 .update({
 
                     status:
-                        "HOD_REJECTED",
+                        "TENURE_REJECTED",
+
+                    tenure_rejection_reason:
+                        reason,
+
+                    tenure_rejected_by:
+                        "ADMIN",
+
+                    tenure_rejected_at:
+                        new Date()
+                            .toISOString(),
 
                 })
 
@@ -97,6 +133,7 @@ export const adminNocService = {
             throw error;
 
     },
+
     async getByStatus(
         status: string
     ) {
@@ -332,7 +369,8 @@ export const adminNocService = {
     },
 
     async cancelRequest(
-        nocRequestId: string
+        nocRequestId: string,
+        reason: string
     ) {
 
         const { error } =
@@ -350,6 +388,12 @@ export const adminNocService = {
                     cancelled_at:
                         new Date()
                             .toISOString(),
+
+                    cancellation_reason:
+                        reason,
+
+                    cancelled_by:
+                        "ADMIN",
 
                 })
 
@@ -518,42 +562,6 @@ export const adminNocService = {
                     completion_verified_at:
                         new Date()
                             .toISOString(),
-
-                })
-
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                );
-
-        if (error)
-            throw error;
-
-    },
-
-    async rejectTenureCompletion(
-        nocRequestId: string
-    ) {
-
-        const {
-            error,
-        } =
-            await (supabase as any)
-
-                .from(
-                    "noc_requests"
-                )
-
-                .update({
-
-                    status:
-                        "ISSUED",
-
-                    completion_submitted_at:
-                        null,
-
-                    completion_verified_at:
-                        null,
 
                 })
 

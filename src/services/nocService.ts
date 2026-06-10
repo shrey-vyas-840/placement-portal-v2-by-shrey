@@ -14,6 +14,9 @@ export const NOC_STATUSES = {
     HOD_REJECTED:
         "HOD_REJECTED",
 
+    ADMIN_REJECTED:
+        "ADMIN_REJECTED",
+
     PENDING_PRINT:
         "PENDING_PRINT",
 

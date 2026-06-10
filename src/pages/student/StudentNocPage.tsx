@@ -239,15 +239,7 @@ export function StudentNocPage() {
                 );
 
             setCompletionRequest(
-
-                pendingVerification &&
-                    !pendingVerification
-                        .completion_submitted_at
-                    ?
-                    pendingVerification
-                    :
-                    null
-
+                pendingVerification ?? null
             );
 
             const active =
@@ -572,51 +564,34 @@ export function StudentNocPage() {
                 title:
                     request.status === "HOD_REJECTED"
                         ? "Rejected by HOD"
-                        : "HOD review",
+                        : request.status === "ADMIN_REJECTED"
+                            ? "Rejected by Admin"
+                            : "HOD review",
+
                 time:
-                    request.approved_at
-                    ??
+                    request.approved_at ??
                     request.hod_approval_deadline,
+
                 description:
-                    request.status === "PENDING_HOD_APPROVAL"
-                        ? "Waiting for HOD approval."
-                        : request.status === "HOD_REJECTED"
-                            ? "Request was rejected."
+                    request.status === "HOD_REJECTED"
+                        ? "Request was rejected by HOD."
+                        : request.status === "ADMIN_REJECTED"
+                            ? "Request was rejected by Admin."
                             : request.approval_source === "ADMIN_OVERRIDE"
                                 ? "Moved forward by admin override."
                                 : "Approved and forwarded to print queue.",
+
                 done:
                     [
                         "HOD_REJECTED",
+                        "ADMIN_REJECTED",
                         "PENDING_PRINT",
                         "PRINTED",
                         "ISSUED",
                         "CANCELLED",
                         "COMPLETED_TENURE_PENDING_VERIFICATION",
                         "TENURE_COMPLETED",
-                    ].includes(
-                        request.status
-                    ),
-            },
-
-            {
-                title:
-                    "Moved to print queue",
-                time:
-                    request.approved_at,
-                description:
-                    "Ready for print processing.",
-                done:
-                    [
-                        "PENDING_PRINT",
-                        "PRINTED",
-                        "ISSUED",
-                        "CANCELLED",
-                        "COMPLETED_TENURE_PENDING_VERIFICATION",
-                        "TENURE_COMPLETED",
-                    ].includes(
-                        request.status
-                    ),
+                    ].includes(request.status),
             },
 
             {
@@ -657,6 +632,27 @@ export function StudentNocPage() {
                         "CANCELLED",
                         "COMPLETED_TENURE_PENDING_VERIFICATION",
                         "TENURE_COMPLETED",
+                    ].includes(
+                        request.status
+                    ),
+            },
+
+            {
+                title:
+                    "Application Rejected",
+
+                time:
+                    request.rejection_at,
+
+                description:
+                    request.rejection_reason
+                    ||
+                    "Application rejected.",
+
+                done:
+                    [
+                        "HOD_REJECTED",
+                        "ADMIN_REJECTED"
                     ].includes(
                         request.status
                     ),
@@ -1462,10 +1458,7 @@ ${[
 
                             <div className="space-y-4">
 
-                                <input
-
-                                    type="file"
-
+                                <input type="file"
                                     accept="
 .pdf,
 .jpg,
@@ -1735,33 +1728,48 @@ p-2
 
                             <div className="mt-4">
 
-                                <button
+                                {
+                                    completionRequest
+                                        ?.completion_submitted_at
+                                        ? (
 
-                                    disabled={
-                                        !!completionRequest?.completion_submitted_at
-                                    }
+                                            <div className="rounded bg-yellow-50 border border-yellow-300 p-3 text-sm">
 
-                                    onClick={
-                                        submitCompletion
-                                    }
+                                                Completion details submitted.
 
-                                    className="
-rounded
-border
+                                                Waiting for Admin verification.
+
+                                            </div>
+
+                                        )
+                                        : (
+
+                                            <button
+
+                                                onClick={
+                                                    submitCompletion
+                                                }
+
+                                                className="
+bg-red-600
+text-white
 px-4
 py-2
+rounded
 "
 
-                                >
+                                            >
 
-                                    Submit Completion Details
+                                                Submit Completion Details
 
-                                </button>
+                                            </button>
+
+                                        )
+                                }
 
                             </div>
 
                         </div>
-
                     )
                 }
 
@@ -1981,7 +1989,6 @@ py-2
                                                     }
         `}
                                             >
-
                                                 {
                                                     request.status === "PENDING_HOD_APPROVAL"
                                                         ? "Pending HOD"
@@ -1998,8 +2005,10 @@ py-2
                                                                             : request.status === "CANCELLED"
                                                                                 ? "Cancelled"
                                                                                 : request.status === "HOD_REJECTED"
-                                                                                    ? "Rejected"
-                                                                                    : request.status
+                                                                                    ? "Rejected by HOD"
+                                                                                    : request.status === "ADMIN_REJECTED"
+                                                                                        ? "Rejected by Admin"
+                                                                                        : request.status
                                                 }
 
                                             </span>
@@ -2297,6 +2306,79 @@ p-6
                             }
 
                         </div>
+
+                        <h3 className="mb-4 text-lg font-semibold">
+                            NOC Timeline History
+                        </h3>
+
+                        {
+                            selectedRequest.rejection_reason
+                            && (
+
+                                <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-4">
+
+                                    <div className="font-semibold text-red-700">
+
+                                        Rejection Reason
+
+                                    </div>
+
+                                    <div className="mt-2 text-sm">
+
+                                        {selectedRequest.rejection_reason}
+
+                                    </div>
+
+                                </div>
+
+                            )
+                        }
+
+                        {
+                            selectedRequest.cancellation_reason
+                            && (
+
+                                <div className="mb-4 rounded-lg border border-orange-300 bg-orange-50 p-4">
+
+                                    <div className="font-semibold text-orange-700">
+
+                                        Cancellation Reason
+
+                                    </div>
+
+                                    <div className="mt-2 text-sm">
+
+                                        {selectedRequest.cancellation_reason}
+
+                                    </div>
+
+                                </div>
+
+                            )
+                        }
+
+                        {
+                            selectedRequest.tenure_rejection_reason
+                            && (
+
+                                <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+
+                                    <div className="font-semibold text-yellow-700">
+
+                                        Tenure Verification Rejected
+
+                                    </div>
+
+                                    <div className="mt-2 text-sm">
+
+                                        {selectedRequest.tenure_rejection_reason}
+
+                                    </div>
+
+                                </div>
+
+                            )
+                        }
 
                         <div className="mt-6 rounded-lg border bg-slate-50 p-4">
 

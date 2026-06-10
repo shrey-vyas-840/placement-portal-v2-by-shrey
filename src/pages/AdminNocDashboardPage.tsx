@@ -463,10 +463,9 @@ export function AdminNocDashboardPage() {
                         "CANCELLED"
                     ),
 
-                adminNocService
-                    .getByStatus(
-                        "HOD_REJECTED"
-                    ),
+             adminNocService.
+             getByStatus
+             ("ADMIN_REJECTED"),
 
                 adminNocService
                     .getByStatus(
@@ -614,15 +613,15 @@ export function AdminNocDashboardPage() {
 
 
     const lifecycleRequests = [
-    ...pendingApproval,
-    ...pendingPrint,
-    ...printed,
-    ...issued,
-    ...cancelled,
-    ...rejected,
-    ...pendingTenureVerification,
-    ...completedTenure,
-];
+        ...pendingApproval,
+        ...pendingPrint,
+        ...printed,
+        ...issued,
+        ...cancelled,
+        ...rejected,
+        ...pendingTenureVerification,
+        ...completedTenure,
+    ];
 
     const analyticsNocTypes = [
         "Internship",
@@ -1416,9 +1415,24 @@ p-3
                                                 onClick={
                                                     async () => {
 
+                                                        const reason =
+                                                            prompt(
+                                                                "Enter rejection reason"
+                                                            );
+
+                                                        if (
+                                                            !reason?.trim()
+                                                        ) {
+                                                            alert(
+                                                                "Reason is required"
+                                                            );
+                                                            return;
+                                                        }
+
                                                         await adminNocService
                                                             .rejectRequest(
-                                                                request.noc_request_id
+                                                                request.noc_request_id,
+                                                                reason
                                                             );
 
                                                         load();
@@ -2056,9 +2070,24 @@ p-3
 
                                                             }
 
+                                                            const reason =
+                                                                prompt(
+                                                                    "Enter cancellation reason"
+                                                                );
+
+                                                            if (
+                                                                !reason?.trim()
+                                                            ) {
+                                                                alert(
+                                                                    "Reason is required"
+                                                                );
+                                                                return;
+                                                            }
+
                                                             await adminNocService
                                                                 .cancelRequest(
-                                                                    request.noc_request_id
+                                                                    request.noc_request_id,
+                                                                    reason
                                                                 );
 
                                                             await load();
@@ -2359,9 +2388,24 @@ p-3
 
                                                     onClick={async () => {
 
+                                                        const reason =
+                                                            prompt(
+                                                                "Enter tenure rejection reason"
+                                                            );
+
+                                                        if (
+                                                            !reason?.trim()
+                                                        ) {
+                                                            alert(
+                                                                "Reason is required"
+                                                            );
+                                                            return;
+                                                        }
+
                                                         await adminNocService
                                                             .rejectTenureCompletion(
-                                                                request.noc_request_id
+                                                                request.noc_request_id,
+                                                                reason
                                                             );
 
                                                         await load();
