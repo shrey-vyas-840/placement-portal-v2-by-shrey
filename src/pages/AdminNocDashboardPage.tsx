@@ -1968,42 +1968,78 @@ p-3
                                                 <button
                                                     onClick={async () => {
 
-                                                        setSelectedRequest(request);
+                                                        const refNumber =
+                                                            (
+                                                                referenceNumbers[
+                                                                request.noc_request_id
+                                                                ]
+                                                                ??
+                                                                request.reference_number
+                                                                ??
+                                                                ""
+                                                            ).trim();
 
-                                                        setReviewMode("PRINT");
+                                                        if (!refNumber) {
 
-                                                        setEditableSnapshot(
-                                                            structuredClone(
-                                                                request.snapshot
-                                                            )
+                                                            alert(
+                                                                "Save Reference Number before reprint."
+                                                            );
+
+                                                            return;
+
+                                                        }
+
+                                                        if (
+                                                            refNumber !==
+                                                            request.reference_number
+                                                        ) {
+
+                                                            await adminNocService
+                                                                .saveReferenceNumber(
+                                                                    request.noc_request_id,
+                                                                    refNumber
+                                                                );
+
+                                                        }
+
+                                                        const reason =
+                                                            window.prompt(
+                                                                "Enter reason for reprint"
+                                                            );
+
+                                                        if (
+                                                            !reason ||
+                                                            !reason.trim()
+                                                        ) {
+                                                            return;
+                                                        }
+
+                                                        await adminNocService.reprintNoc(
+                                                            request.noc_request_id,
+                                                            reason
                                                         );
 
-                                                        setCustomFields(
-                                                            request.noc_customization
-                                                            ??
-                                                            {}
+                                                        setReferenceNumbers(
+                                                            (prev) => {
+
+                                                                const next = {
+                                                                    ...prev,
+                                                                };
+
+                                                                delete next[
+                                                                    request.noc_request_id
+                                                                ];
+
+                                                                return next;
+
+                                                            }
                                                         );
 
-                                                        setSelectedRequest(
-                                                            request
-                                                        );
+                                                        await load();
 
-                                                        setReviewMode(
-                                                            "PRINT"
+                                                        alert(
+                                                            "Moved back to Pending Print"
                                                         );
-
-                                                        setEditableSnapshot(
-                                                            structuredClone(
-                                                                request.snapshot
-                                                            )
-                                                        );
-
-                                                        setCustomFields(
-                                                            request.noc_customization
-                                                            ??
-                                                            {}
-                                                        );
-
                                                     }}
 
                                                     className="rounded border px-3 py-1"
@@ -2023,13 +2059,26 @@ p-3
                                                                     request.noc_request_id
                                                                 ]?.trim();
 
-                                                            if (!refNumber) {
+                                                            if (
+                                                                !refNumber ||
+                                                                !refNumber.trim()
+                                                            ) {
+                                                                alert(
+                                                                    "Reference Number is required."
+                                                                );
+                                                                return;
+                                                            }
+
+                                                            if (
+                                                                request.reference_number
+                                                            ) {
 
                                                                 alert(
-                                                                    "Enter Reference Number"
+                                                                    "Reference Number already saved and cannot be modified."
                                                                 );
 
                                                                 return;
+
                                                             }
 
                                                             await adminNocService

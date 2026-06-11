@@ -2,6 +2,129 @@ import { supabase } from "@/lib/supabase";
 
 export const adminNocService = {
 
+    async createPrintHistory(
+        nocRequestId: string,
+        actionType: string,
+        reason: string | null = null
+    ) {
+
+        const {
+            data: request,
+            error: fetchError,
+        } =
+            await (supabase as any)
+                .from("noc_requests")
+                .select("*")
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+                .single();
+
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        const {
+            data: historyRows,
+        } =
+            await (supabase as any)
+                .from(
+                    "noc_print_history"
+                )
+                .select(
+                    "history_id"
+                )
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        const version =
+            (historyRows?.length || 0) + 1;
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+                .from(
+                    "noc_print_history"
+                )
+                .insert({
+                    noc_request_id:
+                        nocRequestId,
+
+                    reference_number:
+                        request.reference_number,
+
+                    print_version:
+                        version,
+
+                    action_type:
+                        actionType,
+
+                    reason,
+
+                    snapshot:
+                        request.snapshot,
+
+                    noc_customization:
+                        request.noc_customization,
+                });
+
+        if (error) {
+            throw error;
+        }
+    },
+
+    async reprintNoc(
+        nocRequestId: string,
+        reason: string
+    ) {
+
+        await this.createPrintHistory(
+            nocRequestId,
+            "REPRINT",
+            reason
+        );
+
+        const {
+            data: request,
+            error: fetchError,
+        } =
+            await (supabase as any)
+                .from("noc_requests")
+                .select("*")
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+                .single();
+
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+                .from("noc_requests")
+                .update({
+                    status: "PENDING_PRINT",
+                    printed_at: null,
+                    reference_number: null,
+                })
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                );
+
+        if (error) {
+            throw error;
+        }
+    },
+
     async getRequests() {
 
         const {
@@ -236,6 +359,12 @@ export const adminNocService = {
         if (error)
             throw error;
 
+        await this.createPrintHistory(
+            nocRequestId,
+            "PRINT",
+            "Initial Print"
+        );
+
     },
 
     async markIssued(
@@ -309,6 +438,40 @@ export const adminNocService = {
         nocRequestId: string,
         referenceNumber: string
     ) {
+
+        const {
+            data: existing,
+            error: fetchError,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .select(
+                    "reference_number"
+                )
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+
+                .single();
+
+        if (fetchError)
+            throw fetchError;
+
+        if (
+            existing?.reference_number
+        ) {
+
+            throw new Error(
+                "Reference Number already locked."
+            );
+
+        }
 
         const {
             error,
