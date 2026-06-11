@@ -2382,33 +2382,8 @@ p-3
                             </th>
 
                             <th className="p-3 text-left">
-                                HR Email
+                                Completion Details
                             </th>
-
-                            <th className="p-3 text-left">
-                                HR Contact
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Certificate
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Same HR
-                            </th>
-
-                            <th className="p-3 text-left">
-                                New HR Name
-                            </th>
-
-                            <th className="p-3 text-left">
-                                New Designation
-                            </th>
-
-                            <th className="p-3 text-left">
-                                Actions
-                            </th>
-
                         </tr>
 
                     </thead>
@@ -2453,230 +2428,280 @@ p-3
                                         className="border-b"
                                     >
 
-                                        <td className="p-3">
+                                        <td className="p-3 align-top">
+
                                             {
                                                 request.snapshot?.student_name
                                             }
+
                                         </td>
 
-                                        <td className="p-3">
+                                        <td className="p-3 align-top">
+
                                             {
                                                 request.snapshot?.enrollment_no
                                             }
+
                                         </td>
 
-                                        <td className="p-3">
+                                        <td className="p-3 align-top">
+
                                             {
                                                 request.snapshot?.company_name
                                             }
+
                                         </td>
 
-                                        <td className="p-3">
+                                        <td className="p-3 align-top">
+
                                             {
                                                 request.snapshot?.end_date
                                             }
-                                        </td>
 
-                                        <td className="p-3">
-                                            {
-                                                request.completion_hr_email
-                                            }
-                                        </td>
-
-                                        <td className="p-3">
-                                            {
-                                                request.completion_hr_contact
-                                            }
                                         </td>
 
                                         <td className="p-3">
 
-                                            {
-                                                request.completion_certificate_url
-                                                    ? (
-                                                        <button
+                                            <div className="space-y-2 text-sm">
 
-                                                            onClick={
-                                                                async () => {
-                                                                    const url =
-                                                                        await adminNocService
-                                                                            .getCertificateUrl(
-                                                                                request.completion_certificate_url
+                                                <div>
+
+                                                    <strong>Email:</strong>{" "}
+
+                                                    {
+                                                        request.completion_hr_email
+                                                        ??
+                                                        "-"
+                                                    }
+
+                                                </div>
+
+                                                <div>
+
+                                                    <strong>Contact:</strong>{" "}
+
+                                                    {
+                                                        request.completion_hr_contact
+                                                        ??
+                                                        "-"
+                                                    }
+
+                                                </div>
+
+                                                <div>
+
+                                                    <strong>HR:</strong>{" "}
+
+                                                    {
+                                                        request.completion_same_hr
+
+                                                            ? (
+                                                                request.snapshot?.hr_name
+                                                                ??
+                                                                "Same HR"
+                                                            )
+
+                                                            : (
+                                                                request.completion_hr_name
+                                                                ??
+                                                                "-"
+                                                            )
+                                                    }
+
+                                                </div>
+
+                                                <div>
+
+                                                    <strong>Designation:</strong>{" "}
+
+                                                    {
+                                                        request.completion_same_hr
+
+                                                            ? (
+                                                                request.snapshot?.hr_position
+                                                                ??
+                                                                "-"
+                                                            )
+
+                                                            : (
+                                                                request.completion_hr_designation
+                                                                ??
+                                                                "-"
+                                                            )
+                                                    }
+
+                                                </div>
+
+                                                <div>
+
+                                                    <strong>Certificate:</strong>{" "}
+
+                                                    {
+                                                        request.completion_certificate_url
+
+                                                            ? (
+
+                                                                <button
+
+                                                                    onClick={
+                                                                        async () => {
+
+                                                                            const url =
+                                                                                await adminNocService
+                                                                                    .getCertificateUrl(
+                                                                                        request.completion_certificate_url
+                                                                                    );
+
+                                                                            window.open(
+                                                                                url,
+                                                                                "_blank"
                                                                             );
 
-                                                                    window.open(
-                                                                        url,
-                                                                        "_blank"
-                                                                    );
+                                                                        }
+                                                                    }
 
-
-                                                                }
-                                                            }
-
-                                                            className="
+                                                                    className="
 text-blue-600
 underline
 "
 
-                                                        >
+                                                                >
 
-                                                            View
+                                                                    View Certificate
 
-                                                        </button>
-                                                    )
-                                                    : "-"
-                                            }
-                                        </td>
+                                                                </button>
 
-                                        <td className="p-3">
-
-                                            {
-                                                request.completion_same_hr
-                                                    ? "Yes"
-                                                    : "No"
-                                            }
-
-                                        </td>
-
-                                        <td className="p-3">
-
-                                            {
-                                                request.completion_hr_name
-                                                ??
-                                                "-"
-                                            }
-
-                                        </td>
-
-                                        <td className="p-3">
-
-                                            {
-                                                request.completion_hr_designation
-                                                ??
-                                                "-"
-                                            }
-
-                                        </td>
-
-                                        <td className="p-3">
-                                            <div className="flex flex-wrap gap-2">
-
-                                                <button
-
-                                                    onClick={() => {
-
-                                                        setSelectedRequest(
-                                                            request
-                                                        );
-
-                                                        setReviewMode(
-                                                            "VIEW"
-                                                        );
-
-                                                        setEditableSnapshot(
-                                                            structuredClone(
-                                                                request.snapshot
                                                             )
-                                                        );
 
-                                                        setCustomFields(
-                                                            request.noc_customization
-                                                            ??
-                                                            {}
-                                                        );
+                                                            : "-"
 
-                                                    }}
+                                                    }
 
-                                                    className="rounded border px-3 py-1"
+                                                </div>
 
-                                                >
+                                                <div className="pt-3 flex flex-wrap gap-2">
 
-                                                    View
+                                                    <button
 
-                                                </button>
+                                                        onClick={() => {
 
-                                                <button
-
-                                                    onClick={async () => {
-
-                                                        if (
-
-                                                            !request.completion_submitted_at ||
-
-                                                            !request.completion_certificate_url ||
-
-                                                            !request.completion_hr_email ||
-
-                                                            !request.completion_hr_contact
-
-                                                        ) {
-
-                                                            alert(
-                                                                "Student has not submitted completion details."
+                                                            setSelectedRequest(
+                                                                request
                                                             );
 
-                                                            return;
-
-                                                        }
-
-                                                        await adminNocService
-                                                            .approveTenureCompletion(
-                                                                request.noc_request_id
+                                                            setReviewMode(
+                                                                "VIEW"
                                                             );
 
-                                                        await load();
-
-                                                    }}
-
-                                                    className="rounded border px-3 py-1"
-
-                                                >
-
-                                                    Approve
-
-                                                </button>
-
-                                                <button
-
-                                                    onClick={async () => {
-
-                                                        const reason =
-                                                            prompt(
-                                                                "Enter tenure rejection reason"
+                                                            setEditableSnapshot(
+                                                                structuredClone(
+                                                                    request.snapshot
+                                                                )
                                                             );
 
-                                                        if (
-                                                            !reason?.trim()
-                                                        ) {
-                                                            alert(
-                                                                "Reason is required"
-                                                            );
-                                                            return;
-                                                        }
-
-                                                        await adminNocService
-                                                            .rejectTenureCompletion(
-                                                                request.noc_request_id,
-                                                                reason
+                                                            setCustomFields(
+                                                                request.noc_customization
+                                                                ??
+                                                                {}
                                                             );
 
-                                                        await load();
+                                                        }}
 
-                                                    }}
+                                                        className="rounded border px-3 py-1"
 
-                                                    className="rounded border px-3 py-1"
+                                                    >
 
-                                                >
+                                                        View
 
-                                                    Reject
+                                                    </button>
 
-                                                </button>
+                                                    <button
+
+                                                        onClick={async () => {
+
+                                                            if (
+
+                                                                !request.completion_submitted_at ||
+
+                                                                !request.completion_certificate_url ||
+
+                                                                !request.completion_hr_email ||
+
+                                                                !request.completion_hr_contact
+
+                                                            ) {
+
+                                                                alert(
+                                                                    "Student has not submitted completion details."
+                                                                );
+
+                                                                return;
+
+                                                            }
+
+                                                            await adminNocService
+                                                                .approveTenureCompletion(
+                                                                    request.noc_request_id
+                                                                );
+
+                                                            await load();
+
+                                                        }}
+
+                                                        className="rounded border px-3 py-1"
+
+                                                    >
+
+                                                        Approve
+
+                                                    </button>
+
+                                                    <button
+
+                                                        onClick={async () => {
+
+                                                            const reason =
+                                                                prompt(
+                                                                    "Enter tenure rejection reason"
+                                                                );
+
+                                                            if (
+                                                                !reason?.trim()
+                                                            ) {
+
+                                                                alert(
+                                                                    "Reason is required"
+                                                                );
+
+                                                                return;
+
+                                                            }
+
+                                                            await adminNocService
+                                                                .rejectTenureCompletion(
+                                                                    request.noc_request_id,
+                                                                    reason
+                                                                );
+
+                                                            await load();
+
+                                                        }}
+
+                                                        className="rounded border px-3 py-1"
+
+                                                    >
+
+                                                        Reject
+
+                                                    </button>
+
+                                                </div>
 
                                             </div>
+
                                         </td>
 
                                     </tr>
-
                                 )
                             )}
 
