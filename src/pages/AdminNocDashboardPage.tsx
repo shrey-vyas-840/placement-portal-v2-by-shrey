@@ -466,9 +466,17 @@ export function AdminNocDashboardPage() {
                         "CANCELLED"
                     ),
 
-                adminNocService.
-                    getByStatus
-                    ("ADMIN_REJECTED"),
+                Promise.all([
+                    adminNocService.getByStatus("ADMIN_REJECTED"),
+                    adminNocService.getByStatus("HOD_REJECTED"),
+                    adminNocService.getByStatus("TENURE_REJECTED"),
+                ]).then(
+                    ([adminRejected, hodRejected, tenureRejected]) => [
+                        ...adminRejected,
+                        ...hodRejected,
+                        ...tenureRejected,
+                    ]
+                ),
 
                 adminNocService
                     .getByStatus(
@@ -541,40 +549,17 @@ export function AdminNocDashboardPage() {
         );
 
         setHistory(
-
             [
-
                 ...approval,
                 ...printQueue,
                 ...printedData,
                 ...issuedData,
-                ...completionPendingRecords,
                 ...tenureVerification,
                 ...completedTenureData,
                 ...rejectedData,
                 ...cancelledData,
-
             ]
-
         );
-
-        const completionPending =
-            issuedData.filter(
-                (request: any) => {
-
-                    const endDate =
-                        new Date(
-                            request.snapshot?.end_date
-                        );
-
-                    return (
-                        endDate <= new Date()
-                        &&
-                        !request.completion_submitted_at
-                    );
-
-                }
-            );
     }
 
     useEffect(() => {
@@ -779,7 +764,11 @@ export function AdminNocDashboardPage() {
                             (
                                 request: any
                             ) =>
-                                request.noc_type === type
+                                (
+                                    request.noc_type
+                                    ??
+                                    request.snapshot?.noc_type
+                                ) === type
                         ).length,
                 })
             )
@@ -835,11 +824,7 @@ export function AdminNocDashboardPage() {
 
                     <div className="text-2xl font-bold">
                         {
-                            pendingApproval.length +
-                            pendingPrint.length +
-                            printed.length +
-                            issued.length +
-                            cancelled.length
+                            lifecycleRequests.length
                         }
                     </div>
                 </div>
@@ -1070,7 +1055,11 @@ export function AdminNocDashboardPage() {
                                     const count =
                                         lifecycleRequests.filter(
                                             (request: any) =>
-                                                request.noc_type === type
+                                                (
+                                                    request.noc_type
+                                                    ??
+                                                    request.snapshot?.noc_type
+                                                ) === type
                                         ).length;
 
                                     const percent =
