@@ -1693,6 +1693,12 @@ p-3
                                                         )
                                                     );
 
+                                                    setCustomFields(
+                                                        request.noc_customization
+                                                        ??
+                                                        {}
+                                                    );
+
                                                 }}
 
                                                 className="rounded border px-3 py-1"
@@ -3736,7 +3742,8 @@ underline
                                                     window.print();
 
                                                     await load();
-
+                                                    setCustomFields({});
+                                                    setEditableSnapshot(null);
                                                     setSelectedRequest(null);
 
                                                 }
@@ -3755,7 +3762,11 @@ underline
 
                                 <button
                                     onClick={() => {
+
+                                        setCustomFields({});
+                                        setEditableSnapshot(null);
                                         setSelectedRequest(null);
+
                                     }}
                                     className="rounded border px-4 py-2"
                                 >
