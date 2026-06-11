@@ -380,45 +380,26 @@ export const nocService = {
     async uploadCompletionCertificate(
         file: File
     ) {
-
         const fileExt =
             file.name
                 .split(".")
-                .pop();
+                .pop() || "pdf";
 
         const fileName =
             `${crypto.randomUUID()}.${fileExt}`;
 
-        const {
-            error,
-        } =
+        const { error } =
             await supabase.storage
+                .from("noc-completion-documents")
+                .upload(fileName, file, {
+                    upsert: false,
+                    contentType: file.type || "application/octet-stream",
+                });
 
-                .from(
-                    "noc-completion-documents"
-                )
+        if (error) throw error;
 
-                .upload(
-                    fileName,
-                    file
-                );
-
-        if (error)
-            throw error;
-
-        const { data } =
-            supabase.storage
-
-                .from(
-                    "noc-completion-documents"
-                )
-
-                .getPublicUrl(
-                    fileName
-                );
-
-        return data.publicUrl;
-
+        // Private bucket: store the object path, not a public URL.
+        return fileName;
     },
 
     async submitCompletionDetails(
@@ -484,4 +465,25 @@ export const nocService = {
 
     },
 
+    async getCertificateUrl(
+        certificateValue: string
+    ) {
+        if (!certificateValue) {
+            return "";
+        }
+
+        // Keep backward compatibility with old rows that may already store a full URL.
+        if (certificateValue.startsWith("http")) {
+            return certificateValue;
+        }
+
+        const { data, error } =
+            await supabase.storage
+                .from("noc-completion-documents")
+                .createSignedUrl(certificateValue, 60 * 60);
+
+        if (error) throw error;
+
+        return data.signedUrl;
+    },
 };

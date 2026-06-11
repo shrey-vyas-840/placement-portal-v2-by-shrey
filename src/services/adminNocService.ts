@@ -410,37 +410,22 @@ export const adminNocService = {
     async markCompletedTenure(
         nocRequestId: string
     ) {
+        const now = new Date().toISOString();
 
         const {
             error,
         } =
             await (supabase as any)
-
-                .from(
-                    "noc_requests"
-                )
-
+                .from("noc_requests")
                 .update({
-
-                    status:
-                        "COMPLETED_TENURE",
-
-                    tenure_completed_at:
-                        new Date()
-                            .toISOString(),
-
+                    status: "TENURE_COMPLETED",
+                    completion_verified_at: now,
+                    tenure_completed_at: now,
                 })
+                .eq("noc_request_id", nocRequestId);
 
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                );
-
-        if (error)
-            throw error;
-
+        if (error) throw error;
     },
-
 
     async incrementPrintCount(
         nocRequestId: string
@@ -504,75 +489,42 @@ export const adminNocService = {
     async approveTenureCompletion(
         nocRequestId: string
     ) {
-
         const {
             data: request,
             error: fetchError,
         } =
             await (supabase as any)
-
-                .from(
-                    "noc_requests"
-                )
-
+                .from("noc_requests")
                 .select("*")
-
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                )
-
+                .eq("noc_request_id", nocRequestId)
                 .single();
 
-        if (fetchError)
-            throw fetchError;
+        if (fetchError) throw fetchError;
 
         if (
-
             !request.completion_submitted_at ||
-
             !request.completion_certificate_url ||
-
             !request.completion_hr_email ||
-
             !request.completion_hr_contact
-
         ) {
-
-            throw new Error(
-                "Completion details missing."
-            );
-
+            throw new Error("Completion details missing.");
         }
+
+        const now = new Date().toISOString();
 
         const {
             error,
         } =
             await (supabase as any)
-
-                .from(
-                    "noc_requests"
-                )
-
+                .from("noc_requests")
                 .update({
-
-                    status:
-                        "TENURE_COMPLETED",
-
-                    completion_verified_at:
-                        new Date()
-                            .toISOString(),
-
+                    status: "TENURE_COMPLETED",
+                    completion_verified_at: now,
+                    tenure_completed_at: now,
                 })
+                .eq("noc_request_id", nocRequestId);
 
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                );
-
-        if (error)
-            throw error;
-
+        if (error) throw error;
     },
 
     async getCompletedTenureAudit() {
@@ -601,5 +553,41 @@ export const adminNocService = {
         return data ?? [];
 
     },
+
+    async getCertificateUrl(
+        certificateValue: string
+    ) {
+
+        if (
+            certificateValue.startsWith(
+                "http"
+            )
+        ) {
+
+            return certificateValue;
+
+        }
+
+        const {
+            data,
+            error,
+        } =
+            await supabase.storage
+
+                .from(
+                    "noc-completion-documents"
+                )
+
+                .createSignedUrl(
+                    certificateValue,
+                    60 * 60
+                );
+
+        if (error)
+            throw error;
+
+        return data.signedUrl;
+
+    }
 
 };

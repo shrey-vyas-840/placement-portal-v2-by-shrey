@@ -544,22 +544,14 @@ export function AdminNocDashboardPage() {
 
             [
 
-                ...pendingApproval,
-
-                ...pendingPrint,
-
-                ...printed,
-
-                ...issued,
-
+                ...approval,
+                ...printQueue,
+                ...printedData,
+                ...issuedData,
                 ...completionPendingRecords,
-
                 ...tenureVerification,
-
                 ...completedTenureData,
-
                 ...rejectedData,
-
                 ...cancelledData,
 
             ]
@@ -984,7 +976,7 @@ export function AdminNocDashboardPage() {
 
                         {" "}
 
-                        {new Date().toLocaleString()}
+                        Client Time
 
                     </div>
 
@@ -2458,20 +2450,38 @@ p-3
                                             {
                                                 request.completion_certificate_url
                                                     ? (
-                                                        <a
-                                                            href={
-                                                                request.completion_certificate_url
+                                                        <button
+
+                                                            onClick={
+                                                                async () => {
+                                                                    const url =
+                                                                        await adminNocService
+                                                                            .getCertificateUrl(
+                                                                                request.completion_certificate_url
+                                                                            );
+
+                                                                    window.open(
+                                                                        url,
+                                                                        "_blank"
+                                                                    );
+
+
+                                                                }
                                                             }
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="text-blue-600 underline"
+
+                                                            className="
+text-blue-600
+underline
+"
+
                                                         >
+
                                                             View
-                                                        </a>
+
+                                                        </button>
                                                     )
                                                     : "-"
                                             }
-
                                         </td>
 
                                         <td className="p-3">
@@ -2971,16 +2981,30 @@ p-3
                                                 {
                                                     request.completion_certificate_url
                                                         ? (
-                                                            <a
-                                                                href={
-                                                                    request.completion_certificate_url
-                                                                }
-                                                                target="_blank"
-                                                                rel="noreferrer"
+                                                            <button
+
+                                                                onClick={async () => {
+
+                                                                    const url =
+                                                                        await adminNocService
+                                                                            .getCertificateUrl(
+                                                                                request.completion_certificate_url
+                                                                            );
+
+                                                                    window.open(
+                                                                        url,
+                                                                        "_blank"
+                                                                    );
+
+                                                                }}
+
                                                                 className="text-blue-600 underline"
+
                                                             >
+
                                                                 View
-                                                            </a>
+
+                                                            </button>
                                                         )
                                                         : "-"
                                                 }
@@ -3605,16 +3629,23 @@ p-3
                                                     ?.completion_certificate_url
                                                     ?
 
-                                                    <a
+                                                    <button
 
-                                                        href={
-                                                            selectedRequest
-                                                                .completion_certificate_url
-                                                        }
+                                                        onClick={async () => {
 
-                                                        target="_blank"
+                                                            const url =
+                                                                await adminNocService
+                                                                    .getCertificateUrl(
+                                                                        selectedRequest
+                                                                            .completion_certificate_url
+                                                                    );
 
-                                                        rel="noreferrer"
+                                                            window.open(
+                                                                url,
+                                                                "_blank"
+                                                            );
+
+                                                        }}
 
                                                         className="
 text-blue-600
@@ -3625,7 +3656,7 @@ underline
 
                                                         Download Certificate
 
-                                                    </a>
+                                                    </button>
 
                                                     :
 

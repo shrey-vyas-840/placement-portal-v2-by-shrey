@@ -544,7 +544,7 @@ export function StudentNocPage() {
 
     function getStudentNocTimeline(request: any) {
 
-        return [
+        const timeline = [
 
             {
                 title:
@@ -557,40 +557,6 @@ export function StudentNocPage() {
                     `NOC request created for ${request.noc_type}.`,
                 done:
                     true,
-            },
-
-            {
-                title:
-                    request.status === "HOD_REJECTED"
-                        ? "Rejected by HOD"
-                        : request.status === "ADMIN_REJECTED"
-                            ? "Rejected by Admin"
-                            : "HOD review",
-
-                time:
-                    request.approved_at ??
-                    request.hod_approval_deadline,
-
-                description:
-                    request.status === "HOD_REJECTED"
-                        ? "Request was rejected by HOD."
-                        : request.status === "ADMIN_REJECTED"
-                            ? "Request was rejected by Admin."
-                            : request.approval_source === "ADMIN_OVERRIDE"
-                                ? "Moved forward by admin override."
-                                : "Approved and forwarded to print queue.",
-
-                done:
-                    [
-                        "HOD_REJECTED",
-                        "ADMIN_REJECTED",
-                        "PENDING_PRINT",
-                        "PRINTED",
-                        "ISSUED",
-                        "CANCELLED",
-                        "COMPLETED_TENURE_PENDING_VERIFICATION",
-                        "TENURE_COMPLETED",
-                    ].includes(request.status),
             },
 
             {
@@ -638,7 +604,9 @@ export function StudentNocPage() {
 
             {
                 title:
-                    "Application Rejected",
+                    request.status === "HOD_REJECTED"
+                        ? "Rejected By HOD"
+                        : "Rejected By Admin",
 
                 time:
                     request.rejection_at,
@@ -663,6 +631,8 @@ export function StudentNocPage() {
                 time:
                     request.cancelled_at,
                 description:
+                    request.cancellation_reason
+                    ||
                     "Request was cancelled.",
                 done:
                     request.status === "CANCELLED",
@@ -709,6 +679,12 @@ export function StudentNocPage() {
             },
 
         ];
+
+        return timeline.filter(
+            (step) =>
+                step.done ||
+                step.time
+        );
 
     }
 
@@ -2335,16 +2311,23 @@ p-6
 
                                         <br />
 
-                                        <a
+                                        <button
 
-                                            href={
-                                                selectedRequest
-                                                    .completion_certificate_url
-                                            }
+                                            onClick={async () => {
 
-                                            target="_blank"
+                                                const url =
+                                                    await nocService
+                                                        .getCertificateUrl(
+                                                            selectedRequest
+                                                                .completion_certificate_url
+                                                        );
 
-                                            rel="noreferrer"
+                                                window.open(
+                                                    url,
+                                                    "_blank"
+                                                );
+
+                                            }}
 
                                             className="text-blue-600 underline"
 
@@ -2352,7 +2335,7 @@ p-6
 
                                             View Certificate
 
-                                        </a>
+                                        </button>
 
                                     </div>
 
@@ -2473,8 +2456,14 @@ p-6
 
                                             <div
                                                 className={`
-mt-1 h-3 w-3 rounded-full
-${step.done ? "bg-green-600" : "bg-gray-300"}
+mt-1
+h-3
+w-3
+rounded-full
+flex-shrink-0
+${step.done
+                                                        ? "bg-green-600"
+                                                        : "bg-gray-300"}
 `}
                                             />
 
