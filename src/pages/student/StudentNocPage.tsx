@@ -31,6 +31,18 @@ export function StudentNocPage() {
         );
 
     const [
+        uploadProgress,
+        setUploadProgress,
+    ] =
+        useState(0);
+
+    const [
+        dragActive,
+        setDragActive,
+    ] =
+        useState(false);
+
+    const [
         selectedRequest,
         setSelectedRequest,
     ] = useState<any>(
@@ -433,13 +445,13 @@ export function StudentNocPage() {
         }
 
         if (
-            !/^[0-9]{7,15}$/.test(
+            !/^[0-9]{10}$/.test(
                 completionForm.hr_contact.trim()
             )
         ) {
 
             alert(
-                "Enter a valid HR Contact Number."
+                "Enter a valid 10-digit HR Contact Number."
             );
 
             return;
@@ -462,7 +474,7 @@ export function StudentNocPage() {
         if (!completionForm.certificate) {
 
             alert(
-                "Upload Completion Certificate"
+                "Upload Your Completion Certificate"
             );
 
             return;
@@ -513,11 +525,15 @@ export function StudentNocPage() {
 
         }
 
+        setUploadProgress(25);
+
         const certificatePath =
             await nocService
                 .uploadCompletionCertificate(
                     completionForm.certificate!
                 );
+
+        setUploadProgress(100);
 
         await nocService
             .submitCompletionDetails(
@@ -556,6 +572,24 @@ export function StudentNocPage() {
         alert(
             "Completion Details Submitted"
         );
+
+        setUploadProgress(0);
+
+        setCompletionForm({
+
+            certificate: null,
+
+            hr_email: "",
+
+            hr_contact: "",
+
+            same_hr: true,
+
+            hr_name: "",
+
+            hr_designation: "",
+
+        });
 
         await loadProfile();
 
@@ -1462,26 +1496,43 @@ ${[
 
                         <div className="mb-8 rounded-lg border p-6">
 
-                            <h2 className="mb-4 text-xl font-semibold">
+                            <h2 className="mb-2 text-xl font-semibold">
 
-                                Complete Previous NOC
+                                NOC Completion Verification
 
                             </h2>
 
+                            <p className="mb-4 text-sm text-muted-foreground">
+
+                                Upload completion certificate and HR verification details to close your previous NOC.
+
+                            </p>
+
                             <div className="space-y-4">
 
-                                <input type="file"
-                                    accept="
-.pdf,
-.jpg,
-.jpeg,
-.png
-"
+                                <div
+                                    onDragOver={(e) => {
 
-                                    onChange={(e) => {
+                                        e.preventDefault();
+
+                                        setDragActive(true);
+
+                                    }}
+
+                                    onDragLeave={() => {
+
+                                        setDragActive(false);
+
+                                    }}
+
+                                    onDrop={(e) => {
+
+                                        e.preventDefault();
+
+                                        setDragActive(false);
 
                                         const file =
-                                            e.target.files?.[0];
+                                            e.dataTransfer.files?.[0];
 
                                         if (!file)
                                             return;
@@ -1529,16 +1580,92 @@ ${[
 
                                             ...completionForm,
 
-                                            certificate:
-                                                file,
+                                            certificate: file,
 
                                         });
 
                                     }}
 
-                                />
+                                    className={`
+        rounded-lg
+        border-2
+        border-dashed
+        p-8
+        text-center
+        cursor-pointer
+
+        ${dragActive
+                                            ? "border-blue-500 bg-blue-50"
+                                            : "border-gray-300"
+                                        }
+    `}
+                                >
+{
+    !completionRequest?.completion_submitted_at
+    && (
+        <>
+            <input
+
+                id="completion-upload"
+
+                type="file"
+
+                accept=".pdf,.jpg,.jpeg,.png"
+
+                className="hidden"
+
+                onChange={(e) => {
+
+                    const file =
+                        e.target.files?.[0];
+
+                    if (!file)
+                        return;
+
+                    setCompletionForm({
+
+                        ...completionForm,
+
+                        certificate: file,
+
+                    });
+
+                }}
+
+            />
+
+            <label
+                htmlFor="completion-upload"
+                className="cursor-pointer"
+            >
+
+                <div className="font-semibold">
+
+                    Drag & Drop Certificate Here
+
+                </div>
+
+                <div className="text-sm text-muted-foreground mt-2">
+
+                    or Click To Upload
+
+                </div>
+
+                <div className="mt-2 text-xs text-muted-foreground">
+
+                    PDF / JPG / PNG
+                    (Max 5 MB)
+
+                </div>
+
+            </label>
+        </>
+    )
+}
+                                </div>
 
                             </div>
+                            
 
                             {
                                 completionForm.certificate && (
@@ -1546,6 +1673,38 @@ ${[
                                     <div className="text-sm text-green-600">
 
                                         Uploaded:
+
+                                        {
+                                            uploadProgress > 0
+                                            && (
+
+                                                <div className="mt-3">
+
+                                                    <div className="h-2 rounded bg-slate-200">
+
+                                                        <div
+                                                            className="h-2 rounded bg-green-600"
+                                                            style={{
+                                                                width: `${uploadProgress}%`,
+                                                            }}
+                                                        />
+
+                                                    </div>
+
+                                                    <div className="mt-1 text-xs">
+
+                                                        Upload Progress:
+
+                                                        {" "}
+
+                                                        {uploadProgress}%
+
+                                                    </div>
+
+                                                </div>
+
+                                            )
+                                        }
 
                                         {" "}
 
@@ -1628,7 +1787,7 @@ p-2
                                             )
                                             .slice(
                                                 0,
-                                                15
+                                                10
                                             );
 
                                     setCompletionForm({
