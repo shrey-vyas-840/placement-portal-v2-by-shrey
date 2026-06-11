@@ -3189,24 +3189,24 @@ underline
                                     {request.noc_type}
                                 </td>
 
-                                <td className="p-3">
-
+                                <td>
                                     {
                                         request.rejected_by
                                         ??
-                                        "-"
-                                    }
-
-                                </td>
-
-                                <td className="p-3">
-
-                                    {
-                                        request.rejection_reason
+                                        request.tenure_rejected_by
                                         ??
                                         "-"
                                     }
+                                </td>
 
+                                <td>
+                                    {
+                                        request.rejection_reason
+                                        ??
+                                        request.tenure_rejection_reason
+                                        ??
+                                        "-"
+                                    }
                                 </td>
 
                                 <td className="p-3">
@@ -3714,34 +3714,39 @@ underline
                             }
 
                             <div className="mt-6 flex items-center gap-3 whitespace-nowrap no-print">
-                                <button
-                                    disabled={!hasChanges}
-                                    onClick={async () => {
-                                        const diff: Record<string, any> = {};
+                                {
+                                    reviewMode === "PRINT"
+                                    && (
+                                        <button
+                                            disabled={!hasChanges}
+                                            onClick={async () => {
+                                                const diff: Record<string, any> = {};
 
-                                        editableKeys.forEach((key) => {
-                                            const currentValue = currentSnapshot?.[key] ?? "";
-                                            const baseValue = editableSnapshot?.[key] ?? "";
+                                                editableKeys.forEach((key) => {
+                                                    const currentValue = currentSnapshot?.[key] ?? "";
+                                                    const baseValue = editableSnapshot?.[key] ?? "";
 
-                                            if (String(currentValue) !== String(baseValue)) {
-                                                diff[key] = currentValue;
-                                            }
-                                        });
+                                                    if (String(currentValue) !== String(baseValue)) {
+                                                        diff[key] = currentValue;
+                                                    }
+                                                });
 
-                                        if (Object.keys(diff).length > 0) {
-                                            await adminNocService.saveCustomization(
-                                                selectedRequest.noc_request_id,
-                                                diff
-                                            );
-                                        }
+                                                if (Object.keys(diff).length > 0) {
+                                                    await adminNocService.saveCustomization(
+                                                        selectedRequest.noc_request_id,
+                                                        diff
+                                                    );
+                                                }
 
-                                        await load();
-                                        alert("Changes Saved");
-                                    }}
-                                    className="rounded border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    Save Changes
-                                </button>
+                                                await load();
+                                                alert("Changes Saved");
+                                            }}
+                                            className="rounded border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Save Changes
+                                        </button>
+                                    )
+                                }
                                 {
                                     reviewMode === "PRINT" && (
                                         <button
