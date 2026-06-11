@@ -432,6 +432,33 @@ export function StudentNocPage() {
             return;
         }
 
+        if (
+            !/^[0-9]{7,15}$/.test(
+                completionForm.hr_contact.trim()
+            )
+        ) {
+
+            alert(
+                "Enter a valid HR Contact Number."
+            );
+
+            return;
+
+        }
+
+        if (
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                completionForm.hr_email.trim()
+            )
+        ) {
+
+            alert(
+                "Enter a valid HR Email."
+            );
+
+            return;
+
+        }
         if (!completionForm.certificate) {
 
             alert(
@@ -1575,6 +1602,9 @@ p-2
 
                             <input
 
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+
                                 placeholder="HR Contact Number"
 
                                 className="
@@ -1588,18 +1618,29 @@ p-2
                                     completionForm.hr_contact
                                 }
 
-                                onChange={(e) =>
+                                onChange={(e) => {
+
+                                    const value =
+                                        e.target.value
+                                            .replace(
+                                                /\D/g,
+                                                ""
+                                            )
+                                            .slice(
+                                                0,
+                                                15
+                                            );
 
                                     setCompletionForm({
 
                                         ...completionForm,
 
                                         hr_contact:
-                                            e.target.value,
+                                            value,
 
-                                    })
+                                    });
 
-                                }
+                                }}
 
                             />
 
