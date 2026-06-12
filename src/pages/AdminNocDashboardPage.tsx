@@ -423,9 +423,27 @@ export function AdminNocDashboardPage() {
         useState<any[]>([]);
 
     const [
+        printHistory,
+        setPrintHistory,
+    ] =
+        useState<any[]>([]);
+
+    const [
         completionPending,
         setCompletionPending,
     ] = useState<any[]>([]);
+
+    const [
+        showOnlyReprints,
+        setShowOnlyReprints,
+    ] =
+        useState(false);
+
+    const [
+        showAudit,
+        setShowAudit,
+    ] =
+        useState(false);
 
     async function load() {
 
@@ -516,6 +534,14 @@ export function AdminNocDashboardPage() {
 
         setPendingTenureVerification(
             tenureVerification
+        );
+
+        const printHistoryData =
+            await adminNocService
+                .getPrintHistory();
+
+        setPrintHistory(
+            printHistoryData
         );
 
         const completionPendingRecords =
@@ -736,6 +762,10 @@ export function AdminNocDashboardPage() {
         +
         pendingPrint.length
         +
+        printed.length
+        +
+        issued.length
+        +
         completionPending.length
         +
         pendingTenureVerification.length;
@@ -825,7 +855,7 @@ export function AdminNocDashboardPage() {
                 NOC Dashboard
             </h1>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-8 ">
+            <div className="mt-6 grid gap-4 md:grid-cols-5">
                 <div className="rounded-lg border p-4">
                     <div className="text-sm text-muted-foreground">
                         Total NOCs
@@ -1228,25 +1258,58 @@ p-3
 "
                 />
 
-                <button
-
-                    onClick={() =>
-                        setSearchTerm("")
-                    }
-
-                    className="
+                <div
+    className="
         mt-2
-        rounded
-        border
-        px-3
-        py-1
+        flex
+        items-center
+        justify-between
     "
+>
 
-                >
+    <button
+        onClick={() => {
+            setSearchTerm("");
+        }}
+       
+        className="
+            rounded
+            border
+            px-3
+            py-1
+            text-sm
+        "
+    >
+        Clear Search
+    </button>
 
-                    Clear Search
+    <button
 
-                </button>
+        onClick={() =>
+            setShowAudit(
+                !showAudit
+            )
+        }
+
+        className="
+            rounded
+            border
+            px-3
+            py-1
+            text-sm
+        "
+
+    >
+
+        {
+            showAudit
+                ? "Hide Audit"
+                : "Show Audit"
+        }
+
+    </button>
+
+</div>
 
                 <div className="mb-4 text-sm text-muted-foreground">
 
@@ -3310,15 +3373,19 @@ underline
                                 </th>
 
                                 <th className="p-3 text-left">
-                                    Duration
-                                </th>
-
-                                <th className="p-3 text-left">
                                     Type
                                 </th>
 
                                 <th className="p-3 text-left">
                                     Ref No
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Cancelled By
+                                </th>
+
+                                <th className="p-3 text-left">
+                                    Reason
                                 </th>
 
                                 <th className="p-3 text-left">
@@ -3399,19 +3466,6 @@ underline
                                             <td className="p-3">
 
                                                 {
-                                                    getDurationMonths(
-                                                        request.snapshot?.start_date,
-                                                        request.snapshot?.end_date
-                                                    )
-                                                }
-
-                                                Month(s)
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
                                                     request.noc_type
                                                 }
 
@@ -3421,6 +3475,39 @@ underline
 
                                                 {
                                                     request.reference_number
+                                                    ??
+                                                    "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    request.cancelled_by
+                                                    ??
+                                                    "ADMIN"
+                                                }
+
+                                            </td>
+
+                                            <td
+                                                className="
+        p-3
+        max-w-[300px]
+        truncate
+    "
+                                                title={
+                                                    request.cancellation_reason
+                                                    ??
+                                                    ""
+                                                }
+                                            >
+
+                                                {
+                                                    request.cancellation_reason
+                                                    ??
+                                                    "-"
                                                 }
 
                                             </td>
@@ -3486,70 +3573,132 @@ underline
                     </table>
 
                 </div>
+            </div>
 
-                <div className="mt-16 mb-6">
+{
+    showAudit && (
+<>
+            <div className="mt-16 mb-6">
 
-                    <h1 className="text-2xl font-bold">
+                <div
+                    className="
+        mt-10
+        flex
+        items-center
+        justify-between
+    "
+                >
+
+                    <h2
+                        className="
+            text-xl
+            font-semibold
+        "
+                    >
 
                         AUDIT & REPORTS
 
-                    </h1>
+                    </h2>
+
+                    <button
+
+                        onClick={() =>
+                            setShowAudit(
+                                !showAudit
+                            )
+                        }
+
+                        className="
+            rounded
+            border
+            px-3
+            py-1
+        "
+
+                    >
+
+                        {
+                            showAudit
+
+                                ? "Hide"
+
+                                : "Show"
+                        }
+
+                    </button>
 
                 </div>
 
-                <h2 className="mb-4 text-xl font-semibold">
+            </div>
 
-                    History
+            <h3
+                className="font-semibold"
+            >
 
-                </h2>
+                Workflow History
 
-                <div className="overflow-hidden rounded-lg border">
+                {" ("}
 
-                    <table className="w-full">
+                {
+                    history.length
+                }
 
-                        <thead>
+                {" Records)"}
 
-                            <tr className="border-b">
+            </h3>
 
-                                <th className="p-3 text-left">
+            <div className="overflow-hidden rounded-lg border">
 
-                                    Student
+                <table className="w-full">
 
-                                </th>
+                    <thead>
 
-                                <th className="p-3 text-left">
+                        <tr className="border-b">
 
-                                    Enrollment
+                            <th className="p-3 text-left">
 
-                                </th>
+                                Student
 
-                                <th className="p-3 text-left">
+                            </th>
 
-                                    Company
+                            <th className="p-3 text-left">
 
-                                </th>
+                                Enrollment
 
-                                <th className="p-3 text-left">
+                            </th>
 
-                                    Status
+                            <th className="p-3 text-left">
 
-                                </th>
+                                Company
 
-                                <th className="p-3 text-left">
+                            </th>
 
-                                    Created
+                            <th className="p-3 text-left">
 
-                                </th>
+                                Status
 
-                            </tr>
+                            </th>
 
-                        </thead>
+                            <th className="p-3 text-left">
 
-                        <tbody>
+                                Created
 
-                            {
+                            </th>
 
-                                history.map(
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {
+
+                            history.slice(
+                                0,
+                                10
+                            )
+
+                                .map(
                                     (
                                         request: any
                                     ) => (
@@ -3610,15 +3759,227 @@ underline
 
                                 )
 
-                            }
+                        }
 
-                        </tbody>
+                    </tbody>
 
-                    </table>
-
-                </div>
+                </table>
 
             </div>
+
+            <h3 className="mt-8 mb-3 font-semibold">
+
+                Print & Reprint History
+                {" ("}
+
+                {
+                    printHistory.length
+                }
+
+                {" Records)"}
+
+            </h3>
+
+            <div className="mb-3 flex items-center gap-2">
+
+                <input
+                    type="checkbox"
+                    checked={
+                        showOnlyReprints
+                    }
+                    onChange={(e) =>
+                        setShowOnlyReprints(
+                            e.target.checked
+                        )
+                    }
+                />
+
+                <span className="text-sm">
+
+                    Show Reprints Only
+
+                </span>
+
+            </div>
+
+            <div className="overflow-x-auto rounded border">
+
+                <table className="w-full text-sm">
+
+                    <thead>
+
+                        <tr className="border-b bg-muted/30">
+
+                            <th className="p-3 text-left">
+                                Student
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Company
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Version
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Action
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Ref No
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Reason
+                            </th>
+
+                            <th className="p-3 text-left">
+                                Date
+                            </th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {
+                            printHistory
+
+                                .slice(
+                                    0,
+                                    50
+                                )
+
+                                .filter(
+                                    (row: any) =>
+                                        !showOnlyReprints
+                                        ||
+                                        row.action_type ===
+                                        "REPRINT"
+                                )
+
+                                .map(
+                                    (
+                                        row: any
+                                    ) => (
+
+                                        <tr
+                                            key={
+                                                row.history_id
+                                            }
+                                            className="border-b"
+                                        >
+
+                                            <td className="p-3">
+
+                                                {
+                                                    row.snapshot
+                                                        ?.student_name
+                                                    ??
+                                                    "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    row.snapshot
+                                                        ?.company_name
+                                                    ??
+                                                    "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    row.print_version
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                <span
+                                                    className={
+                                                        row.action_type ===
+                                                            "REPRINT"
+
+                                                            ? "font-semibold text-amber-600"
+
+                                                            : ""
+                                                    }
+                                                >
+
+                                                    {
+                                                        row.action_type
+                                                    }
+
+                                                </span>
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    row.reference_number
+                                                    ??
+                                                    "-"
+                                                }
+
+                                            </td>
+
+                                            <td
+                                                className="
+        p-3
+        max-w-[300px]
+        truncate
+    "
+                                                title={
+                                                    row.reason
+                                                    ??
+                                                    ""
+                                                }
+                                            >
+
+                                                {
+                                                    row.reason
+                                                    ??
+                                                    "-"
+                                                }
+
+                                            </td>
+
+                                            <td className="p-3">
+
+                                                {
+                                                    row.created_at
+                                                        ?
+                                                        new Date(
+                                                            row.created_at
+                                                        ).toLocaleString()
+                                                        :
+                                                        "-"
+                                                }
+
+                                            </td>
+                                        </tr>
+
+                                    )
+                                )
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+             </>
+            )}
 
             {selectedRequest && (
                 <>

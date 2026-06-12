@@ -751,6 +751,34 @@ export const adminNocService = {
 
         return data.signedUrl;
 
-    }
+    },
+
+    async getPrintHistory() {
+
+    const {
+        data,
+        error,
+    } =
+        await (supabase as any)
+
+            .from(
+                "noc_print_history"
+            )
+
+            .select("*")
+
+            .order(
+                "created_at",
+                {
+                    ascending: false,
+                }
+            );
+
+    if (error)
+        throw error;
+
+    return data ?? [];
+
+}
 
 };
