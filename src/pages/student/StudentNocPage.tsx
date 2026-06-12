@@ -77,7 +77,10 @@ export function StudentNocPage() {
     ] = useState({
 
         noc_type:
-            "Internship",
+            "On Campus Internship",
+
+        opportunity_mode:
+            "Offline",
 
         start_date:
             "",
@@ -907,6 +910,40 @@ p-4
 
                         </select>
 
+                        <div>
+
+                            <label>
+                                Opportunity Mode
+                            </label>
+
+                            <select
+                                className="w-full border rounded p-2"
+                                value={form.opportunity_mode}
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        opportunity_mode:
+                                            e.target.value,
+                                    })
+                                }
+                            >
+
+                                <option>
+                                    Offline
+                                </option>
+
+                                <option>
+                                    Hybrid
+                                </option>
+
+                                <option>
+                                    Online
+                                </option>
+
+                            </select>
+
+                        </div>
+
                     </div>
                     {
                         selectedRequest && (
@@ -1375,6 +1412,22 @@ ${[
                         </div>
 
                         <div className="rounded border p-3">
+
+                            <p className="text-xs text-muted-foreground">
+
+                                Opportunity Mode
+
+                            </p>
+
+                            <p className="font-medium">
+
+                                {form.opportunity_mode}
+
+                            </p>
+
+                        </div>
+
+                        <div className="rounded border p-3">
                             <p className="text-xs text-muted-foreground">
                                 Start Date
                             </p>
@@ -1600,72 +1653,72 @@ ${[
                                         }
     `}
                                 >
-{
-    !completionRequest?.completion_submitted_at
-    && (
-        <>
-            <input
+                                    {
+                                        !completionRequest?.completion_submitted_at
+                                        && (
+                                            <>
+                                                <input
 
-                id="completion-upload"
+                                                    id="completion-upload"
 
-                type="file"
+                                                    type="file"
 
-                accept=".pdf,.jpg,.jpeg,.png"
+                                                    accept=".pdf,.jpg,.jpeg,.png"
 
-                className="hidden"
+                                                    className="hidden"
 
-                onChange={(e) => {
+                                                    onChange={(e) => {
 
-                    const file =
-                        e.target.files?.[0];
+                                                        const file =
+                                                            e.target.files?.[0];
 
-                    if (!file)
-                        return;
+                                                        if (!file)
+                                                            return;
 
-                    setCompletionForm({
+                                                        setCompletionForm({
 
-                        ...completionForm,
+                                                            ...completionForm,
 
-                        certificate: file,
+                                                            certificate: file,
 
-                    });
+                                                        });
 
-                }}
+                                                    }}
 
-            />
+                                                />
 
-            <label
-                htmlFor="completion-upload"
-                className="cursor-pointer"
-            >
+                                                <label
+                                                    htmlFor="completion-upload"
+                                                    className="cursor-pointer"
+                                                >
 
-                <div className="font-semibold">
+                                                    <div className="font-semibold">
 
-                    Drag & Drop Certificate Here
+                                                        Drag & Drop Certificate Here
 
-                </div>
+                                                    </div>
 
-                <div className="text-sm text-muted-foreground mt-2">
+                                                    <div className="text-sm text-muted-foreground mt-2">
 
-                    or Click To Upload
+                                                        or Click To Upload
 
-                </div>
+                                                    </div>
 
-                <div className="mt-2 text-xs text-muted-foreground">
+                                                    <div className="mt-2 text-xs text-muted-foreground">
 
-                    PDF / JPG / PNG
-                    (Max 5 MB)
+                                                        PDF / JPG / PNG
+                                                        (Max 5 MB)
 
-                </div>
+                                                    </div>
 
-            </label>
-        </>
-    )
-}
+                                                </label>
+                                            </>
+                                        )
+                                    }
                                 </div>
 
                             </div>
-                            
+
 
                             {
                                 completionForm.certificate && (

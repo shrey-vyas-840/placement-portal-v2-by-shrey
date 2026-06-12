@@ -1,9 +1,19 @@
 import { supabase } from "@/lib/supabase";
 
 export const NOC_TYPES = [
-    "Internship",
-    "Off Campus Placement",
+
+    "On Campus Internship + PPO",
+
+    "On Campus Internship",
+    
     "On Campus Placement",
+
+    "Off Campus Internship + PPO",
+    
+    "Off Campus Internship",
+    
+    "Off Campus Placement",
+
 ] as const;
 
 export const NOC_STATUSES = {
@@ -150,6 +160,8 @@ export const nocService = {
 
             hr_position: string;
 
+            opportunity_mode: string;
+
         }
 
     ) {
@@ -197,6 +209,9 @@ export const nocService = {
 
             noc_type:
                 payload.noc_type,
+
+            opportunity_mode:
+                payload.opportunity_mode,
 
             start_date:
                 payload.start_date,

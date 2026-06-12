@@ -27,7 +27,7 @@ function NocLetterBlock({
 
     return (
         <div
-            className="mx-auto max-w-4xl bg-white px-12 py-75 text-sm leading-6"
+            className="mx-auto max-w-4xl bg-white px-12 py-65 text-sm leading-6"
             style={{
                 fontFamily: "Arial",
             }}
@@ -666,9 +666,18 @@ export function AdminNocDashboardPage() {
     ];
 
     const analyticsNocTypes = [
-        "Internship",
-        "Off Campus Placement",
+        "On Campus Internship + PPO",
+
+        "On Campus Internship",
+
         "On Campus Placement",
+
+        "Off Campus Internship + PPO",
+
+        "Off Campus Internship",
+
+        "Off Campus Placement",
+
     ];
 
     function getAverageApprovalHours(records: any[]) {
