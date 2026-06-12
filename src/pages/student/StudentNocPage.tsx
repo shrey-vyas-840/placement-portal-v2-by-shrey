@@ -1555,108 +1555,125 @@ ${[
 
                             </h2>
 
-                            <p className="mb-4 text-sm text-muted-foreground">
+                            <p className="mb-6 text-sm text-muted-foreground">
 
-                                Upload completion certificate and HR verification details to close your previous NOC.
+                                Upload your completion certificate and HR verification details
+                                to close your previous NOC and become eligible for future NOC requests.
 
                             </p>
 
-                            <div className="space-y-4">
+                            {
 
-                                <div
-                                    onDragOver={(e) => {
+                                (
+                                    !completionRequest?.completion_submitted_at
+                                    ||
+                                    completionRequest?.status ===
+                                    "TENURE_REJECTED"
+                                )
+                                && (
 
-                                        e.preventDefault();
+                                    <div className="space-y-6">
 
-                                        setDragActive(true);
+                                        <div className="rounded-lg border bg-slate-50 p-4">
 
-                                    }}
+                                            <div className="mb-2 font-medium">
 
-                                    onDragLeave={() => {
+                                                Completion Certificate
 
-                                        setDragActive(false);
+                                            </div>
 
-                                    }}
+                                            <div
+                                                onDragOver={(e) => {
 
-                                    onDrop={(e) => {
+                                                    e.preventDefault();
 
-                                        e.preventDefault();
+                                                    setDragActive(true);
 
-                                        setDragActive(false);
+                                                }}
 
-                                        const file =
-                                            e.dataTransfer.files?.[0];
+                                                onDragLeave={() => {
 
-                                        if (!file)
-                                            return;
+                                                    setDragActive(false);
 
-                                        const allowedTypes = [
+                                                }}
 
-                                            "application/pdf",
+                                                onDrop={(e) => {
 
-                                            "image/jpeg",
+                                                    e.preventDefault();
 
-                                            "image/jpg",
+                                                    setDragActive(false);
 
-                                            "image/png",
+                                                    const file =
+                                                        e.dataTransfer.files?.[0];
 
-                                        ];
+                                                    if (!file)
+                                                        return;
 
-                                        if (
-                                            !allowedTypes.includes(
-                                                file.type
-                                            )
-                                        ) {
+                                                    const allowedTypes = [
 
-                                            alert(
-                                                "Only PDF, JPG, JPEG and PNG allowed"
-                                            );
+                                                        "application/pdf",
 
-                                            return;
+                                                        "image/jpeg",
 
-                                        }
+                                                        "image/jpg",
 
-                                        if (
-                                            file.size >
-                                            5 * 1024 * 1024
-                                        ) {
+                                                        "image/png",
 
-                                            alert(
-                                                "Maximum file size is 5 MB"
-                                            );
+                                                    ];
 
-                                            return;
+                                                    if (
+                                                        !allowedTypes.includes(
+                                                            file.type
+                                                        )
+                                                    ) {
 
-                                        }
+                                                        alert(
+                                                            "Only PDF, JPG, JPEG and PNG allowed"
+                                                        );
 
-                                        setCompletionForm({
+                                                        return;
 
-                                            ...completionForm,
+                                                    }
 
-                                            certificate: file,
+                                                    if (
+                                                        file.size >
+                                                        5 * 1024 * 1024
+                                                    ) {
 
-                                        });
+                                                        alert(
+                                                            "Maximum file size is 5 MB"
+                                                        );
 
-                                    }}
+                                                        return;
 
-                                    className={`
-        rounded-lg
-        border-2
-        border-dashed
-        p-8
-        text-center
-        cursor-pointer
+                                                    }
 
-        ${dragActive
-                                            ? "border-blue-500 bg-blue-50"
-                                            : "border-gray-300"
-                                        }
-    `}
-                                >
-                                    {
-                                        !completionRequest?.completion_submitted_at
-                                        && (
-                                            <>
+                                                    setCompletionForm({
+
+                                                        ...completionForm,
+
+                                                        certificate: file,
+
+                                                    });
+
+                                                }}
+
+                                                className={`
+                        rounded-lg
+                        border-2
+                        border-dashed
+                        p-8
+                        text-center
+                        cursor-pointer
+                        transition
+
+                        ${dragActive
+                                                        ? "border-blue-500 bg-blue-50"
+                                                        : "border-gray-300 bg-white"
+                                                    }
+                    `}
+                                            >
+
                                                 <input
 
                                                     id="completion-upload"
@@ -1692,274 +1709,277 @@ ${[
                                                     className="cursor-pointer"
                                                 >
 
-                                                    <div className="font-semibold">
+                                                    <div className="text-lg font-semibold">
 
-                                                        Drag & Drop Certificate Here
-
-                                                    </div>
-
-                                                    <div className="text-sm text-muted-foreground mt-2">
-
-                                                        or Click To Upload
+                                                        Upload Completion Certificate
 
                                                     </div>
 
-                                                    <div className="mt-2 text-xs text-muted-foreground">
+                                                    <div className="mt-2 text-sm text-muted-foreground">
 
-                                                        PDF / JPG / PNG
-                                                        (Max 5 MB)
+                                                        Drag & Drop or Click To Browse
+
+                                                    </div>
+
+                                                    <div className="mt-1 text-xs text-muted-foreground">
+
+                                                        PDF / JPG / PNG • Max 5 MB
 
                                                     </div>
 
                                                 </label>
-                                            </>
-                                        )
-                                    }
-                                </div>
 
-                            </div>
+                                            </div>
 
+                                            {
+                                                completionForm.certificate
+                                                && (
 
-                            {
-                                completionForm.certificate && (
+                                                    <div className="mt-4 rounded border bg-green-50 p-3">
 
-                                    <div className="text-sm text-green-600">
+                                                        <div className="font-medium text-green-700">
 
-                                        Uploaded:
+                                                            File Selected
 
-                                        {
-                                            uploadProgress > 0
-                                            && (
+                                                        </div>
 
-                                                <div className="mt-3">
+                                                        <div className="text-sm">
 
-                                                    <div className="h-2 rounded bg-slate-200">
+                                                            {
+                                                                completionForm.certificate.name
+                                                            }
 
-                                                        <div
-                                                            className="h-2 rounded bg-green-600"
-                                                            style={{
-                                                                width: `${uploadProgress}%`,
-                                                            }}
+                                                        </div>
+
+                                                        <div className="text-xs text-muted-foreground">
+
+                                                            {
+                                                                (
+                                                                    completionForm.certificate.size
+                                                                    / 1024
+                                                                    / 1024
+                                                                ).toFixed(2)
+                                                            }
+
+                                                            MB
+
+                                                        </div>
+
+                                                        {
+                                                            uploadProgress > 0
+                                                            && (
+
+                                                                <div className="mt-3">
+
+                                                                    <div className="h-2 rounded bg-slate-200">
+
+                                                                        <div
+                                                                            className="h-2 rounded bg-green-600"
+                                                                            style={{
+                                                                                width: `${uploadProgress}%`,
+                                                                            }}
+                                                                        />
+
+                                                                    </div>
+
+                                                                    <div className="mt-1 text-xs">
+
+                                                                        Upload Progress:
+                                                                        {" "}
+                                                                        {uploadProgress}%
+
+                                                                    </div>
+
+                                                                </div>
+
+                                                            )
+                                                        }
+
+                                                    </div>
+
+                                                )
+                                            }
+
+                                        </div>
+
+                                        <div className="rounded-lg border bg-slate-50 p-4">
+
+                                            <div className="mb-4 font-medium">
+
+                                                HR Verification Details
+
+                                            </div>
+
+                                            <div className="grid gap-4 md:grid-cols-2">
+
+                                                <input
+
+                                                    placeholder="HR Email"
+
+                                                    className="w-full rounded border p-2"
+
+                                                    value={
+                                                        completionForm.hr_email
+                                                    }
+
+                                                    onChange={(e) =>
+
+                                                        setCompletionForm({
+
+                                                            ...completionForm,
+
+                                                            hr_email:
+                                                                e.target.value,
+
+                                                        })
+
+                                                    }
+
+                                                />
+
+                                                <input
+
+                                                    inputMode="numeric"
+
+                                                    pattern="[0-9]*"
+
+                                                    placeholder="10 Digit HR Contact Number"
+
+                                                    className="w-full rounded border p-2"
+
+                                                    value={
+                                                        completionForm.hr_contact
+                                                    }
+
+                                                    onChange={(e) => {
+
+                                                        const value =
+                                                            e.target.value
+                                                                .replace(
+                                                                    /\D/g,
+                                                                    ""
+                                                                )
+                                                                .slice(
+                                                                    0,
+                                                                    10
+                                                                );
+
+                                                        setCompletionForm({
+
+                                                            ...completionForm,
+
+                                                            hr_contact:
+                                                                value,
+
+                                                        });
+
+                                                    }}
+
+                                                />
+
+                                            </div>
+
+                                            <label className="mt-4 flex gap-2">
+
+                                                <input
+
+                                                    type="checkbox"
+
+                                                    checked={
+                                                        completionForm.same_hr
+                                                    }
+
+                                                    onChange={(e) =>
+
+                                                        setCompletionForm({
+
+                                                            ...completionForm,
+
+                                                            same_hr:
+                                                                e.target.checked,
+
+                                                        })
+
+                                                    }
+
+                                                />
+
+                                                Same HR as NOC
+
+                                                (
+                                                {
+                                                    completionRequest
+                                                        ?.snapshot
+                                                        ?.hr_name
+                                                }
+                                                )
+
+                                            </label>
+
+                                            {
+                                                !completionForm.same_hr
+                                                && (
+
+                                                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+
+                                                        <input
+
+                                                            placeholder="New HR Name"
+
+                                                            className="w-full rounded border p-2"
+
+                                                            value={
+                                                                completionForm.hr_name
+                                                            }
+
+                                                            onChange={(e) =>
+
+                                                                setCompletionForm({
+
+                                                                    ...completionForm,
+
+                                                                    hr_name:
+                                                                        e.target.value,
+
+                                                                })
+
+                                                            }
+
+                                                        />
+
+                                                        <input
+
+                                                            placeholder="New HR Designation"
+
+                                                            className="w-full rounded border p-2"
+
+                                                            value={
+                                                                completionForm.hr_designation
+                                                            }
+
+                                                            onChange={(e) =>
+
+                                                                setCompletionForm({
+
+                                                                    ...completionForm,
+
+                                                                    hr_designation:
+                                                                        e.target.value,
+
+                                                                })
+
+                                                            }
+
                                                         />
 
                                                     </div>
 
-                                                    <div className="mt-1 text-xs">
+                                                )
+                                            }
 
-                                                        Upload Progress:
-
-                                                        {" "}
-
-                                                        {uploadProgress}%
-
-                                                    </div>
-
-                                                </div>
-
-                                            )
-                                        }
-
-                                        {" "}
-
-                                        {completionForm.certificate.name}
-
-                                        {" "}
-
-                                        (
-
-                                        {
-                                            (
-                                                completionForm.certificate.size
-                                                / 1024
-                                                / 1024
-                                            ).toFixed(2)
-                                        }
-
-                                        MB)
+                                        </div>
 
                                     </div>
-
-                                )
-                            }
-
-                            <input
-
-                                placeholder="HR Email"
-
-                                className="
-w-full
-rounded
-border
-p-2
-"
-
-                                value={
-                                    completionForm.hr_email
-                                }
-
-                                onChange={(e) =>
-
-                                    setCompletionForm({
-
-                                        ...completionForm,
-
-                                        hr_email:
-                                            e.target.value,
-
-                                    })
-
-                                }
-
-                            />
-
-                            <input
-
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-
-                                placeholder="HR Contact Number"
-
-                                className="
-w-full
-rounded
-border
-p-2
-"
-
-                                value={
-                                    completionForm.hr_contact
-                                }
-
-                                onChange={(e) => {
-
-                                    const value =
-                                        e.target.value
-                                            .replace(
-                                                /\D/g,
-                                                ""
-                                            )
-                                            .slice(
-                                                0,
-                                                10
-                                            );
-
-                                    setCompletionForm({
-
-                                        ...completionForm,
-
-                                        hr_contact:
-                                            value,
-
-                                    });
-
-                                }}
-
-                            />
-
-                            <label className="flex gap-2">
-
-                                <input
-
-                                    type="checkbox"
-
-                                    checked={
-                                        completionForm.same_hr
-                                    }
-
-                                    onChange={(e) =>
-
-                                        setCompletionForm({
-
-                                            ...completionForm,
-
-                                            same_hr:
-                                                e.target.checked,
-
-                                        })
-
-                                    }
-
-                                />
-
-                                Same HR as NOC
-
-                                (
-                                {
-                                    completionRequest
-                                        ?.snapshot
-                                        ?.hr_name
-                                }
-
-                                )
-
-                            </label>
-
-                            {
-                                !completionForm.same_hr && (
-
-                                    <>
-
-                                        <input
-
-                                            placeholder="New HR Name"
-
-                                            className="
-w-full
-rounded
-border
-p-2
-"
-
-                                            value={
-                                                completionForm.hr_name
-                                            }
-
-                                            onChange={(e) =>
-
-                                                setCompletionForm({
-
-                                                    ...completionForm,
-
-                                                    hr_name:
-                                                        e.target.value,
-
-                                                })
-
-                                            }
-
-                                        />
-
-                                        <input
-
-                                            placeholder="New HR Designation"
-
-                                            className="
-w-full
-rounded
-border
-p-2
-"
-
-                                            value={
-                                                completionForm.hr_designation
-                                            }
-
-                                            onChange={(e) =>
-
-                                                setCompletionForm({
-
-                                                    ...completionForm,
-
-                                                    hr_designation:
-                                                        e.target.value,
-
-                                                })
-
-                                            }
-
-                                        />
-
-                                    </>
 
                                 )
                             }
@@ -2060,6 +2080,7 @@ rounded
                                 }
 
                             </div>
+
 
                         </div>
                     )
