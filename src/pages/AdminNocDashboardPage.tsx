@@ -7,6 +7,8 @@ import {
     adminNocService,
 } from "@/services/adminNocService";
 
+import * as ExcelJS from "exceljs";
+
 function NocLetterBlock({
     snapshot,
     approvedAt,
@@ -445,6 +447,12 @@ export function AdminNocDashboardPage() {
     ] =
         useState(false);
 
+    const [
+        exporting,
+        setExporting,
+    ] =
+        useState(false);
+
     async function load() {
 
         const [
@@ -847,6 +855,485 @@ export function AdminNocDashboardPage() {
                     b
                 ) => b[1] - a[1]
             );
+
+    function getBranchShortCode(branch?: string) {
+
+        if (!branch)
+            return "-";
+
+        const exactMap: Record<string, string> = {
+
+            "Computer Science Engineering": "CSE",
+
+            "Computer Engineering": "CE",
+
+            "Civil Engineering": "CE",
+
+            "Mechanical Engineering": "ME",
+
+            "Electrical Engineering": "EE",
+
+            "Electronics and Communication Engineering": "ECE",
+
+            "Electronics & Communication Engineering": "ECE",
+
+            "Information Technology": "IT",
+
+            "Artificial Intelligence and Machine Learning": "AIML",
+
+            "Data Science": "DS",
+
+        };
+
+        const exact =
+            exactMap[branch.trim()];
+
+        if (exact)
+            return exact;
+
+        const code =
+            branch
+                .split(
+                    /\s+/
+                )
+                .filter(
+                    (word) =>
+                        ![
+                            "and",
+                            "&",
+                            "of",
+                            "the",
+                        ].includes(
+                            word.toLowerCase()
+                        )
+                )
+                .map(
+                    (word) =>
+                        word
+                            .trim()
+                            .charAt(0)
+                )
+                .join("")
+                .toUpperCase();
+
+        return code || branch;
+
+    }
+
+    async function handleExportNocExcel() {
+
+        if (exporting)
+            return;
+
+        setExporting(true);
+
+        try {
+
+            const [
+                allRequests,
+                printHistoryRows,
+            ] =
+                await Promise.all([
+
+                    adminNocService.getRequests(),
+
+                    adminNocService.getPrintHistory(),
+
+                ]);
+
+            const reprintedRequestIds =
+                new Set(
+                    printHistoryRows
+                        .filter(
+                            (row: any) =>
+                                row.action_type === "REPRINT"
+                        )
+                        .map(
+                            (row: any) =>
+                                row.noc_request_id
+                        )
+                );
+
+            const exportRows =
+                allRequests
+                    .filter(
+                        (request: any) =>
+                            request.issued_at
+                            ||
+                            request.completion_verified_at
+                            ||
+                            request.tenure_completed_at
+                            ||
+                            request.cancelled_at
+                    )
+                    .slice()
+                    .sort(
+                        (
+                            a: any,
+                            b: any
+                        ) => {
+
+                            const aTime =
+                                new Date(
+                                    a.issued_at
+                                    ??
+                                    a.completion_verified_at
+                                    ??
+                                    a.tenure_completed_at
+                                    ??
+                                    a.cancelled_at
+                                    ??
+                                    a.created_at
+                                ).getTime();
+
+                            const bTime =
+                                new Date(
+                                    b.issued_at
+                                    ??
+                                    b.completion_verified_at
+                                    ??
+                                    b.tenure_completed_at
+                                    ??
+                                    b.cancelled_at
+                                    ??
+                                    b.created_at
+                                ).getTime();
+
+                            return aTime - bTime;
+
+                        }
+                    );
+
+            const workbook =
+                new ExcelJS.Workbook();
+
+            workbook.creator =
+                "Placement Portal V2";
+
+            workbook.created =
+                new Date();
+
+            const sheet =
+                workbook.addWorksheet(
+                    "NOC Export"
+                );
+
+            sheet.pageSetup.orientation =
+                "landscape";
+
+            sheet.pageSetup.paperSize =
+                9;
+
+            sheet.pageSetup.fitToPage =
+                true;
+
+            sheet.pageSetup.fitToWidth =
+                1;
+
+            sheet.pageSetup.fitToHeight =
+                0;
+
+            sheet.views = [
+                {
+                    state: "frozen",
+                    ySplit: 1,
+                },
+            ];
+
+            sheet.columns = [
+                { width: 8 },
+                { width: 12 },
+                { width: 24 },
+                { width: 16 },
+                { width: 12 },
+                { width: 12 },
+                { width: 10 },
+                { width: 14 },
+                { width: 14 },
+                { width: 16 },
+                { width: 34 },
+                { width: 12 },
+                { width: 24 },
+                { width: 28 },
+                { width: 30 },
+                { width: 42 },
+                { width: 42 },
+                { width: 14 },
+                { width: 16 },
+            ];
+
+            const headers = [
+                "Sr. No.",
+                "Student Prefix",
+                "Student Name",
+                "Enrollment No",
+                "Institute",
+                "Course",
+                "Semester",
+                "Start Date",
+                "End Date",
+                "Duration (Months)",
+                "Institute Full Name",
+                "HR Prefix",
+                "HR Name",
+                "HR Position",
+                "Company Name",
+                "Company Address 1",
+                "Company Address 2",
+                "Ref. No.",
+                "NOC_Issued_On",
+            ];
+
+            const headerRow =
+                sheet.addRow(headers);
+
+            headerRow.height = 22;
+
+            headerRow.eachCell(
+                (cell) => {
+
+                    cell.fill = {
+                        type: "pattern",
+                        pattern: "solid",
+                        fgColor: {
+                            argb: "FFFFFF00",
+                        },
+                    };
+
+                    cell.font = {
+                        bold: true,
+                        color: {
+                            argb: "FF000000",
+                        },
+                    };
+
+                    cell.border = {
+                        top: {
+                            style: "thin",
+                        },
+                        left: {
+                            style: "thin",
+                        },
+                        bottom: {
+                            style: "thin",
+                        },
+                        right: {
+                            style: "thin",
+                        },
+                    };
+
+                    cell.alignment = {
+                        horizontal: "center",
+                        vertical: "middle",
+                        wrapText: true,
+                    };
+
+                }
+            );
+
+            const centerColumns =
+                new Set([
+                    1,
+                    7,
+                    8,
+                    9,
+                    10,
+                    18,
+                    19,
+                ]);
+
+            exportRows.forEach(
+                (
+                    request: any,
+                    index: number
+                ) => {
+
+                    const snapshot =
+                        request.snapshot ?? {};
+
+                    const startDate =
+                        snapshot.start_date
+                            ? new Date(
+                                snapshot.start_date
+                            )
+                            : null;
+
+                    const endDate =
+                        snapshot.end_date
+                            ? new Date(
+                                snapshot.end_date
+                            )
+                            : null;
+
+                    const issuedOn =
+                        request.issued_at
+                        ??
+                        request.completion_verified_at
+                        ??
+                        request.tenure_completed_at
+                        ??
+                        request.cancelled_at
+                        ??
+                        null;
+
+                    const issuedDate =
+                        issuedOn
+                            ? new Date(issuedOn)
+                            : null;
+
+                    const row =
+                        sheet.addRow([
+                            index + 1,
+                            snapshot.student_prefix ?? "Mr./Ms.",
+                            snapshot.student_name ?? "-",
+                            snapshot.enrollment_no ?? "-",
+                            snapshot.institute_name ?? "-",
+                            getBranchShortCode(
+                                snapshot.branch ?? request.noc_type
+                            ),
+                            snapshot.semester ?? "-",
+                            startDate,
+                            endDate,
+                            getDurationMonths(
+                                snapshot.start_date,
+                                snapshot.end_date
+                            ),
+                            snapshot.institute_full_name
+                            ?? "Indus Institute of Technology and Engineering",
+                            snapshot.hr_prefix ?? "-",
+                            snapshot.hr_name ?? "-",
+                            snapshot.hr_position ?? "-",
+                            snapshot.company_name ?? "-",
+                            snapshot.company_address_1 ?? "-",
+                            snapshot.company_address_2 ?? "-",
+                            request.reference_number ?? "-",
+                            issuedDate,
+                        ]);
+
+                    row.height = 20;
+
+                    const isRedRow =
+                        request.status === "CANCELLED"
+                        ||
+                        Number(
+                            request.print_count ?? 0
+                        ) > 1
+                        ||
+                        reprintedRequestIds.has(
+                            request.noc_request_id
+                        );
+
+                    row.eachCell(
+                        (cell, colNumber) => {
+
+                            cell.border = {
+                                top: {
+                                    style: "thin",
+                                },
+                                left: {
+                                    style: "thin",
+                                },
+                                bottom: {
+                                    style: "thin",
+                                },
+                                right: {
+                                    style: "thin",
+                                },
+                            };
+
+                            cell.alignment = {
+                                horizontal:
+                                    centerColumns.has(
+                                        colNumber
+                                    )
+                                        ? "center"
+                                        : "left",
+                                vertical: "middle",
+                                wrapText: true,
+                            };
+
+                            cell.font = {
+                                color: {
+                                    argb: "FF000000",
+                                },
+                            };
+
+                            if (isRedRow) {
+                                cell.fill = {
+                                    type: "pattern",
+                                    pattern: "solid",
+                                    fgColor: {
+                                        argb: "FFFF0000",
+                                    },
+                                };
+                            }
+
+                        }
+                    );
+
+                    row.getCell(8).numFmt = "dd/mm/yyyy";
+                    row.getCell(9).numFmt = "dd/mm/yyyy";
+                    row.getCell(19).numFmt = "dd/mm/yyyy";
+
+                }
+            );
+
+            sheet.autoFilter = "A1:S1";
+
+            const buffer =
+                await workbook.xlsx.writeBuffer();
+
+            const blob =
+                new Blob(
+                    [buffer],
+                    {
+                        type:
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    }
+                );
+
+            const url =
+                URL.createObjectURL(
+                    blob
+                );
+
+            const link =
+                document.createElement(
+                    "a"
+                );
+
+            link.href = url;
+
+            link.download =
+                `NOC_Export_${new Date()
+                    .toISOString()
+                    .replace(
+                        /[:.]/g,
+                        "-"
+                    )}.xlsx`;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            setTimeout(
+                () =>
+                    URL.revokeObjectURL(
+                        url
+                    ),
+                1000
+            );
+
+        }
+        finally {
+
+            setExporting(false);
+
+        }
+
+    }
 
     return (
 
@@ -1267,8 +1754,10 @@ p-3
                     className="
         mt-2
         flex
+        flex-wrap
         items-center
         justify-between
+        gap-2
     "
                 >
 
@@ -1276,7 +1765,6 @@ p-3
                         onClick={() => {
                             setSearchTerm("");
                         }}
-
                         className="
             rounded
             border
@@ -1288,31 +1776,54 @@ p-3
                         Clear Search
                     </button>
 
-                    <button
+                    <div className="flex flex-wrap items-center gap-2">
 
-                        onClick={() =>
-                            setShowAudit(
-                                !showAudit
-                            )
-                        }
+                        <button
+                            onClick={() =>
+                                setShowAudit(
+                                    !showAudit
+                                )
+                            }
+                            className="
+                rounded
+                border
+                px-3
+                py-1
+                text-sm
+            "
+                        >
 
-                        className="
-            rounded
-            border
-            px-3
-            py-1
-            text-sm
-        "
+                            {
+                                showAudit
+                                    ? "Hide Audit"
+                                    : "Show Audit"
+                            }
 
-                    >
+                        </button>
 
-                        {
-                            showAudit
-                                ? "Hide Audit"
-                                : "Show Audit"
-                        }
+                        <button
+                            onClick={handleExportNocExcel}
+                            disabled={exporting}
+                            className="
+                rounded
+                border
+                px-3
+                py-1
+                text-sm
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+            "
+                        >
 
-                    </button>
+                            {
+                                exporting
+                                    ? "Exporting..."
+                                    : "Export Excel"
+                            }
+
+                        </button>
+
+                    </div>
 
                 </div>
 
@@ -1374,7 +1885,7 @@ p-3
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                     >
                                         Enrollment
@@ -1659,7 +2170,7 @@ p-3
     sticky
     left-0
     bg-white
-    z-20
+   z-10
 "
                                     >
                                         Enrollment
@@ -1865,7 +2376,7 @@ p-3
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                         >
                                             Enrollment
@@ -2408,7 +2919,7 @@ p-3
     sticky
     left-0
     bg-white
-    z-20
+   z-10
 "
                                     >
                                         Enrollment
@@ -2531,7 +3042,7 @@ p-3
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                     >
                                         Enrollment
@@ -2912,7 +3423,7 @@ underline
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                         >
                                             Enrollment
@@ -3145,7 +3656,7 @@ underline
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                     >
                                         Enrollment
@@ -3375,7 +3886,7 @@ underline
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                     >
                                         Enrollment
@@ -3529,7 +4040,7 @@ underline
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                         >
                                             Enrollment
@@ -3853,7 +4364,7 @@ underline
     sticky
     left-0
     bg-white
-    z-20
+    z-10
 "
                                                 >
 
