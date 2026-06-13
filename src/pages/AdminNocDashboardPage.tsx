@@ -1074,8 +1074,15 @@ export function AdminNocDashboardPage() {
 
                 </div>
 
-                <div className="mt-6 grid gap-6 lg:grid-cols-2">
-
+                <div
+                    className="
+    mt-6
+    grid
+    gap-6
+    grid-cols-1
+    xl:grid-cols-2
+"
+                >
                     <div className="rounded-lg border bg-white p-4">
 
                         <h3 className="mb-4 text-base font-semibold">
@@ -1348,465 +1355,10 @@ p-3
             </h2>
 
             <div className="rounded-lg border">
-                <div className="max-h-[420px] overflow-y-auto">
-
-                    <table className="w-full">
-
-                        <thead className="sticky top-0 z-10 bg-white">
-
-                            <tr className="border-b">
-
-                                <th className="p-3 text-left">
-                                    Student
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Enrollment
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Branch
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Company
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Type
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Status
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Approval Source
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Actions
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {pendingApproval
-
-                                .slice()
-
-                                .sort(
-                                    (
-                                        a,
-                                        b
-                                    ) =>
-
-                                        new Date(
-                                            b.created_at
-                                        ).getTime()
-
-                                        -
-
-                                        new Date(
-                                            a.created_at
-                                        ).getTime()
-
-                                )
-
-                                .filter(
-                                    matchesSearch
-                                )
-                                .slice(0, 100)
-                                .map(
-                                    (
-                                        request: any
-                                    ) => (
-
-                                        <tr
-                                            key={
-                                                request.noc_request_id
-                                            }
-                                            className="border-b"
-                                        >
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.student_name
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.enrollment_no
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.branch
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.company_name
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.noc_type
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.status === "PENDING_HOD_APPROVAL"
-                                                        ? "Pending HOD"
-                                                        : request.status
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.approval_source
-                                                    ||
-                                                    "-"
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3 flex gap-2">
-
-                                                <button
-
-                                                    onClick={() => {
-
-                                                        setSelectedRequest(
-                                                            request
-                                                        );
-
-                                                        setReviewMode(
-                                                            "VIEW"
-                                                        );
-
-                                                        setEditableSnapshot(
-                                                            structuredClone(
-                                                                request.snapshot
-                                                            )
-                                                        );
-
-                                                        setCustomFields(
-                                                            request.noc_customization
-                                                            ??
-                                                            {}
-                                                        );
-                                                    }}
-
-                                                    className="rounded border px-3 py-1"
-
-                                                >
-
-                                                    View
-
-                                                </button>
-
-                                                <button
-
-                                                    onClick={
-                                                        async () => {
-
-                                                            const confirmed =
-                                                                window.confirm(
-                                                                    "Override HOD approval and move directly to Pending Print?"
-                                                                );
-
-                                                            if (!confirmed)
-                                                                return;
-
-                                                            await adminNocService
-                                                                .moveToPendingPrint(
-                                                                    request.noc_request_id
-                                                                );
-
-                                                            await load();
-
-                                                        }
-                                                    }
-                                                    className="rounded border px-3 py-1"
-
-                                                >
-
-                                                    Override
-
-                                                </button>
-
-                                                <button
-
-                                                    onClick={
-                                                        async () => {
-
-                                                            const reason =
-                                                                prompt(
-                                                                    "Enter rejection reason"
-                                                                );
-
-                                                            if (
-                                                                !reason?.trim()
-                                                            ) {
-                                                                alert(
-                                                                    "Reason is required"
-                                                                );
-                                                                return;
-                                                            }
-
-                                                            await adminNocService
-                                                                .rejectRequest(
-                                                                    request.noc_request_id,
-                                                                    reason
-                                                                );
-
-                                                            load();
-
-                                                        }
-                                                    }
-
-                                                    className="rounded border px-3 py-1"
-
-                                                >
-
-                                                    Reject
-
-                                                </button>
-
-                                            </td>
-
-                                        </tr>
-
-                                    )
-                                )}
-
-                        </tbody>
-
-                    </table>
-                </div>
-            </div>
-
-            <h2 className="mt-10 mb-4 text-xl font-semibold">
-
-                Pending Print
-
-            </h2>
-
-            <div className="rounded-lg border">
-                <div className="max-h-[420px] overflow-y-auto">
-
-                    <table className="w-full">
-
-                        <thead className="sticky top-0 z-10 bg-white">
-
-                            <tr className="border-b">
-
-                                <th className="p-3 text-left">
-                                    Student
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Enrollment
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Branch
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Company
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Type
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Approval Source
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Actions
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {pendingPrint
-
-                                .slice()
-
-                                .sort(
-                                    (
-                                        a,
-                                        b
-                                    ) =>
-
-                                        new Date(
-                                            b.created_at
-                                        ).getTime()
-
-                                        -
-
-                                        new Date(
-                                            a.created_at
-                                        ).getTime()
-
-                                )
-
-                                .filter(
-                                    matchesSearch
-                                )
-.slice(0, 100)
-.map(
-                                    (
-                                        request: any
-                                    ) => (
-
-                                        <tr
-                                            key={
-                                                request.noc_request_id
-                                            }
-                                            className="border-b"
-                                        >
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.student_name
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.enrollment_no
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.branch
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.company_name
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.noc_type
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.approval_source
-                                                    ||
-                                                    "-"
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                <button
-
-                                                    onClick={() => {
-
-                                                        setSelectedRequest(
-                                                            request
-                                                        );
-
-                                                        setReviewMode(
-                                                            "PRINT"
-                                                        );
-
-                                                        setEditableSnapshot(
-                                                            structuredClone(
-                                                                request.snapshot
-                                                            )
-                                                        );
-
-                                                        setCustomFields(
-                                                            request.noc_customization
-                                                            ??
-                                                            {}
-                                                        );
-
-                                                    }}
-
-                                                    className="rounded border px-3 py-1"
-
-                                                >
-
-                                                    Review
-
-                                                </button>
-
-                                            </td>
-
-                                        </tr>
-
-                                    )
-                                )}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-            </div>
-
-            <h2 className="mt-10 mb-4 text-xl font-semibold">
-
-                Printed
-
-            </h2>
-
-            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-
-                <div className="rounded-lg border">
+                <div className="overflow-x-auto">
                     <div className="max-h-[420px] overflow-y-auto">
+                        <table className="min-w-[1200px] w-full">
 
-                        <table className="w-full">
                             <thead className="sticky top-0 z-10 bg-white">
 
                                 <tr className="border-b">
@@ -1815,7 +1367,16 @@ p-3
                                         Student
                                     </th>
 
-                                    <th className="p-3 text-left">
+                                    <th
+                                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                    >
                                         Enrollment
                                     </th>
 
@@ -1832,15 +1393,11 @@ p-3
                                     </th>
 
                                     <th className="p-3 text-left">
-                                        Ref No
+                                        Status
                                     </th>
 
                                     <th className="p-3 text-left">
-                                        Printed At
-                                    </th>
-
-                                    <th className="p-3 text-left">
-                                        Prints
+                                        Approval Source
                                     </th>
 
                                     <th className="p-3 text-left">
@@ -1853,7 +1410,7 @@ p-3
 
                             <tbody>
 
-                                {printed
+                                {pendingApproval
 
                                     .slice()
 
@@ -1878,8 +1435,8 @@ p-3
                                     .filter(
                                         matchesSearch
                                     )
-.slice(0, 100)
-.map(
+                                    .slice(0, 100)
+                                    .map(
                                         (
                                             request: any
                                         ) => (
@@ -1888,6 +1445,7 @@ p-3
                                                 key={
                                                     request.noc_request_id
                                                 }
+                                                className="border-b"
                                             >
 
                                                 <td className="p-3">
@@ -1898,7 +1456,15 @@ p-3
 
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td
+                                                    className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                >
 
                                                     {
                                                         request.snapshot?.enrollment_no
@@ -1932,62 +1498,10 @@ p-3
 
                                                 <td className="p-3">
 
-                                                    <input
-
-                                                        type="number"
-
-                                                        min="1"
-
-                                                        value={
-                                                            referenceNumbers[
-                                                            request.noc_request_id
-                                                            ]
-                                                            ??
-                                                            request.reference_number
-                                                            ??
-                                                            ""
-                                                        }
-
-                                                        onChange={(e) => {
-
-                                                            const value =
-                                                                e.target.value
-                                                                    .replace(
-                                                                        /\D/g,
-                                                                        ""
-                                                                    );
-
-                                                            setReferenceNumbers(
-                                                                (prev) => ({
-
-                                                                    ...prev,
-
-                                                                    [
-                                                                        request.noc_request_id
-                                                                    ]:
-                                                                        value,
-
-                                                                })
-                                                            );
-
-                                                        }}
-
-                                                        className="rounded border p-2"
-
-                                                    />
-
-                                                </td>
-
-                                                <td className="p-3">
-
                                                     {
-                                                        request.printed_at
-                                                            ?
-                                                            new Date(
-                                                                request.printed_at
-                                                            ).toLocaleString()
-                                                            :
-                                                            "-"
+                                                        request.status === "PENDING_HOD_APPROVAL"
+                                                            ? "Pending HOD"
+                                                            : request.status
                                                     }
 
                                                 </td>
@@ -1995,9 +1509,9 @@ p-3
                                                 <td className="p-3">
 
                                                     {
-                                                        request.print_count
-                                                        ??
-                                                        0
+                                                        request.approval_source
+                                                        ||
+                                                        "-"
                                                     }
 
                                                 </td>
@@ -2027,7 +1541,6 @@ p-3
                                                                 ??
                                                                 {}
                                                             );
-
                                                         }}
 
                                                         className="rounded border px-3 py-1"
@@ -2039,187 +1552,20 @@ p-3
                                                     </button>
 
                                                     <button
-                                                        onClick={async () => {
-
-                                                            const refNumber =
-                                                                (
-                                                                    referenceNumbers[
-                                                                    request.noc_request_id
-                                                                    ]
-                                                                    ??
-                                                                    request.reference_number
-                                                                    ??
-                                                                    ""
-                                                                ).trim();
-
-                                                            if (!refNumber) {
-
-                                                                alert(
-                                                                    "Save Reference Number before reprint."
-                                                                );
-
-                                                                return;
-
-                                                            }
-
-                                                            if (
-                                                                refNumber !==
-                                                                request.reference_number
-                                                            ) {
-
-                                                                await adminNocService
-                                                                    .saveReferenceNumber(
-                                                                        request.noc_request_id,
-                                                                        refNumber
-                                                                    );
-
-                                                            }
-
-                                                            const reason =
-                                                                window.prompt(
-                                                                    "Enter reason for reprint"
-                                                                );
-
-                                                            if (
-                                                                !reason ||
-                                                                !reason.trim()
-                                                            ) {
-                                                                return;
-                                                            }
-
-                                                            await adminNocService.reprintNoc(
-                                                                request.noc_request_id,
-                                                                reason
-                                                            );
-
-                                                            setReferenceNumbers(
-                                                                (prev) => {
-
-                                                                    const next = {
-                                                                        ...prev,
-                                                                    };
-
-                                                                    delete next[
-                                                                        request.noc_request_id
-                                                                    ];
-
-                                                                    return next;
-
-                                                                }
-                                                            );
-
-                                                            await load();
-
-                                                            alert(
-                                                                "Moved back to Pending Print"
-                                                            );
-                                                        }}
-
-                                                        className="rounded border px-3 py-1"
-
-                                                    >
-
-                                                        Reprint
-
-                                                    </button>
-
-                                                    <button
-                                                        onClick={
-                                                            async () => {
-
-                                                                const refNumber =
-                                                                    referenceNumbers[
-                                                                        request.noc_request_id
-                                                                    ]?.trim();
-
-                                                                if (
-                                                                    !refNumber ||
-                                                                    !refNumber.trim()
-                                                                ) {
-                                                                    alert(
-                                                                        "Reference Number is required."
-                                                                    );
-                                                                    return;
-                                                                }
-
-                                                                if (
-                                                                    request.reference_number
-                                                                ) {
-
-                                                                    alert(
-                                                                        "Reference Number already saved and cannot be modified."
-                                                                    );
-
-                                                                    return;
-
-                                                                }
-
-                                                                await adminNocService
-                                                                    .saveReferenceNumber(
-
-                                                                        request.noc_request_id,
-
-                                                                        refNumber
-
-                                                                    );
-
-                                                                await load();
-
-                                                                alert(
-                                                                    "Reference Number Saved"
-                                                                );
-
-                                                            }
-                                                        }
-
-                                                        className="rounded border px-3 py-1"
-
-                                                    >
-
-                                                        Save Ref
-
-                                                    </button>
-
-                                                    <button
 
                                                         onClick={
                                                             async () => {
 
-                                                                const refNumber =
-                                                                    (
-                                                                        referenceNumbers[
-                                                                        request.noc_request_id
-                                                                        ]
-                                                                        ??
-                                                                        request.reference_number
-                                                                        ??
-                                                                        ""
-                                                                    ).trim();
-
-                                                                if (!refNumber) {
-
-                                                                    alert(
-                                                                        "Save Reference Number First"
+                                                                const confirmed =
+                                                                    window.confirm(
+                                                                        "Override HOD approval and move directly to Pending Print?"
                                                                     );
 
+                                                                if (!confirmed)
                                                                     return;
-                                                                }
-
-                                                                if (
-                                                                    refNumber !==
-                                                                    request.reference_number
-                                                                ) {
-
-                                                                    await adminNocService
-                                                                        .saveReferenceNumber(
-                                                                            request.noc_request_id,
-                                                                            refNumber
-                                                                        );
-
-                                                                }
 
                                                                 await adminNocService
-                                                                    .issueRequest(
+                                                                    .moveToPendingPrint(
                                                                         request.noc_request_id
                                                                     );
 
@@ -2228,9 +1574,10 @@ p-3
                                                             }
                                                         }
                                                         className="rounded border px-3 py-1"
+
                                                     >
 
-                                                        Issue
+                                                        Override
 
                                                     </button>
 
@@ -2238,45 +1585,10 @@ p-3
 
                                                         onClick={
                                                             async () => {
-
-                                                                const refNumber =
-                                                                    (
-                                                                        referenceNumbers[
-                                                                        request.noc_request_id
-                                                                        ]
-                                                                        ??
-                                                                        request.reference_number
-                                                                        ??
-                                                                        ""
-                                                                    )
-                                                                        .trim();
-
-                                                                if (!refNumber) {
-
-                                                                    alert(
-                                                                        "Save Reference Number First"
-                                                                    );
-
-                                                                    return;
-
-                                                                }
-
-                                                                if (
-                                                                    refNumber !==
-                                                                    request.reference_number
-                                                                ) {
-
-                                                                    await adminNocService
-                                                                        .saveReferenceNumber(
-                                                                            request.noc_request_id,
-                                                                            refNumber
-                                                                        );
-
-                                                                }
 
                                                                 const reason =
                                                                     prompt(
-                                                                        "Enter cancellation reason"
+                                                                        "Enter rejection reason"
                                                                     );
 
                                                                 if (
@@ -2289,12 +1601,13 @@ p-3
                                                                 }
 
                                                                 await adminNocService
-                                                                    .cancelRequest(
+                                                                    .rejectRequest(
                                                                         request.noc_request_id,
                                                                         reason
                                                                     );
 
-                                                                await load();
+                                                                load();
+
                                                             }
                                                         }
 
@@ -2302,7 +1615,7 @@ p-3
 
                                                     >
 
-                                                        Cancel
+                                                        Reject
 
                                                     </button>
 
@@ -2316,349 +1629,440 @@ p-3
                             </tbody>
 
                         </table>
-
                     </div>
-
                 </div>
             </div>
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
-                Completion Pending
+                Pending Print
 
             </h2>
 
             <div className="rounded-lg border">
-                <div className="max-h-[420px] overflow-y-auto">
+                <div className="overflow-x-auto">
+                    <div className="max-h-[420px] overflow-y-auto">
+                        <table className="min-w-[1200px] w-full">
 
-                    <table className="w-full">
+                            <thead className="sticky top-0 z-10 bg-white">
 
-                        <thead className="sticky top-0 z-10 bg-white">
+                                <tr className="border-b">
 
-                            <tr className="border-b">
+                                    <th className="p-3 text-left">
+                                        Student
+                                    </th>
 
-                                <th className="p-3 text-left">
-                                    Student
-                                </th>
+                                    <th
+                                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                    >
+                                        Enrollment
+                                    </th>
 
-                                <th className="p-3 text-left">
-                                    Enrollment
-                                </th>
+                                    <th className="p-3 text-left">
+                                        Branch
+                                    </th>
 
-                                <th className="p-3 text-left">
-                                    Company
-                                </th>
+                                    <th className="p-3 text-left">
+                                        Company
+                                    </th>
 
-                                <th className="p-3 text-left">
-                                    End Date
-                                </th>
+                                    <th className="p-3 text-left">
+                                        Type
+                                    </th>
 
-                                <th className="p-3 text-left">
-                                    Status
-                                </th>
+                                    <th className="p-3 text-left">
+                                        Approval Source
+                                    </th>
 
-                            </tr>
+                                    <th className="p-3 text-left">
+                                        Actions
+                                    </th>
 
-                        </thead>
+                                </tr>
 
-                        <tbody>
+                            </thead>
 
-                            {
-                                completionPending.slice(0, 100)
-.map(
-                                    (
-                                        request: any
-                                    ) => (
+                            <tbody>
 
-                                        <tr
-                                            key={
-                                                request.noc_request_id
-                                            }
-                                            className="border-b"
-                                        >
+                                {pendingPrint
 
-                                            <td className="p-3">
+                                    .slice()
 
-                                                {
-                                                    request.snapshot?.student_name
-                                                }
+                                    .sort(
+                                        (
+                                            a,
+                                            b
+                                        ) =>
 
-                                            </td>
+                                            new Date(
+                                                b.created_at
+                                            ).getTime()
 
-                                            <td className="p-3">
+                                            -
 
-                                                {
-                                                    request.snapshot?.enrollment_no
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.company_name
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                {
-                                                    request.snapshot?.end_date
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3 text-red-600 font-medium">
-
-                                                Waiting For Student Completion Submission
-
-                                            </td>
-
-                                        </tr>
+                                            new Date(
+                                                a.created_at
+                                            ).getTime()
 
                                     )
-                                )
-                            }
 
-                        </tbody>
+                                    .filter(
+                                        matchesSearch
+                                    )
+                                    .slice(0, 100)
+                                    .map(
+                                        (
+                                            request: any
+                                        ) => (
 
-                    </table>
+                                            <tr
+                                                key={
+                                                    request.noc_request_id
+                                                }
+                                                className="border-b"
+                                            >
 
+                                                <td className="p-3">
+
+                                                    {
+                                                        request.snapshot?.student_name
+                                                    }
+
+                                                </td>
+
+                                                <td
+                                                    className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                >
+
+                                                    {
+                                                        request.snapshot?.enrollment_no
+                                                    }
+
+                                                </td>
+
+                                                <td className="p-3">
+
+                                                    {
+                                                        request.snapshot?.branch
+                                                    }
+
+                                                </td>
+
+                                                <td className="p-3">
+
+                                                    {
+                                                        request.snapshot?.company_name
+                                                    }
+
+                                                </td>
+
+                                                <td className="p-3">
+
+                                                    {
+                                                        request.noc_type
+                                                    }
+
+                                                </td>
+
+                                                <td className="p-3">
+
+                                                    {
+                                                        request.approval_source
+                                                        ||
+                                                        "-"
+                                                    }
+
+                                                </td>
+
+                                                <td className="p-3">
+
+                                                    <button
+
+                                                        onClick={() => {
+
+                                                            setSelectedRequest(
+                                                                request
+                                                            );
+
+                                                            setReviewMode(
+                                                                "PRINT"
+                                                            );
+
+                                                            setEditableSnapshot(
+                                                                structuredClone(
+                                                                    request.snapshot
+                                                                )
+                                                            );
+
+                                                            setCustomFields(
+                                                                request.noc_customization
+                                                                ??
+                                                                {}
+                                                            );
+
+                                                        }}
+
+                                                        className="rounded border px-3 py-1"
+
+                                                    >
+
+                                                        Review
+
+                                                    </button>
+
+                                                </td>
+
+                                            </tr>
+
+                                        )
+                                    )}
+
+                            </tbody>
+
+                        </table>
+                    </div>
                 </div>
             </div>
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
-                Tenure Verification Pending
+                Printed
 
             </h2>
 
-            <div className="rounded-lg border">
-                <div className="max-h-[420px] overflow-y-auto">
-
-                    <table className="w-full">
-
-                        <thead className="sticky top-0 z-10 bg-white">
-
-                            <tr className="border-b">
-
-                                <th className="p-3 text-left">
-                                    Student
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Enrollment
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Company
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    End Date
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Completion Details
-                                </th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {pendingTenureVerification
-
-                                .slice()
-
-                                .sort(
-                                    (
-                                        a,
-                                        b
-                                    ) =>
-
-                                        new Date(
-                                            b.created_at
-                                        ).getTime()
-
-                                        -
-
-                                        new Date(
-                                            a.created_at
-                                        ).getTime()
-
-                                )
-
-                                .filter(
-                                    matchesSearch
-                                )
-
-                               .slice(0, 100)
-.map(
-                                    (
-                                        request: any
-                                    ) => (
-
-                                        <tr
-                                            key={
-                                                request.noc_request_id
-                                            }
-                                            className="border-b"
-                                        >
-
-                                            <td className="p-3 align-top">
-
-                                                {
-                                                    request.snapshot?.student_name
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3 align-top">
-
-                                                {
-                                                    request.snapshot?.enrollment_no
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3 align-top">
-
-                                                {
-                                                    request.snapshot?.company_name
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3 align-top">
-
-                                                {
-                                                    request.snapshot?.end_date
-                                                }
-
-                                            </td>
-
-                                            <td className="p-3">
-
-                                                <div className="space-y-2 text-sm">
-
-                                                    <div>
-
-                                                        <strong>Email:</strong>{" "}
-
-                                                        {
-                                                            request.completion_hr_email
-                                                            ??
-                                                            "-"
-                                                        }
-
-                                                    </div>
-
-                                                    <div>
-
-                                                        <strong>Contact:</strong>{" "}
-
-                                                        {
-                                                            request.completion_hr_contact
-                                                            ??
-                                                            "-"
-                                                        }
-
-                                                    </div>
-
-                                                    <div>
-
-                                                        <strong>HR:</strong>{" "}
-
-                                                        {
-                                                            request.completion_same_hr
-
-                                                                ? (
-                                                                    request.snapshot?.hr_name
-                                                                    ??
-                                                                    "Same HR"
-                                                                )
-
-                                                                : (
-                                                                    request.completion_hr_name
-                                                                    ??
-                                                                    "-"
-                                                                )
-                                                        }
-
-                                                    </div>
-
-                                                    <div>
-
-                                                        <strong>Designation:</strong>{" "}
-
-                                                        {
-                                                            request.completion_same_hr
-
-                                                                ? (
-                                                                    request.snapshot?.hr_position
-                                                                    ??
-                                                                    "-"
-                                                                )
-
-                                                                : (
-                                                                    request.completion_hr_designation
-                                                                    ??
-                                                                    "-"
-                                                                )
-                                                        }
-
-                                                    </div>
-
-                                                    <div>
-
-                                                        <strong>Certificate:</strong>{" "}
-
-                                                        {
-                                                            request.completion_certificate_url
-
-                                                                ? (
-
-                                                                    <button
-
-                                                                        onClick={
-                                                                            async () => {
-
-                                                                                const url =
-                                                                                    await adminNocService
-                                                                                        .getCertificateUrl(
-                                                                                            request.completion_certificate_url
-                                                                                        );
-
-                                                                                window.open(
-                                                                                    url,
-                                                                                    "_blank"
-                                                                                );
-
-                                                                            }
-                                                                        }
-
-                                                                        className="
-text-blue-600
-underline
+            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+
+                <div className="rounded-lg border">
+                    <div className="overflow-x-auto">
+                        <div className="max-h-[420px] overflow-y-auto">
+                            <table className="min-w-[1200px] w-full">
+
+                                <thead className="sticky top-0 z-10 bg-white">
+
+                                    <tr className="border-b">
+
+                                        <th className="p-3 text-left">
+                                            Student
+                                        </th>
+
+                                        <th
+                                            className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
 "
+                                        >
+                                            Enrollment
+                                        </th>
 
-                                                                    >
+                                        <th className="p-3 text-left">
+                                            Branch
+                                        </th>
 
-                                                                        View Certificate
+                                        <th className="p-3 text-left">
+                                            Company
+                                        </th>
 
-                                                                    </button>
+                                        <th className="p-3 text-left">
+                                            Type
+                                        </th>
 
-                                                                )
+                                        <th className="p-3 text-left">
+                                            Ref No
+                                        </th>
 
-                                                                : "-"
+                                        <th className="p-3 text-left">
+                                            Printed At
+                                        </th>
 
+                                        <th className="p-3 text-left">
+                                            Prints
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Actions
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    {printed
+
+                                        .slice()
+
+                                        .sort(
+                                            (
+                                                a,
+                                                b
+                                            ) =>
+
+                                                new Date(
+                                                    b.created_at
+                                                ).getTime()
+
+                                                -
+
+                                                new Date(
+                                                    a.created_at
+                                                ).getTime()
+
+                                        )
+
+                                        .filter(
+                                            matchesSearch
+                                        )
+                                        .slice(0, 100)
+                                        .map(
+                                            (
+                                                request: any
+                                            ) => (
+
+                                                <tr
+                                                    key={
+                                                        request.noc_request_id
+                                                    }
+                                                >
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.student_name
                                                         }
 
-                                                    </div>
+                                                    </td>
 
-                                                    <div className="pt-3 flex flex-wrap gap-2">
+                                                    <td
+                                                        className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                    >
+
+                                                        {
+                                                            request.snapshot?.enrollment_no
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.branch
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.company_name
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.noc_type
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        <input
+
+                                                            type="number"
+
+                                                            min="1"
+
+                                                            value={
+                                                                referenceNumbers[
+                                                                request.noc_request_id
+                                                                ]
+                                                                ??
+                                                                request.reference_number
+                                                                ??
+                                                                ""
+                                                            }
+
+                                                            onChange={(e) => {
+
+                                                                const value =
+                                                                    e.target.value
+                                                                        .replace(
+                                                                            /\D/g,
+                                                                            ""
+                                                                        );
+
+                                                                setReferenceNumbers(
+                                                                    (prev) => ({
+
+                                                                        ...prev,
+
+                                                                        [
+                                                                            request.noc_request_id
+                                                                        ]:
+                                                                            value,
+
+                                                                    })
+                                                                );
+
+                                                            }}
+
+                                                            className="rounded border p-2"
+
+                                                        />
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.printed_at
+                                                                ?
+                                                                new Date(
+                                                                    request.printed_at
+                                                                ).toLocaleString()
+                                                                :
+                                                                "-"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.print_count
+                                                            ??
+                                                            0
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3 flex gap-2">
 
                                                         <button
 
@@ -2695,124 +2099,318 @@ underline
                                                         </button>
 
                                                         <button
-
                                                             onClick={async () => {
 
-                                                                if (
+                                                                const refNumber =
+                                                                    (
+                                                                        referenceNumbers[
+                                                                        request.noc_request_id
+                                                                        ]
+                                                                        ??
+                                                                        request.reference_number
+                                                                        ??
+                                                                        ""
+                                                                    ).trim();
 
-                                                                    !request.completion_submitted_at ||
-
-                                                                    !request.completion_certificate_url ||
-
-                                                                    !request.completion_hr_email ||
-
-                                                                    !request.completion_hr_contact
-
-                                                                ) {
+                                                                if (!refNumber) {
 
                                                                     alert(
-                                                                        "Student has not submitted completion details."
+                                                                        "Save Reference Number before reprint."
                                                                     );
 
                                                                     return;
 
                                                                 }
 
-                                                                await adminNocService
-                                                                    .approveTenureCompletion(
-                                                                        request.noc_request_id
+                                                                if (
+                                                                    refNumber !==
+                                                                    request.reference_number
+                                                                ) {
+
+                                                                    await adminNocService
+                                                                        .saveReferenceNumber(
+                                                                            request.noc_request_id,
+                                                                            refNumber
+                                                                        );
+
+                                                                }
+
+                                                                const reason =
+                                                                    window.prompt(
+                                                                        "Enter reason for reprint"
                                                                     );
+
+                                                                if (
+                                                                    !reason ||
+                                                                    !reason.trim()
+                                                                ) {
+                                                                    return;
+                                                                }
+
+                                                                await adminNocService.reprintNoc(
+                                                                    request.noc_request_id,
+                                                                    reason
+                                                                );
+
+                                                                setReferenceNumbers(
+                                                                    (prev) => {
+
+                                                                        const next = {
+                                                                            ...prev,
+                                                                        };
+
+                                                                        delete next[
+                                                                            request.noc_request_id
+                                                                        ];
+
+                                                                        return next;
+
+                                                                    }
+                                                                );
 
                                                                 await load();
 
+                                                                alert(
+                                                                    "Moved back to Pending Print"
+                                                                );
                                                             }}
 
                                                             className="rounded border px-3 py-1"
 
                                                         >
 
-                                                            Approve
+                                                            Reprint
+
+                                                        </button>
+
+                                                        <button
+                                                            onClick={
+                                                                async () => {
+
+                                                                    const refNumber =
+                                                                        referenceNumbers[
+                                                                            request.noc_request_id
+                                                                        ]?.trim();
+
+                                                                    if (
+                                                                        !refNumber ||
+                                                                        !refNumber.trim()
+                                                                    ) {
+                                                                        alert(
+                                                                            "Reference Number is required."
+                                                                        );
+                                                                        return;
+                                                                    }
+
+                                                                    if (
+                                                                        request.reference_number
+                                                                    ) {
+
+                                                                        alert(
+                                                                            "Reference Number already saved and cannot be modified."
+                                                                        );
+
+                                                                        return;
+
+                                                                    }
+
+                                                                    await adminNocService
+                                                                        .saveReferenceNumber(
+
+                                                                            request.noc_request_id,
+
+                                                                            refNumber
+
+                                                                        );
+
+                                                                    await load();
+
+                                                                    alert(
+                                                                        "Reference Number Saved"
+                                                                    );
+
+                                                                }
+                                                            }
+
+                                                            className="rounded border px-3 py-1"
+
+                                                        >
+
+                                                            Save Ref
 
                                                         </button>
 
                                                         <button
 
-                                                            onClick={async () => {
+                                                            onClick={
+                                                                async () => {
 
-                                                                const reason =
-                                                                    prompt(
-                                                                        "Enter tenure rejection reason"
-                                                                    );
+                                                                    const refNumber =
+                                                                        (
+                                                                            referenceNumbers[
+                                                                            request.noc_request_id
+                                                                            ]
+                                                                            ??
+                                                                            request.reference_number
+                                                                            ??
+                                                                            ""
+                                                                        ).trim();
 
-                                                                if (
-                                                                    !reason?.trim()
-                                                                ) {
+                                                                    if (!refNumber) {
 
-                                                                    alert(
-                                                                        "Reason is required"
-                                                                    );
+                                                                        alert(
+                                                                            "Save Reference Number First"
+                                                                        );
 
-                                                                    return;
+                                                                        return;
+                                                                    }
+
+                                                                    if (
+                                                                        refNumber !==
+                                                                        request.reference_number
+                                                                    ) {
+
+                                                                        await adminNocService
+                                                                            .saveReferenceNumber(
+                                                                                request.noc_request_id,
+                                                                                refNumber
+                                                                            );
+
+                                                                    }
+
+                                                                    await adminNocService
+                                                                        .issueRequest(
+                                                                            request.noc_request_id
+                                                                        );
+
+                                                                    await load();
 
                                                                 }
+                                                            }
+                                                            className="rounded border px-3 py-1"
+                                                        >
 
-                                                                await adminNocService
-                                                                    .rejectTenureCompletion(
-                                                                        request.noc_request_id,
-                                                                        reason
-                                                                    );
+                                                            Issue
 
-                                                                await load();
+                                                        </button>
 
-                                                            }}
+                                                        <button
+
+                                                            onClick={
+                                                                async () => {
+
+                                                                    const refNumber =
+                                                                        (
+                                                                            referenceNumbers[
+                                                                            request.noc_request_id
+                                                                            ]
+                                                                            ??
+                                                                            request.reference_number
+                                                                            ??
+                                                                            ""
+                                                                        )
+                                                                            .trim();
+
+                                                                    if (!refNumber) {
+
+                                                                        alert(
+                                                                            "Save Reference Number First"
+                                                                        );
+
+                                                                        return;
+
+                                                                    }
+
+                                                                    if (
+                                                                        refNumber !==
+                                                                        request.reference_number
+                                                                    ) {
+
+                                                                        await adminNocService
+                                                                            .saveReferenceNumber(
+                                                                                request.noc_request_id,
+                                                                                refNumber
+                                                                            );
+
+                                                                    }
+
+                                                                    const reason =
+                                                                        prompt(
+                                                                            "Enter cancellation reason"
+                                                                        );
+
+                                                                    if (
+                                                                        !reason?.trim()
+                                                                    ) {
+                                                                        alert(
+                                                                            "Reason is required"
+                                                                        );
+                                                                        return;
+                                                                    }
+
+                                                                    await adminNocService
+                                                                        .cancelRequest(
+                                                                            request.noc_request_id,
+                                                                            reason
+                                                                        );
+
+                                                                    await load();
+                                                                }
+                                                            }
 
                                                             className="rounded border px-3 py-1"
 
                                                         >
 
-                                                            Reject
+                                                            Cancel
 
                                                         </button>
 
-                                                    </div>
+                                                    </td>
 
-                                                </div>
+                                                </tr>
 
-                                            </td>
+                                            )
+                                        )}
 
-                                        </tr>
-                                    )
-                                )}
+                                </tbody>
 
-                        </tbody>
+                            </table>
 
-                    </table>
-
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <h2 className="mt-10 mb-4 text-xl font-semibold">
 
-                Issued
+                Completion Pending
 
             </h2>
 
-            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-
-                <div className="rounded-lg border">
+            <div className="rounded-lg border">
+                <div className="overflow-x-auto">
                     <div className="max-h-[420px] overflow-y-auto">
-
-                        <table className="w-full">
+                        <table className="min-w-[1200px] w-full">
 
                             <thead className="sticky top-0 z-10 bg-white">
 
-                                <tr>
+                                <tr className="border-b">
 
                                     <th className="p-3 text-left">
                                         Student
                                     </th>
 
-                                    <th className="p-3 text-left">
+                                    <th
+                                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                    >
                                         Enrollment
                                     </th>
 
@@ -2821,23 +2419,11 @@ underline
                                     </th>
 
                                     <th className="p-3 text-left">
-                                        Duration
+                                        End Date
                                     </th>
 
                                     <th className="p-3 text-left">
-                                        Type
-                                    </th>
-
-                                    <th className="p-3 text-left">
-                                        Ref No
-                                    </th>
-
-                                    <th className="p-3 text-left">
-                                        Issued At
-                                    </th>
-
-                                    <th className="p-3 text-left">
-                                        Actions
+                                        Status
                                     </th>
 
                                 </tr>
@@ -2846,7 +2432,129 @@ underline
 
                             <tbody>
 
-                                {issued
+                                {
+                                    completionPending.slice(0, 100)
+                                        .map(
+                                            (
+                                                request: any
+                                            ) => (
+
+                                                <tr
+                                                    key={
+                                                        request.noc_request_id
+                                                    }
+                                                    className="border-b"
+                                                >
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.student_name
+                                                        }
+
+                                                    </td>
+
+                                                    <td
+                                                        className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                    >
+
+                                                        {
+                                                            request.snapshot?.enrollment_no
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.company_name
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.end_date
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3 text-red-600 font-medium">
+
+                                                        Waiting For Student Completion Submission
+
+                                                    </td>
+
+                                                </tr>
+
+                                            )
+                                        )
+                                }
+
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Tenure Verification Pending
+
+            </h2>
+
+            <div className="rounded-lg border">
+                <div className="overflow-x-auto">
+                    <div className="max-h-[420px] overflow-y-auto">
+                        <table className="min-w-[1200px] w-full">
+
+                            <thead className="sticky top-0 z-10 bg-white">
+
+                                <tr className="border-b">
+
+                                    <th className="p-3 text-left">
+                                        Student
+                                    </th>
+
+                                    <th
+                                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                    >
+                                        Enrollment
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                        Company
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                        End Date
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                        Completion Details
+                                    </th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {pendingTenureVerification
 
                                     .slice()
 
@@ -2871,8 +2579,9 @@ underline
                                     .filter(
                                         matchesSearch
                                     )
-.slice(0, 100)
-.map(
+
+                                    .slice(0, 100)
+                                    .map(
                                         (
                                             request: any
                                         ) => (
@@ -2881,9 +2590,10 @@ underline
                                                 key={
                                                     request.noc_request_id
                                                 }
+                                                className="border-b"
                                             >
 
-                                                <td className="p-3">
+                                                <td className="p-3 align-top">
 
                                                     {
                                                         request.snapshot?.student_name
@@ -2891,7 +2601,14 @@ underline
 
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td
+                                                    className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+ align-top">
 
                                                     {
                                                         request.snapshot?.enrollment_no
@@ -2899,7 +2616,7 @@ underline
 
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td className="p-3 align-top">
 
                                                     {
                                                         request.snapshot?.company_name
@@ -2907,86 +2624,255 @@ underline
 
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td className="p-3 align-top">
 
                                                     {
-                                                        getDurationMonths(
-                                                            request.snapshot?.start_date,
-                                                            request.snapshot?.end_date
-                                                        )
-                                                    }
-
-                                                    Month(s)
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.noc_type
+                                                        request.snapshot?.end_date
                                                     }
 
                                                 </td>
 
                                                 <td className="p-3">
 
-                                                    {
-                                                        request.reference_number
-                                                    }
+                                                    <div className="space-y-2 text-sm">
 
-                                                </td>
+                                                        <div>
 
-                                                <td className="p-3">
+                                                            <strong>Email:</strong>{" "}
 
-                                                    {
-                                                        request.issued_at
-                                                            ?
-                                                            new Date(
-                                                                request.issued_at
-                                                            ).toLocaleString()
-                                                            :
-                                                            "-"
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    <button
-
-                                                        onClick={() => {
-
-                                                            setSelectedRequest(
-                                                                request
-                                                            );
-
-                                                            setReviewMode(
-                                                                "VIEW"
-                                                            );
-
-                                                            setEditableSnapshot(
-                                                                structuredClone(
-                                                                    request.snapshot
-                                                                )
-                                                            );
-
-                                                            setCustomFields(
-                                                                request.noc_customization
+                                                            {
+                                                                request.completion_hr_email
                                                                 ??
-                                                                {}
-                                                            );
+                                                                "-"
+                                                            }
 
-                                                        }}
+                                                        </div>
 
-                                                        className="rounded border px-3 py-1"
+                                                        <div>
 
-                                                    >
+                                                            <strong>Contact:</strong>{" "}
 
-                                                        View
+                                                            {
+                                                                request.completion_hr_contact
+                                                                ??
+                                                                "-"
+                                                            }
 
-                                                    </button>
+                                                        </div>
+
+                                                        <div>
+
+                                                            <strong>HR:</strong>{" "}
+
+                                                            {
+                                                                request.completion_same_hr
+
+                                                                    ? (
+                                                                        request.snapshot?.hr_name
+                                                                        ??
+                                                                        "Same HR"
+                                                                    )
+
+                                                                    : (
+                                                                        request.completion_hr_name
+                                                                        ??
+                                                                        "-"
+                                                                    )
+                                                            }
+
+                                                        </div>
+
+                                                        <div>
+
+                                                            <strong>Designation:</strong>{" "}
+
+                                                            {
+                                                                request.completion_same_hr
+
+                                                                    ? (
+                                                                        request.snapshot?.hr_position
+                                                                        ??
+                                                                        "-"
+                                                                    )
+
+                                                                    : (
+                                                                        request.completion_hr_designation
+                                                                        ??
+                                                                        "-"
+                                                                    )
+                                                            }
+
+                                                        </div>
+
+                                                        <div>
+
+                                                            <strong>Certificate:</strong>{" "}
+
+                                                            {
+                                                                request.completion_certificate_url
+
+                                                                    ? (
+
+                                                                        <button
+
+                                                                            onClick={
+                                                                                async () => {
+
+                                                                                    const url =
+                                                                                        await adminNocService
+                                                                                            .getCertificateUrl(
+                                                                                                request.completion_certificate_url
+                                                                                            );
+
+                                                                                    window.open(
+                                                                                        url,
+                                                                                        "_blank"
+                                                                                    );
+
+                                                                                }
+                                                                            }
+
+                                                                            className="
+text-blue-600
+underline
+"
+
+                                                                        >
+
+                                                                            View Certificate
+
+                                                                        </button>
+
+                                                                    )
+
+                                                                    : "-"
+
+                                                            }
+
+                                                        </div>
+
+                                                        <div className="pt-3 flex flex-wrap gap-2">
+
+                                                            <button
+
+                                                                onClick={() => {
+
+                                                                    setSelectedRequest(
+                                                                        request
+                                                                    );
+
+                                                                    setReviewMode(
+                                                                        "VIEW"
+                                                                    );
+
+                                                                    setEditableSnapshot(
+                                                                        structuredClone(
+                                                                            request.snapshot
+                                                                        )
+                                                                    );
+
+                                                                    setCustomFields(
+                                                                        request.noc_customization
+                                                                        ??
+                                                                        {}
+                                                                    );
+
+                                                                }}
+
+                                                                className="rounded border px-3 py-1"
+
+                                                            >
+
+                                                                View
+
+                                                            </button>
+
+                                                            <button
+
+                                                                onClick={async () => {
+
+                                                                    if (
+
+                                                                        !request.completion_submitted_at ||
+
+                                                                        !request.completion_certificate_url ||
+
+                                                                        !request.completion_hr_email ||
+
+                                                                        !request.completion_hr_contact
+
+                                                                    ) {
+
+                                                                        alert(
+                                                                            "Student has not submitted completion details."
+                                                                        );
+
+                                                                        return;
+
+                                                                    }
+
+                                                                    await adminNocService
+                                                                        .approveTenureCompletion(
+                                                                            request.noc_request_id
+                                                                        );
+
+                                                                    await load();
+
+                                                                }}
+
+                                                                className="rounded border px-3 py-1"
+
+                                                            >
+
+                                                                Approve
+
+                                                            </button>
+
+                                                            <button
+
+                                                                onClick={async () => {
+
+                                                                    const reason =
+                                                                        prompt(
+                                                                            "Enter tenure rejection reason"
+                                                                        );
+
+                                                                    if (
+                                                                        !reason?.trim()
+                                                                    ) {
+
+                                                                        alert(
+                                                                            "Reason is required"
+                                                                        );
+
+                                                                        return;
+
+                                                                    }
+
+                                                                    await adminNocService
+                                                                        .rejectTenureCompletion(
+                                                                            request.noc_request_id,
+                                                                            reason
+                                                                        );
+
+                                                                    await load();
+
+                                                                }}
+
+                                                                className="rounded border px-3 py-1"
+
+                                                            >
+
+                                                                Reject
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    </div>
 
                                                 </td>
+
                                             </tr>
                                         )
                                     )}
@@ -2994,7 +2880,231 @@ underline
                             </tbody>
 
                         </table>
+                    </div>
+                </div>
+            </div>
 
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Issued
+
+            </h2>
+
+            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+
+                <div className="rounded-lg border">
+                    <div className="overflow-x-auto">
+                        <div className="max-h-[420px] overflow-y-auto">
+                            <table className="min-w-[1200px] w-full">
+
+                                <thead className="sticky top-0 z-10 bg-white">
+
+                                    <tr>
+
+                                        <th className="p-3 text-left">
+                                            Student
+                                        </th>
+
+                                        <th
+                                            className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                        >
+                                            Enrollment
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Company
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Duration
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Type
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Ref No
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Issued At
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Actions
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    {issued
+
+                                        .slice()
+
+                                        .sort(
+                                            (
+                                                a,
+                                                b
+                                            ) =>
+
+                                                new Date(
+                                                    b.created_at
+                                                ).getTime()
+
+                                                -
+
+                                                new Date(
+                                                    a.created_at
+                                                ).getTime()
+
+                                        )
+
+                                        .filter(
+                                            matchesSearch
+                                        )
+                                        .slice(0, 100)
+                                        .map(
+                                            (
+                                                request: any
+                                            ) => (
+
+                                                <tr
+                                                    key={
+                                                        request.noc_request_id
+                                                    }
+                                                >
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.student_name
+                                                        }
+
+                                                    </td>
+
+                                                    <td
+                                                        className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                    >
+
+                                                        {
+                                                            request.snapshot?.enrollment_no
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.company_name
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            getDurationMonths(
+                                                                request.snapshot?.start_date,
+                                                                request.snapshot?.end_date
+                                                            )
+                                                        }
+
+                                                        Month(s)
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.noc_type
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.reference_number
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.issued_at
+                                                                ?
+                                                                new Date(
+                                                                    request.issued_at
+                                                                ).toLocaleString()
+                                                                :
+                                                                "-"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        <button
+
+                                                            onClick={() => {
+
+                                                                setSelectedRequest(
+                                                                    request
+                                                                );
+
+                                                                setReviewMode(
+                                                                    "VIEW"
+                                                                );
+
+                                                                setEditableSnapshot(
+                                                                    structuredClone(
+                                                                        request.snapshot
+                                                                    )
+                                                                );
+
+                                                                setCustomFields(
+                                                                    request.noc_customization
+                                                                    ??
+                                                                    {}
+                                                                );
+
+                                                            }}
+
+                                                            className="rounded border px-3 py-1"
+
+                                                        >
+
+                                                            View
+
+                                                        </button>
+
+                                                    </td>
+                                                </tr>
+                                            )
+                                        )}
+
+                                </tbody>
+
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3016,367 +3126,28 @@ underline
             </h2>
 
             <div className="rounded-lg border">
-                <div className="max-h-[420px] overflow-y-auto">
-
-                    <table className="w-full">
-
-                        <thead className="sticky top-0 z-10 bg-white">
-
-                            <tr className="border-b">
-
-                                <th className="p-3 text-left">
-                                    Student
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Enrollment
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Company
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Verified At
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Certificate
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    HR Email
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Actions
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {
-                                completedTenure
-
-                                    .slice()
-
-                                    .sort(
-                                        (
-                                            a,
-                                            b
-                                        ) =>
-
-                                            new Date(
-                                                b.completion_verified_at
-                                            ).getTime()
-
-                                            -
-
-                                            new Date(
-                                                a.completion_verified_at
-                                            ).getTime()
-
-                                    )
-
-                                    .filter(
-                                        matchesSearch
-                                    )
-.slice(0, 100)
-.map(
-                                        (
-                                            request: any
-                                        ) => (
-
-                                            <tr
-                                                key={
-                                                    request.noc_request_id
-                                                }
-                                                className="border-b"
-                                            >
-
-                                                <td className="p-3">
-                                                    {
-                                                        request.snapshot?.student_name
-                                                    }
-                                                </td>
-
-                                                <td className="p-3">
-                                                    {
-                                                        request.snapshot?.enrollment_no
-                                                    }
-                                                </td>
-
-                                                <td className="p-3">
-                                                    {
-                                                        request.snapshot?.company_name
-                                                    }
-                                                </td>
-
-                                                <td className="p-3">
-                                                    {
-                                                        request.completion_verified_at
-                                                            ?
-                                                            new Date(
-                                                                request.completion_verified_at
-                                                            ).toLocaleString()
-                                                            :
-                                                            "-"
-                                                    }
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.completion_certificate_url
-                                                            ? (
-                                                                <button
-
-                                                                    onClick={async () => {
-
-                                                                        const url =
-                                                                            await adminNocService
-                                                                                .getCertificateUrl(
-                                                                                    request.completion_certificate_url
-                                                                                );
-
-                                                                        window.open(
-                                                                            url,
-                                                                            "_blank"
-                                                                        );
-
-                                                                    }}
-
-                                                                    className="text-blue-600 underline"
-
-                                                                >
-
-                                                                    View
-
-                                                                </button>
-                                                            )
-                                                            : "-"
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.completion_hr_email
-                                                        ??
-                                                        "-"
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    <button
-
-                                                        onClick={() => {
-
-                                                            setSelectedRequest(
-                                                                request
-                                                            );
-
-                                                            setReviewMode(
-                                                                "VIEW"
-                                                            );
-
-                                                            setEditableSnapshot(
-                                                                structuredClone(
-                                                                    request.snapshot
-                                                                )
-                                                            );
-
-                                                            setCustomFields(
-                                                                request.noc_customization
-                                                                ??
-                                                                {}
-                                                            );
-
-                                                        }}
-
-                                                        className="rounded border px-3 py-1"
-
-                                                    >
-
-                                                        View
-
-                                                    </button>
-
-                                                </td>
-
-                                            </tr>
-
-                                        )
-                                    )
-
-                            }
-
-                        </tbody>
-
-                    </table>
-                </div>
-            </div>
-
-            <h2 className="mt-10 mb-4 text-xl font-semibold">
-                Rejected
-            </h2>
-
-            <div className="rounded-lg border">
-                <div className="max-h-[420px] overflow-y-auto">
-
-                    <table className="w-full">
-
-                        <thead className="sticky top-0 z-10 bg-white">
-
-                            <tr className="border-b">
-
-                                <th className="p-3 text-left">
-                                    Student
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Enrollment
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Company
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Type
-                                </th>
-
-                                <th className="p-3 text-left">
-
-                                    Rejected By
-
-                                </th>
-
-                                <th className="p-3 text-left">
-
-                                    Reason
-
-                                </th>
-
-                                <th className="p-3 text-left">
-                                    Actions
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            {rejected.map((request: any) => (
-
-                                <tr
-                                    key={request.noc_request_id}
-                                    className="border-b"
-                                >
-
-                                    <td className="p-3">
-                                        {request.snapshot?.student_name}
-                                    </td>
-
-                                    <td className="p-3">
-                                        {request.snapshot?.enrollment_no}
-                                    </td>
-
-                                    <td className="p-3">
-                                        {request.snapshot?.company_name}
-                                    </td>
-
-                                    <td className="p-3">
-                                        {request.noc_type}
-                                    </td>
-
-                                    <td>
-                                        {
-                                            request.rejected_by
-                                            ??
-                                            request.tenure_rejected_by
-                                            ??
-                                            "-"
-                                        }
-                                    </td>
-
-                                    <td>
-                                        {
-                                            request.rejection_reason
-                                            ??
-                                            request.tenure_rejection_reason
-                                            ??
-                                            "-"
-                                        }
-                                    </td>
-
-                                    <td className="p-3">
-
-                                        <button
-
-                                            onClick={() => {
-
-                                                setSelectedRequest(request);
-
-                                                setReviewMode("VIEW");
-
-                                                setEditableSnapshot(
-                                                    structuredClone(
-                                                        request.snapshot
-                                                    )
-                                                );
-
-                                            }}
-
-                                            className="rounded border px-3 py-1"
-
-                                        >
-
-                                            View
-
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-
-                            ))}
-
-                        </tbody>
-
-                    </table>
-                </div>
-            </div>
-
-            <h2 className="mt-10 mb-4 text-xl font-semibold">
-
-                Cancelled
-
-            </h2>
-
-            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-
-                <div className="rounded-lg border">
+                <div className="overflow-x-auto">
                     <div className="max-h-[420px] overflow-y-auto">
-
-                        <table className="w-full">
+                        <table className="min-w-[1200px] w-full">
 
                             <thead className="sticky top-0 z-10 bg-white">
 
-                                <tr>
+                                <tr className="border-b">
 
                                     <th className="p-3 text-left">
                                         Student
                                     </th>
 
-                                    <th className="p-3 text-left">
+                                    <th
+                                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                    >
                                         Enrollment
                                     </th>
 
@@ -3385,27 +3156,15 @@ underline
                                     </th>
 
                                     <th className="p-3 text-left">
-                                        Type
+                                        Verified At
                                     </th>
 
                                     <th className="p-3 text-left">
-                                        Ref No
+                                        Certificate
                                     </th>
 
                                     <th className="p-3 text-left">
-                                        Cancelled By
-                                    </th>
-
-                                    <th className="p-3 text-left">
-                                        Print Version
-                                    </th>
-
-                                    <th className="p-3 text-left">
-                                        Reason
-                                    </th>
-
-                                    <th className="p-3 text-left">
-                                        Cancelled At
+                                        HR Email
                                     </th>
 
                                     <th className="p-3 text-left">
@@ -3418,179 +3177,584 @@ underline
 
                             <tbody>
 
-                                {cancelled
+                                {
+                                    completedTenure
 
-                                    .slice()
+                                        .slice()
 
-                                    .sort(
-                                        (
-                                            a,
-                                            b
-                                        ) =>
+                                        .sort(
+                                            (
+                                                a,
+                                                b
+                                            ) =>
 
-                                            new Date(
-                                                b.created_at
-                                            ).getTime()
+                                                new Date(
+                                                    b.completion_verified_at
+                                                ).getTime()
 
-                                            -
+                                                -
 
-                                            new Date(
-                                                a.created_at
-                                            ).getTime()
-
-                                    )
-
-                                    .filter(
-                                        matchesSearch
-                                    )
-.slice(0, 100)
-.map(
-                                        (
-                                            request: any
-                                        ) => (
-
-                                            <tr
-                                                key={
-                                                    request.noc_request_id
-                                                }
-                                            >
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.snapshot?.student_name
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.snapshot?.enrollment_no
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.snapshot?.company_name
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.noc_type
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.reference_number
-                                                        ??
-                                                        "-"
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.cancelled_by
-                                                        ??
-                                                        "ADMIN"
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-                                                    {request.print_count ?? 1}
-                                                </td>
-
-                                                <td
-                                                    className="
-        p-3
-        max-w-[300px]
-        truncate
-    "
-                                                    title={
-                                                        request.cancellation_reason
-                                                        ??
-                                                        ""
-                                                    }
-                                                >
-
-                                                    {
-                                                        request.cancellation_reason
-                                                        ??
-                                                        "-"
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    {
-                                                        request.cancelled_at
-                                                            ?
-                                                            new Date(
-                                                                request.cancelled_at
-                                                            ).toLocaleString()
-                                                            :
-                                                            "-"
-                                                    }
-
-                                                </td>
-
-                                                <td className="p-3">
-
-                                                    <button
-
-                                                        onClick={() => {
-
-                                                            setSelectedRequest(
-                                                                request
-                                                            );
-
-                                                            setReviewMode(
-                                                                "VIEW"
-                                                            );
-
-                                                            setEditableSnapshot(
-                                                                structuredClone(
-                                                                    request.snapshot
-                                                                )
-                                                            );
-
-                                                            setCustomFields(
-                                                                request.noc_customization
-                                                                ??
-                                                                {}
-                                                            );
-
-                                                        }}
-
-                                                        className="rounded border px-3 py-1"
-
-                                                    >
-
-                                                        View
-
-                                                    </button>
-
-                                                </td>
-                                            </tr>
+                                                new Date(
+                                                    a.completion_verified_at
+                                                ).getTime()
 
                                         )
-                                    )}
+
+                                        .filter(
+                                            matchesSearch
+                                        )
+                                        .slice(0, 100)
+                                        .map(
+                                            (
+                                                request: any
+                                            ) => (
+
+                                                <tr
+                                                    key={
+                                                        request.noc_request_id
+                                                    }
+                                                    className="border-b"
+                                                >
+
+                                                    <td className="p-3">
+                                                        {
+                                                            request.snapshot?.student_name
+                                                        }
+                                                    </td>
+
+                                                    <td
+                                                        className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                    >
+                                                        {
+                                                            request.snapshot?.enrollment_no
+                                                        }
+                                                    </td>
+
+                                                    <td className="p-3">
+                                                        {
+                                                            request.snapshot?.company_name
+                                                        }
+                                                    </td>
+
+                                                    <td className="p-3">
+                                                        {
+                                                            request.completion_verified_at
+                                                                ?
+                                                                new Date(
+                                                                    request.completion_verified_at
+                                                                ).toLocaleString()
+                                                                :
+                                                                "-"
+                                                        }
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.completion_certificate_url
+                                                                ? (
+                                                                    <button
+
+                                                                        onClick={async () => {
+
+                                                                            const url =
+                                                                                await adminNocService
+                                                                                    .getCertificateUrl(
+                                                                                        request.completion_certificate_url
+                                                                                    );
+
+                                                                            window.open(
+                                                                                url,
+                                                                                "_blank"
+                                                                            );
+
+                                                                        }}
+
+                                                                        className="text-blue-600 underline"
+
+                                                                    >
+
+                                                                        View
+
+                                                                    </button>
+                                                                )
+                                                                : "-"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.completion_hr_email
+                                                            ??
+                                                            "-"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        <button
+
+                                                            onClick={() => {
+
+                                                                setSelectedRequest(
+                                                                    request
+                                                                );
+
+                                                                setReviewMode(
+                                                                    "VIEW"
+                                                                );
+
+                                                                setEditableSnapshot(
+                                                                    structuredClone(
+                                                                        request.snapshot
+                                                                    )
+                                                                );
+
+                                                                setCustomFields(
+                                                                    request.noc_customization
+                                                                    ??
+                                                                    {}
+                                                                );
+
+                                                            }}
+
+                                                            className="rounded border px-3 py-1"
+
+                                                        >
+
+                                                            View
+
+                                                        </button>
+
+                                                    </td>
+
+                                                </tr>
+
+                                            )
+                                        )
+
+                                }
 
                             </tbody>
 
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+                Rejected
+            </h2>
+
+            <div className="rounded-lg border">
+                <div className="overflow-x-auto">
+                    <div className="max-h-[420px] overflow-y-auto">
+                        <table className="min-w-[1200px] w-full">
+
+                            <thead className="sticky top-0 z-10 bg-white">
+
+                                <tr className="border-b">
+
+                                    <th className="p-3 text-left">
+                                        Student
+                                    </th>
+
+                                    <th
+                                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                    >
+                                        Enrollment
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                        Company
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                        Type
+                                    </th>
+
+                                    <th className="p-3 text-left">
+
+                                        Rejected By
+
+                                    </th>
+
+                                    <th className="p-3 text-left">
+
+                                        Reason
+
+                                    </th>
+
+                                    <th className="p-3 text-left">
+                                        Actions
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {rejected.map((request: any) => (
+
+                                    <tr
+                                        key={request.noc_request_id}
+                                        className="border-b"
+                                    >
+
+                                        <td className="p-3">
+                                            {request.snapshot?.student_name}
+                                        </td>
+
+                                        <td
+                                            className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                        >
+                                            {request.snapshot?.enrollment_no}
+                                        </td>
+
+                                        <td className="p-3">
+                                            {request.snapshot?.company_name}
+                                        </td>
+
+                                        <td className="p-3">
+                                            {request.noc_type}
+                                        </td>
+
+                                        <td>
+                                            {
+                                                request.rejected_by
+                                                ??
+                                                request.tenure_rejected_by
+                                                ??
+                                                "-"
+                                            }
+                                        </td>
+
+                                        <td>
+                                            {
+                                                request.rejection_reason
+                                                ??
+                                                request.tenure_rejection_reason
+                                                ??
+                                                "-"
+                                            }
+                                        </td>
+
+                                        <td className="p-3">
+
+                                            <button
+
+                                                onClick={() => {
+
+                                                    setSelectedRequest(request);
+
+                                                    setReviewMode("VIEW");
+
+                                                    setEditableSnapshot(
+                                                        structuredClone(
+                                                            request.snapshot
+                                                        )
+                                                    );
+
+                                                }}
+
+                                                className="rounded border px-3 py-1"
+
+                                            >
+
+                                                View
+
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+
+                                ))}
+
+                            </tbody>
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <h2 className="mt-10 mb-4 text-xl font-semibold">
+
+                Cancelled
+
+            </h2>
+
+            <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+
+                <div className="rounded-lg border">
+                    <div className="overflow-x-auto">
+                        <div className="max-h-[420px] overflow-y-auto">
+                            <table className="min-w-[1200px] w-full">
+
+                                <thead className="sticky top-0 z-10 bg-white">
+
+                                    <tr>
+
+                                        <th className="p-3 text-left">
+                                            Student
+                                        </th>
+
+                                        <th
+                                            className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                        >
+                                            Enrollment
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Company
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Type
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Ref No
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Cancelled By
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Print Version
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Reason
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Cancelled At
+                                        </th>
+
+                                        <th className="p-3 text-left">
+                                            Actions
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    {cancelled
+
+                                        .slice()
+
+                                        .sort(
+                                            (
+                                                a,
+                                                b
+                                            ) =>
+
+                                                new Date(
+                                                    b.created_at
+                                                ).getTime()
+
+                                                -
+
+                                                new Date(
+                                                    a.created_at
+                                                ).getTime()
+
+                                        )
+
+                                        .filter(
+                                            matchesSearch
+                                        )
+                                        .slice(0, 100)
+                                        .map(
+                                            (
+                                                request: any
+                                            ) => (
+
+                                                <tr
+                                                    key={
+                                                        request.noc_request_id
+                                                    }
+                                                >
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.student_name
+                                                        }
+
+                                                    </td>
+
+                                                    <td
+                                                        className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                    >
+
+                                                        {
+                                                            request.snapshot?.enrollment_no
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.snapshot?.company_name
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.noc_type
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.reference_number
+                                                            ??
+                                                            "-"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.cancelled_by
+                                                            ??
+                                                            "ADMIN"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+                                                        {request.print_count ?? 1}
+                                                    </td>
+
+                                                    <td
+                                                        className="
+        p-3
+        max-w-[300px]
+        truncate
+    "
+                                                        title={
+                                                            request.cancellation_reason
+                                                            ??
+                                                            ""
+                                                        }
+                                                    >
+
+                                                        {
+                                                            request.cancellation_reason
+                                                            ??
+                                                            "-"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        {
+                                                            request.cancelled_at
+                                                                ?
+                                                                new Date(
+                                                                    request.cancelled_at
+                                                                ).toLocaleString()
+                                                                :
+                                                                "-"
+                                                        }
+
+                                                    </td>
+
+                                                    <td className="p-3">
+
+                                                        <button
+
+                                                            onClick={() => {
+
+                                                                setSelectedRequest(
+                                                                    request
+                                                                );
+
+                                                                setReviewMode(
+                                                                    "VIEW"
+                                                                );
+
+                                                                setEditableSnapshot(
+                                                                    structuredClone(
+                                                                        request.snapshot
+                                                                    )
+                                                                );
+
+                                                                setCustomFields(
+                                                                    request.noc_customization
+                                                                    ??
+                                                                    {}
+                                                                );
+
+                                                            }}
+
+                                                            className="rounded border px-3 py-1"
+
+                                                        >
+
+                                                            View
+
+                                                        </button>
+
+                                                    </td>
+                                                </tr>
+
+                                            )
+                                        )}
+
+                                </tbody>
+
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3668,121 +3832,139 @@ underline
                         </h3>
 
                         <div className="rounded-lg border">
-                            <div className="max-h-[420px] overflow-y-auto">
+                            <div className="overflow-x-auto">
+                                <div className="max-h-[420px] overflow-y-auto">
+                                    <table className="min-w-[1200px] w-full">
 
-                                <table className="w-full">
+                                        <thead className="sticky top-0 z-10 bg-white">
 
-                                    <thead className="sticky top-0 z-10 bg-white">
+                                            <tr className="border-b">
 
-                                        <tr className="border-b">
+                                                <th className="p-3 text-left">
 
-                                            <th className="p-3 text-left">
+                                                    Student
 
-                                                Student
+                                                </th>
 
-                                            </th>
+                                                <th
+                                                    className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-20
+"
+                                                >
 
-                                            <th className="p-3 text-left">
+                                                    Enrollment
 
-                                                Enrollment
+                                                </th>
 
-                                            </th>
+                                                <th className="p-3 text-left">
 
-                                            <th className="p-3 text-left">
+                                                    Company
 
-                                                Company
+                                                </th>
 
-                                            </th>
+                                                <th className="p-3 text-left">
 
-                                            <th className="p-3 text-left">
+                                                    Status
 
-                                                Status
+                                                </th>
 
-                                            </th>
+                                                <th className="p-3 text-left">
 
-                                            <th className="p-3 text-left">
+                                                    Created
 
-                                                Created
+                                                </th>
 
-                                            </th>
+                                            </tr>
 
-                                        </tr>
+                                        </thead>
 
-                                    </thead>
+                                        <tbody>
 
-                                    <tbody>
+                                            {
 
-                                        {
+                                                history.slice(
+                                                    0,
+                                                    100
+                                                ).map(
+                                                    (
+                                                        request: any
+                                                    ) => (
 
-                                            history.slice(
-                                                0,
-                                                100
-                                            ).map(
-                                                (
-                                                    request: any
-                                                ) => (
-
-                                                    <tr
-                                                        key={
-                                                            request.noc_request_id
-                                                        }
-                                                        className="border-b"
-                                                    >
-
-                                                        <td className="p-3">
-
-                                                            {
-                                                                request.snapshot?.student_name
+                                                        <tr
+                                                            key={
+                                                                request.noc_request_id
                                                             }
+                                                            className="border-b"
+                                                        >
 
-                                                        </td>
+                                                            <td className="p-3">
 
-                                                        <td className="p-3">
+                                                                {
+                                                                    request.snapshot?.student_name
+                                                                }
 
-                                                            {
-                                                                request.snapshot?.enrollment_no
-                                                            }
+                                                            </td>
 
-                                                        </td>
+                                                            <td
+                                                                className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                                                            >
 
-                                                        <td className="p-3">
+                                                                {
+                                                                    request.snapshot?.enrollment_no
+                                                                }
 
-                                                            {
-                                                                request.snapshot?.company_name
-                                                            }
+                                                            </td>
 
-                                                        </td>
+                                                            <td className="p-3">
 
-                                                        <td className="p-3">
+                                                                {
+                                                                    request.snapshot?.company_name
+                                                                }
 
-                                                            {
-                                                                request.status
-                                                            }
+                                                            </td>
 
-                                                        </td>
+                                                            <td className="p-3">
 
-                                                        <td className="p-3">
+                                                                {
+                                                                    request.status
+                                                                }
 
-                                                            {
-                                                                new Date(
-                                                                    request.created_at
-                                                                )
-                                                                    .toLocaleDateString()
-                                                            }
+                                                            </td>
 
-                                                        </td>
+                                                            <td className="p-3">
 
-                                                    </tr>
+                                                                {
+                                                                    new Date(
+                                                                        request.created_at
+                                                                    )
+                                                                        .toLocaleDateString()
+                                                                }
+
+                                                            </td>
+
+                                                        </tr>
+
+                                                    )
 
                                                 )
 
-                                            )
+                                            }
 
-                                        }
+                                        </tbody>
 
-                                    </tbody>
-
-                                </table>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 
@@ -3822,182 +4004,182 @@ underline
                         </div>
 
                         <div className="rounded-lg border">
-                            <div className="max-h-[420px] overflow-y-auto">
+                            <div className="overflow-x-auto">
+                                <div className="max-h-[420px] overflow-y-auto">
+                                    <table className="min-w-[1200px] w-full">
 
-                                <table className="w-full text-sm">
+                                        <thead className="sticky top-0 z-10 bg-white">
 
-                                    <thead className="sticky top-0 z-10 bg-white">
+                                            <tr className="border-b bg-muted/30">
 
-                                        <tr className="border-b bg-muted/30">
+                                                <th className="p-3 text-left">
+                                                    Student
+                                                </th>
 
-                                            <th className="p-3 text-left">
-                                                Student
-                                            </th>
+                                                <th className="p-3 text-left">
+                                                    Company
+                                                </th>
 
-                                            <th className="p-3 text-left">
-                                                Company
-                                            </th>
+                                                <th className="p-3 text-left">
+                                                    Version
+                                                </th>
 
-                                            <th className="p-3 text-left">
-                                                Version
-                                            </th>
+                                                <th className="p-3 text-left">
+                                                    Action
+                                                </th>
 
-                                            <th className="p-3 text-left">
-                                                Action
-                                            </th>
+                                                <th className="p-3 text-left">
+                                                    Ref No
+                                                </th>
 
-                                            <th className="p-3 text-left">
-                                                Ref No
-                                            </th>
+                                                <th className="p-3 text-left">
+                                                    Reason
+                                                </th>
 
-                                            <th className="p-3 text-left">
-                                                Reason
-                                            </th>
+                                                <th className="p-3 text-left">
+                                                    Date
+                                                </th>
+                                            </tr>
 
-                                            <th className="p-3 text-left">
-                                                Date
-                                            </th>
-                                        </tr>
+                                        </thead>
 
-                                    </thead>
+                                        <tbody>
 
-                                    <tbody>
+                                            {
+                                                printHistory
 
-                                        {
-                                            printHistory
+                                                    .slice(
+                                                        0,
+                                                        100
+                                                    )
 
-                                                .slice(
-                                                    0,
-                                                    100
-                                                )
+                                                    .filter(
+                                                        (row: any) =>
+                                                            !showOnlyReprints
+                                                            ||
+                                                            row.action_type ===
+                                                            "REPRINT"
+                                                    )
 
-                                                .filter(
-                                                    (row: any) =>
-                                                        !showOnlyReprints
-                                                        ||
-                                                        row.action_type ===
-                                                        "REPRINT"
-                                                )
+                                                    .map(
+                                                        (
+                                                            row: any
+                                                        ) => (
 
-                                                .map(
-                                                    (
-                                                        row: any
-                                                    ) => (
-
-                                                        <tr
-                                                            key={
-                                                                row.history_id
-                                                            }
-                                                            className="border-b"
-                                                        >
-
-                                                            <td className="p-3">
-
-                                                                {
-                                                                    row.snapshot
-                                                                        ?.student_name
-                                                                    ??
-                                                                    "-"
+                                                            <tr
+                                                                key={
+                                                                    row.history_id
                                                                 }
+                                                                className="border-b"
+                                                            >
 
-                                                            </td>
-
-                                                            <td className="p-3">
-
-                                                                {
-                                                                    row.snapshot
-                                                                        ?.company_name
-                                                                    ??
-                                                                    "-"
-                                                                }
-
-                                                            </td>
-
-                                                            <td className="p-3">
-
-                                                                {
-                                                                    row.print_version
-                                                                }
-
-                                                            </td>
-
-                                                            <td className="p-3">
-
-                                                                <span
-                                                                    className={
-                                                                        row.action_type ===
-                                                                            "REPRINT"
-
-                                                                            ? "font-semibold text-amber-600"
-
-                                                                            : ""
-                                                                    }
-                                                                >
+                                                                <td className="p-3">
 
                                                                     {
-                                                                        row.action_type
+                                                                        row.snapshot
+                                                                            ?.student_name
+                                                                        ??
+                                                                        "-"
                                                                     }
 
-                                                                </span>
+                                                                </td>
 
-                                                            </td>
+                                                                <td className="p-3">
 
-                                                            <td className="p-3">
+                                                                    {
+                                                                        row.snapshot
+                                                                            ?.company_name
+                                                                        ??
+                                                                        "-"
+                                                                    }
 
-                                                                {
-                                                                    row.reference_number
-                                                                    ??
-                                                                    "-"
-                                                                }
+                                                                </td>
 
-                                                            </td>
+                                                                <td className="p-3">
 
-                                                            <td
-                                                                className="
+                                                                    {
+                                                                        row.print_version
+                                                                    }
+
+                                                                </td>
+
+                                                                <td className="p-3">
+
+                                                                    <span
+                                                                        className={
+                                                                            row.action_type ===
+                                                                                "REPRINT"
+
+                                                                                ? "font-semibold text-amber-600"
+
+                                                                                : ""
+                                                                        }
+                                                                    >
+
+                                                                        {
+                                                                            row.action_type
+                                                                        }
+
+                                                                    </span>
+
+                                                                </td>
+
+                                                                <td className="p-3">
+
+                                                                    {
+                                                                        row.reference_number
+                                                                        ??
+                                                                        "-"
+                                                                    }
+
+                                                                </td>
+
+                                                                <td
+                                                                    className="
         p-3
         max-w-[300px]
         truncate
     "
-                                                                title={
-                                                                    row.reason
-                                                                    ??
-                                                                    ""
-                                                                }
-                                                            >
+                                                                    title={
+                                                                        row.reason
+                                                                        ??
+                                                                        ""
+                                                                    }
+                                                                >
 
-                                                                {
-                                                                    row.reason
-                                                                    ??
-                                                                    "-"
-                                                                }
-
-                                                            </td>
-
-                                                            <td className="p-3">
-
-                                                                {
-                                                                    row.created_at
-                                                                        ?
-                                                                        new Date(
-                                                                            row.created_at
-                                                                        ).toLocaleString()
-                                                                        :
+                                                                    {
+                                                                        row.reason
+                                                                        ??
                                                                         "-"
-                                                                }
+                                                                    }
 
-                                                            </td>
-                                                        </tr>
+                                                                </td>
 
+                                                                <td className="p-3">
+
+                                                                    {
+                                                                        row.created_at
+                                                                            ?
+                                                                            new Date(
+                                                                                row.created_at
+                                                                            ).toLocaleString()
+                                                                            :
+                                                                            "-"
+                                                                    }
+
+                                                                </td>
+                                                            </tr>
+
+                                                        )
                                                     )
-                                                )
-                                        }
+                                            }
 
-                                    </tbody>
+                                        </tbody>
 
-                                </table>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-
                     </>
                 )}
 
@@ -4153,6 +4335,10 @@ underline
                                                     );
                                                 }
 
+                                                setEditableSnapshot(
+                                                    structuredClone(currentSnapshot)
+                                                );
+
                                                 await load();
                                                 alert("Changes Saved");
                                             }}
@@ -4193,22 +4379,20 @@ underline
 
                                                 try {
 
+                                                    window.print();
+
+                                                    const confirmed =
+                                                        window.confirm(
+                                                            "Did you successfully print this NOC?"
+                                                        );
+
+                                                    if (!confirmed) {
+                                                        return;
+                                                    }
+
                                                     await adminNocService.markPrinted(
                                                         selectedRequest.noc_request_id
                                                     );
-                                                    if (
-                                                        selectedRequest.status ===
-                                                        "PRINTED"
-                                                    ) {
-
-                                                        await adminNocService
-                                                            .incrementPrintCount(
-                                                                selectedRequest.noc_request_id
-                                                            );
-
-                                                    }
-
-                                                    window.print();
 
                                                     await load();
                                                     setCustomFields({});

@@ -77,53 +77,37 @@ export const adminNocService = {
         }
     },
 
-    async reprintNoc(
-        nocRequestId: string,
-        reason: string
-    ) {
+  async reprintNoc(
+    nocRequestId: string,
+    reason: string
+) {
 
-        await this.createPrintHistory(
-            nocRequestId,
-            "REPRINT",
-            reason
-        );
+    await this.createPrintHistory(
+        nocRequestId,
+        "REPRINT",
+        reason
+    );
 
-        const {
-            data: request,
-            error: fetchError,
-        } =
-            await (supabase as any)
-                .from("noc_requests")
-                .select("*")
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                )
-                .single();
+    const {
+        error,
+    } =
+        await (supabase as any)
+            .from("noc_requests")
+            .update({
+                status: "PENDING_PRINT",
+                printed_at: null,
+                reference_number: null,
+            })
+            .eq(
+                "noc_request_id",
+                nocRequestId
+            );
 
-        if (fetchError) {
-            throw fetchError;
-        }
+    if (error) {
+        throw error;
+    }
 
-        const {
-            error,
-        } =
-            await (supabase as any)
-                .from("noc_requests")
-                .update({
-                    status: "PENDING_PRINT",
-                    printed_at: null,
-                    reference_number: null,
-                })
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                );
-
-        if (error) {
-            throw error;
-        }
-    },
+},
 
     async getRequests() {
 
@@ -299,21 +283,35 @@ export const adminNocService = {
     ) {
 
         const {
+            data: existing,
+            error: fetchError,
+        } =
+            await (supabase as any)
+                .from("noc_requests")
+                .select("noc_customization")
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+                .single();
+
+        if (fetchError)
+            throw fetchError;
+
+        const mergedCustomization = {
+            ...(existing?.noc_customization ?? {}),
+            ...(customization ?? {}),
+        };
+
+        const {
             error,
         } =
             await (supabase as any)
-
-                .from(
-                    "noc_requests"
-                )
-
+                .from("noc_requests")
                 .update({
-
                     noc_customization:
-                        customization,
-
+                        mergedCustomization,
                 })
-
                 .eq(
                     "noc_request_id",
                     nocRequestId
@@ -329,25 +327,47 @@ export const adminNocService = {
     ) {
 
         const {
+            data,
+            error: fetchError,
+        } =
+            await (supabase as any)
+
+                .from("noc_requests")
+
+                .select("print_count")
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+
+                .single();
+
+        if (fetchError)
+            throw fetchError;
+
+        const currentCount =
+            Number(
+                data?.print_count ?? 0
+            );
+
+        const {
             error,
         } =
             await (supabase as any)
 
-                .from(
-                    "noc_requests"
-                )
+                .from("noc_requests")
 
                 .update({
 
-                    status:
-                        "PRINTED",
+                    status: "PRINTED",
 
                     printed_at:
                         new Date()
                             .toISOString(),
 
                     print_count:
-                        1,
+                        currentCount + 1,
 
                 })
 
@@ -361,12 +381,15 @@ export const adminNocService = {
 
         await this.createPrintHistory(
             nocRequestId,
-            "PRINT",
-            "Initial Print"
+            currentCount === 0
+                ? "PRINT"
+                : "REPRINT",
+            currentCount === 0
+                ? "Initial Print"
+                : "Printed Again"
         );
 
     },
-
     async markIssued(
         nocRequestId: string
     ) {
@@ -590,65 +613,6 @@ export const adminNocService = {
         if (error) throw error;
     },
 
-    async incrementPrintCount(
-        nocRequestId: string
-    ) {
-
-        const {
-            data,
-            error,
-        } =
-            await (supabase as any)
-
-                .from(
-                    "noc_requests"
-                )
-
-                .select(
-                    "print_count"
-                )
-
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                )
-
-                .single();
-
-        if (error)
-            throw error;
-
-        const currentCount =
-            Number(
-                data?.print_count ?? 0
-            );
-
-        const {
-            error: updateError,
-        } =
-            await (supabase as any)
-
-                .from(
-                    "noc_requests"
-                )
-
-                .update({
-
-                    print_count:
-                        currentCount + 1,
-
-                })
-
-                .eq(
-                    "noc_request_id",
-                    nocRequestId
-                );
-
-        if (updateError)
-            throw updateError;
-
-    },
-
     async approveTenureCompletion(
         nocRequestId: string
     ) {
@@ -755,30 +719,30 @@ export const adminNocService = {
 
     async getPrintHistory() {
 
-    const {
-        data,
-        error,
-    } =
-        await (supabase as any)
+        const {
+            data,
+            error,
+        } =
+            await (supabase as any)
 
-            .from(
-                "noc_print_history"
-            )
+                .from(
+                    "noc_print_history"
+                )
 
-            .select("*")
+                .select("*")
 
-            .order(
-                "created_at",
-                {
-                    ascending: false,
-                }
-            );
+                .order(
+                    "created_at",
+                    {
+                        ascending: false,
+                    }
+                );
 
-    if (error)
-        throw error;
+        if (error)
+            throw error;
 
-    return data ?? [];
+        return data ?? [];
 
-}
+    }
 
 };
