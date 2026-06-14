@@ -457,7 +457,7 @@ export const nocService = {
         return data.signedUrl;
     },
 
-        async regenerateHodToken(
+    async regenerateHodToken(
         nocRequestId: string
     ) {
 
@@ -475,7 +475,10 @@ export const nocService = {
                 )
 
                 .select(
-                    "hod_approval_deadline"
+                    `
+    hod_approval_deadline,
+    status
+    `
                 )
 
                 .eq(
@@ -485,8 +488,14 @@ export const nocService = {
 
                 .single();
 
-        if (requestError)
-            throw requestError;
+        if (
+            request.status !==
+            "PENDING_HOD_APPROVAL"
+        ) {
+            throw new Error(
+                "Approval process already completed."
+            );
+        }
 
         const {
             error,
@@ -531,59 +540,58 @@ export const nocService = {
     },
 
     async markHodMailSent(
-    nocRequestId: string
-) {
+        nocRequestId: string
+    ) {
 
-    const {
-        data,
-        error,
-    } =
+        const {
+            data,
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .select(
+                    "hod_mail_send_count"
+                )
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+
+                .single();
+
+        if (error)
+            throw error;
+
         await (supabase as any)
 
             .from(
                 "noc_requests"
             )
 
-            .select(
-                "hod_mail_send_count"
-            )
+            .update({
+
+                hod_mail_sent_at:
+                    new Date()
+                        .toISOString(),
+
+                hod_mail_send_count:
+                    (
+                        data?.hod_mail_send_count
+                        ??
+                        0
+                    ) + 1,
+
+            })
 
             .eq(
                 "noc_request_id",
                 nocRequestId
-            )
+            );
 
-            .single();
-
-    if (error)
-        throw error;
-
-    await (supabase as any)
-
-        .from(
-            "noc_requests"
-        )
-
-        .update({
-
-            hod_mail_sent_at:
-                new Date()
-                    .toISOString(),
-
-            hod_mail_send_count:
-                (
-                    data?.hod_mail_send_count
-                    ??
-                    0
-                ) + 1,
-
-        })
-
-        .eq(
-            "noc_request_id",
-            nocRequestId
-        );
-
-}
-
+    }
 };

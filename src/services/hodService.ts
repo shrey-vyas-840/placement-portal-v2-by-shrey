@@ -407,6 +407,24 @@ export const hodService = {
         const ctx = await this.getReviewContext(identifier);
 
         if (!ctx.request) throw new Error("NOC request not found.");
+
+        if (
+            ctx.request.status !==
+            "PENDING_HOD_APPROVAL"
+        ) {
+            throw new Error(
+                "Request already processed."
+            );
+        }
+
+        if (
+            ctx.request.status !==
+            "PENDING_HOD_APPROVAL"
+        ) {
+            throw new Error(
+                "Request already processed."
+            );
+        }
         if (ctx.isExpired) throw new Error("Approval link expired.");
         if (ctx.tokenRow?.used_at) throw new Error("This link has already been used.");
 

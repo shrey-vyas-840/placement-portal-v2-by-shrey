@@ -248,6 +248,25 @@ export function StudentNocPage() {
 
             setRequests(nocRequests);
 
+            if (selectedRequest) {
+
+                const updatedRequest =
+                    nocRequests.find(
+                        (r: any) =>
+                            r.noc_request_id ===
+                            selectedRequest.noc_request_id
+                    );
+
+                if (updatedRequest) {
+
+                    setSelectedRequest(
+                        updatedRequest
+                    );
+
+                }
+
+            }
+
             const blockingRequest =
                 await nocService
                     .hasActiveNoc(
@@ -607,6 +626,18 @@ export function StudentNocPage() {
         request: any
     ) {
         if (
+            request.hod_mail_send_count >= 2
+        ) {
+
+            alert(
+                "Maximum HOD approval emails already sent."
+            );
+
+            return;
+
+        }
+
+        if (
             request.hod_mail_send_count >= 1
             &&
             new Date() <
@@ -617,6 +648,19 @@ export function StudentNocPage() {
 
             alert(
                 "HOD approval request already sent. You can resend only after the approval deadline expires."
+            );
+
+            return;
+
+        }
+
+        if (
+            request.status !==
+            "PENDING_HOD_APPROVAL"
+        ) {
+
+            alert(
+                "Approval process already completed."
             );
 
             return;
@@ -681,6 +725,8 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                 request.noc_request_id
             );
 
+            await loadProfile();
+
             const gmailUrl =
                 `https://mail.google.com/mail/?view=cm&fs=1`
                 + `&to=${encodeURIComponent(hodEmail)}`
@@ -730,6 +776,21 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                     `NOC request created for ${request.noc_type}.`,
                 done:
                     true,
+            },
+
+            {
+                title:
+                    "Approved By HOD",
+
+                time:
+                    request.approved_at,
+
+                description:
+                    "Application approved by HOD.",
+
+                done:
+                    request.approval_source ===
+                    "HOD_APPROVED",
             },
 
             {
@@ -2333,8 +2394,7 @@ rounded
                                         <td className="p-3">
 
                                             {
-                                                request.status ===
-                                                    "PENDING_HOD_APPROVAL"
+                                                request.hod_approval_deadline
 
                                                     ?
 
@@ -2457,11 +2517,25 @@ rounded
                                                     View
 
                                                 </button>
-
                                                 {
-
                                                     request.status ===
                                                     "PENDING_HOD_APPROVAL"
+
+                                                    &&
+
+                                                    request.hod_mail_send_count < 2
+
+                                                    &&
+
+                                                    !(
+                                                        request.hod_mail_send_count >= 1
+                                                        &&
+                                                        new Date() <
+                                                        new Date(
+                                                            request.hod_approval_deadline
+                                                        )
+                                                    )
+
                                                     && (
 
                                                         <button
@@ -2473,51 +2547,25 @@ rounded
                                                             }
 
                                                             className="
-rounded
-border
-px-3
-py-1
-bg-blue-50
+                                                            rounded
+                                                            border
+                                                            px-3
+                                                            py-1
+                                                            bg-blue-50
 "
 
                                                         >
 
                                                             {
-                                                                request.status ===
-                                                                "PENDING_HOD_APPROVAL"
-
-                                                                &&
-
-                                                                (
-                                                                    request.hod_mail_send_count >= 1
-                                                                        &&
-                                                                        new Date() <
-                                                                        new Date(
-                                                                            request.hod_approval_deadline
-                                                                        )
-
-                                                                        ?
-
-                                                                        null
-
-                                                                        :
-
-                                                                        <button>
-                                                                            {
-                                                                                request.hod_mail_send_count > 0
-                                                                                    ? "Resend HOD Approval"
-                                                                                    : "Send HOD Approval Request"
-                                                                            }
-                                                                        </button>
-                                                                )
+                                                                request.hod_mail_send_count > 0
+                                                                    ? "Resend HOD Approval"
+                                                                    : "Send HOD Approval Request"
                                                             }
 
                                                         </button>
 
                                                     )
-
                                                 }
-
                                             </div>
 
                                         </td>
