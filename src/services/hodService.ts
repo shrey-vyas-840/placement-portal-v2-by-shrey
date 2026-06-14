@@ -97,25 +97,22 @@ export const hodService = {
     },
 
     async requireHodAccess() {
+    const ctx = await this.getCurrentAuthContext();
 
-        const ctx =
-            await this.getCurrentAuthContext();
+    const mappedBranches = await this.getMappedBranchesForEmail(ctx.email);
 
-        if (
-            !ctx.roleNames.includes("Admin")
-            &&
-            !ctx.roleNames.includes("HOD")
-        ) {
+    const hasRoleAccess =
+        ctx.roleNames.includes("Admin") ||
+        ctx.roleNames.includes("HOD");
 
-            throw new Error(
-                "Unauthorized"
-            );
+    const hasMappingAccess = mappedBranches.length > 0;
 
-        }
+    if (!hasRoleAccess && !hasMappingAccess) {
+        throw new Error("Unauthorized");
+    }
 
-        return ctx;
-
-    },
+    return ctx;
+},
 
     async getMappedBranchesForEmail(email: string) {
         const {
