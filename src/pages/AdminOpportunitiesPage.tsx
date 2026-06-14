@@ -189,11 +189,6 @@ export function AdminOpportunitiesPage() {
         setMailWorkspaceCompanySize
     ] = useState("");
 
-    const [
-        mailWorkspaceRemarks,
-        setMailWorkspaceRemarks
-    ] = useState("");
-
     const [mailWorkspaceStipendEnabled, setMailWorkspaceStipendEnabled] = useState(false);
     const [mailWorkspaceStipendAmount, setMailWorkspaceStipendAmount] = useState("");
 
@@ -474,15 +469,34 @@ export function AdminOpportunitiesPage() {
     }
 
     function normalizeMailBody(input: string) {
+
         return input
-            .replace(/<mark>|<\/mark>/gi, "")
-            .replace(/<[^>]+>/g, "")
+
+            // remove html tags except mark
+            .replace(/<\/?(?!mark\b)[^>]+>/gi, "")
+
+            // remove markdown headings only
             .replace(/^#{1,6}\s+/gm, "")
-            .replace(/\*\*(.*?)\*\*/g, "$1")
-            .replace(/__(.*?)__/g, "$1")
+
+            // convert markdown bold to gmail-friendly bold markers
+            .replace(/\*\*(.*?)\*\*/g, "*$1*")
+
+            .replace(/__(.*?)__/g, "*$1*")
+
+            // remove code blocks
             .replace(/`{1,3}/g, "")
+
+            // keep bullet points
             .replace(/^\s*[-*]\s+/gm, "• ")
+
+            // collapse spacing
             .replace(/\n{3,}/g, "\n\n")
+
+            .replace(
+                /\[([^\]]+)\]\(([^)]+)\)/g,
+                "$1"
+            )
+
             .trim();
     }
 
@@ -541,10 +555,6 @@ export function AdminOpportunitiesPage() {
 
             setMailWorkspaceCompanySize(
                 workspace.companySize || ""
-            );
-
-            setMailWorkspaceRemarks(
-                workspace.remarks || ""
             );
 
             setMailWorkspaceDraft({
@@ -756,9 +766,8 @@ export function AdminOpportunitiesPage() {
         const specialInstruction =
             mailWorkspaceSpecialInstruction.trim() || "None";
 
-        const remarks =
-            mailWorkspaceRemarks.trim();
-
+        const companyConversation =
+            mailWorkspaceCompanyConversation.trim();
 
         const registrationPortalUrl =
             "Student Opportunity Portal";
@@ -826,7 +835,8 @@ export function AdminOpportunitiesPage() {
             mailWorkspaceAttachFiles
                 ? "- Additional files will be attached by admin."
                 : "",
-            "- Do not use markdown syntax (#, ##, ###, *, **, tables, or HTML tags).",
+
+            "- Do not use markdown headings (#, ##, ###).",
             "- Do not invent missing information.",
             "- Omit any unavailable line completely.",
             "- Do not include Selection Process unless the Special Instruction explicitly asks for it.",
@@ -896,6 +906,9 @@ ${importantNotesBlock}
 
 Special Instruction:
 ${specialInstruction}
+
+Company Conversation:
+${companyConversation || "None"}
 
 Generate only the final email body.
     `;
@@ -1070,7 +1083,9 @@ Generate only the final email body.
     }
 
     function openGmailDraft() {
+
         const mail = buildMailPackage();
+
         if (!mail) {
             alert("Paste the final ChatGPT mail body first.");
             return;
@@ -1081,13 +1096,18 @@ Generate only the final email body.
             `&to=${encodeURIComponent(mail.to)}` +
             `&cc=${encodeURIComponent(mail.cc)}` +
             `&bcc=${encodeURIComponent(mail.bcc)}` +
-            `&su=${encodeURIComponent(mail.subject)}` +
-            `&body=${encodeURIComponent(mail.body)}`;
+            `&su=${encodeURIComponent(mail.subject)}`;
 
         window.open(
             gmailUrl,
             "_blank",
             "noopener,noreferrer"
+        );
+
+        navigator.clipboard.writeText(mail.body);
+
+        alert(
+            "Gmail draft opened. Mail body copied to clipboard. Paste it into Gmail."
         );
     }
 
@@ -1917,7 +1937,6 @@ border rounded px-3 py-2 w-full
                                             setMailWorkspaceDriveMode("");
                                             setMailWorkspaceIndustryType("");
                                             setMailWorkspaceCompanySize("");
-                                            setMailWorkspaceRemarks("");
 
                                             setMailWorkspaceStipendEnabled(false);
                                             setMailWorkspaceStipendAmount("");
