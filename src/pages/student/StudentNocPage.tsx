@@ -8,6 +8,11 @@ import {
     NOC_TYPES,
 } from "@/services/nocService";
 
+import {
+    getHodEmail,
+    NOC_EMAIL_CONFIG,
+} from "@/config/hodMapping";
+
 import { supabase } from "@/lib/supabase";
 
 export function StudentNocPage() {
@@ -595,6 +600,90 @@ export function StudentNocPage() {
         });
 
         await loadProfile();
+
+    }
+
+    async function sendHodApprovalMail(
+        request: any
+    ) {
+
+        try {
+
+            const freshToken =
+                await nocService.regenerateHodToken(
+                    request.noc_request_id
+                );
+
+            const hodEmail =
+                getHodEmail(
+                    request.snapshot?.institute_name,
+                    request.snapshot?.course,
+                    request.snapshot?.branch
+                );
+
+            const subject =
+                `NOC Request: ${request.snapshot?.enrollment_no} - ${request.snapshot?.student_name} for ${request.snapshot?.company_name} as ${request.noc_type}`;
+
+            const branchLine =
+                request.snapshot?.branch === "Computer Science Engineering"
+                    ? "CSE"
+                    : request.snapshot?.branch ?? "";
+
+            const body =
+                `Dear Sir/Madam,
+
+Greetings.
+
+I am ${request.snapshot?.student_name} (Enrollment No. ${request.snapshot?.enrollment_no}), currently studying in ${request.snapshot?.course} ${request.snapshot?.branch} at ${request.snapshot?.institute_name}.
+
+I have applied for  ${request.noc_type} opportunity with ${request.snapshot?.company_name} and request your approval for my NOC application.
+
+I kindly request you to review and approve/reject my application at your earliest convenience using the secure review link below:
+
+${window.location.origin}/hod/review/${freshToken}
+
+Thank you.
+
+Regards,
+
+${request.snapshot?.student_name}
+${request.snapshot?.enrollment_no}
+${branchLine}, ${request.snapshot?.institute_name}`;
+
+            const mailto =
+                `mailto:${hodEmail}`
+                +
+                `?cc=${encodeURIComponent(
+                    `${NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL},${NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL}`
+                )}`
+                +
+                `&subject=${encodeURIComponent(subject)}`
+                +
+                `&body=${encodeURIComponent(body)}`;
+
+           const gmailUrl =
+    `https://mail.google.com/mail/?view=cm&fs=1`
+    + `&to=${encodeURIComponent(hodEmail)}`
+    + `&cc=${encodeURIComponent(
+        `${NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL},${NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL}`
+    )}`
+    + `&su=${encodeURIComponent(subject)}`
+    + `&body=${encodeURIComponent(body)}`;
+
+window.open(
+    gmailUrl,
+    "_blank"
+);
+
+        } catch (
+        error: any
+        ) {
+
+            alert(
+                error.message
+            );
+
+        }
 
     }
 
@@ -2331,21 +2420,58 @@ rounded
 
                                         <td className="p-3">
 
-                                            <button
+                                            <div className="flex flex-wrap gap-2">
 
-                                                onClick={() =>
-                                                    setSelectedRequest(
-                                                        request
+                                                <button
+
+                                                    onClick={() =>
+                                                        setSelectedRequest(
+                                                            request
+                                                        )
+                                                    }
+
+                                                    className="rounded border px-3 py-1"
+
+                                                >
+
+                                                    View
+
+                                                </button>
+
+                                                {
+
+                                                    request.status ===
+                                                    "PENDING_HOD_APPROVAL"
+                                                    && (
+
+                                                        <button
+
+                                                            onClick={() =>
+                                                                sendHodApprovalMail(
+                                                                    request
+                                                                )
+                                                            }
+
+                                                            className="
+rounded
+border
+px-3
+py-1
+bg-blue-50
+"
+
+                                                        >
+
+                                                            Send HOD Approval Request
+
+                                                        </button>
+
                                                     )
+
                                                 }
 
-                                                className="rounded border px-3 py-1"
+                                            </div>
 
-                                            >
-
-                                                View
-
-                                            </button>
                                         </td>
 
                                     </tr>
@@ -2700,6 +2826,8 @@ p-6
 
                             )
                         }
+
+
 
                         <div className="mt-6 rounded-lg border bg-slate-50 p-4">
 

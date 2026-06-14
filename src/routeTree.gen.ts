@@ -15,6 +15,7 @@ import { Route as MyApplicationsRouteImport } from './routes/my-applications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HodIndexRouteImport } from './routes/hod/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StudentNocRouteImport } from './routes/student/noc'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -27,6 +28,7 @@ import { Route as AdminAttendanceRouteImport } from './routes/admin/attendance'
 import { Route as AdminAllOpportunitiesRouteImport } from './routes/admin/all-opportunities'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
 import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/opportunities.index'
+import { Route as HodReviewTokenRouteImport } from './routes/hod/review.$token'
 import { Route as AdminQuestionsOpportunityIdRouteImport } from './routes/admin/questions.$opportunityId'
 import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
 import { Route as AdminExportOpportunityIdRouteImport } from './routes/admin/export.$opportunityId'
@@ -59,6 +61,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HodIndexRoute = HodIndexRouteImport.update({
+  id: '/hod/',
+  path: '/hod/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -121,6 +128,11 @@ const AdminOpportunitiesIndexRoute = AdminOpportunitiesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminOpportunitiesRoute,
 } as any)
+const HodReviewTokenRoute = HodReviewTokenRouteImport.update({
+  id: '/hod/review/$token',
+  path: '/hod/review/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminQuestionsOpportunityIdRoute =
   AdminQuestionsOpportunityIdRouteImport.update({
     id: '/admin/questions/$opportunityId',
@@ -158,9 +170,11 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
   '/admin/': typeof AdminIndexRoute
+  '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
   '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
+  '/hod/review/$token': typeof HodReviewTokenRoute
   '/admin/opportunities/': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -180,9 +194,11 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
   '/admin': typeof AdminIndexRoute
+  '/hod': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
   '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
+  '/hod/review/$token': typeof HodReviewTokenRoute
   '/admin/opportunities': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRoutesById {
@@ -204,9 +220,11 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
   '/admin/': typeof AdminIndexRoute
+  '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
   '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
+  '/hod/review/$token': typeof HodReviewTokenRoute
   '/admin/opportunities/': typeof AdminOpportunitiesIndexRoute
 }
 export interface FileRouteTypes {
@@ -229,9 +247,11 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/student/noc'
     | '/admin/'
+    | '/hod/'
     | '/admin/export/$opportunityId'
     | '/admin/opportunities/$opportunityId'
     | '/admin/questions/$opportunityId'
+    | '/hod/review/$token'
     | '/admin/opportunities/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -251,9 +271,11 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/student/noc'
     | '/admin'
+    | '/hod'
     | '/admin/export/$opportunityId'
     | '/admin/opportunities/$opportunityId'
     | '/admin/questions/$opportunityId'
+    | '/hod/review/$token'
     | '/admin/opportunities'
   id:
     | '__root__'
@@ -274,9 +296,11 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/student/noc'
     | '/admin/'
+    | '/hod/'
     | '/admin/export/$opportunityId'
     | '/admin/opportunities/$opportunityId'
     | '/admin/questions/$opportunityId'
+    | '/hod/review/$token'
     | '/admin/opportunities/'
   fileRoutesById: FileRoutesById
 }
@@ -298,8 +322,10 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   StudentNocRoute: typeof StudentNocRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  HodIndexRoute: typeof HodIndexRoute
   AdminExportOpportunityIdRoute: typeof AdminExportOpportunityIdRoute
   AdminQuestionsOpportunityIdRoute: typeof AdminQuestionsOpportunityIdRoute
+  HodReviewTokenRoute: typeof HodReviewTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -344,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hod/': {
+      id: '/hod/'
+      path: '/hod'
+      fullPath: '/hod/'
+      preLoaderRoute: typeof HodIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -430,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOpportunitiesIndexRouteImport
       parentRoute: typeof AdminOpportunitiesRoute
     }
+    '/hod/review/$token': {
+      id: '/hod/review/$token'
+      path: '/hod/review/$token'
+      fullPath: '/hod/review/$token'
+      preLoaderRoute: typeof HodReviewTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/questions/$opportunityId': {
       id: '/admin/questions/$opportunityId'
       path: '/admin/questions/$opportunityId'
@@ -485,8 +525,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   StudentNocRoute: StudentNocRoute,
   AdminIndexRoute: AdminIndexRoute,
+  HodIndexRoute: HodIndexRoute,
   AdminExportOpportunityIdRoute: AdminExportOpportunityIdRoute,
   AdminQuestionsOpportunityIdRoute: AdminQuestionsOpportunityIdRoute,
+  HodReviewTokenRoute: HodReviewTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

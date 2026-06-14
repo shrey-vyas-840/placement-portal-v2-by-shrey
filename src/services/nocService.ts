@@ -5,13 +5,13 @@ export const NOC_TYPES = [
     "On Campus Internship + PPO",
 
     "On Campus Internship",
-    
+
     "On Campus Placement",
 
     "Off Campus Internship + PPO",
-    
+
     "Off Campus Internship",
-    
+
     "Off Campus Placement",
 
 ] as const;
@@ -137,151 +137,106 @@ export const nocService = {
     },
 
     async createRequest(
-
         studentId: string,
-
         payload: {
-
             noc_type: string;
-
             start_date: string;
-
             end_date: string;
-
             company_name: string;
-
             company_address_1: string;
-
             company_address_2: string;
-
             hr_prefix: string;
-
             hr_name: string;
-
             hr_position: string;
-
             opportunity_mode: string;
-
         }
-
     ) {
-
         const snapshot =
-            await this
-                .getStudentProfileSnapshot(
-                    studentId
-                );
+            await this.getStudentProfileSnapshot(studentId);
 
         const {
             data: hod,
-        } =
-            await (supabase as any)
+        } = await (supabase as any)
+            .from("branch_hod_mapping")
+            .select("*")
+            .eq("branch_name", snapshot.branch)
+            .eq("is_active", true)
+            .maybeSingle();
 
-                .from(
-                    "branch_hod_mapping"
-                )
-
-                .select("*")
-
-                .eq(
-                    "branch_name",
-                    snapshot.branch
-                )
-
-                .eq(
-                    "is_active",
-                    true
-                )
-
-                .maybeSingle();
-
-        const deadline =
-            new Date();
-
-        deadline.setHours(
-            deadline.getHours()
-            + 36
-        );
+        const deadline = new Date();
+        deadline.setHours(deadline.getHours() + 36);
 
         const finalSnapshot = {
-
             ...snapshot,
-
-            noc_type:
-                payload.noc_type,
-
-            opportunity_mode:
-                payload.opportunity_mode,
-
-            start_date:
-                payload.start_date,
-
-            end_date:
-                payload.end_date,
-
-            company_name:
-                payload.company_name,
-
-            company_address_1:
-                payload.company_address_1,
-
-            company_address_2:
-                payload.company_address_2,
-
-            hr_prefix:
-                payload.hr_prefix,
-
-            hr_name:
-                payload.hr_name,
-
-            hr_position:
-                payload.hr_position,
-
+            noc_type: payload.noc_type,
+            opportunity_mode: payload.opportunity_mode,
+            start_date: payload.start_date,
+            end_date: payload.end_date,
+            company_name: payload.company_name,
+            company_address_1: payload.company_address_1,
+            company_address_2: payload.company_address_2,
+            hr_prefix: payload.hr_prefix,
+            hr_name: payload.hr_name,
+            hr_position: payload.hr_position,
         };
+
+        const hodEmail = (
+            hod?.hod_email ??
+            "shrey36870@gmail.com"
+        )
+            .trim()
+            .toLowerCase();
 
         const {
             data,
             error,
-        } =
-            await (supabase as any)
+        } = await (supabase as any)
+            .from("noc_requests")
+            .insert({
+                student_id: studentId,
+                noc_type: payload.noc_type,
+                hod_email: hodEmail,
+                status: "PENDING_HOD_APPROVAL",
+                snapshot: finalSnapshot,
+                hod_approval_deadline: deadline.toISOString(),
+            })
+            .select()
+            .single();
 
-                .from(
-                    "noc_requests"
-                )
+        if (error) throw error;
 
-                .insert({
+        const approvalToken = crypto.randomUUID();
 
-                    student_id:
-                        studentId,
+        const {
+            error: tokenError,
+        } = await (supabase as any)
+            .from("noc_approval_tokens")
+            .upsert(
+                {
+                    noc_request_id: data.noc_request_id,
+                    token: approvalToken,
+                    expires_at: deadline.toISOString(),
+                    used_at: null,
+                    action: "HOD_REVIEW",
+                    created_at: new Date().toISOString(),
+                },
+                {
+                    onConflict: "noc_request_id",
+                }
+            );
 
-                    noc_type:
-                        payload.noc_type,
+        if (tokenError) throw tokenError;
 
-                    hod_email:
-                        hod?.hod_email
-                        ??
-                        "shrey36870@gmail.com",
+        const reviewUrl =
+            typeof window !== "undefined"
+                ? `${window.location.origin}/hod/review/${approvalToken}`
+                : `/hod/review/${approvalToken}`;
 
-                    status:
-                        "PENDING_HOD_APPROVAL",
-
-                    snapshot:
-                        finalSnapshot,
-
-                    hod_approval_deadline:
-                        deadline.toISOString(),
-
-                })
-
-                .select()
-
-                .single();
-
-        if (error)
-            throw error;
-
-        return data;
-
+        return {
+            ...data,
+            hod_review_token: approvalToken,
+            hod_review_url: reviewUrl,
+        };
     },
 
     async getStudentRequests(
@@ -500,5 +455,78 @@ export const nocService = {
         if (error) throw error;
 
         return data.signedUrl;
+    },
+
+        async regenerateHodToken(
+        nocRequestId: string
+    ) {
+
+        const token =
+            crypto.randomUUID();
+
+        const {
+            data: request,
+            error: requestError,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_requests"
+                )
+
+                .select(
+                    "hod_approval_deadline"
+                )
+
+                .eq(
+                    "noc_request_id",
+                    nocRequestId
+                )
+
+                .single();
+
+        if (requestError)
+            throw requestError;
+
+        const {
+            error,
+        } =
+            await (supabase as any)
+
+                .from(
+                    "noc_approval_tokens"
+                )
+
+                .upsert(
+                    {
+                        noc_request_id:
+                            nocRequestId,
+
+                        token,
+
+                        expires_at:
+                            request.hod_approval_deadline,
+
+                        used_at:
+                            null,
+
+                        action:
+                            "HOD_REVIEW",
+
+                        created_at:
+                            new Date()
+                                .toISOString(),
+                    },
+                    {
+                        onConflict:
+                            "noc_request_id",
+                    }
+                );
+
+        if (error)
+            throw error;
+
+        return token;
+
     },
 };
