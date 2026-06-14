@@ -529,4 +529,61 @@ export const nocService = {
         return token;
 
     },
+
+    async markHodMailSent(
+    nocRequestId: string
+) {
+
+    const {
+        data,
+        error,
+    } =
+        await (supabase as any)
+
+            .from(
+                "noc_requests"
+            )
+
+            .select(
+                "hod_mail_send_count"
+            )
+
+            .eq(
+                "noc_request_id",
+                nocRequestId
+            )
+
+            .single();
+
+    if (error)
+        throw error;
+
+    await (supabase as any)
+
+        .from(
+            "noc_requests"
+        )
+
+        .update({
+
+            hod_mail_sent_at:
+                new Date()
+                    .toISOString(),
+
+            hod_mail_send_count:
+                (
+                    data?.hod_mail_send_count
+                    ??
+                    0
+                ) + 1,
+
+        })
+
+        .eq(
+            "noc_request_id",
+            nocRequestId
+        );
+
+}
+
 };

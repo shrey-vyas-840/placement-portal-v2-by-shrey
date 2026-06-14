@@ -606,6 +606,22 @@ export function StudentNocPage() {
     async function sendHodApprovalMail(
         request: any
     ) {
+        if (
+            request.hod_mail_send_count >= 1
+            &&
+            new Date() <
+            new Date(
+                request.hod_approval_deadline
+            )
+        ) {
+
+            alert(
+                "HOD approval request already sent. You can resend only after the approval deadline expires."
+            );
+
+            return;
+
+        }
 
         try {
 
@@ -661,19 +677,23 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                 +
                 `&body=${encodeURIComponent(body)}`;
 
-           const gmailUrl =
-    `https://mail.google.com/mail/?view=cm&fs=1`
-    + `&to=${encodeURIComponent(hodEmail)}`
-    + `&cc=${encodeURIComponent(
-        `${NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL},${NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL}`
-    )}`
-    + `&su=${encodeURIComponent(subject)}`
-    + `&body=${encodeURIComponent(body)}`;
+            await nocService.markHodMailSent(
+                request.noc_request_id
+            );
 
-window.open(
-    gmailUrl,
-    "_blank"
-);
+            const gmailUrl =
+                `https://mail.google.com/mail/?view=cm&fs=1`
+                + `&to=${encodeURIComponent(hodEmail)}`
+                + `&cc=${encodeURIComponent(
+                    `${NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL},${NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL}`
+                )}`
+                + `&su=${encodeURIComponent(subject)}`
+                + `&body=${encodeURIComponent(body)}`;
+
+            window.open(
+                gmailUrl,
+                "_blank"
+            );
 
         } catch (
         error: any
@@ -2462,7 +2482,35 @@ bg-blue-50
 
                                                         >
 
-                                                            Send HOD Approval Request
+                                                            {
+                                                                request.status ===
+                                                                "PENDING_HOD_APPROVAL"
+
+                                                                &&
+
+                                                                (
+                                                                    request.hod_mail_send_count >= 1
+                                                                        &&
+                                                                        new Date() <
+                                                                        new Date(
+                                                                            request.hod_approval_deadline
+                                                                        )
+
+                                                                        ?
+
+                                                                        null
+
+                                                                        :
+
+                                                                        <button>
+                                                                            {
+                                                                                request.hod_mail_send_count > 0
+                                                                                    ? "Resend HOD Approval"
+                                                                                    : "Send HOD Approval Request"
+                                                                            }
+                                                                        </button>
+                                                                )
+                                                            }
 
                                                         </button>
 
