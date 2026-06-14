@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { NOC_EMAIL_CONFIG } from "@/config/hodMapping";
 import { Link } from "@tanstack/react-router";
 import { adminOpportunityService } from "@/services/adminOpportunityService";
+import {
+    OpportunityMailWorkspaceModal,
+} from "@/components/opportunities/OpportunityMailWorkspaceModal";
 
 type OpportunityCard = {
     opportunity_id: string;
@@ -58,7 +62,10 @@ export function AdminAllOpportunitiesPage() {
     const [periodFilter, setPeriodFilter] = useState<FilterPeriod>("All");
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
-
+    const [
+        mailWorkspaceOpportunityId,
+        setMailWorkspaceOpportunityId,
+    ] = useState<string | null>(null);
     const [extendOpportunity, setExtendOpportunity] = useState<OpportunityCard | null>(null);
     const [newDeadline, setNewDeadline] = useState("");
 
@@ -225,13 +232,37 @@ export function AdminAllOpportunitiesPage() {
                                     >
                                         Extend Application
                                     </button>
+
+                                    <button
+                                        type="button"
+                                        className="rounded-lg border px-4 py-2"
+                                        onClick={() =>
+                                            setMailWorkspaceOpportunityId(
+                                                opportunity.opportunity_id
+                                            )
+                                        }
+                                    >
+                                        Mail Workspace
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
-
+            <OpportunityMailWorkspaceModal
+                open={
+                    mailWorkspaceOpportunityId !== null
+                }
+                opportunityId={
+                    mailWorkspaceOpportunityId
+                }
+                onClose={() =>
+                    setMailWorkspaceOpportunityId(
+                        null
+                    )
+                }
+            />
             {extendOpportunity && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/40">
                     <div className="w-96 space-y-4 rounded-lg bg-white p-6">
