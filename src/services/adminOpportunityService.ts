@@ -1,4 +1,83 @@
 import { supabase } from "@/lib/supabase";
+import { ELIGIBILITY_MAPPING } from "@/constants/eligibilityMapping";
+import { getHodEmail } from "@/config/hodMapping";
+
+type AnyRecord = Record<string, any>;
+
+function normalize(value?: string | null) {
+    return (value ?? "").trim().toLowerCase();
+}
+
+function splitCsvList(value?: string | null) {
+    if (!value) return [];
+    return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function uniqueStrings(values: Array<string | null | undefined>) {
+    return Array.from(
+        new Set(
+            values
+                .filter(
+                    (value): value is string =>
+                        typeof value === "string"
+                )
+                .map((value) => value.trim())
+                .filter(Boolean)
+        )
+    );
+}
+
+function fullName(student: AnyRecord) {
+    return [
+        student.first_name,
+        student.middle_name,
+        student.last_name,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function matchesAllowed(
+    candidate: string | null | undefined,
+    allowed: string[]
+) {
+    if (!allowed.length) return true;
+    return allowed.some(
+        (item) => normalize(item) === normalize(candidate)
+    );
+}
+
+function buildEligibilityCatalog() {
+    return Object.entries(ELIGIBILITY_MAPPING).map(
+        ([institute, degrees]) => ({
+            institute,
+            degrees: Object.entries(degrees).map(
+                ([degree, branches]) => ({
+                    degree,
+                    branches: [...branches],
+                })
+            ),
+        })
+    );
+}
+
+const COMPANY_LOGO_BUCKET = "company-logos"; // change only if your bucket name differs
+
+function resolveCompanyLogoUrl(path?: string | null) {
+    if (!path) return null;
+
+    const { data } =
+        supabase.storage
+            .from(COMPANY_LOGO_BUCKET)
+            .getPublicUrl(path);
+
+    return data?.publicUrl || null;
+}
 
 export const adminOpportunityService = {
 
@@ -852,6 +931,379 @@ export const adminOpportunityService = {
 
     },
 
+    async getOpportunityMailWorkspace(
+        opportunityId: string
+    ) {
+        const {
+            data: opportunity,
+            error: opportunityError,
+        } = await (supabase as any)
+            .from("opportunity_master")
+            .select(`
+                *,
+                drive_master(
+                    drive_id,
+                    drive_name,
+                    drive_type,
+                    drive_mode,
+                    lowest_package_lpa,
+                    highest_package_lpa,
+                    bond_years,
+                    remarks,
+                    company_master(
+    company_name,
+    hiring_location,
+    company_website,
+    industry_type,
+    company_description,
+    company_size,
+    company_logo
+)
+                )
+            `)
+            .eq("opportunity_id", opportunityId)
+            .single();
 
+        if (opportunityError) throw opportunityError;
+
+        const {
+            data: eligibility,
+            error: eligibilityError,
+        } = await (supabase as any)
+            .from("drive_eligibility")
+            .select("*")
+            .eq("drive_id", opportunity.drive_id)
+            .maybeSingle();
+
+        if (eligibilityError) throw eligibilityError;
+
+        const allowedInstitutes =
+            splitCsvList(
+                eligibility?.allowed_institutes
+            );
+
+        const allowedDegrees =
+            splitCsvList(
+                eligibility?.allowed_degrees
+            );
+
+        const allowedBranches =
+            splitCsvList(
+                eligibility?.allowed_branches
+            );
+
+        const allowedBatches =
+            splitCsvList(
+                eligibility?.passing_out_batches
+            );
+
+        const minCgpa =
+            Number(
+                eligibility?.minimum_cgpa ?? 0
+            ) || 0;
+
+        const maxBacklogs =
+            Number(
+                eligibility?.maximum_active_backlogs ?? 0
+            ) || 0;
+
+        const [
+            studentsResult,
+            academicsResult,
+            hodMappingsResult,
+        ] = await Promise.all([
+            (supabase as any)
+                .from("student_master")
+                .select(`
+                    student_id,
+                    user_id,
+                    enrollment_no,
+                    first_name,
+                    middle_name,
+                    last_name,
+                    institute_email,
+                    personal_email,
+                    is_active
+                `)
+                .eq("is_active", true),
+
+            (supabase as any)
+                .from("student_academic_details")
+                .select(`
+                    student_id,
+                    current_institute_name,
+                    current_degree_level,
+                    current_branch_name,
+                    current_cgpa,
+                    active_backlogs,
+                    graduation_year
+                `),
+
+            (supabase as any)
+                .from("branch_hod_mapping")
+                .select(`
+                    institute_name,
+                    degree_name,
+                    branch_name,
+                    hod_email,
+                    is_active
+                `)
+                .eq("is_active", true),
+        ]);
+
+        if (studentsResult.error) throw studentsResult.error;
+        if (academicsResult.error) throw academicsResult.error;
+        if (hodMappingsResult.error) throw hodMappingsResult.error;
+
+        const students = (studentsResult.data ?? []) as AnyRecord[];
+        const academics = (academicsResult.data ?? []) as AnyRecord[];
+        const hodMappings = (hodMappingsResult.data ?? []) as AnyRecord[];
+
+        const academicMap = new Map<string, AnyRecord>(
+            academics.map((row) => [
+                String(row.student_id),
+                row,
+            ])
+        );
+
+        const eligibleStudents = students
+            .map((student: AnyRecord) => {
+                const academic =
+                    academicMap.get(String(student.student_id)) as AnyRecord | undefined;
+
+                if (!academic) return null;
+
+                const instituteMatch = matchesAllowed(
+                    academic.current_institute_name,
+                    allowedInstitutes
+                );
+
+                const degreeMatch = matchesAllowed(
+                    academic.current_degree_level,
+                    allowedDegrees
+                );
+
+                const branchMatch = matchesAllowed(
+                    academic.current_branch_name,
+                    allowedBranches
+                );
+
+                const cgpaMatch =
+                    minCgpa <= 0
+                        ? true
+                        : Number(academic.current_cgpa ?? 0) >= minCgpa;
+
+                const backlogMatch =
+                    maxBacklogs < 0
+                        ? true
+                        : Number(academic.active_backlogs ?? 0) <= maxBacklogs;
+
+                const batchMatch = allowedBatches.length
+                    ? allowedBatches.includes(
+                        String(academic.graduation_year ?? "")
+                    )
+                    : true;
+
+                if (
+                    !instituteMatch ||
+                    !degreeMatch ||
+                    !branchMatch ||
+                    !cgpaMatch ||
+                    !backlogMatch ||
+                    !batchMatch
+                ) {
+                    return null;
+                }
+
+                const email =
+                    student.institute_email ||
+                    student.personal_email ||
+                    "";
+
+                if (!email) return null;
+
+                return {
+                    student_id: student.student_id,
+                    enrollment_no: student.enrollment_no,
+                    student_name: fullName(student),
+                    institute_email: student.institute_email || null,
+                    personal_email: student.personal_email || null,
+                    current_institute_name:
+                        academic.current_institute_name || null,
+                    current_degree_level:
+                        academic.current_degree_level || null,
+                    current_branch_name:
+                        academic.current_branch_name || null,
+                    current_cgpa:
+                        academic.current_cgpa || null,
+                    active_backlogs:
+                        academic.active_backlogs ?? 0,
+                    graduation_year:
+                        academic.graduation_year || null,
+                    email,
+                };
+            })
+            .filter(Boolean);
+
+        const studentEmails = uniqueStrings(
+            eligibleStudents.map(
+                (item: any) => item.email
+            )
+        );
+
+        let hodEmails = uniqueStrings(
+            hodMappings
+                .filter((row: AnyRecord) => {
+                    const instituteMatch = matchesAllowed(
+                        row.institute_name,
+                        allowedInstitutes
+                    );
+
+                    const degreeMatch = matchesAllowed(
+                        row.degree_name,
+                        allowedDegrees
+                    );
+
+                    const branchMatch = matchesAllowed(
+                        row.branch_name,
+                        allowedBranches
+                    );
+
+                    return instituteMatch && degreeMatch && branchMatch;
+                })
+                .map((row: AnyRecord) => row.hod_email)
+        );
+
+        if (!hodEmails.length) {
+            hodEmails = uniqueStrings(
+                eligibleStudents.map((student: any) =>
+                    getHodEmail(
+                        student.current_institute_name,
+                        student.current_degree_level,
+                        student.current_branch_name
+                    )
+                )
+            );
+        }
+
+        const companyName =
+            opportunity?.drive_master?.company_master?.company_name ||
+            opportunity?.drive_master?.company_name ||
+            "";
+
+        const driveName =
+            opportunity?.drive_master?.drive_name ||
+            "";
+
+        const packageRange =
+            opportunity?.drive_master?.lowest_package_lpa != null ||
+                opportunity?.drive_master?.highest_package_lpa != null
+                ? `${opportunity?.drive_master?.lowest_package_lpa ?? "-"} LPA - ${opportunity?.drive_master?.highest_package_lpa ?? "-"} LPA`
+                : "Package not specified";
+
+        const deadlineText = opportunity.application_end_date
+            ? new Date(opportunity.application_end_date).toLocaleString()
+            : "-";
+
+        return {
+
+            companyLogoUrl:
+                resolveCompanyLogoUrl(
+                    opportunity?.drive_master
+                        ?.company_master
+                        ?.company_logo
+                ),
+
+            companyDescription:
+                opportunity?.drive_master
+                    ?.company_master
+                    ?.company_description
+                || "",
+
+            companyWebsite:
+                opportunity?.drive_master
+                    ?.company_master
+                    ?.company_website
+                || "",
+
+            companyLocation:
+                opportunity?.drive_master
+                    ?.company_master
+                    ?.hiring_location
+                || "",
+
+            lowestPackage:
+                opportunity?.drive_master
+                    ?.lowest_package_lpa ?? null,
+
+            highestPackage:
+                opportunity?.drive_master
+                    ?.highest_package_lpa ?? null,
+
+            bondYears:
+                opportunity?.drive_master
+                    ?.bond_years ?? null,
+
+            driveType:
+                opportunity?.drive_master
+                    ?.drive_type ?? "",
+
+            driveMode:
+                opportunity?.drive_master
+                    ?.drive_mode ?? "",
+
+            remarks:
+                opportunity?.drive_master
+                    ?.remarks ?? "",
+
+            industryType:
+                opportunity?.drive_master
+                    ?.company_master
+                    ?.industry_type ?? "",
+
+            companySize:
+                opportunity?.drive_master
+                    ?.company_master
+                    ?.company_size ?? "",
+
+            opportunity: {
+                ...opportunity,
+
+                company_name:
+                    companyName,
+
+                drive_name:
+                    driveName,
+
+                package_range:
+                    packageRange,
+
+                deadline_text:
+                    deadlineText,
+            },
+
+            eligibility: {
+                allowedInstitutes,
+                allowedDegrees,
+                allowedBranches,
+                allowedBatches,
+                minimumCgpa: minCgpa,
+                maximumActiveBacklogs: maxBacklogs,
+                willingToRelocateRequired:
+                    !!eligibility?.willing_to_relocate_required,
+                additionalRequirements:
+                    eligibility?.additional_requirements ?? "",
+            },
+
+            eligibleStudents,
+
+            studentEmails,
+
+            hodEmails,
+
+            eligibilityCatalog:
+                buildEligibilityCatalog(),
+        };
+    },
 
 };
