@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureUserProvisioned } from "@/services/provisionService";
+import { canAccessPortal, getLandingRoute } from "@/services/identityPolicyService";
 
 export const Route = createFileRoute("/auth/callback")({
   component: AuthCallback,
@@ -16,36 +17,40 @@ function AuthCallback() {
 
       if (error) {
         console.error("Auth callback error:", error);
-        navigate({ to: "/login" });
+        navigate({ to: "/login", replace: true });
         return;
       }
 
-      if (data.session) {
-  try {
-    await ensureUserProvisioned();
+      const session = data.session;
 
-    console.log(
-      "User provisioning completed",
-    );
+      if (!session) {
+        navigate({ to: "/login", replace: true });
+        return;
+      }
 
-    navigate({
-      to: "/dashboard",
-    });
-  } catch (err) {
-    console.error(
-      "Provisioning failed",
-      err,
-    );
+      if (!canAccessPortal(session.user?.email)) {
+        await supabase.auth.signOut();
+        navigate({ to: "/login", replace: true });
+        return;
+      }
 
-    navigate({
-      to: "/login",
-    });
-  }
-} else {
-  navigate({
-    to: "/login",
-  });
-}
+      try {
+        await ensureUserProvisioned();
+
+        navigate({
+          to: getLandingRoute(session.user?.email),
+          replace: true,
+        });
+      } catch (err) {
+        console.error("Provisioning failed", err);
+
+        await supabase.auth.signOut();
+
+        navigate({
+          to: "/login",
+          replace: true,
+        });
+      }
     };
 
     handleAuth();

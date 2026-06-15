@@ -2,25 +2,25 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { getLandingRoute } from "@/services/identityPolicyService";
 
 export function LoginPage() {
-  const { signInWithGoogle, status } = useAuth();
+  const { signInWithGoogle, status, user } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") {
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: getLandingRoute(user?.email), replace: true });
     }
-  }, [status, navigate]);
+  }, [status, user?.email, navigate]);
 
   const handleGoogleSignIn = async () => {
     setError(null);
     setSubmitting(true);
     try {
       await signInWithGoogle();
-      // Browser may redirect; otherwise auth state listener navigates.
     } catch (e) {
       setError(e instanceof Error ? e.message : "Sign-in failed");
       setSubmitting(false);
@@ -34,7 +34,7 @@ export function LoginPage() {
           Indus Placement Nexus
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sign in to access your student dashboard.
+          Sign in using your official Indus University email or approved developer account.
         </p>
 
         <div className="mt-6">
@@ -50,10 +50,7 @@ export function LoginPage() {
         </div>
 
         {error && (
-          <p
-            role="alert"
-            className="mt-4 text-sm text-destructive"
-          >
+          <p role="alert" className="mt-4 text-sm text-destructive">
             {error}
           </p>
         )}

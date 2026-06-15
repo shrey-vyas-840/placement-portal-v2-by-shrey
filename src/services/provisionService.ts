@@ -1,4 +1,8 @@
 import { supabase } from "@/lib/supabase";
+import {
+  canAccessPortal,
+  normalizeEmail,
+} from "@/services/identityPolicyService";
 
 export async function ensureUserProvisioned() {
   const {
@@ -7,7 +11,9 @@ export async function ensureUserProvisioned() {
 
   if (!user) return;
 
-  console.log("Provisioning started");
+  if (!canAccessPortal(user.email)) {
+    throw new Error("Portal access denied");
+  }
 
   const { data: existingUser } = await (supabase as any)
     .from("user_accounts")
@@ -16,17 +22,14 @@ export async function ensureUserProvisioned() {
     .maybeSingle();
 
   if (existingUser) {
-    console.log("user_account already exists");
     return;
   }
-
-  console.log("Creating user_account");
 
   const { error } = await (supabase as any)
     .from("user_accounts")
     .insert({
       auth_provider_id: user.id,
-      email_address: user.email,
+      email_address: normalizeEmail(user.email),
       account_status: "Active",
       email_verified: true,
       created_by_type: "Auto Generated",
@@ -37,6 +40,4 @@ export async function ensureUserProvisioned() {
     console.error("USER ACCOUNT ERROR", error);
     throw error;
   }
-
-  console.log("user_account created successfully");
 }

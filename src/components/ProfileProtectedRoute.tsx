@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { profileStatusService } from "@/services/profileStatusService";
+import { isDeveloperEmail } from "@/services/identityPolicyService";
 
 type Props = {
   children: React.ReactNode;
@@ -12,11 +13,8 @@ export function ProfileProtectedRoute({
 }: Props) {
   const { user, status } = useAuth();
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [hasProfile, setHasProfile] =
-    useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -27,11 +25,16 @@ export function ProfileProtectedRoute({
         return;
       }
 
+      if (isDeveloperEmail(user.email)) {
+        if (active) {
+          setHasProfile(true);
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
-        const exists =
-          await profileStatusService.hasProfile(
-            user.id,
-          );
+        const exists = await profileStatusService.hasProfile(user.id);
 
         if (active) {
           setHasProfile(exists);
@@ -50,33 +53,20 @@ export function ProfileProtectedRoute({
     };
   }, [user]);
 
-  if (
-    status === "loading" ||
-    loading
-  ) {
-    return (
-      <div className="p-8">
-        Loading...
-      </div>
-    );
+  if (status === "loading" || loading) {
+    return <div className="p-8">Loading...</div>;
   }
 
   if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isDeveloperEmail(user.email)) {
+    return <>{children}</>;
   }
 
   if (!hasProfile) {
-    return (
-      <Navigate
-        to="/profile"
-        replace
-      />
-    );
+    return <Navigate to="/profile" replace />;
   }
 
   return <>{children}</>;

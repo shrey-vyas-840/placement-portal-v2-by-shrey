@@ -188,27 +188,25 @@ export function WorkspaceCatalogPage() {
             {/* CENTER CONTENT */}
 
             <main className="flex-1 p-8">
-
-                <div className="flex h-full min-h-[700px] items-center justify-center rounded-2xl border border-dashed border-border bg-card">
-
-                    <div className="text-center">
-
-                        <h2 className="text-3xl font-semibold">
-                            Workspace Catalog
+                <div className="grid gap-4">
+                    <Link
+                        to="/workspace/registry-import"
+                        className="rounded-2xl border border-border bg-card p-6 shadow-sm transition hover:border-primary/40 hover:bg-muted/20"
+                    >
+                        <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                            Phase 1
+                        </div>
+                        <h2 className="mt-2 text-2xl font-semibold">
+                            Master Student Registry Import
                         </h2>
-
-                        <p className="mt-3 text-muted-foreground">
-                            Internal workspace hub.
+                        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                            Upload Excel, validate the exact header order, dedupe by latest timestamp, scan conflicts, and push only clean rows to the registry table.
                         </p>
-
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Future tools will appear here.
-                        </p>
-
-                    </div>
-
+                        <div className="mt-4 inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                            Open Import Tool
+                        </div>
+                    </Link>
                 </div>
-
             </main>
 
         </div>

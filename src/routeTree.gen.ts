@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HodIndexRouteImport } from './routes/hod/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as WorkspaceRegistryImportRouteImport } from './routes/workspace/registry-import'
 import { Route as WorkspaceCatalogRouteImport } from './routes/workspace/catalog'
 import { Route as StudentNocRouteImport } from './routes/student/noc'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -72,6 +73,11 @@ const HodIndexRoute = HodIndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceRegistryImportRoute = WorkspaceRegistryImportRouteImport.update({
+  id: '/workspace/registry-import',
+  path: '/workspace/registry-import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
   '/workspace/catalog': typeof WorkspaceCatalogRoute
+  '/workspace/registry-import': typeof WorkspaceRegistryImportRoute
   '/admin/': typeof AdminIndexRoute
   '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
   '/workspace/catalog': typeof WorkspaceCatalogRoute
+  '/workspace/registry-import': typeof WorkspaceRegistryImportRoute
   '/admin': typeof AdminIndexRoute
   '/hod': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
   '/workspace/catalog': typeof WorkspaceCatalogRoute
+  '/workspace/registry-import': typeof WorkspaceRegistryImportRoute
   '/admin/': typeof AdminIndexRoute
   '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/student/noc'
     | '/workspace/catalog'
+    | '/workspace/registry-import'
     | '/admin/'
     | '/hod/'
     | '/admin/export/$opportunityId'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/student/noc'
     | '/workspace/catalog'
+    | '/workspace/registry-import'
     | '/admin'
     | '/hod'
     | '/admin/export/$opportunityId'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/student/noc'
     | '/workspace/catalog'
+    | '/workspace/registry-import'
     | '/admin/'
     | '/hod/'
     | '/admin/export/$opportunityId'
@@ -334,6 +346,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   StudentNocRoute: typeof StudentNocRoute
   WorkspaceCatalogRoute: typeof WorkspaceCatalogRoute
+  WorkspaceRegistryImportRoute: typeof WorkspaceRegistryImportRoute
   AdminIndexRoute: typeof AdminIndexRoute
   HodIndexRoute: typeof HodIndexRoute
   AdminExportOpportunityIdRoute: typeof AdminExportOpportunityIdRoute
@@ -397,6 +410,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/registry-import': {
+      id: '/workspace/registry-import'
+      path: '/workspace/registry-import'
+      fullPath: '/workspace/registry-import'
+      preLoaderRoute: typeof WorkspaceRegistryImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workspace/catalog': {
@@ -545,6 +565,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   StudentNocRoute: StudentNocRoute,
   WorkspaceCatalogRoute: WorkspaceCatalogRoute,
+  WorkspaceRegistryImportRoute: WorkspaceRegistryImportRoute,
   AdminIndexRoute: AdminIndexRoute,
   HodIndexRoute: HodIndexRoute,
   AdminExportOpportunityIdRoute: AdminExportOpportunityIdRoute,
