@@ -1,6 +1,6 @@
-# Placement Portal V2
+# Indus Placement Nexus
 
-A scalable institution-focused Placement Portal Management System (PPMS) built using React, TypeScript, Supabase, PostgreSQL, and TanStack Router.
+A scalable institution-focused Indus Placement Nexus Management System (PPMS) built using React, TypeScript, Supabase, PostgreSQL, and TanStack Router.
 
 Repository:
 `placement-portal-v2-by-shrey`
@@ -9,7 +9,7 @@ Repository:
 
 # Project Overview
 
-Placement Portal V2 is designed as a centralized placement ecosystem for educational institutions to manage:
+Indus Placement Nexus is designed as a centralized placement ecosystem for educational institutions to manage:
 
 * Student Profiles
 * Academic Records

@@ -10,6 +10,8 @@ import {
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/useAuth";
+import { APP_METADATA } from "@/config/appMetadata";
+import { BuildInfo } from "@/components/BuildInfo";
 
 function NotFoundComponent() {
   return (
@@ -73,14 +75,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Customised Placement Portal" },
-      { name: "description", content: "Shrey Generated Project" },
-      { name: "author", content: "Shrey Vyas" },
-      { property: "og:title", content: "Shrey Vyas" },
-      { property: "og:description", content: "Shrey Vyas @Owner of PMS" },
+      { title: APP_METADATA.appName },
+      { name: "application-name", content: APP_METADATA.appName },
+      { name: "application-version", content: APP_METADATA.version },
+      { name: "application-author", content: APP_METADATA.initialDeveloper },
+      { name: "description", content: APP_METADATA.tagline },
+      { name: "author", content: APP_METADATA.initialDeveloper },
+      { property: "og:title", content: APP_METADATA.appName },
+      { property: "og:description", content: APP_METADATA.tagline },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@IndusPlacementNexus" },
     ],
     links: [
       {
@@ -115,6 +120,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <BuildInfo />
         <Outlet />
       </AuthProvider>
     </QueryClientProvider>

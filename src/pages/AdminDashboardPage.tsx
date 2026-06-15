@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { PortalFooter } from "@/components/PortalFooter";
 import {
     useEffect,
     useMemo,
@@ -656,7 +657,7 @@ export function AdminDashboardPage() {
                     {!sidebarCollapsed ? (
                         <div>
                             <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                                Placement Portal
+                                Indus Placement Nexus
                             </div>
                             <div className="mt-1 text-lg font-bold">Admin Control Center</div>
                         </div>
@@ -903,8 +904,8 @@ export function AdminDashboardPage() {
                                                             centerTitle="Drive"
                                                             centerValue={selectedDrive?.drive_name ?? "Drive"}
                                                             size={180}
-outerRadius={60}
-innerRadius={35}
+                                                            outerRadius={60}
+                                                            innerRadius={35}
                                                             legendPosition="bottom"
                                                         />
                                                     </div>
@@ -1358,7 +1359,10 @@ innerRadius={35}
 
                     </section>
 
+                    <PortalFooter />
+
                     <div className="pb-6" />
+
                 </main>
             </div>
         </div>

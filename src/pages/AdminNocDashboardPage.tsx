@@ -1008,7 +1008,7 @@ export function AdminNocDashboardPage() {
                 new ExcelJS.Workbook();
 
             workbook.creator =
-                "Placement Portal V2";
+                "Indus Placement Nexus";
 
             workbook.created =
                 new Date();

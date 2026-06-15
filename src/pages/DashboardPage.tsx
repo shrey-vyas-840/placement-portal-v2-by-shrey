@@ -7,6 +7,7 @@ import { studentService } from "@/services/studentService";
 import { rbacService } from "@/services/rbacService";
 import { getMyStudentDrilldown } from "@/services/studentDashboardAnalyticsService";
 import { StudentAnalyticsSection } from "@/components/dashboard/StudentAnalyticsSection";
+import { PortalFooter } from "@/components/PortalFooter";
 
 function SidebarLink({
   to,
@@ -172,7 +173,7 @@ export function DashboardPage() {
       <aside className="border-r border-border bg-card p-4 lg:w-80">
         <div className="mb-6">
           <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Placement Portal
+            Indus Placement Nexus
           </div>
           <div className="mt-1 text-xl font-bold text-foreground">Student Dashboard</div>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -195,7 +196,7 @@ export function DashboardPage() {
         </h1>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          Manage your profile, documents and placement activities through the Placement Portal.
+          Manage your profile, documents and placement activities through the Indus Placement Nexus.
         </p>
 
         {!profileCompleted && (
@@ -228,6 +229,7 @@ export function DashboardPage() {
             </div>
           </div>
         </section>
+                <PortalFooter />
       </main>
     </div>
   );

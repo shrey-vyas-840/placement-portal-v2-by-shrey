@@ -1,7 +1,7 @@
 export const APP_CONFIG = {
 
     APP_NAME:
-        "Placement Portal",
+        "Indus Placement Nexus",
 
     BASE_URL:
         window.location.origin,
@@ -28,13 +28,23 @@ export const APP_CONFIG = {
 
         },
 
-        DEVELOPER: {
+        DEVELOPER_INSTITUTE_ID: {
 
             name:
                 "Shrey Vyas",
 
             email:
                 "shreyvyas.23.cse@iite.indusuni.ac.in",
+
+        },
+
+        DEVELOPER_PERSONAL_ID: {
+
+            name:
+                "Shrey Vyas",
+
+            email:
+                "vs.shrey@gmail.com",
 
         },
 

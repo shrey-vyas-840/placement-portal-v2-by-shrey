@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { APP_METADATA } from "@/config/appMetadata";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -18,7 +19,7 @@ export function AppHeader() {
           to="/dashboard"
           className="text-base font-semibold text-foreground"
         >
-          Custmised Placement Portal For Indus T&P Cell
+          {APP_METADATA.appName}
         </Link>
         <nav className="flex items-center gap-2" aria-label="Primary">
           <Link
@@ -39,6 +40,7 @@ export function AppHeader() {
             className="hidden text-xs text-muted-foreground sm:inline"
             aria-label="Signed in as"
           >
+            {user?.email ? `Signed in as ${user.email}` : ""}
           </span>
           <Button size="sm" variant="outline" onClick={handleLogout}>
             Logout
