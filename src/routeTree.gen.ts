@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HodIndexRouteImport } from './routes/hod/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as WorkspaceCatalogRouteImport } from './routes/workspace/catalog'
 import { Route as StudentNocRouteImport } from './routes/student/noc'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
@@ -71,6 +72,11 @@ const HodIndexRoute = HodIndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
+  id: '/workspace/catalog',
+  path: '/workspace/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudentNocRoute = StudentNocRouteImport.update({
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
+  '/workspace/catalog': typeof WorkspaceCatalogRoute
   '/admin/': typeof AdminIndexRoute
   '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
+  '/workspace/catalog': typeof WorkspaceCatalogRoute
   '/admin': typeof AdminIndexRoute
   '/hod': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
+  '/workspace/catalog': typeof WorkspaceCatalogRoute
   '/admin/': typeof AdminIndexRoute
   '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
+    | '/workspace/catalog'
     | '/admin/'
     | '/hod/'
     | '/admin/export/$opportunityId'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
+    | '/workspace/catalog'
     | '/admin'
     | '/hod'
     | '/admin/export/$opportunityId'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
+    | '/workspace/catalog'
     | '/admin/'
     | '/hod/'
     | '/admin/export/$opportunityId'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   StudentNocRoute: typeof StudentNocRoute
+  WorkspaceCatalogRoute: typeof WorkspaceCatalogRoute
   AdminIndexRoute: typeof AdminIndexRoute
   HodIndexRoute: typeof HodIndexRoute
   AdminExportOpportunityIdRoute: typeof AdminExportOpportunityIdRoute
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/catalog': {
+      id: '/workspace/catalog'
+      path: '/workspace/catalog'
+      fullPath: '/workspace/catalog'
+      preLoaderRoute: typeof WorkspaceCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/student/noc': {
@@ -524,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   StudentNocRoute: StudentNocRoute,
+  WorkspaceCatalogRoute: WorkspaceCatalogRoute,
   AdminIndexRoute: AdminIndexRoute,
   HodIndexRoute: HodIndexRoute,
   AdminExportOpportunityIdRoute: AdminExportOpportunityIdRoute,
