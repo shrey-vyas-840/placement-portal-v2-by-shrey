@@ -1,37 +1,76 @@
 import { supabase } from "@/lib/supabase";
 import type { StudentMaster, StudentMasterUpdate } from "@/types/student";
+import {
+  getRegistryStudentByEmail,
+  type StudentMasterRegistryRow,
+} from "@/services/studentRegistryService";
 
 /**
  * Student profile service. Reads/writes go through `student_master`
  * scoped to the signed-in user. RLS is the source of truth — these
  * helpers do NOT bypass policies.
  */
+
+function mapRegistryPlacementPreference(
+  value?: string | null,
+): StudentMaster["placement_preference"] {
+  const normalized = (value ?? "").trim().toLowerCase();
+
+  if (
+    normalized.includes("higher") ||
+    normalized.includes("master")
+  ) {
+    return "Higher Studies";
+  }
+
+  if (
+    normalized.includes("entrepreneur") ||
+    normalized.includes("startup")
+  ) {
+    return "Entrepreneurship";
+  }
+
+  if (
+    normalized.includes("not") ||
+    normalized.includes("out")
+  ) {
+    return "Not Interested";
+  }
+
+  return "Interested";
+}
+
+async function resolvePortalUserId(
+  authUserId: string,
+): Promise<string | null> {
+  const { data, error } = await (supabase as any)
+    .from("user_accounts")
+    .select("user_id")
+    .eq("auth_provider_id", authUserId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.user_id ?? null;
+}
+
 export const studentService = {
   async getProfileByUserId(
     authUserId: string,
   ): Promise<StudentMaster | null> {
+    const userId = await resolvePortalUserId(authUserId);
 
-    const { data: account, error: accountError } =
-      await (supabase as any)
-        .from("user_accounts")
-        .select("user_id")
-        .eq("auth_provider_id", authUserId)
-        .maybeSingle();
-
-    if (accountError) {
-      throw accountError;
-    }
-
-    if (!account) {
+    if (!userId) {
       return null;
     }
 
-    const { data, error } =
-      await (supabase as any)
-        .from("student_master")
-        .select("*")
-        .eq("user_id", account.user_id)
-        .maybeSingle();
+    const { data, error } = await (supabase as any)
+      .from("student_master")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
 
     if (error) {
       throw error;
@@ -39,6 +78,90 @@ export const studentService = {
 
     return (data as StudentMaster | null) ?? null;
   },
+
+  async createProfileFromRegistry(
+    authUserId: string,
+    registry: StudentMasterRegistryRow,
+  ): Promise<StudentMaster> {
+    const userId = await resolvePortalUserId(authUserId);
+
+    if (!userId) {
+      throw new Error("User account not found.");
+    }
+
+    const { data: existingProfile, error: existingError } =
+      await (supabase as any)
+        .from("student_master")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    if (existingError) {
+      throw existingError;
+    }
+
+    if (existingProfile) {
+      return existingProfile as StudentMaster;
+    }
+
+    const instituteEmail =
+      registry.institute_email_id || registry.email_address;
+
+    const { data, error } = await (supabase as any)
+      .from("student_master")
+      .insert({
+        user_id: userId,
+        enrollment_no: registry.enrollment_no,
+        first_name: registry.first_name,
+        middle_name: null,
+        last_name: registry.last_name,
+        institute_email: instituteEmail,
+        personal_email: registry.personal_email_id ?? null,
+        contact_number: registry.contact_number,
+        alternate_contact_number: null,
+        gender: registry.gender ?? null,
+        date_of_birth: registry.date_of_birth ?? null,
+        profile_photo_document_id: null,
+        placement_preference: mapRegistryPlacementPreference(
+          registry.placement_preference_text,
+        ),
+        placement_status: "Unplaced",
+        created_by_type: "Auto Generated",
+        is_active: true,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data as StudentMaster;
+  },
+
+  async ensureStudentProfileFromRegistry(
+    authUserId: string,
+    email?: string | null,
+  ): Promise<StudentMaster | null> {
+    const existing = await this.getProfileByUserId(authUserId);
+
+    if (existing) {
+      return existing;
+    }
+
+    if (!email) {
+      return null;
+    }
+
+    const registry = await getRegistryStudentByEmail(email);
+
+    if (!registry) {
+      return null;
+    }
+
+    return this.createProfileFromRegistry(authUserId, registry);
+  },
+
   async updateProfile(
     id: string,
     patch: StudentMasterUpdate,
@@ -91,20 +214,21 @@ export const studentService = {
       };
     }
 
-    const [applicationsResult, attendanceResult, recentResult] = await Promise.all([
-      (supabase as any)
-        .from("student_opportunity_applications")
-        .select("application_status")
-        .eq("student_id", profile.student_id),
+    const [applicationsResult, attendanceResult, recentResult] =
+      await Promise.all([
+        (supabase as any)
+          .from("student_opportunity_applications")
+          .select("application_status")
+          .eq("student_id", profile.student_id),
 
-      (supabase as any)
-        .from("attendance_records")
-        .select("attendance_status")
-        .eq("student_id", profile.student_id),
+        (supabase as any)
+          .from("attendance_records")
+          .select("attendance_status")
+          .eq("student_id", profile.student_id),
 
-      (supabase as any)
-        .from("student_opportunity_applications")
-        .select(`
+        (supabase as any)
+          .from("student_opportunity_applications")
+          .select(`
                 application_id,
                 application_status,
                 applied_at,
@@ -112,10 +236,10 @@ export const studentService = {
                     opportunity_title
                 )
             `)
-        .eq("student_id", profile.student_id)
-        .order("applied_at", { ascending: false })
-        .limit(5),
-    ]);
+          .eq("student_id", profile.student_id)
+          .order("applied_at", { ascending: false })
+          .limit(5),
+      ]);
 
     const applications = applicationsResult.data ?? [];
     const attendance = attendanceResult.data ?? [];
@@ -123,22 +247,24 @@ export const studentService = {
 
     const appliedCount = applications.length;
     const shortlistedCount = applications.filter(
-      (item: any) => item.application_status === "Shortlisted"
+      (item: any) => item.application_status === "Shortlisted",
     ).length;
 
     const attendancePresent = attendance.filter(
-      (item: any) => item.attendance_status === "PRESENT"
+      (item: any) => item.attendance_status === "PRESENT",
     ).length;
 
     const attendanceAbsent = attendance.filter(
-      (item: any) => item.attendance_status === "ABSENT"
+      (item: any) => item.attendance_status === "ABSENT",
     ).length;
 
     const attendancePercentage =
       attendancePresent + attendanceAbsent === 0
         ? 0
         : Math.round(
-          (attendancePresent / (attendancePresent + attendanceAbsent)) * 100
+          (attendancePresent /
+            (attendancePresent + attendanceAbsent)) *
+          100,
         );
 
     return {

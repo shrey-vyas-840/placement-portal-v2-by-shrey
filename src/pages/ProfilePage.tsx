@@ -320,7 +320,7 @@ export function ProfilePage() {
           <CompleteProfileForm
             authUserId={user?.id ?? ""}
             email={user?.email ?? ""}
-            onCreated={() => window.location.reload()}
+            onCreated={() => window.location.assign("/onboarding")}
           />
         )}
 

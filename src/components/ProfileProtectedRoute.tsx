@@ -1,52 +1,72 @@
-import { useEffect, useState } from "react";
 import { Navigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { profileStatusService } from "@/services/profileStatusService";
+import { studentService } from "@/services/studentService";
+import { getOnboardingByStudentId } from "@/services/studentOnboardingService";
 import { isDeveloperEmail } from "@/services/identityPolicyService";
 
 type Props = {
   children: React.ReactNode;
 };
 
-export function ProfileProtectedRoute({
-  children,
-}: Props) {
+export function ProfileProtectedRoute({ children }: Props) {
   const { user, status } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [hasProfile, setHasProfile] = useState(false);
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     let active = true;
 
-    async function checkProfile() {
+    async function checkAccess() {
       if (!user) {
-        setLoading(false);
+        if (active) setLoading(false);
         return;
       }
 
       if (isDeveloperEmail(user.email)) {
         if (active) {
-          setHasProfile(true);
+          setAllowed(true);
           setLoading(false);
         }
         return;
       }
 
       try {
-        const exists = await profileStatusService.hasProfile(user.id);
+        const profile = await studentService.getProfileByUserId(user.id);
+
+        if (!profile) {
+          if (active) {
+            setAllowed(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const onboarding = await getOnboardingByStudentId(profile.student_id);
+
+        if (
+          !onboarding ||
+          onboarding.onboarding_status !== "COMPLETED"
+        ) {
+          if (active) {
+            setAllowed(false);
+            setLoading(false);
+          }
+          return;
+        }
 
         if (active) {
-          setHasProfile(exists);
-        }
-      } finally {
-        if (active) {
+          setAllowed(true);
           setLoading(false);
         }
+      } catch (err) {
+        console.error(err);
+        if (active) setLoading(false);
       }
     }
 
-    checkProfile();
+    checkAccess();
 
     return () => {
       active = false;
@@ -54,19 +74,19 @@ export function ProfileProtectedRoute({
   }, [user]);
 
   if (status === "loading" || loading) {
-    return <div className="p-8">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (isDeveloperEmail(user.email)) {
-    return <>{children}</>;
-  }
-
-  if (!hasProfile) {
-    return <Navigate to="/profile" replace />;
+  if (!allowed && !isDeveloperEmail(user.email)) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;

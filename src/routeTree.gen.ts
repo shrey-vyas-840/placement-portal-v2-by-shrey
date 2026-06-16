@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MyApplicationsRouteImport } from './routes/my-applications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -49,6 +50,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const OpportunitiesRoute = OpportunitiesRouteImport.update({
   id: '/opportunities',
   path: '/opportunities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyApplicationsRoute = MyApplicationsRouteImport.update({
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/my-applications': typeof MyApplicationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/my-applications': typeof MyApplicationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/my-applications': typeof MyApplicationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/my-applications'
+    | '/onboarding'
     | '/opportunities'
     | '/profile'
     | '/reset-password'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/my-applications'
+    | '/onboarding'
     | '/opportunities'
     | '/profile'
     | '/reset-password'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/my-applications'
+    | '/onboarding'
     | '/opportunities'
     | '/profile'
     | '/reset-password'
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   MyApplicationsRoute: typeof MyApplicationsRoute
+  OnboardingRoute: typeof OnboardingRoute
   OpportunitiesRoute: typeof OpportunitiesRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -388,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/opportunities'
       fullPath: '/opportunities'
       preLoaderRoute: typeof OpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-applications': {
@@ -572,6 +592,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   MyApplicationsRoute: MyApplicationsRoute,
+  OnboardingRoute: OnboardingRoute,
   OpportunitiesRoute: OpportunitiesRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
