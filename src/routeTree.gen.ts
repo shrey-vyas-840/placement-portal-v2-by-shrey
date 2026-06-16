@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as MyApplicationsRouteImport } from './routes/my-applications'
@@ -35,6 +36,11 @@ import { Route as AdminQuestionsOpportunityIdRouteImport } from './routes/admin/
 import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
 import { Route as AdminExportOpportunityIdRouteImport } from './routes/admin/export.$opportunityId'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/my-applications': typeof MyApplicationsRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/attendance': typeof AdminAttendanceRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/my-applications': typeof MyApplicationsRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/attendance': typeof AdminAttendanceRoute
@@ -225,6 +233,7 @@ export interface FileRoutesById {
   '/my-applications': typeof MyApplicationsRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/$studentId': typeof AdminStudentIdRoute
   '/admin/all-opportunities': typeof AdminAllOpportunitiesRoute
   '/admin/attendance': typeof AdminAttendanceRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/my-applications'
     | '/opportunities'
     | '/profile'
+    | '/reset-password'
     | '/admin/$studentId'
     | '/admin/all-opportunities'
     | '/admin/attendance'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/my-applications'
     | '/opportunities'
     | '/profile'
+    | '/reset-password'
     | '/admin/$studentId'
     | '/admin/all-opportunities'
     | '/admin/attendance'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/my-applications'
     | '/opportunities'
     | '/profile'
+    | '/reset-password'
     | '/admin/$studentId'
     | '/admin/all-opportunities'
     | '/admin/attendance'
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   MyApplicationsRoute: typeof MyApplicationsRoute
   OpportunitiesRoute: typeof OpportunitiesRoute
   ProfileRoute: typeof ProfileRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   AdminStudentIdRoute: typeof AdminStudentIdRoute
   AdminAllOpportunitiesRoute: typeof AdminAllOpportunitiesRoute
   AdminAttendanceRoute: typeof AdminAttendanceRoute
@@ -356,6 +369,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -554,6 +574,7 @@ const rootRouteChildren: RootRouteChildren = {
   MyApplicationsRoute: MyApplicationsRoute,
   OpportunitiesRoute: OpportunitiesRoute,
   ProfileRoute: ProfileRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   AdminStudentIdRoute: AdminStudentIdRoute,
   AdminAllOpportunitiesRoute: AdminAllOpportunitiesRoute,
   AdminAttendanceRoute: AdminAttendanceRoute,

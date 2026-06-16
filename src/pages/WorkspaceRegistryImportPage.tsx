@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import type { DragEvent } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { hasWorkspaceAccess } from "@/services/workspaceAccessService";
 import {
@@ -47,6 +48,7 @@ export function WorkspaceRegistryImportPage() {
     const [instituteName, setInstituteName] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [report, setReport] = useState<RegistryValidationReport | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
     const [loading, setLoading] = useState(false);
     const [importing, setImporting] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -71,6 +73,54 @@ export function WorkspaceRegistryImportPage() {
             </div>
         );
     }
+
+    const processSelectedFile = (selectedFile: File | null) => {
+        if (!selectedFile) return;
+
+        const allowedExtensions = [".xlsx", ".xls"];
+        const lowerName = selectedFile.name.toLowerCase();
+
+        const validExtension = allowedExtensions.some(ext =>
+            lowerName.endsWith(ext)
+        );
+
+        if (!validExtension) {
+            setStatusError("Only .xlsx or .xls files are allowed.");
+            return;
+        }
+
+        const maxSizeMB = 15;
+
+        if (selectedFile.size > maxSizeMB * 1024 * 1024) {
+            setStatusError(`File exceeds ${maxSizeMB} MB limit.`);
+            return;
+        }
+
+        setFile(selectedFile);
+        setReport(null);
+        setStatusMessage(null);
+        setStatusError(null);
+    };
+
+    const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(false);
+
+        const droppedFile = event.dataTransfer.files?.[0] ?? null;
+        processSelectedFile(droppedFile);
+    };
+
+    const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+    };
+
+    const handleDragEnter = () => {
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragging(false);
+    };
 
     const handleValidate = async () => {
         setStatusMessage(null);
@@ -186,18 +236,51 @@ export function WorkspaceRegistryImportPage() {
                             </div>
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium">Excel File (.xlsx)</label>
-                                <input
-                                    type="file"
-                                    accept=".xlsx,.xls"
-                                    onChange={(e) => {
-                                        setFile(e.target.files?.[0] ?? null);
-                                        setReport(null);
-                                        setStatusMessage(null);
-                                        setStatusError(null);
-                                    }}
-                                    className="block w-full text-sm"
-                                />
+                                <label className="mb-2 block text-sm font-medium">
+                                    Excel File (.xlsx)
+                                </label>
+
+                                <div
+                                    onDrop={handleDrop}
+                                    onDragOver={handleDragOver}
+                                    onDragEnter={handleDragEnter}
+                                    onDragLeave={handleDragLeave}
+                                    className={`rounded-2xl border-2 border-dashed p-8 text-center transition-all ${isDragging
+                                        ? "border-primary bg-primary/5"
+                                        : "border-border bg-background"
+                                        }`}
+                                >
+                                    <input
+                                        id="registry-file-upload"
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        className="hidden"
+                                        onChange={(e) =>
+                                            processSelectedFile(
+                                                e.target.files?.[0] ?? null
+                                            )
+                                        }
+                                    />
+
+                                    <label
+                                        htmlFor="registry-file-upload"
+                                        className="cursor-pointer"
+                                    >
+                                        <div className="space-y-2">
+                                            <div className="text-lg font-semibold">
+                                                Drag & Drop Excel File
+                                            </div>
+
+                                            <div className="text-sm text-muted-foreground">
+                                                or click here to browse
+                                            </div>
+
+                                            <div className="text-xs text-muted-foreground">
+                                                Supports .xlsx and .xls
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="flex flex-wrap gap-2">
@@ -222,8 +305,32 @@ export function WorkspaceRegistryImportPage() {
 
                             {file ? (
                                 <div className="rounded-xl border border-border bg-background p-3 text-sm">
-                                    <div className="font-medium">Selected file</div>
-                                    <div className="mt-1 text-muted-foreground">{file.name}</div>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div className="font-medium">
+                                                Selected file
+                                            </div>
+
+                                            <div className="mt-1 text-muted-foreground">
+                                                {file.name}
+                                            </div>
+
+                                            <div className="mt-1 text-xs text-muted-foreground">
+                                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFile(null);
+                                                setReport(null);
+                                            }}
+                                            className="rounded-lg border border-border px-3 py-1 text-xs"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
                                 </div>
                             ) : null}
 
@@ -403,8 +510,8 @@ export function WorkspaceRegistryImportPage() {
                                     <div
                                         key={`${issue.rowNumber ?? "global"}-${index}`}
                                         className={`rounded-xl border p-3 text-sm ${issue.severity === "error"
-                                                ? "border-red-200 bg-red-50 text-red-700"
-                                                : "border-amber-200 bg-amber-50 text-amber-800"
+                                            ? "border-red-200 bg-red-50 text-red-700"
+                                            : "border-amber-200 bg-amber-50 text-amber-800"
                                             }`}
                                     >
                                         {issue.rowNumber ? `Row ${issue.rowNumber}: ` : ""}

@@ -2,6 +2,24 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { canAccessPortal, isInstitutionalEmail, normalizeEmail } from "@/services/identityPolicyService";
 
+async function resolvePortalUserId(
+    authProviderId: string,
+): Promise<string> {
+    const { data, error } = await (supabase as any)
+        .from("user_accounts")
+        .select("user_id")
+        .eq("auth_provider_id", authProviderId)
+        .single();
+
+    if (error || !data?.user_id) {
+        throw new Error(
+            "Unable to resolve portal user account."
+        );
+    }
+
+    return data.user_id;
+}
+
 export const REGISTRY_EXPECTED_HEADERS = [
     "Timestamp",
     "Email Address",
@@ -653,10 +671,12 @@ export async function validateRegistryWorkbook(
 
 export async function importRegistryRows(
     report: RegistryValidationReport,
-    importedByUserId: string,
+    authProviderId: string,
 ): Promise<RegistryImportResult> {
     const rowsToImport = report.rows.filter((row) => row.action === "import");
-
+    const importedByUserId =
+        await resolvePortalUserId(authProviderId);
+        
     if (!rowsToImport.length) {
         return {
             insertedOrUpdated: 0,
