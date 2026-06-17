@@ -365,6 +365,7 @@ export function FirstTimeSetupPage() {
     };
 
     const handlePasswordContinue = async () => {
+        console.log("HANDLE PASSWORD CONTINUE FIRED");
         setError(null);
         setMessage(null);
 
@@ -394,14 +395,22 @@ export function FirstTimeSetupPage() {
             setSaving(true);
 
             await authService.updatePassword(newPassword);
+            console.log("PASSWORD UPDATED");
+            console.log("USER EMAIL", user?.email);
 
             const normalizedEnrollment =
                 normalizeEnrollment(enteredEnrollment);
 
-            const registry =
-                await getRegistryStudentByEmail(
-                    user.email ?? ""
-                );
+            console.log("AUTH EMAIL", user.email);
+
+            console.log("ABOUT TO CALL REGISTRY");
+
+            const registry = await getRegistryStudentByEmail(
+                user.email ?? ""
+            );
+
+            console.log("REGISTRY RESPONSE", registry);
+            console.log("REGISTRY RESULT", registry);
 
             if (
                 registry &&
@@ -415,6 +424,18 @@ export function FirstTimeSetupPage() {
                 return;
             }
 
+            if (
+                registry &&
+                normalizeEnrollment(registry.enrollment_no) !==
+                normalizedEnrollment
+            ) {
+                setError(
+                    "Enrollment number does not match registry record."
+                );
+                setSaving(false);
+                return;
+            }
+            console.log("ENTERED ENROLLMENT", enteredEnrollment);
             if (registry) {
                 const normalizedInput = normalizeEnrollment(enteredEnrollment);
                 const normalizedRegistry = normalizeEnrollment(

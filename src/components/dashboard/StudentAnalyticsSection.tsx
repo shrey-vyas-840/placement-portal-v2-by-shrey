@@ -34,28 +34,50 @@ function MetricCard({
     title,
     value,
     subtitle,
+    accent = "from-primary to-cyan-500",
 }: {
     title: string;
     value: number | string;
     subtitle?: string;
+    accent?: string;
 }) {
     return (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-            <div className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        <div
+            className="
+                group
+                relative
+                overflow-hidden
+                rounded-3xl
+                border
+                border-border/60
+                bg-white
+                p-7
+                transition-all
+                duration-300
+                hover:-translate-y-1
+                hover:shadow-x2
+            "
+        >
+            <div
+                className={`absolute left-0 top-0 h-1.25 w-full bg-gradient-to-r ${accent}`}
+            />
+
+            <div className="text-[14px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
                 {title}
             </div>
-            <div className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">
+
+            <div className="mt-3 text-4xl font-bold tracking-tight text-foreground">
                 {value}
             </div>
+
             {subtitle ? (
-                <div className="mt-2 text-xs text-muted-foreground">
+                <div className="mt-3 text-xs text-muted-foreground">
                     {subtitle}
                 </div>
             ) : null}
         </div>
     );
 }
-
 function SectionCard({
     title,
     subtitle,
@@ -66,12 +88,22 @@ function SectionCard({
     children: React.ReactNode;
 }) {
     return (
-        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+        <section
+            className="
+                rounded-3xl
+                border
+                border-border/60
+                bg-white
+                p-6
+                shadow-sm
+            "
+        >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h3 className="text-base font-semibold text-foreground sm:text-lg">
+                    <h3 className="text-xl font-semibold tracking-tight text-foreground">
                         {title}
                     </h3>
+
                     {subtitle ? (
                         <p className="mt-1 text-sm text-muted-foreground">
                             {subtitle}
@@ -79,7 +111,10 @@ function SectionCard({
                     ) : null}
                 </div>
             </div>
-            <div className="mt-5">{children}</div>
+
+            <div className="mt-6">
+                {children}
+            </div>
         </section>
     );
 }
@@ -92,8 +127,25 @@ function StatusPill({
     value: string | number;
 }) {
     return (
-        <div className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground">
-            {label}: {value}
+        <div
+            className="
+                rounded-2xl
+                border
+                border-border/50
+                bg-slate-50
+                px-3
+                py-2
+                text-xs
+                font-medium
+            "
+        >
+            <div className="text-muted-foreground">
+                {label}
+            </div>
+
+            <div className="mt-1 text-sm font-semibold text-foreground">
+                {value}
+            </div>
         </div>
     );
 }
@@ -216,21 +268,25 @@ export function StudentAnalyticsSection({
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <MetricCard
                     title="Registered Drives"
+                    accent="from-blue-600 to-blue-400"
                     value={formatNumber(report.registered_drives)}
                     subtitle="Drive-wise participation"
                 />
                 <MetricCard
                     title="Present Drives"
+                    accent="from-emerald-600 to-emerald-400"
                     value={formatNumber(report.present_drives)}
                     subtitle="Marked present"
                 />
                 <MetricCard
                     title="Absent Drives"
+                    accent="from-red-600 to-rose-400"
                     value={formatNumber(report.absent_drives)}
                     subtitle="Marked absent"
                 />
                 <MetricCard
                     title="Attendance %"
+                    accent="from-violet-600 to-fuchsia-400"
                     value={`${clampPercent(report.attendance_percentage)}%`}
                     subtitle="Present / participated"
                 />
@@ -239,26 +295,31 @@ export function StudentAnalyticsSection({
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <MetricCard
                     title="Total Drives"
+                    accent="from-slate-700 to-slate-500"
                     value={formatNumber(totalDrives)}
                     subtitle="Active drives considered"
                 />
                 <MetricCard
                     title="Eligible Drives"
+                    accent="from-cyan-600 to-sky-400"
                     value={formatNumber(summary?.eligibleDrives ?? totalDrives)}
                     subtitle="Eligible for this student"
                 />
                 <MetricCard
                     title="Shortlisted"
+                    accent="from-amber-600 to-yellow-400"
                     value={formatNumber(report.shortlisted_count)}
                     subtitle="Pipeline progress"
                 />
                 <MetricCard
                     title="Selected"
+                    accent="from-green-600 to-lime-400"
                     value={formatNumber(report.selected_count)}
                     subtitle="Final selections"
                 />
                 <MetricCard
                     title="Applications"
+                    accent="from-indigo-600 to-blue-400"
                     value={formatNumber(report.applications_count)}
                     subtitle="All submitted applications"
                 />
@@ -269,14 +330,29 @@ export function StudentAnalyticsSection({
                 subtitle="All analytics below are restricted to the logged-in student only."
             >
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-2xl border border-border bg-background p-4">
+                    <div className="
+    rounded-3xl
+    border
+    border-border/50
+    bg-gradient-to-b
+    from-white
+    to-slate-50/60
+    p-5
+">
                         <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
                             Participation Coverage
                         </div>
                         <div className="mt-2 text-2xl font-bold">
                             {summary?.participationCoverage ?? 0}%
                         </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="
+    mt-3
+    h-2.5
+    w-full
+    overflow-hidden
+    rounded-full
+    bg-slate-100
+">
                             <div
                                 className="h-full bg-primary"
                                 style={{
@@ -289,14 +365,29 @@ export function StudentAnalyticsSection({
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-background p-4">
+                    <div className="
+    rounded-3xl
+    border
+    border-border/50
+    bg-gradient-to-b
+    from-white
+    to-slate-50/60
+    p-5
+">
                         <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
                             Registration Success
                         </div>
                         <div className="mt-2 text-2xl font-bold">
                             {summary?.registeredRate ?? 0}%
                         </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="
+    mt-3
+    h-2.5
+    w-full
+    overflow-hidden
+    rounded-full
+    bg-slate-100
+">
                             <div
                                 className="h-full bg-emerald-500"
                                 style={{
@@ -309,14 +400,29 @@ export function StudentAnalyticsSection({
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-background p-4">
+                    <div className="
+    rounded-3xl
+    border
+    border-border/50
+    bg-gradient-to-b
+    from-white
+    to-slate-50/60
+    p-5
+">
                         <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
                             Attendance Success
                         </div>
                         <div className="mt-2 text-2xl font-bold">
                             {summary?.attendanceRateVsRegistered ?? 0}%
                         </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="
+    mt-3
+    h-2.5
+    w-full
+    overflow-hidden
+    rounded-full
+    bg-slate-100
+">
                             <div
                                 className="h-full bg-violet-500"
                                 style={{
@@ -329,14 +435,29 @@ export function StudentAnalyticsSection({
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-background p-4">
+                    <div className="
+    rounded-3xl
+    border
+    border-border/50
+    bg-gradient-to-b
+    from-white
+    to-slate-50/60
+    p-5
+">
                         <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
                             Shortlist / Selection
                         </div>
                         <div className="mt-2 text-2xl font-bold">
                             {summary?.shortlistingRate ?? 0}% / {summary?.selectionRate ?? 0}%
                         </div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="
+    mt-3
+    h-2.5
+    w-full
+    overflow-hidden
+    rounded-full
+    bg-slate-100
+">
                             <div
                                 className="h-full bg-amber-500"
                                 style={{
@@ -356,7 +477,7 @@ export function StudentAnalyticsSection({
                     title="Student Status"
                     subtitle="Drive participation breakdown"
                 >
-                    <div className="h-[320px] w-full">
+                    <div className="h-[360px] w-full">
                         {pieData.length ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -398,9 +519,32 @@ export function StudentAnalyticsSection({
                     title="Participation History"
                     subtitle="Drive-by-drive breakdown for the logged-in student"
                 >
-                    <div className="hidden w-full overflow-x-auto md:block">
+                    <div
+                        className="
+        hidden
+        overflow-hidden
+        rounded-3xl
+        border
+        border-border/50
+        bg-white
+        md:block
+    "
+                    >
                         <table className="min-w-[1100px] w-full text-sm">
-                            <thead className="border-b border-border bg-muted/20 text-left text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                            <thead
+                                className="
+        sticky
+        top-0
+        border-b
+        border-border
+        bg-slate-50
+        text-left
+        text-xs
+        uppercase
+        tracking-[0.12em]
+        text-muted-foreground
+    "
+                            >
                                 <tr>
                                     <th className="px-3 py-3">Drive</th>
                                     <th className="px-3 py-3">Company</th>
@@ -418,7 +562,13 @@ export function StudentAnalyticsSection({
                                 {report.drive_breakdown.map((row) => (
                                     <tr
                                         key={row.drive_id}
-                                        className="border-b border-border last:border-b-0"
+                                        className="
+    border-b
+    border-border/50
+    transition-colors
+    hover:bg-slate-50
+    last:border-b-0
+"
                                     >
                                         <td className="px-3 py-3 font-medium text-foreground">
                                             {row.drive_name}
@@ -427,7 +577,19 @@ export function StudentAnalyticsSection({
                                             {row.company_name ?? "-"}
                                         </td>
                                         <td className="px-3 py-3">
-                                            <span className="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium">
+                                            <span
+                                                className="
+        rounded-full
+        border
+        border-primary/15
+        bg-primary/5
+        px-3
+        py-1
+        text-xs
+        font-semibold
+        text-primary
+    "
+                                            >
                                                 {row.status}
                                             </span>
                                         </td>
@@ -459,7 +621,15 @@ export function StudentAnalyticsSection({
                         {report.drive_breakdown.map((row) => (
                             <div
                                 key={row.drive_id}
-                                className="rounded-2xl border border-border bg-background p-4"
+                                className="
+    rounded-3xl
+    border
+    border-border/50
+    bg-gradient-to-b
+    from-white
+    to-slate-50/60
+    p-5
+"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div>

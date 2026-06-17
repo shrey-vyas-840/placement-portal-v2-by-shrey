@@ -21,10 +21,48 @@ function SidebarLink({
   return (
     <Link
       to={to}
-      className="block rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:bg-muted/20"
+      activeProps={{
+        className:
+          "border-primary/20 bg-primary/5 shadow-md",
+      }}
+      className="
+        group
+        relative
+        block
+        overflow-hidden
+        rounded-2xl
+        border
+        border-border
+        bg-card
+        p-4
+        transition-all
+        duration-200
+        hover:-translate-y-0.5
+        hover:border-primary/30
+        hover:shadow-lg
+      "
     >
-      <div className="font-medium text-foreground">{label}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{description}</div>
+      <div
+        className="
+          absolute
+          left-0
+          top-0
+          h-full
+          w-1
+          bg-primary
+          opacity-0
+          transition-opacity
+          group-hover:opacity-100
+        "
+      />
+
+      <div className="font-semibold text-foreground">
+        {label}
+      </div>
+
+      <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+        {description}
+      </div>
     </Link>
   );
 }
@@ -170,15 +208,83 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background lg:flex">
-      <aside className="border-r border-border bg-card p-4 lg:w-80">
+      <aside
+        className="
+    border-r
+    border-border/60
+    bg-white/70
+    backdrop-blur-xl
+    p-5
+    lg:w-80
+  "
+      >
         <div className="mb-6">
-          <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          <div className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
             Indus Placement Nexus
           </div>
-          <div className="mt-1 text-xl font-bold text-foreground">Student Dashboard</div>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+            Student Workspace
+          </div>
           <p className="mt-2 text-sm text-muted-foreground">
             Welcome{completionName ? `, ${completionName}` : ""}.
           </p>
+        </div>
+
+        <div
+          className="
+    mb-6
+    overflow-hidden
+    rounded-3xl
+    border
+    border-primary/10
+    bg-gradient-to-br
+    from-primary
+    to-blue-700
+    p-5
+    text-white
+  "
+        >
+          <div
+            className="
+      flex
+      h-12
+      w-12
+      items-center
+      justify-center
+      rounded-2xl
+      bg-white/20
+      text-lg
+      font-bold
+    "
+          >
+            {completionName?.charAt(0) || "S"}
+          </div>
+
+          <div className="mt-4">
+            <div className="font-semibold">
+              {completionName}
+            </div>
+
+            <div className="text-sm text-white/70">
+              Student
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="flex items-center justify-between text-xs">
+              <span>Profile Completion</span>
+              <span>{completion.percentage}%</span>
+            </div>
+
+            <div className="mt-2 h-2 rounded-full bg-white/20">
+              <div
+                className="h-2 rounded-full bg-white"
+                style={{
+                  width: `${completion.percentage}%`,
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -190,14 +296,96 @@ export function DashboardPage() {
         </div>
       </aside>
 
-      <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Welcome{completionName ? `, ${completionName}` : ""}
-        </h1>
+      <main className="flex-1 px-6 py-10 sm:px-8 lg:px-10">
+        <div
+          className="
+    relative
+    overflow-hidden
+    rounded-[32px]
+    border
+    border-primary/10
+    bg-gradient-to-r
+    from-primary
+    via-blue-700
+    to-cyan-600
+    p-8
+    text-white
+    shadow-xl
+  "
+        >
+          <div className="relative z-10">
+            <div className="text-sm font-medium text-white/80">
+              Student Workspace
+            </div>
 
-        <p className="mt-2 text-sm text-muted-foreground">
-          Manage your profile, documents and placement activities through the Indus Placement Nexus.
-        </p>
+            <h1 className="mt-2 text-4xl font-bold tracking-tight">
+              Welcome{completionName ? `, ${completionName}` : ""}
+            </h1>
+
+            <p className="mt-3 max-w-2xl text-white/80">
+              Track opportunities, applications,
+              placement progress, attendance and
+              NOC activities from a single workspace.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/opportunities"
+                className="
+          rounded-xl
+          bg-white
+          px-4
+          py-2
+          text-sm
+          font-semibold
+          text-primary
+        "
+              >
+                Browse Opportunities
+              </Link>
+
+              <Link
+                to="/profile"
+                className="
+          rounded-xl
+          border
+          border-white/30
+          px-4
+          py-2
+          text-sm
+          font-semibold
+          text-white
+        "
+              >
+                View Profile
+              </Link>
+            </div>
+          </div>
+
+          <div
+            className="
+      absolute
+      -right-20
+      -top-20
+      h-72
+      w-72
+      rounded-full
+      bg-white/10
+    "
+          />
+
+          <div
+            className="
+      absolute
+      right-16
+      bottom-0
+      h-40
+      w-40
+      rounded-full
+      bg-cyan-300/10
+    "
+          />
+        </div>
 
         {!profileCompleted && (
           <div className="mt-8">
@@ -229,7 +417,7 @@ export function DashboardPage() {
             </div>
           </div>
         </section>
-                <PortalFooter />
+        <PortalFooter />
       </main>
     </div>
   );

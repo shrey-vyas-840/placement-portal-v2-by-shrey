@@ -34,8 +34,7 @@ export async function getPostLoginRoute(
     const profile = await studentService.getProfileByUserId(authProviderId);
 
     if (profile) {
-        return "/
-        ";
+        return "/";
     }
 
     return "/onboarding";

@@ -48,38 +48,68 @@ export async function getRegistryStudentByEmail(
     return null;
   }
 
-  const query = (supabase as any)
-    .from("student_master_registry")
-    .select("*")
-    .eq("is_active", true)
-    .order("source_timestamp", { ascending: false });
-
-  const { data: byEmail, error: byEmailError } = await query
-    .eq("email_address", normalizedEmail)
-    .maybeSingle();
-
-  if (byEmailError) {
-    throw byEmailError;
-  }
-
-  if (byEmail) {
-    return byEmail as StudentMasterRegistryRow;
-  }
-
-  const { data: byInstituteEmail, error: byInstituteEmailError } =
+  console.log(
+    "QUERY EMAIL VALUE",
+    JSON.stringify(normalizedEmail)
+  );
+  const { data: byEmail, error: byEmailError } =
     await (supabase as any)
       .from("student_master_registry")
       .select("*")
-      .eq("is_active", true)
-      .eq("institute_email_id", normalizedEmail)
-      .order("source_timestamp", { ascending: false })
-      .maybeSingle();
+      .ilike("email_address", normalizedEmail)
+      .order("source_timestamp", {
+        ascending: false,
+      })
+      .limit(1);
+
+  console.log("REGISTRY LOOKUP EMAIL", normalizedEmail);
+  console.log("REGISTRY LOOKUP RESULT", byEmail);
+  console.log("REGISTRY LOOKUP ERROR", byEmailError);
+
+  if (byEmailError) {
+    console.error(
+      "REGISTRY QUERY ERROR",
+      byEmailError
+    );
+    throw byEmailError;
+  }
+
+  if (byEmail && byEmail.length > 0) {
+    return byEmail[0] as StudentMasterRegistryRow;
+  }
+
+  console.log(
+    "EMAIL_ADDRESS lookup failed, trying institute_email_id"
+  );
+
+  const {
+    data: byInstituteEmail,
+    error: byInstituteEmailError,
+  } = await (supabase as any)
+    .from("student_master_registry")
+    .select("*")
+    .ilike("institute_email_id", normalizedEmail)
+    .order("source_timestamp", {
+      ascending: false,
+    })
+    .limit(1);
+
+  console.log(
+    "INSTITUTE EMAIL RESULT",
+    byInstituteEmail
+  );
 
   if (byInstituteEmailError) {
     throw byInstituteEmailError;
   }
 
-  return (byInstituteEmail as StudentMasterRegistryRow | null) ?? null;
+  if (
+    byInstituteEmail &&
+    byInstituteEmail.length > 0
+  ) {
+    return byInstituteEmail[0] as StudentMasterRegistryRow;
+  }
+  return null;
 }
 
 export async function verifyStudentRegistryEntry(
@@ -87,14 +117,27 @@ export async function verifyStudentRegistryEntry(
   enrollment: string,
 ): Promise<boolean> {
   const normalizedEmail = normalizeEmail(email);
-  const normalizedEnrollment = enrollment
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "");
+  const { data: allRows } = await (supabase as any)
+    .from("student_master_registry")
+    .select("institute_email_id,email_address")
+    .limit(5);
+
+  console.log("SAMPLE REGISTRY ROWS", allRows);
+  console.log("RAW EMAIL", email);
+  console.log("NORMALIZED EMAIL", normalizedEmail);
+  console.log(
+    "IS INSTITUTIONAL",
+    isInstitutionalEmail(normalizedEmail)
+  );
 
   if (!isInstitutionalEmail(normalizedEmail)) {
     return false;
   }
+
+  const normalizedEnrollment = enrollment
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
 
   const row = await getRegistryStudentByEmail(normalizedEmail);
 
