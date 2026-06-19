@@ -233,17 +233,54 @@ export function StudentOpportunitiesPage() {
 
             <div className="mx-auto max-w-7xl px-6 py-8">
 
-                <h1 className="text-3xl font-bold">
-                    Opportunities
-                </h1>
+                <div
+                    className="
+        relative
+        overflow-hidden
+        rounded-3xl
+        bg-gradient-to-r
+        from-blue-800
+        via-blue-700
+        to-cyan-600
+        p-8
+        text-white
+        shadow-xl
+    "
+                >
+
+                    <div className="relative z-10">
+
+                        <p className="text-xs uppercase tracking-widest text-white/70">
+                            Student Workspace
+                        </p>
+
+                        <h1 className="mt-2 text-4xl font-bold">
+                            Opportunities
+                        </h1>
+
+                        <p className="mt-2 max-w-2xl text-sm text-white/80">
+                            Browse internships, placements, PPOs and campus hiring opportunities.
+                        </p>
+
+                        <div className="mt-4 inline-flex rounded-full bg-white/30 px-4 py-2 text-sm">
+                            {opportunities.length} Active Opportunities
+                        </div>
+
+                    </div>
+
+                    <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/20" />
+                    <div className="absolute right-10 bottom-0 h-24 w-24 rounded-full bg-white/20" />
+
+                </div>
 
                 <div
                     className="
-        mt-8
+        mt-6
         grid
         gap-6
         md:grid-cols-2
-        2xl:grid-cols-3
+xl:grid-cols-3
+2xl:grid-cols-4
     "
                 >
 
@@ -268,13 +305,15 @@ export function StudentOpportunitiesPage() {
     rounded-3xl
     border
     border-border/50
-    bg-white
-    p-5
+   bg-white/90
+backdrop-blur-sm
+    p-4
     shadow-sm
     transition-all
     duration-300
-    hover:-translate-y-1
-    hover:shadow-xl
+ hover:-translate-y-2
+hover:shadow-2xl
+hover:border-primary/30
 "
                                 >
                                     <div
@@ -297,17 +336,21 @@ export function StudentOpportunitiesPage() {
 
                                             <div
                                                 className="
-                flex
-                h-12
-                w-12
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                bg-primary/10
-                font-bold
-                text-primary
-            "
+        flex
+        h-14
+        w-14
+        shrink-0
+        items-center
+        justify-center
+        rounded-2xl
+        bg-gradient-to-br
+        from-slate-100
+        to-slate-200
+        font-bold
+        text-lg
+        text-primary
+        shadow-inner
+    "
                                             >
                                                 {
                                                     (
@@ -320,7 +363,7 @@ export function StudentOpportunitiesPage() {
                                             </div>
 
                                             <div>
-                                                <h2 className="text-base font-semibold">
+                                                <h2 className="text-lg font-bold text-slate-900">
                                                     {
                                                         opportunity
                                                             .drive_master
@@ -330,9 +373,10 @@ export function StudentOpportunitiesPage() {
                                                     }
                                                 </h2>
 
-                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                <p className="mt-1 text-[11px] text-slate-500 line-clamp-1">
                                                     {opportunity.opportunity_title}
                                                 </p>
+
                                             </div>
 
                                         </div>
@@ -354,26 +398,33 @@ export function StudentOpportunitiesPage() {
                                     </div>
                                     <div className="mt-3 space-y-1.5 text-xs">
 
+
                                         <div className="flex justify-between gap-3">
+
                                             <span
                                                 className="
-        rounded-full
-        bg-primary/10
-        px-2.5
-        py-1
-        font-semibold
-        text-primary
-    "
+            font-medium
+            text-blue-700
+        "
                                             >
                                                 Package
                                             </span>
 
-                                            <span className="font-medium text-right">
-                                                {opportunity.drive_master?.lowest_package_lpa &&
-                                                    opportunity.drive_master?.highest_package_lpa
-                                                    ? `${opportunity.drive_master.lowest_package_lpa} - ${opportunity.drive_master.highest_package_lpa} LPA`
-                                                    : "-"}
+                                            <span
+                                                className="
+            font-semibold
+            text-right
+            text-slate-900
+        "
+                                            >
+                                                {
+                                                    opportunity.drive_master?.lowest_package_lpa &&
+                                                        opportunity.drive_master?.highest_package_lpa
+                                                        ? `₹ ${opportunity.drive_master.lowest_package_lpa} - ₹ ${opportunity.drive_master.highest_package_lpa} LPA`
+                                                        : "Not Specified"
+                                                }
                                             </span>
+
                                         </div>
 
                                         <div className="flex justify-between gap-3">
@@ -386,37 +437,48 @@ export function StudentOpportunitiesPage() {
                                             </span>
                                         </div>
 
-                                        <div className="flex justify-between gap-3">
-                                            <span className="text-muted-foreground">
-                                                Bond
-                                            </span>
+                                        {
+                                            opportunity.drive_master?.bond_years
+                                                ? (
+                                                    <div className="flex justify-between gap-3">
 
-                                            <span className="font-medium text-right">
-                                                {opportunity.drive_master?.bond_years
-                                                    ? `${opportunity.drive_master.bond_years} Years`
-                                                    : "None"}
-                                            </span>
-                                        </div>
+                                                        <span className="text-muted-foreground">
+                                                            Bond
+                                                        </span>
+
+                                                        <span className="font-medium text-right">
+                                                            {opportunity.drive_master.bond_years} Years
+                                                        </span>
+
+                                                    </div>
+                                                )
+                                                : null
+                                        }
 
                                         <div className="flex justify-between gap-3">
+
                                             <span
                                                 className="
-        rounded-full
-        bg-amber-50
-        px-2
-        py-1
-        font-medium
-        text-amber-700
-    "
+            rounded-full
+            bg-amber-50
+            px-
+            py-1
+            text-xs
+            font-semibold
+            text-amber-700
+        "
                                             >
-                                                Deadline
+                                                ⏳ Deadline
                                             </span>
 
-                                            <span className="font-medium text-right">
-                                                {new Date(
-                                                    opportunity.application_end_date
-                                                ).toLocaleDateString()}
+                                            <span className="font-medium">
+                                                {
+                                                    new Date(
+                                                        opportunity.application_end_date
+                                                    ).toLocaleDateString()
+                                                }
                                             </span>
+
                                         </div>
 
                                     </div>
@@ -459,14 +521,25 @@ export function StudentOpportunitiesPage() {
 
                                         }}
 
-                                        className="mt-4 rounded border px-4 py-2 disabled:opacity-50"
-
+                                        className={`
+    mt-5
+    w-full
+    rounded-xl
+    py-2.5
+    text-sm
+    font-semibold
+    transition-all
+    ${opportunity.alreadyApplied
+                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                : "bg-primary text-white hover:scale-[1.02]"
+                                            }
+`}
                                     >
 
                                         {
                                             opportunity.alreadyApplied
                                                 ?
-                                                "Already Applied"
+                                                "Applied ✓"
                                                 :
                                                 "Apply"
                                         }
@@ -481,20 +554,65 @@ export function StudentOpportunitiesPage() {
                 {
                     selectedOpportunity && (
                         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-                            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                                <h2>Additional Questions</h2>
+                            <div
+                                className="
+        w-full
+        max-w-3xl
+        max-h-[90vh]
+        overflow-y-auto
+        rounded-3xl
+        border
+        border-border/50
+        bg-white
+        p-8
+        shadow-2xl
+    "
+                            >
+                                <div className="mb-8">
+
+                                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                                        Opportunity Application
+                                    </p>
+
+                                    <h2 className="mt-2 text-2xl font-bold">
+                                        Additional Questions
+                                    </h2>
+
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Complete the required information before submitting your application.
+                                    </p>
+
+                                </div>
 
                                 {questions.map((q: any) => (
-                                    <div key={q.question_id} className="mb-4">
+                                    <div
+                                        key={q.question_id}
+                                        className="
+        mb-5
+        rounded-2xl
+        border
+        border-border/50
+        bg-slate-50/50
+        p-5
+    "
+                                    >
 
-                                        <label>
+                                        <label className="mb-2 block font-medium">
                                             {q.question_title}
                                             {q.is_required ? " *" : ""}
                                         </label>
 
                                         {q.question_type === "text" && (
                                             <input
-                                                className="border w-full"
+                                                className="
+    w-full
+    rounded-xl
+    border
+    border-border
+    bg-white
+    px-3
+    py-2
+"
                                                 onChange={(e) =>
                                                     setAnswers({ ...answers, [q.question_id]: e.target.value })
                                                 }
@@ -509,7 +627,15 @@ export function StudentOpportunitiesPage() {
                                                 max={
                                                     q.validation?.max
                                                 }
-                                                className="border w-full"
+                                                className="
+    w-full
+    rounded-xl
+    border
+    border-border
+    bg-white
+    px-3
+    py-2
+"
                                                 value={
                                                     answers[q.question_id] || ""
                                                 }
@@ -525,7 +651,15 @@ export function StudentOpportunitiesPage() {
 
                                         {q.question_type === "paragraph" && (
                                             <textarea
-                                                className="border w-full"
+                                                className="
+    w-full
+    rounded-xl
+    border
+    border-border
+    bg-white
+    px-3
+    py-2
+"
                                                 onChange={(e) =>
                                                     setAnswers({ ...answers, [q.question_id]: e.target.value })
                                                 }
@@ -541,7 +675,15 @@ export function StudentOpportunitiesPage() {
                                                 max={
                                                     q.validation?.maxDate
                                                 }
-                                                className="border w-full"
+                                                className="
+    w-full
+    rounded-xl
+    border
+    border-border
+    bg-white
+    px-3
+    py-2
+"
                                                 onChange={(e) =>
                                                     setAnswers({
                                                         ...answers,
@@ -554,7 +696,15 @@ export function StudentOpportunitiesPage() {
 
                                         {q.question_type === "dropdown" && (
                                             <select
-                                                className="border w-full"
+                                                className="
+    w-full
+    rounded-xl
+    border
+    border-border
+    bg-white
+    px-3
+    py-2
+"
                                                 onChange={(e) =>
                                                     setAnswers({ ...answers, [q.question_id]: e.target.value })
                                                 }
@@ -647,9 +797,16 @@ export function StudentOpportunitiesPage() {
                                     </div>
                                 ))}
 
-                                <div className="flex gap-3 pt-4">
+                                <div className="sticky bottom-0 mt-8 flex gap-3 border-t bg-white pt-5">
                                     <button
-                                        className="px-4 py-2 border rounded"
+                                        className="
+    rounded-xl
+    bg-primary
+    px-5
+    py-2.5
+    font-medium
+    text-white
+"
                                         disabled={pendingApply}
                                         onClick={async () => {
 
@@ -939,7 +1096,13 @@ export function StudentOpportunitiesPage() {
 
 
                                     <button
-                                        className="px-4 py-2 border rounded"
+                                       className="
+    rounded-xl
+    border
+    px-5
+    py-2.5
+    font-medium
+"
                                         onClick={() => {
                                             setSelectedOpportunity(null);
                                             setAnswers({});

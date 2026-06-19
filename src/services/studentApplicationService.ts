@@ -13,12 +13,19 @@ export const studentApplicationService = {
                 )
                 .select(`
                     *,
-                    opportunity_master(
-                        opportunity_title,
-                        drive_master(
-                            drive_name
-                        )
-                    )
+                   opportunity_master(
+    opportunity_title,
+    opportunity_description,
+    drive_master(
+        drive_name,
+        drive_type,
+        lowest_package_lpa,
+        highest_package_lpa,
+        company_master(
+            company_name
+        )
+    )
+)
                 `)
                 .eq(
                     "student_id",
