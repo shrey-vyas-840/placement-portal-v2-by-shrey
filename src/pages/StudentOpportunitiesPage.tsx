@@ -241,9 +241,9 @@ export function StudentOpportunitiesPage() {
                     className="
         mt-8
         grid
-        gap-5
+        gap-6
         md:grid-cols-2
-        xl:grid-cols-3
+        2xl:grid-cols-3
     "
                 >
 
@@ -262,31 +262,79 @@ export function StudentOpportunitiesPage() {
                                 <div
                                     key={opportunity.opportunity_id}
                                     className="
-        group
-        rounded-3xl
-        border
-        border-border/50
-        bg-white
-        p-4
-        shadow-sm
-        transition-all
-        duration-300
-        hover:-translate-y-1
-        hover:shadow-lg
-    "
+    group
+    relative
+    overflow-hidden
+    rounded-3xl
+    border
+    border-border/50
+    bg-white
+    p-5
+    shadow-sm
+    transition-all
+    duration-300
+    hover:-translate-y-1
+    hover:shadow-xl
+"
                                 >
+                                    <div
+                                        className="
+        absolute
+        left-0
+        top-0
+        h-1
+        w-full
+        bg-gradient-to-r
+        from-primary
+        via-cyan-500
+        to-emerald-500
+    "
+                                    />
+
                                     <div className="flex items-start justify-between gap-4">
 
-                                        <div>
-                                            <h2 className="text-lg font-semibold">
-                                                {opportunity.company_name ||
-                                                    opportunity.company_master?.company_name ||
-                                                    opportunity.opportunity_title}
-                                            </h2>
+                                        <div className="flex gap-3">
 
-                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                                                {opportunity.opportunity_description}
-                                            </p>
+                                            <div
+                                                className="
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                bg-primary/10
+                font-bold
+                text-primary
+            "
+                                            >
+                                                {
+                                                    (
+                                                        opportunity
+                                                            .drive_master
+                                                            ?.company_master
+                                                            ?.company_name?.[0] ?? "C"
+                                                    ).toUpperCase()
+                                                }
+                                            </div>
+
+                                            <div>
+                                                <h2 className="text-base font-semibold">
+                                                    {
+                                                        opportunity
+                                                            .drive_master
+                                                            ?.company_master
+                                                            ?.company_name ??
+                                                        opportunity.opportunity_title
+                                                    }
+                                                </h2>
+
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    {opportunity.opportunity_title}
+                                                </p>
+                                            </div>
+
                                         </div>
 
                                         <span
@@ -304,16 +352,27 @@ export function StudentOpportunitiesPage() {
                                         </span>
 
                                     </div>
-
                                     <div className="mt-3 space-y-1.5 text-xs">
 
                                         <div className="flex justify-between gap-3">
-                                            <span className="text-muted-foreground">
-                                                Company
+                                            <span
+                                                className="
+        rounded-full
+        bg-primary/10
+        px-2.5
+        py-1
+        font-semibold
+        text-primary
+    "
+                                            >
+                                                Package
                                             </span>
 
                                             <span className="font-medium text-right">
-                                                {opportunity.drive_master?.company_master?.company_name ?? "-"}
+                                                {opportunity.drive_master?.lowest_package_lpa &&
+                                                    opportunity.drive_master?.highest_package_lpa
+                                                    ? `${opportunity.drive_master.lowest_package_lpa} - ${opportunity.drive_master.highest_package_lpa} LPA`
+                                                    : "-"}
                                             </span>
                                         </div>
 
@@ -324,19 +383,6 @@ export function StudentOpportunitiesPage() {
 
                                             <span className="font-medium text-right">
                                                 {opportunity.drive_master?.drive_type ?? "-"}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between gap-3">
-                                            <span className="text-muted-foreground">
-                                                Package
-                                            </span>
-
-                                            <span className="font-medium text-right">
-                                                {opportunity.drive_master?.lowest_package_lpa &&
-                                                    opportunity.drive_master?.highest_package_lpa
-                                                    ? `${opportunity.drive_master.lowest_package_lpa} - ${opportunity.drive_master.highest_package_lpa} LPA`
-                                                    : "-"}
                                             </span>
                                         </div>
 
@@ -353,22 +399,16 @@ export function StudentOpportunitiesPage() {
                                         </div>
 
                                         <div className="flex justify-between gap-3">
-                                            <span className="text-muted-foreground">
-                                                Branches
-                                            </span>
-
-                                            <span className="font-medium text-right">
-                                                <span className="font-medium text-right">
-                                                    {opportunity?.eligible_branches && opportunity.eligible_branches.length > 2
-                                                        ? `${opportunity.eligible_branches.slice(0, 2).join(', ')}...`
-                                                        : 'All'}
-                                                </span>
-
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between gap-3">
-                                            <span className="text-muted-foreground">
+                                            <span
+                                                className="
+        rounded-full
+        bg-amber-50
+        px-2
+        py-1
+        font-medium
+        text-amber-700
+    "
+                                            >
                                                 Deadline
                                             </span>
 
