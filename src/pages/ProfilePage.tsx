@@ -280,53 +280,109 @@ export function ProfilePage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
 
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="text-2xl font-semibold">
-          Student Profile
-        </h1>
+      {loading && (
+        <p className="mt-6">
+          Loading...
+        </p>
+      )}
 
-        {loading && (
-          <p className="mt-6">
-            Loading...
+      {error && (
+        <p className="mt-6 text-red-500">
+          {error}
+        </p>
+      )}
+      {!loading && !profile && !isInstitutionalEmail && (
+        <div className="mt-6 rounded border border-red-300 bg-red-50 p-6">
+          <h2 className="text-lg font-semibold text-red-700">
+            Institutional Email Required
+          </h2>
+
+          <p className="mt-2">
+            Please sign in using your official Indus University email address.
           </p>
-        )}
 
-        {error && (
-          <p className="mt-6 text-red-500">
-            {error}
+          <p className="mt-2 text-sm">
+            Examples:
+            <br />
+            abc.it@indusuni.ac.in
+            <br />
+            xyz.23.cse@iite.indusuni.ac.in
           </p>
-        )}
-        {!loading && !profile && !isInstitutionalEmail && (
-          <div className="mt-6 rounded border border-red-300 bg-red-50 p-6">
-            <h2 className="text-lg font-semibold text-red-700">
-              Institutional Email Required
-            </h2>
+        </div>
+      )}
 
-            <p className="mt-2">
-              Please sign in using your official Indus University email address.
-            </p>
+      {!loading && !profile && isInstitutionalEmail && (
+        <CompleteProfileForm
+          authUserId={user?.id ?? ""}
+          email={user?.email ?? ""}
+          onCreated={() => window.location.assign("/onboarding")}
+        />
+      )}
 
-            <p className="mt-2 text-sm">
-              Examples:
-              <br />
-              abc.it@indusuni.ac.in
-              <br />
-              xyz.23.cse@iite.indusuni.ac.in
-            </p>
-          </div>
-        )}
+      {profile && (
+        <>
 
-        {!loading && !profile && isInstitutionalEmail && (
-          <CompleteProfileForm
-            authUserId={user?.id ?? ""}
-            email={user?.email ?? ""}
-            onCreated={() => window.location.assign("/onboarding")}
-          />
-        )}
+          <main className="mx-auto max-w-7xl px-6 py-10">
+            <div
+              className="
+        relative
+        overflow-hidden
+        rounded-[32px]
+        border
+        border-primary/10
+        bg-gradient-to-r
+        from-primary
+        via-blue-700
+        to-cyan-600
+        p-8
+        text-white
+        shadow-xl
+    "
+            >
+              <div className="flex items-center gap-5">
+                <div
+                  className="
+                flex
+                h-20
+                w-20
+                items-center
+                justify-center
+                rounded-3xl
+                bg-white/20
+                text-3xl
+                font-bold
+            "
+                >
+                  {profile?.first_name?.charAt(0) ?? "S"}
+                </div>
 
-        {profile && (
-          <>
-            <div className="mt-6 rounded border p-6">
+                <div>
+                  <div className="text-sm text-white/80">
+                    Student Profile
+                  </div>
+
+                  <h1 className="mt-1 text-4xl font-bold tracking-tight">
+                    {profile?.first_name} {profile?.last_name}
+                  </h1>
+
+                  <div className="mt-2 text-white/80">
+                    {profile?.enrollment_no}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="
+    mt-6
+    rounded-3xl
+    border
+    border-border/50
+    bg-white
+    p-8
+    shadow-sm
+  "
+            >
 
               <div className="mb-6 flex justify-end gap-2">
 
@@ -336,7 +392,16 @@ export function ProfilePage() {
                       setError(null);
                       setEditing(true);
                     }}
-                    className="rounded bg-black px-4 py-2 text-white"
+                    className="
+  rounded-xl
+  bg-primary
+  px-5
+  py-2.5
+  font-medium
+  text-white
+  transition-all
+  hover:shadow-lg
+"
                   >
                     Edit Profile
                   </button>
@@ -365,7 +430,16 @@ export function ProfilePage() {
                       disabled={
                         savingProfile || !hasChanges
                       }
-                      className="rounded bg-black px-4 py-2 text-white"
+                      className="
+  rounded-xl
+  bg-primary
+  px-5
+  py-2.5
+  font-medium
+  text-white
+  transition-all
+  hover:shadow-lg
+"
                     >
                       {savingProfile
                         ? "Saving..."
@@ -376,7 +450,7 @@ export function ProfilePage() {
 
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-8 sm:grid-cols-2">
 
                 <Field
                   label="Enrollment Number"
@@ -522,7 +596,8 @@ export function ProfilePage() {
                       onChange={(e) =>
                         setProfile({
                           ...profile,
-                          alternate_contact_number: e.target.value,
+                          alternate_contact_number:
+                            e.target.value.replace(/\D/g, ""),
                         })
                       }
                     />
@@ -635,39 +710,68 @@ export function ProfilePage() {
                 />
               </div>
             </div>
-            
-<div className="mt-8">
 
-            <SkillsSection
-              studentId={profile.student_id}
-            />
-          </div>  
-            <ResumeSection
-              studentId={profile.student_id}
-              authUserId={user?.id ?? ""}
-              existingUrl={resumeUrl}
-              onSaved={() =>
-                loadResume(profile.student_id)
-              }
-            />
-            {profile && (
-              <AcademicSection
-                studentId={
-                  profile.student_id
-                }
-                existingData={
-                  academicData
-                }
-                onSaved={() =>
-                  loadAcademicDetails(
-                    profile.student_id,
-                  )
-                }
-              />
-            )}
-          </>
-        )}
-      </main>
+           <div
+  className="
+    mt-8
+    rounded-3xl
+    border
+    border-border/50
+    bg-white
+    p-6
+    shadow-sm
+  "
+>
+  <SkillsSection
+    studentId={profile.student_id}
+  />
+</div>
+
+<div
+  className="
+    mt-8
+    rounded-3xl
+    border
+    border-border/50
+    bg-white
+    p-6
+    shadow-sm
+  "
+>
+  <ResumeSection
+    studentId={profile.student_id}
+    authUserId={user?.id ?? ""}
+    existingUrl={resumeUrl}
+    onSaved={() =>
+      loadResume(profile.student_id)
+    }
+  />
+</div>
+
+<div
+  className="
+    mt-8
+    rounded-3xl
+    border
+    border-border/50
+    bg-white
+    p-6
+    shadow-sm
+  "
+>
+  {profile && (
+    <AcademicSection
+      studentId={profile.student_id}
+      existingData={academicData}
+      onSaved={() =>
+        loadAcademicDetails(profile.student_id)
+      }
+    />
+  )}
+</div>
+          </main>
+        </>
+      )}
     </div>
   );
 }
@@ -680,12 +784,20 @@ function Field({
   value: string;
 }) {
   return (
-    <div>
-      <p className="text-xs text-muted-foreground">
+    <div
+      className="
+        rounded-2xl
+        border
+        border-border/50
+        bg-slate-50/60
+        p-4
+      "
+    >
+      <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </p>
 
-      <p className="font-medium">
+      <p className="mt-2 font-semibold text-foreground">
         {value}
       </p>
     </div>
@@ -881,7 +993,17 @@ function CompleteProfileForm({
   };
 
   return (
-    <div className="mt-6 rounded border p-6">
+    <div
+      className="
+    mt-6
+    rounded-3xl
+    border
+    border-border/50
+    bg-white
+    p-8
+    shadow-sm
+  "
+    >
       <h2 className="mb-4 text-lg font-semibold">
         Complete Your Profile
       </h2>
@@ -1020,7 +1142,16 @@ function CompleteProfileForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded bg-black px-4 py-2 text-white"
+          className="
+  rounded-xl
+  bg-primary
+  px-5
+  py-2.5
+  font-medium
+  text-white
+  transition-all
+  hover:shadow-lg
+"
         >
           {saving
             ? "Saving..."

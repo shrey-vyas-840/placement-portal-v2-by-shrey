@@ -40,22 +40,31 @@ export const studentOpportunityService = {
         const { data: opportunities, error } = await (supabase as any)
             .from("opportunity_master")
             .select(`
-        *,
-        drive_master(
-          drive_name
-        ),
-        student_opportunity_applications(
-          student_id,
-          application_status
+    *,
+    drive_master(
+        drive_id,
+        drive_name,
+        drive_type,
+        drive_mode,
+        lowest_package_lpa,
+        highest_package_lpa,
+        bond_years,
+        company_master(
+            company_name
         )
-      `)
+    ),
+    student_opportunity_applications(
+        student_id,
+        application_status
+    )
+`)
             .eq("visible_to_students", true)
             .eq("application_status", "Open")
             .gt("application_end_date", new Date().toISOString())
             .order("created_at", { ascending: false });
 
         if (error) throw error;
-
+        
         const processedOpportunities: any[] = [];
 
         for (const opportunity of opportunities || []) {
@@ -70,10 +79,17 @@ export const studentOpportunityService = {
                 .eq("drive_id", opportunity.drive_id)
                 .maybeSingle();
 
+            const eligibleBranches =
+                eligibility?.allowed_branches
+                    ?.split(",")
+                    .map((x: string) => x.trim())
+                    .filter(Boolean) ?? [];
+
             if (!eligibility) {
                 processedOpportunities.push({
                     ...opportunity,
                     alreadyApplied,
+                    eligible_branches: eligibleBranches,
                     eligibility_status: "Eligible",
                     eligibility_reason: "",
                 });
@@ -128,6 +144,7 @@ export const studentOpportunityService = {
             processedOpportunities.push({
                 ...opportunity,
                 alreadyApplied,
+                eligible_branches: eligibleBranches,
                 eligibility_status:
                     instituteMatch &&
                         degreeMatch &&

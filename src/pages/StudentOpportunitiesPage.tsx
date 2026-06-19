@@ -237,7 +237,15 @@ export function StudentOpportunitiesPage() {
                     Opportunities
                 </h1>
 
-                <div className="mt-8 grid gap-4">
+                <div
+                    className="
+        mt-8
+        grid
+        gap-5
+        md:grid-cols-2
+        xl:grid-cols-3
+    "
+                >
 
                     {opportunities
                         .filter(
@@ -252,40 +260,124 @@ export function StudentOpportunitiesPage() {
                             ) => (
 
                                 <div
-                                    key={
-                                        opportunity.opportunity_id
-                                    }
-                                    className="rounded-lg border p-5"
+                                    key={opportunity.opportunity_id}
+                                    className="
+        group
+        rounded-3xl
+        border
+        border-border/50
+        bg-white
+        p-4
+        shadow-sm
+        transition-all
+        duration-300
+        hover:-translate-y-1
+        hover:shadow-lg
+    "
                                 >
+                                    <div className="flex items-start justify-between gap-4">
 
-                                    <h2 className="text-lg font-semibold">
-                                        {
-                                            opportunity.opportunity_title
-                                        }
-                                    </h2>
+                                        <div>
+                                            <h2 className="text-lg font-semibold">
+                                                {opportunity.company_name ||
+                                                    opportunity.company_master?.company_name ||
+                                                    opportunity.opportunity_title}
+                                            </h2>
 
-                                    <p className="mt-2 text-sm text-muted-foreground">
-                                        {
-                                            opportunity.drive_master?.drive_name
-                                        }
-                                    </p>
+                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                                {opportunity.opportunity_description}
+                                            </p>
+                                        </div>
 
-                                    <p className="mt-4">
-                                        {
-                                            opportunity.opportunity_description
-                                        }
-                                    </p>
-
-                                    <div className="mt-3 text-sm">
-
-                                        <span className="rounded border px-2 py-1">
-
-                                            {
-                                                opportunity
-                                                    .eligibility_status
-                                            }
-
+                                        <span
+                                            className="
+            rounded-full
+            bg-emerald-50
+            px-3
+            py-1
+            text-xs
+            font-medium
+            text-emerald-700
+        "
+                                        >
+                                            Eligible
                                         </span>
+
+                                    </div>
+
+                                    <div className="mt-3 space-y-1.5 text-xs">
+
+                                        <div className="flex justify-between gap-3">
+                                            <span className="text-muted-foreground">
+                                                Company
+                                            </span>
+
+                                            <span className="font-medium text-right">
+                                                {opportunity.drive_master?.company_master?.company_name ?? "-"}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between gap-3">
+                                            <span className="text-muted-foreground">
+                                                Drive Type
+                                            </span>
+
+                                            <span className="font-medium text-right">
+                                                {opportunity.drive_master?.drive_type ?? "-"}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between gap-3">
+                                            <span className="text-muted-foreground">
+                                                Package
+                                            </span>
+
+                                            <span className="font-medium text-right">
+                                                {opportunity.drive_master?.lowest_package_lpa &&
+                                                    opportunity.drive_master?.highest_package_lpa
+                                                    ? `${opportunity.drive_master.lowest_package_lpa} - ${opportunity.drive_master.highest_package_lpa} LPA`
+                                                    : "-"}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between gap-3">
+                                            <span className="text-muted-foreground">
+                                                Bond
+                                            </span>
+
+                                            <span className="font-medium text-right">
+                                                {opportunity.drive_master?.bond_years
+                                                    ? `${opportunity.drive_master.bond_years} Years`
+                                                    : "None"}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between gap-3">
+                                            <span className="text-muted-foreground">
+                                                Branches
+                                            </span>
+
+                                            <span className="font-medium text-right">
+                                                <span className="font-medium text-right">
+                                                    {opportunity?.eligible_branches && opportunity.eligible_branches.length > 2
+                                                        ? `${opportunity.eligible_branches.slice(0, 2).join(', ')}...`
+                                                        : 'All'}
+                                                </span>
+
+                                            </span>
+                                        </div>
+
+                                        <div className="flex justify-between gap-3">
+                                            <span className="text-muted-foreground">
+                                                Deadline
+                                            </span>
+
+                                            <span className="font-medium text-right">
+                                                {new Date(
+                                                    opportunity.application_end_date
+                                                ).toLocaleDateString()}
+                                            </span>
+                                        </div>
 
                                     </div>
 
