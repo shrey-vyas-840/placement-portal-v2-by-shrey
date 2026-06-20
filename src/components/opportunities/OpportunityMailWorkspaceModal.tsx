@@ -153,7 +153,7 @@ export function OpportunityMailWorkspaceModal({
             .replace(/#/g, "")
             .replace(/\*/g, "")
             .replace(/\**/g, "")
-            .replace(/\##/g, "")
+            .replace(/##/g, "")
 
             // remove code blocks
             .replace(/`{1,3}/g, "")

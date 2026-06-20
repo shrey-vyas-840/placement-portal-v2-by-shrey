@@ -127,14 +127,11 @@ export function ProfilePage() {
         JSON.stringify(resume, null, 2)
       );
 
-      console.log(
+           console.log(
         "RESUME URL",
         metadata?.storage_url
       );
-      setResumeUrl
-        (
-          metadata?.storage_url ?? null,
-        );
+      setResumeUrl(metadata?.storage_url ?? null);
     } catch (err) {
       console.error(err);
     }

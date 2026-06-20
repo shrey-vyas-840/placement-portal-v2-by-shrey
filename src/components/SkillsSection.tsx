@@ -4,709 +4,697 @@ import CreatableSelect from "react-select/creatable";
 import { skillService } from "@/services/skillService";
 
 type SkillOption = {
-    label: string;
-    value: string;
+  label: string;
+  value: string;
 };
 
 interface SkillsSectionProps {
-    studentId: string;
-    onCompletionChange?: (
-        completed: boolean,
-    ) => void;
+  studentId: string;
+  onCompletionChange?: (completed: boolean) => void;
 }
 
 const defaultFormData = {
-    technical_skills:
-        [] as SkillOption[],
+  technical_skills: [] as SkillOption[],
 
-    programming_languages:
-        [] as SkillOption[],
+  programming_languages: [] as SkillOption[],
 
-    tools_and_technologies:
-        [] as SkillOption[],
+  tools_and_technologies: [] as SkillOption[],
 
-    github_url: "",
-    linkedin_url: "",
-    portfolio_url: "",
+  github_url: "",
+  linkedin_url: "",
+  portfolio_url: "",
 
-    strengths: "",
+  strengths: "",
 };
 
 const technicalSkillOptions = [
-    "React",
-    "Node.js",
-    "Express.js",
-    "MongoDB",
-    "PostgreSQL",
-    "Supabase",
-    "Firebase",
-    "Docker",
-    "AWS",
-    "Machine Learning",
-    "AI",
-    "UI/UX",
-    "Git",
-    "GitHub",
+  "React",
+  "Node.js",
+  "Express.js",
+  "MongoDB",
+  "PostgreSQL",
+  "Supabase",
+  "Firebase",
+  "Docker",
+  "AWS",
+  "Machine Learning",
+  "AI",
+  "UI/UX",
+  "Git",
+  "GitHub",
 ].map((skill) => ({
-    label: skill,
-    value: skill,
+  label: skill,
+  value: skill,
 }));
 
-const languageOptions = [
-    "C",
-    "C++",
-    "Java",
-    "Python",
-    "JavaScript",
-    "TypeScript",
-].map((skill) => ({
-    label: skill,
-    value: skill,
+const languageOptions = ["C", "C++", "Java", "Python", "JavaScript", "TypeScript"].map((skill) => ({
+  label: skill,
+  value: skill,
 }));
 
-const toolsOptions = [
-    "VS Code",
-    "Figma",
-    "Git",
-    "GitHub",
-    "Postman",
-    "Docker",
-    "Linux",
-].map((skill) => ({
+const toolsOptions = ["VS Code", "Figma", "Git", "GitHub", "Postman", "Docker", "Linux"].map(
+  (skill) => ({
     label: skill,
     value: skill,
-}));
+  }),
+);
 
-export default function SkillsSection({
-    studentId,
-    onCompletionChange,
-}: SkillsSectionProps) {
-    const [loading, setLoading] =
-        useState(true);
+const selectStyles = {
+  control: (base: any) => ({
+    ...base,
+    minHeight: 54,
+    borderRadius: 16,
+    borderColor: "#e2e8f0",
+    boxShadow: "none",
+    backgroundColor: "#f8fafc",
+  }),
 
-    const [saving, setSaving] =
-        useState(false);
+  multiValue: (base: any) => ({
+    ...base,
+    borderRadius: 999,
+    padding: "2px 6px",
+  }),
+};
 
-    const [hasExistingData, setHasExistingData] =
-        useState(false);
+export default function SkillsSection({ studentId, onCompletionChange }: SkillsSectionProps) {
+  const [loading, setLoading] = useState(true);
 
-    const [initialData, setInitialData] =
-        useState("");
+  const [saving, setSaving] = useState(false);
 
-    const [editMode, setEditMode] =
-        useState(false);
+  const [hasExistingData, setHasExistingData] = useState(false);
 
-    const [formData, setFormData] =
-        useState(defaultFormData);
+  const [initialData, setInitialData] = useState("");
 
-    const [errors, setErrors] =
+  const [editMode, setEditMode] = useState(false);
 
-        useState({
-            github_url: "",
-            linkedin_url: "",
-            portfolio_url: "",
-        });
+  const [formData, setFormData] = useState(defaultFormData);
 
-    useEffect(() => {
-        loadSkills();
-    }, [studentId]);
+  const [errors, setErrors] = useState({
+    github_url: "",
+    linkedin_url: "",
+    portfolio_url: "",
+  });
 
-    const loadSkills = async () => {
-        try {
-            setLoading(true);
+  useEffect(() => {
+    loadSkills();
+  }, [studentId]);
 
-            const data =
-                await skillService.getSkillProfile(
-                    studentId,
-                );
+  const loadSkills = async () => {
+    try {
+      setLoading(true);
 
-            if (data) {
+      const data = await skillService.getSkillProfile(studentId);
 
-                setHasExistingData(true);
-                setEditMode(false);
-
-                setFormData({
-                    technical_skills: Array.isArray(
-                        data.technical_skills,
-                    )
-                        ? data.technical_skills
-                        : data.technical_skills
-                            ? data.technical_skills
-                                .split(",")
-                                .filter(Boolean)
-                                .map(
-                                    (
-                                        skill: string,
-                                    ) => ({
-                                        label:
-                                            skill.trim(),
-                                        value:
-                                            skill.trim(),
-                                    }),
-                                )
-                            : [],
-
-                    programming_languages:
-                        Array.isArray(
-                            data.programming_languages,
-                        )
-                            ? data.programming_languages
-                            : data.programming_languages
-                                ? data.programming_languages
-                                    .split(",")
-                                    .filter(Boolean)
-                                    .map(
-                                        (
-                                            skill: string,
-                                        ) => ({
-                                            label:
-                                                skill.trim(),
-                                            value:
-                                                skill.trim(),
-                                        }),
-                                    )
-                                : [],
-
-                    tools_and_technologies:
-                        Array.isArray(
-                            data.tools_and_technologies,
-                        )
-                            ? data.tools_and_technologies
-                            : data.tools_and_technologies
-                                ? data.tools_and_technologies
-                                    .split(",")
-                                    .filter(Boolean)
-                                    .map(
-                                        (
-                                            skill: string,
-                                        ) => ({
-                                            label:
-                                                skill.trim(),
-                                            value:
-                                                skill.trim(),
-                                        }),
-                                    )
-                                : [],
-
-                    github_url:
-                        data.github_url || "",
-
-                    linkedin_url:
-                        data.linkedin_url || "",
-
-                    portfolio_url:
-                        data.portfolio_url || "",
-
-                    strengths:
-                        data.strengths || "",
-                });
-
-                const completed =
-                    !!data.technical_skills &&
-                    !!data.programming_languages &&
-                    !!data.linkedin_url;
-
-                onCompletionChange?.(
-                    completed,
-                );
-
-                setEditMode(false);
-            } else {
-                setEditMode(true);
-                setHasExistingData(false);
-            }
-        } catch (error: any) {
-            console.error(
-                "SKILLS LOAD ERROR:",
-                error,
-            );
-
-            toast.error(
-                "Failed to load skills",
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleChange = (
-        e: any,
-    ) => {
-        const {
-            name,
-            value,
-        } = e.target;
+      if (data) {
+        setHasExistingData(true);
+        setEditMode(false);
 
         setFormData({
-            ...formData,
-            [name]: value,
+          technical_skills: Array.isArray(data.technical_skills)
+            ? data.technical_skills
+            : data.technical_skills
+              ? data.technical_skills
+                  .split(",")
+                  .filter(Boolean)
+                  .map((skill: string) => ({
+                    label: skill.trim(),
+                    value: skill.trim(),
+                  }))
+              : [],
+
+          programming_languages: Array.isArray(data.programming_languages)
+            ? data.programming_languages
+            : data.programming_languages
+              ? data.programming_languages
+                  .split(",")
+                  .filter(Boolean)
+                  .map((skill: string) => ({
+                    label: skill.trim(),
+                    value: skill.trim(),
+                  }))
+              : [],
+
+          tools_and_technologies: Array.isArray(data.tools_and_technologies)
+            ? data.tools_and_technologies
+            : data.tools_and_technologies
+              ? data.tools_and_technologies
+                  .split(",")
+                  .filter(Boolean)
+                  .map((skill: string) => ({
+                    label: skill.trim(),
+                    value: skill.trim(),
+                  }))
+              : [],
+
+          github_url: data.github_url || "",
+
+          linkedin_url: data.linkedin_url || "",
+
+          portfolio_url: data.portfolio_url || "",
+
+          strengths: data.strengths || "",
         });
 
-        if (name === "github_url") {
-            const valid =
-                /^https:\/\/(www\.)?github\.com\/[A-Za-z0-9_-]+\/?$/.test(
-                    value,
-                ) || value === "";
+        const completed =
+          !!data.technical_skills && !!data.programming_languages && !!data.linkedin_url;
 
-            setErrors((prev) => ({
-                ...prev,
-                github_url: valid
-                    ? ""
-                    : "Only valid GitHub profile links allowed",
-            }));
-        }
+        onCompletionChange?.(completed);
 
-        if (name === "linkedin_url") {
-            const valid =
-                /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+\/?$/.test(
-                    value,
-                ) || value === "";
+        setEditMode(false);
+      } else {
+        setEditMode(true);
+        setHasExistingData(false);
+      }
+    } catch (error: any) {
+      console.error("SKILLS LOAD ERROR:", error);
 
-            setErrors((prev) => ({
-                ...prev,
-                linkedin_url: valid
-                    ? ""
-                    : "Only valid LinkedIn profile links allowed",
-            }));
-        }
+      toast.error("Failed to load skills");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        if (name === "portfolio_url") {
-            const valid =
-                /^https:\/\/.+\.(vercel\.app|netlify\.app|github\.io)(\/.*)?$/.test(
-                    value,
-                ) || value === "";
+  const handleChange = (e: any) => {
+    const { name, value } = e.target;
 
-            setErrors((prev) => ({
-                ...prev,
-                portfolio_url: valid
-                    ? ""
-                    : "Only Vercel / Netlify / GitHub Pages links allowed",
-            }));
-        }
-    };
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
 
-    const generateComparableData = () => {
-        return JSON.stringify({
-            technical_skills:
-                formData.technical_skills
-                    .map(
-                        (item) =>
-                            item.value,
-                    )
-                    .sort(),
+    if (name === "github_url") {
+      const valid =
+        /^https:\/\/(www\.)?github\.com\/[A-Za-z0-9_-]+\/?$/.test(value) || value === "";
 
-            programming_languages:
-                formData.programming_languages
-                    .map(
-                        (item) =>
-                            item.value,
-                    )
-                    .sort(),
-
-            tools_and_technologies:
-                formData.tools_and_technologies
-                    .map(
-                        (item) =>
-                            item.value,
-                    )
-                    .sort(),
-
-            github_url:
-                formData.github_url.trim(),
-
-            linkedin_url:
-                formData.linkedin_url.trim(),
-
-            portfolio_url:
-                formData.portfolio_url.trim(),
-
-            strengths:
-                formData.strengths.trim(),
-        });
-    };
-
-    const handleSave = async () => {
-
-        const currentData = generateComparableData();
-
-        if (
-            errors.github_url ||
-            errors.linkedin_url ||
-            errors.portfolio_url
-        ) {
-            toast.error(
-                "Please fix invalid links before saving",
-            );
-
-            return;
-        }
-
-        if (
-            currentData === initialData
-        ) {
-            toast.info(
-                "No changes detected",
-            );
-
-            return;
-        }
-
-        try {
-
-            setSaving(true);
-
-            await skillService.saveSkillProfile(
-                {
-                    student_id: studentId,
-
-                    technical_skills:
-                        formData.technical_skills
-                            .map(
-                                (item: any) =>
-                                    item.value,
-                            )
-                            .join(", "),
-
-                    programming_languages:
-                        formData.programming_languages
-                            .map(
-                                (item: any) =>
-                                    item.value,
-                            )
-                            .join(", "),
-
-                    tools_and_technologies:
-                        formData.tools_and_technologies
-                            .map(
-                                (item: any) =>
-                                    item.value,
-                            )
-                            .join(", "),
-
-                    github_url:
-                        formData.github_url?.trim() ||
-                        null,
-
-                    linkedin_url:
-                        formData.linkedin_url?.trim() ||
-                        null,
-
-                    portfolio_url:
-                        formData.portfolio_url?.trim() ||
-                        null,
-
-                    strengths:
-                        formData.strengths?.trim() ||
-                        null,
-
-                    certification_count: 0,
-                    hackathon_count: 0,
-                    project_count: 0,
-                    profile_score: 0,
-
-                    created_by_type:
-                        "User",
-
-                    is_active: true,
-                }
-            );
-
-            const completed =
-                !!formData.technical_skills.length &&
-                !!formData.programming_languages.length &&
-                !!formData.linkedin_url;
-
-            onCompletionChange?.(
-                completed,
-            );
-
-            setInitialData(
-                generateComparableData(),
-            );
-
-            setHasExistingData(true);
-
-            setEditMode(false);
-
-            toast.success(
-                "Skills updated successfully",
-            );
-
-            await loadSkills();
-
-        } catch (error: any) {
-
-            console.error(
-                "SKILLS SAVE ERROR:",
-                error,
-            );
-
-            toast.error(
-                error.message ||
-                "Failed to save skills",
-            );
-
-        } finally {
-
-            setSaving(false);
-
-        }
-    };
-
-    const currentData =
-        generateComparableData()
-        
-    if (loading) {
-        return (
-            <div className="p-4">
-                Loading skills...
-            </div>
-        );
+      setErrors((prev) => ({
+        ...prev,
+        github_url: valid ? "" : "Only valid GitHub profile links allowed",
+      }));
     }
 
-    return (
-        <div className="border rounded-xl p-6 space-y-6 bg-white mt-8">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                    Skills
-                </h2>
+    if (name === "linkedin_url") {
+      const valid =
+        /^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+\/?$/.test(value) || value === "";
 
-                <div className="flex gap-2">
-                    {!hasExistingData ? (
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="px-4 py-2 border rounded-lg"
-                        >
-                            {saving
-                                ? "Saving..."
-                                : "Save"}
-                        </button>
-                    ) : (
+      setErrors((prev) => ({
+        ...prev,
+        linkedin_url: valid ? "" : "Only valid LinkedIn profile links allowed",
+      }));
+    }
 
-                        <>
-                            {!editMode ? (
-                                <button
-                                    onClick={() => {
-                                        setEditMode(true);
-                                    }}
-                                    className="px-4 py-2 border rounded-lg"
-                                >
-                                    Edit
-                                </button>
-                            ) : (
-                                <>
-                                    <button
-                                        onClick={async () => {
-                                            await loadSkills();
+    if (name === "portfolio_url") {
+      const valid =
+        /^https:\/\/.+\.(vercel\.app|netlify\.app|github\.io)(\/.*)?$/.test(value) || value === "";
 
-                                            setEditMode(false);
-                                        }}
-                                        className="px-4 py-2 border rounded-lg"
-                                    >
-                                        Cancel
-                                    </button>
+      setErrors((prev) => ({
+        ...prev,
+        portfolio_url: valid ? "" : "Only Vercel / Netlify / GitHub Pages links allowed",
+      }));
+    }
+  };
 
-                                    <button
-                                        onClick={handleSave}
-                                        disabled={saving}
-                                        className="px-4 py-2 border rounded-lg"
-                                    >
-                                        {saving
-                                            ? "Saving..."
-                                            : "Save"}
-                                    </button>
-                                </>
-                            )}
-                        </>
+  const generateComparableData = () => {
+    return JSON.stringify({
+      technical_skills: formData.technical_skills.map((item) => item.value).sort(),
 
-                    )}
-                </div>
+      programming_languages: formData.programming_languages.map((item) => item.value).sort(),
+
+      tools_and_technologies: formData.tools_and_technologies.map((item) => item.value).sort(),
+
+      github_url: formData.github_url.trim(),
+
+      linkedin_url: formData.linkedin_url.trim(),
+
+      portfolio_url: formData.portfolio_url.trim(),
+
+      strengths: formData.strengths.trim(),
+    });
+  };
+
+  const handleSave = async () => {
+    const currentData = generateComparableData();
+
+    if (errors.github_url || errors.linkedin_url || errors.portfolio_url) {
+      toast.error("Please fix invalid links before saving");
+
+      return;
+    }
+
+    if (currentData === initialData) {
+      toast.info("No changes detected");
+
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await skillService.saveSkillProfile({
+        student_id: studentId,
+
+        technical_skills: formData.technical_skills.map((item: any) => item.value).join(", "),
+
+        programming_languages: formData.programming_languages
+          .map((item: any) => item.value)
+          .join(", "),
+
+        tools_and_technologies: formData.tools_and_technologies
+          .map((item: any) => item.value)
+          .join(", "),
+
+        github_url: formData.github_url?.trim() || null,
+
+        linkedin_url: formData.linkedin_url?.trim() || null,
+
+        portfolio_url: formData.portfolio_url?.trim() || null,
+
+        strengths: formData.strengths?.trim() || null,
+
+        certification_count: 0,
+        hackathon_count: 0,
+        project_count: 0,
+        profile_score: 0,
+
+        created_by_type: "User",
+
+        is_active: true,
+      });
+
+      const completed =
+        !!formData.technical_skills.length &&
+        !!formData.programming_languages.length &&
+        !!formData.linkedin_url;
+
+      onCompletionChange?.(completed);
+
+      setInitialData(generateComparableData());
+
+      setHasExistingData(true);
+
+      setEditMode(false);
+
+      toast.success("Skills updated successfully");
+
+      await loadSkills();
+    } catch (error: any) {
+      console.error("SKILLS SAVE ERROR:", error);
+
+      toast.error(error.message || "Failed to save skills");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const currentData = generateComparableData();
+
+  if (loading) {
+    return <div className="p-4">Loading skills...</div>;
+  }
+  return (
+    <div
+      className="
+            rounded-3xl
+            border
+            border-border/50
+            bg-white
+            p-8
+            shadow-sm
+        "
+    >
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Skills & Professional Profile</h2>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            Showcase your technical expertise, programming capabilities and professional presence.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {!hasExistingData ? (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="
+rounded-xl
+bg-primary
+px-6
+py-3
+font-medium
+text-white
+transition-all
+hover:shadow-lg
+"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+          ) : (
+            <>
+              {!editMode ? (
+                <button
+                  onClick={() => {
+                    setEditMode(true);
+                  }}
+                  className="
+rounded-xl
+bg-primary
+px-6
+py-3
+font-medium
+text-white
+transition-all
+hover:shadow-lg
+"
+                >
+                  Edit
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={async () => {
+                      await loadSkills();
+
+                      setEditMode(false);
+                    }}
+                    className="
+rounded-xl
+border
+border-slate-300
+bg-white
+px-6
+py-3
+font-medium
+transition-all
+hover:bg-slate-50
+"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="
+rounded-xl
+bg-primary
+px-6
+py-3
+font-medium
+text-white
+transition-all
+hover:shadow-lg
+disabled:opacity-50
+"
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid gap-6">
+        <div>
+          <label
+            className="
+        mb-2
+        block
+        text-xs
+        uppercase
+        tracking-[0.12em]
+        text-muted-foreground
+    "
+          >
+            Technical Skills
+          </label>
+
+          <CreatableSelect<SkillOption, true>
+            styles={selectStyles}
+            isMulti
+            isDisabled={!editMode}
+            options={technicalSkillOptions}
+            value={Array.isArray(formData.technical_skills) ? formData.technical_skills : []}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                technical_skills: [...value],
+              })
+            }
+          />
+        </div>
+
+        <div>
+          <label
+            className="
+        mb-2
+        block
+        text-xs
+        uppercase
+        tracking-[0.12em]
+        text-muted-foreground
+    "
+          >
+            Programming Languages
+          </label>
+
+          <CreatableSelect<SkillOption, true>
+            styles={selectStyles}
+            isMulti
+            isDisabled={!editMode}
+            options={languageOptions}
+            value={
+              Array.isArray(formData.programming_languages) ? formData.programming_languages : []
+            }
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                programming_languages: [...value],
+              })
+            }
+          />
+        </div>
+
+        <div>
+          <label
+            className="
+        mb-2
+        block
+        text-xs
+        uppercase
+        tracking-[0.12em]
+        text-muted-foreground
+    "
+          >
+            Tools & Technologies
+          </label>
+
+          <CreatableSelect<SkillOption, true>
+            styles={selectStyles}
+            isMulti
+            isDisabled={!editMode}
+            options={toolsOptions}
+            value={
+              Array.isArray(formData.tools_and_technologies) ? formData.tools_and_technologies : []
+            }
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                tools_and_technologies: [...value],
+              })
+            }
+          />
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-3">
+          {/* GitHub */}
+          <div
+            className="
+      rounded-2xl
+      border
+      border-slate-200
+      bg-slate-50/60
+      p-5
+      transition-all
+      hover:border-primary/40
+      hover:shadow-md
+    "
+          >
+            <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">GitHub</div>
+
+            {editMode ? (
+              <input
+                type="text"
+                name="github_url"
+                value={formData.github_url}
+                onChange={handleChange}
+                className="
+          mt-3
+          w-full
+          rounded-xl
+          border
+          border-slate-200
+          px-3
+          py-2
+        "
+              />
+            ) : (
+              <a
+                href={formData.github_url}
+                target="_blank"
+                rel="noreferrer"
+                className="
+          mt-3
+          block
+          truncate
+          font-medium
+          text-primary
+        "
+              >
+                View GitHub Profile →
+              </a>
+            )}
+          </div>
+
+          {/* LinkedIn */}
+          <div
+            className="
+      rounded-2xl
+      border
+      border-slate-200
+      bg-slate-50/60
+      p-5
+      transition-all
+      hover:border-primary/40
+      hover:shadow-md
+    "
+          >
+            <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              LinkedIn
             </div>
 
-            <div className="space-y-4">
-                <div>
-                    <label className="text-sm font-medium">
-                        Technical Skills
-                    </label>
+            {editMode ? (
+              <input
+                type="text"
+                name="linkedin_url"
+                value={formData.linkedin_url}
+                onChange={handleChange}
+                className="
+          mt-3
+          w-full
+          rounded-xl
+          border
+          border-slate-200
+          px-3
+          py-2
+        "
+              />
+            ) : (
+              <a
+                href={formData.linkedin_url}
+                target="_blank"
+                rel="noreferrer"
+                className="
+          mt-3
+          block
+          truncate
+          font-medium
+          text-primary
+        "
+              >
+                View LinkedIn Profile →
+              </a>
+            )}
+          </div>
 
-                    <CreatableSelect<
-                        SkillOption,
-                        true
-                    >
-                        isMulti
-                        isDisabled={!editMode}
-                        options={technicalSkillOptions}
-
-                        value={
-                            Array.isArray(
-                                formData.technical_skills,
-                            )
-                                ? formData.technical_skills
-                                : []
-                        }
-                        onChange={(value) =>
-                            setFormData({
-                                ...formData,
-                                technical_skills: [
-                                    ...value,
-                                ],
-                            })
-                        }
-                    />
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium">
-                        Programming Languages
-                    </label>
-
-                    <CreatableSelect<
-                        SkillOption,
-                        true
-                    >
-                        isMulti
-                        isDisabled={!editMode}
-                        options={languageOptions}
-
-                        value={
-                            Array.isArray(
-                                formData.programming_languages,
-                            )
-                                ? formData.programming_languages
-                                : []
-                        }
-                        onChange={(value) =>
-                            setFormData({
-                                ...formData,
-                                programming_languages:
-                                    [...value],
-                            })
-                        }
-                    />
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium">
-                        Tools & Technologies
-                    </label>
-
-                    <CreatableSelect<
-                        SkillOption,
-                        true
-                    >
-                        isMulti
-                        isDisabled={!editMode}
-                        options={toolsOptions}
-
-                        value={
-                            Array.isArray(
-                                formData.tools_and_technologies,
-                            )
-                                ? formData.tools_and_technologies
-                                : []
-                        }
-
-                        onChange={(value) =>
-                            setFormData({
-                                ...formData,
-                                tools_and_technologies:
-                                    [...value],
-                            })
-                        }
-                    />
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium">
-                        GitHub URL
-                    </label>
-
-                    <input
-                        disabled={!editMode}
-                        type="text"
-                        name="github_url"
-                        placeholder="GitHub URL"
-                        value={
-                            formData.github_url
-                        }
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                    />
-
-                    {errors.github_url && (
-                        <p className="text-red-500 text-sm mt-1">
-                            {errors.github_url}
-                        </p>
-                    )}
-
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium">
-                        LinkedIn URL
-                    </label>
-
-                    <input
-                        disabled={!editMode}
-                        type="text"
-                        name="linkedin_url"
-                        placeholder="LinkedIn URL"
-                        value={
-                            formData.linkedin_url
-                        }
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                    />
-
-                    {errors.linkedin_url && (
-                        <p className="text-red-500 text-sm mt-1">
-                            {errors.linkedin_url}
-                        </p>
-                    )}
-
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium">
-                        Portfolio URL
-                    </label>
-
-                    <input
-                        disabled={!editMode}
-                        type="text"
-                        name="portfolio_url"
-                        placeholder="Portfolio URL"
-                        value={
-                            formData.portfolio_url
-                        }
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                    />
-                    {errors.portfolio_url && (
-                        <p className="text-red-500 text-sm mt-1">
-                            {errors.portfolio_url}
-                        </p>
-                    )}
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium">
-                        Strengths
-                    </label>
-
-                    <textarea
-                        disabled={!editMode}
-                        name="strengths"
-                        placeholder="Strengths"
-                        value={
-                            formData.strengths
-                        }
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                    />
-                </div>
+          {/* Portfolio */}
+          <div
+            className="
+      rounded-2xl
+      border
+      border-slate-200
+      bg-slate-50/60
+      p-5
+      transition-all
+      hover:border-primary/40
+      hover:shadow-md
+    "
+          >
+            <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              Portfolio
             </div>
-        </div >
-    );
+
+            {editMode ? (
+              <input
+                type="text"
+                name="portfolio_url"
+                value={formData.portfolio_url}
+                onChange={handleChange}
+                className="
+          mt-3
+          w-full
+          rounded-xl
+          border
+          border-slate-200
+          px-3
+          py-2
+        "
+              />
+            ) : (
+              <a
+                href={formData.portfolio_url}
+                target="_blank"
+                rel="noreferrer"
+                className="
+          mt-3
+          block
+          truncate
+          font-medium
+          text-primary
+        "
+              >
+                View Portfolio →
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div
+          className="
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/60
+    p-5
+  "
+        >
+          <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+            Professional Strengths
+          </div>
+
+          {editMode ? (
+            <textarea
+              name="strengths"
+              value={formData.strengths}
+              onChange={handleChange}
+              className="
+        mt-3
+        min-h-[120px]
+        w-full
+        rounded-xl
+        border
+        border-slate-200
+        px-4
+        py-3
+      "
+            />
+          ) : (
+            <p className="mt-3 leading-7 text-slate-700">
+              {formData.strengths || "No strengths added yet."}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

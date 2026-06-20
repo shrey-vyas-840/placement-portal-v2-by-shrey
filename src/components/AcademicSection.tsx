@@ -857,7 +857,7 @@ export function AcademicSection({
                                     placeholder="Enter GPA"
                                     value={gpaInput}
                                     onChange={(e) => {
-                                        let value =
+                                        const value =
                                             e.target.value.replace(
                                                 /[^0-9.]/g,
                                                 "",
