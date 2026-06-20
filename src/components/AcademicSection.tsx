@@ -8,8 +8,7 @@ type Props = {
   onSaved: () => void;
 };
 
-const modernInputClass =
-`
+const modernInputClass = `
 w-full
 appearance-none
 rounded-2xl
@@ -298,6 +297,51 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
             </button>
           )}
         </div>
+
+<div className="mb-8 grid gap-4 md:grid-cols-4">
+
+  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-blue-50 to-white p-5">
+    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+      Current CGPA
+    </div>
+
+    <div className="mt-2 text-3xl font-bold text-primary">
+      {cgpa || "-"}
+    </div>
+  </div>
+
+  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-cyan-50 to-white p-5">
+    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+      Semester
+    </div>
+
+    <div className="mt-2 text-3xl font-bold text-cyan-600">
+      {currentSemester || "-"}
+    </div>
+  </div>
+
+  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-emerald-50 to-white p-5">
+    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+      Active Backlogs
+    </div>
+
+    <div className="mt-2 text-3xl font-bold text-emerald-600">
+      {activeBacklogs || "0"}
+    </div>
+  </div>
+
+  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-violet-50 to-white p-5">
+    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+      Graduation Year
+    </div>
+
+    <div className="mt-2 text-3xl font-bold text-violet-600">
+      {graduationYear || "-"}
+    </div>
+  </div>
+
+</div>
+
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <div
             className="
@@ -331,41 +375,6 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
 "
             >
               {educationPath}
-            </p>
-          </div>
-
-          <div
-            className="
-    rounded-2xl
-    border
-    border-border/80
-    bg-white
-    p-4
-    transition-all
-    hover:-translate-y-1
-    hover:border-primary/40
-    hover:shadow-md
-  "
-          >
-            <p
-              className="
-  text-xs
-  uppercase
-  tracking-[0.12em]
-  text-muted-foreground
-"
-            >
-              Current Degree
-            </p>
-
-            <p
-              className="
-  mt-2
-  font-semibold
-  text-foreground
-"
-            >
-              {currentDegreeName}
             </p>
           </div>
 
@@ -425,6 +434,41 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
   text-muted-foreground
 "
             >
+              Current Degree
+            </p>
+
+            <p
+              className="
+  mt-2
+  font-semibold
+  text-foreground
+"
+            >
+              {currentDegreeName}
+            </p>
+          </div>
+
+          <div
+            className="
+    rounded-2xl
+    border
+    border-border/80
+    bg-white
+    p-4
+    transition-all
+    hover:-translate-y-1
+    hover:border-primary/40
+    hover:shadow-md
+  "
+          >
+            <p
+              className="
+  text-xs
+  uppercase
+  tracking-[0.12em]
+  text-muted-foreground
+"
+            >
               Branch
             </p>
 
@@ -460,7 +504,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
   text-muted-foreground
 "
             >
-              Current CGPA
+              Current Semester
             </p>
 
             <p
@@ -470,7 +514,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
   text-foreground
 "
             >
-              {cgpa}
+              {currentSemester}
             </p>
           </div>
 
@@ -495,7 +539,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
   text-muted-foreground
 "
             >
-              Current Semester
+              Current CGPA
             </p>
 
             <p
@@ -505,7 +549,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
   text-foreground
 "
             >
-              {currentSemester}
+              {cgpa}
             </p>
           </div>
 
@@ -738,41 +782,39 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
     shadow-sm
   "
     >
-    <div className="mb-8 flex items-start justify-between">
-  <div>
-    <h2 className="text-2xl font-semibold">
-      Academic Details
-    </h2>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Academic Details</h2>
 
-    <p className="mt-2 text-sm text-muted-foreground">
-      Educational qualifications and eligibility information used for placements.
-    </p>
-  </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Educational qualifications and eligibility information used for placements.
+          </p>
+        </div>
 
-  <div className="flex gap-3">
-    {editing && (
-      <>
-        <button
-          type="button"
-          onClick={() => {
-            if (originalData) {
-              setEducationPath(originalData.education_path ?? "");
-              setCurrentDegreeName(originalData.current_degree_level ?? "");
-              setCurrentInstituteName(originalData.current_institute_name ?? "");
-              setCurrentBranchName(originalData.current_branch_name ?? "");
-              setCurrentSemester(originalData.current_semester?.toString() ?? "");
-              setCgpa(originalData.current_cgpa?.toString() ?? "");
-              setTenthPercentage(originalData.tenth_percentage?.toString() ?? "");
-              setTwelfthPercentage(originalData.twelfth_percentage?.toString() ?? "");
-              setDiplomaPercentage(originalData.diploma_percentage?.toString() ?? "");
-              setActiveBacklogs(originalData.active_backlogs?.toString() ?? "0");
-              setYearGapCount(originalData.year_gap_count?.toString() ?? "0");
-              setGraduationYear(originalData.graduation_year?.toString() ?? "");
-            }
+        <div className="flex gap-3">
+          {editing && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  if (originalData) {
+                    setEducationPath(originalData.education_path ?? "");
+                    setCurrentDegreeName(originalData.current_degree_level ?? "");
+                    setCurrentInstituteName(originalData.current_institute_name ?? "");
+                    setCurrentBranchName(originalData.current_branch_name ?? "");
+                    setCurrentSemester(originalData.current_semester?.toString() ?? "");
+                    setCgpa(originalData.current_cgpa?.toString() ?? "");
+                    setTenthPercentage(originalData.tenth_percentage?.toString() ?? "");
+                    setTwelfthPercentage(originalData.twelfth_percentage?.toString() ?? "");
+                    setDiplomaPercentage(originalData.diploma_percentage?.toString() ?? "");
+                    setActiveBacklogs(originalData.active_backlogs?.toString() ?? "0");
+                    setYearGapCount(originalData.year_gap_count?.toString() ?? "0");
+                    setGraduationYear(originalData.graduation_year?.toString() ?? "");
+                  }
 
-            setEditing(false);
-          }}
-          className="
+                  setEditing(false);
+                }}
+                className="
             rounded-xl
             border
             border-slate-300
@@ -783,14 +825,14 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
             transition-all
             hover:bg-slate-50
           "
-        >
-          Cancel
-        </button>
+              >
+                Cancel
+              </button>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="
             rounded-xl
             bg-primary
             px-6
@@ -800,24 +842,20 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
             transition-all
             hover:shadow-lg
           "
-        >
-          {saving ? "Saving..." : "Save Academic Details"}
-        </button>
-      </>
-    )}
-  </div>
-</div>
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
-{error && (
-  <p className="mb-6 text-sm text-red-500">
-    {error}
-  </p>
-)}
+      {error && <p className="mb-6 text-sm text-red-500">{error}</p>}
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-       <div className="relative">
-  <label
-    className="
+      <div className="mt-4 grid gap-5 md:grid-cols-2">
+        <div className="relative">
+          <label
+            className="
       mb-2
       block
       text-xs
@@ -825,11 +863,11 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
       tracking-[0.12em]
       text-muted-foreground
     "
-  >
-    Education Path
-  </label>
+          >
+            Education Path
+          </label>
 
-  <select
+          <select
             disabled={!editing}
             className={modernInputClass}
             value={educationPath}
@@ -1016,6 +1054,28 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
   text-muted-foreground
 "
           >
+            Current Semester
+          </label>
+          <input
+            disabled={!editing}
+            className={modernInputClass}
+            placeholder="Current Semester"
+            value={currentSemester}
+            onChange={(e) => setCurrentSemester(e.target.value.replace(/\D/g, ""))}
+          />
+        </div>
+
+        <div>
+          <label
+            className="
+  mb-2
+  block
+  text-xs
+  uppercase
+  tracking-[0.12em]
+  text-muted-foreground
+"
+          >
             10th Percentage
           </label>
 
@@ -1146,28 +1206,6 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
             </div>
           </div>
         )}
-
-        <div>
-          <label
-            className="
-  mb-2
-  block
-  text-xs
-  uppercase
-  tracking-[0.12em]
-  text-muted-foreground
-"
-          >
-            Current Semester
-          </label>
-          <input
-            disabled={!editing}
-            className={modernInputClass}
-            placeholder="Current Semester"
-            value={currentSemester}
-            onChange={(e) => setCurrentSemester(e.target.value.replace(/\D/g, ""))}
-          />
-        </div>
 
         <div>
           <label
