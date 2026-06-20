@@ -286,11 +286,6 @@ export function ProfilePage() {
         </p>
       )}
 
-      {error && (
-        <p className="mt-6 text-red-500">
-          {error}
-        </p>
-      )}
       {!loading && !profile && !isInstitutionalEmail && (
         <div className="mt-6 rounded border border-red-300 bg-red-50 p-6">
           <h2 className="text-lg font-semibold text-red-700">
@@ -319,136 +314,289 @@ export function ProfilePage() {
         />
       )}
 
-      {profile && (
-        <>
+        {profile && (
+          <>
 
-          <main className="mx-auto max-w-7xl px-6 py-10">
-            <div
-              className="
-        relative
-        overflow-hidden
-        rounded-[32px]
-        border
-        border-primary/10
-        bg-gradient-to-r
-        from-primary
-        via-blue-700
-        to-cyan-600
-        p-8
-        text-white
-        shadow-xl
+            <main className="mx-auto max-w-7xl px-6 py-10">
+              
+<div
+  className="
+    relative
+    overflow-hidden
+    rounded-[32px]
+    border
+    border-primary/10
+    bg-gradient-to-r
+    from-primary
+    via-blue-700
+    to-cyan-600
+    px-8
+    py-8
+    text-white
+    shadow-xl
+  "
+>
+  <div className="flex items-center justify-between gap-8">
+
+    {/* LEFT SIDE */}
+    <div className="flex items-center gap-5">
+
+      <div
+        className="
+          flex
+          h-20
+          w-20
+          items-center
+          justify-center
+          rounded-3xl
+          bg-white/20
+          text-3xl
+          font-bold
+          backdrop-blur-md
+        "
+      >
+        {profile?.first_name?.charAt(0) ?? "S"}
+      </div>
+
+      <div>
+        <div className="text-sm text-white/80">
+          Student Profile
+        </div>
+
+        <h1 className="mt-1 text-4xl font-bold tracking-tight">
+          {profile?.first_name} {profile?.last_name}
+        </h1>
+
+        <div className="mt-2 text-white/80">
+          {profile?.enrollment_no}
+        </div>
+      </div>
+
+    </div>
+
+    {/* RIGHT SIDE KPI GRID */}
+    <div className="grid grid-cols-2 gap-3">
+
+      <div
+        className="
+          min-w-[140px]
+          rounded-2xl
+          bg-white/15
+          p-4
+          backdrop-blur-md
+        "
+      >
+        <div className="text-xs text-white/70">
+          Status
+        </div>
+
+        <div className="mt-2 text-lg font-semibold">
+          {profile?.placement_status ?? "-"}
+        </div>
+      </div>
+
+      <div
+        className="
+          min-w-[140px]
+          rounded-2xl
+          bg-white/10
+          p-4
+          backdrop-blur-md
+        "
+      >
+        <div className="text-xs text-white/70">
+          Preference
+        </div>
+
+        <div className="mt-2 text-lg font-semibold">
+          {profile?.placement_preference ?? "-"}
+        </div>
+      </div>
+
+      <div
+        className="
+          min-w-[140px]
+          rounded-2xl
+          bg-white/15
+          p-4
+          backdrop-blur-md
+        "
+      >
+        <div className="text-xs text-white/70">
+          Passing Year
+        </div>
+
+        <div className="mt-2 text-lg font-semibold">
+          {academicData?.graduation_year ?? "-"}
+        </div>
+      </div>
+
+      <div
+        className="
+          min-w-[140px]
+          rounded-2xl
+          bg-white/10
+          p-4
+          backdrop-blur-md
+        "
+      >
+        <div className="text-xs text-white/70">
+          CGPA
+        </div>
+
+        <div className="mt-2 text-lg font-semibold">
+          {academicData?.current_cgpa ?? "-"}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  {/* Decorative circles */}
+  <div
+    className="
+      absolute
+      right-0
+      top-0
+      h-40
+      w-40
+      rounded-full
+      bg-white/10
+      blur-sm
     "
-            >
-              <div className="flex items-center gap-5">
-                <div
-                  className="
-                flex
-                h-20
-                w-20
-                items-center
-                justify-center
-                rounded-3xl
-                bg-white/20
-                text-3xl
-                font-bold
-            "
-                >
-                  {profile?.first_name?.charAt(0) ?? "S"}
-                </div>
+  />
+
+  <div
+    className="
+      absolute
+      bottom-0
+      right-12
+      h-24
+      w-24
+      rounded-full
+      bg-white/10
+      blur-sm
+    "
+  />
+</div>
+
+              <div
+                className="
+      mt-7
+      rounded-3xl
+      border
+      border-border/50
+      bg-white
+      p-8
+      shadow-sm
+    "
+              >
 
                 <div>
-                  <div className="text-sm text-white/80">
-                    Student Profile
-                  </div>
+    
+    <div className="mb-8 flex items-start justify-between">
 
-                  <h1 className="mt-1 text-4xl font-bold tracking-tight">
-                    {profile?.first_name} {profile?.last_name}
-                  </h1>
+  <div>
+    <h2 className="text-2xl font-semibold">
+      Basic Student Information
+    </h2>
 
-                  <div className="mt-2 text-white/80">
-                    {profile?.enrollment_no}
-                  </div>
-                </div>
-              </div>
-            </div>
+    <p className="mt-2 text-sm text-muted-foreground">
+      Personal details, contact information and placement preferences maintained by the student.
+    </p>
+  </div>
 
-            <div
-              className="
-    mt-6
-    rounded-3xl
-    border
-    border-border/50
-    bg-white
-    p-8
-    shadow-sm
-  "
-            >
+  <div className="flex items-center gap-3">
 
-              <div className="mb-6 flex justify-end gap-2">
+    {!editing ? (
+      <button
+        onClick={() => {
+          setError(null);
+          setEditing(true);
+        }}
+        className="
+          rounded-xl
+          bg-primary
+          px-7
+          py-3
+          font-medium
+          text-white
+          transition-all
+          hover:shadow-lg
+        "
+      >
+        Edit Profile
+      </button>
+    ) : (
+      <>
+        <button
+          onClick={() => {
+            if (originalProfile) {
+              setProfile({ ...originalProfile });
+            }
 
-                {!editing && (
-                  <button
-                    onClick={() => {
-                      setError(null);
-                      setEditing(true);
-                    }}
-                    className="
-  rounded-xl
-  bg-primary
-  px-5
-  py-2.5
-  font-medium
-  text-white
-  transition-all
-  hover:shadow-lg
-"
-                  >
-                    Edit Profile
-                  </button>
-                )}
+            setError(null);
+            setEditing(false);
+          }}
+          className="
+            rounded-xl
+            border
+            border-slate-300
+            bg-white
+            px-6
+            py-3
+            font-medium
+            transition-all
+            hover:bg-slate-50
+          "
+        >
+          Cancel
+        </button>
 
-                {editing && (
-                  <>
-                    <button
-                      onClick={() => {
-                        if (originalProfile) {
-                          setProfile({
-                            ...originalProfile,
-                          });
-                        }
+        <button
+          onClick={handleProfileSave}
+          disabled={savingProfile || !hasChanges}
+          className="
+            rounded-xl
+            bg-primary
+            px-6
+            py-3
+            font-medium
+            text-white
+            transition-all
+            hover:shadow-lg
+            disabled:opacity-50
+          "
+        >
+          {savingProfile ? "Saving..." : "Save Changes"}
+        </button>
+      </>
+    )}
 
-                        setError(null);
-                        setEditing(false);
-                      }}
-                      className="rounded border px-4 py-2"
-                    >
-                      Cancel
-                    </button>
+  </div>
 
-                    <button
-                      onClick={handleProfileSave}
-                      disabled={
-                        savingProfile || !hasChanges
-                      }
-                      className="
-  rounded-xl
-  bg-primary
-  px-5
-  py-2.5
-  font-medium
-  text-white
-  transition-all
-  hover:shadow-lg
-"
-                    >
-                      {savingProfile
-                        ? "Saving..."
-                        : "Save Changes"}
-                    </button>
-                  </>
-                )}
+</div>
+      </div>
 
-              </div>
+      {error && (
+  <div
+    className="
+      mb-6
+      rounded-2xl
+      border
+      border-red-200
+      bg-red-50
+      px-4
+      py-3
+      text-sm
+      font-medium
+      text-red-600
+    "
+  >
+    {error}
+  </div>
+)}
 
               <div className="grid gap-8 sm:grid-cols-2">
 
@@ -459,12 +607,34 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                    <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       First Name
                     </p>
 
                     <input
-                      className="w-full rounded border p-2"
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.first_name}
                       onChange={(e) =>
                         setProfile({
@@ -483,13 +653,35 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                    <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Middle Name
                     </p>
 
                     <input
                       maxLength={1}
-                      className="w-full rounded border p-2"
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.middle_name ?? ""}
                       onChange={(e) =>
                         setProfile({
@@ -508,12 +700,34 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                   <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Last Name
                     </p>
 
-                    <input
-                      className="w-full rounded border p-2"
+                  <input
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.last_name}
                       onChange={(e) =>
                         setProfile({
@@ -537,13 +751,35 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                   <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Personal Email
                     </p>
 
-                    <input
-                      type="email"
-                      className="w-full rounded border p-2"
+<input
+type="email"
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.personal_email ?? ""}
                       onChange={(e) =>
                         setProfile({
@@ -561,12 +797,34 @@ export function ProfilePage() {
                 )}
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                  <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Contact Number
                     </p>
 
-                    <input
-                      className="w-full rounded border p-2"
+<input
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.contact_number}
                       onChange={(e) =>
                         setProfile({
@@ -586,19 +844,42 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+<p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Alternate Contact
                     </p>
 
-                    <input
-                      className="w-full rounded border p-2"
+              <input
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                      placeholder="Alternate Contact Number (Optional)"
+                      maxLength={10}
                       value={profile.alternate_contact_number ?? ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          alternate_contact_number:
-                            e.target.value.replace(/\D/g, ""),
-                        })
+                      onChange={(e) => setProfile({
+                        ...profile,
+                        alternate_contact_number:
+                          e.target.value.replace(/\D/g, ""),
+                      })
                       }
                     />
                   </div>
@@ -611,12 +892,34 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                   <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Gender
                     </p>
 
                     <select
-                      className="w-full rounded border p-2"
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.gender ?? ""}
                       onChange={(e) =>
                         setProfile({
@@ -640,14 +943,36 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                    <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Date Of Birth
                     </p>
 
                     <input
                       type="date"
                       max={new Date().toISOString().split("T")[0]}
-                      className="w-full rounded border p-2"
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.date_of_birth ?? ""}
                       onChange={(e) =>
                         setProfile({
@@ -666,12 +991,35 @@ export function ProfilePage() {
 
                 {editing ? (
                   <div>
-                    <p className="text-xs text-muted-foreground">
+                  <p
+  className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+>
                       Placement Preference
                     </p>
 
                     <select
-                      className="w-full rounded border p-2"
+
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
                       value={profile.placement_preference}
                       onChange={(e) =>
                         setProfile({
@@ -711,9 +1059,9 @@ export function ProfilePage() {
               </div>
             </div>
 
-           <div
-  className="
-    mt-8
+            <div
+              className="
+    mt-6
     rounded-3xl
     border
     border-border/50
@@ -721,15 +1069,15 @@ export function ProfilePage() {
     p-6
     shadow-sm
   "
->
-  <SkillsSection
-    studentId={profile.student_id}
-  />
-</div>
+            >
+              <SkillsSection
+                studentId={profile.student_id}
+              />
+            </div>
 
-<div
-  className="
-    mt-8
+            <div
+              className="
+    mt-6
     rounded-3xl
     border
     border-border/50
@@ -737,20 +1085,20 @@ export function ProfilePage() {
     p-6
     shadow-sm
   "
->
-  <ResumeSection
-    studentId={profile.student_id}
-    authUserId={user?.id ?? ""}
-    existingUrl={resumeUrl}
-    onSaved={() =>
-      loadResume(profile.student_id)
-    }
-  />
-</div>
+            >
+              <ResumeSection
+                studentId={profile.student_id}
+                authUserId={user?.id ?? ""}
+                existingUrl={resumeUrl}
+                onSaved={() =>
+                  loadResume(profile.student_id)
+                }
+              />
+            </div>
 
-<div
-  className="
-    mt-8
+            <div
+              className="
+    mt-6
     rounded-3xl
     border
     border-border/50
@@ -758,17 +1106,17 @@ export function ProfilePage() {
     p-6
     shadow-sm
   "
->
-  {profile && (
-    <AcademicSection
-      studentId={profile.student_id}
-      existingData={academicData}
-      onSaved={() =>
-        loadAcademicDetails(profile.student_id)
-      }
-    />
-  )}
-</div>
+            >
+              {profile && (
+                <AcademicSection
+                  studentId={profile.student_id}
+                  existingData={academicData}
+                  onSaved={() =>
+                    loadAcademicDetails(profile.student_id)
+                  }
+                />
+              )}
+            </div>
           </main>
         </>
       )}
@@ -788,8 +1136,13 @@ function Field({
       className="
         rounded-2xl
         border
-        border-border/50
-        bg-slate-50/60
+        border-border/80
+        bg-white
+hover:bg-slate-50
+hover:-translate-y-2
+hover:border-primary/60
+hover:shadow-md
+transition-all                                                                                  
         p-4
       "
     >
@@ -1079,13 +1432,27 @@ function CompleteProfileForm({
           required
         />
 
-        <input
-          className="rounded border p-2"
+  <input
+  className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
           placeholder="Alternate Contact Number (Optional)"
           maxLength={10}
-          value={contactNumber}
+          value={alternateContactNumber}
           onChange={(e) =>
-            setContactNumber(
+            setAlternateContactNumber(
               e.target.value.replace(/\D/g, "")
             )
           }
