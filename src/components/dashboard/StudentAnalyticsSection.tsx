@@ -122,7 +122,7 @@ export function StudentAnalyticsSection({
   report,
   loading,
 }: {
-  report: StudentDrilldownReport | null;
+  report: StudentDrilldownReport;
   loading?: boolean;
 }) {
   const summary = useMemo(() => {
@@ -176,6 +176,7 @@ export function StudentAnalyticsSection({
     return <LoadingSkeleton />;
   }
 
+  
   if (!report) {
     return (
       <EmptyState
@@ -195,63 +196,6 @@ export function StudentAnalyticsSection({
   const isNewStudent = !hasDashboardHistory;
 
   const totalDrives = summary?.totalDrives ?? report.drive_breakdown.length;
-
-  if (isNewStudent) {
-    return (
-      <section className="space-y-6">
-        <div
-          className="
-                    overflow-hidden
-                    rounded-3xl
-                    border
-                    border-emerald-200
-                    bg-gradient-to-r
-                    from-emerald-50
-                    via-white
-                    to-blue-50
-                    p-8
-                "
-        >
-          <div className="max-w-3xl">
-            <div
-              className="
-                            text-xs
-                            font-semibold
-                            uppercase
-                            tracking-[0.18em]
-                            text-emerald-600
-                        "
-            >
-              Placement Ready
-            </div>
-
-            <h2
-              className="
-                            mt-3
-                            text-3xl
-                            font-bold
-                            tracking-tight
-                        "
-            >
-              Your profile is complete.
-            </h2>
-
-            <p
-              className="
-                            mt-4
-                            text-base
-                            text-muted-foreground
-                        "
-            >
-              You are eligible to participate in placement opportunities. Register for campus drives
-              to unlock attendance analytics, participation history, shortlisting trends and
-              dashboard insights.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="space-y-6">

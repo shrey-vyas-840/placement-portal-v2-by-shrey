@@ -22,8 +22,7 @@ function SidebarLink({
     <Link
       to={to}
       activeProps={{
-        className:
-          "border-primary/20 bg-primary/5 shadow-md",
+        className: "border-primary/20 bg-primary/5 shadow-md",
       }}
       className="
         group
@@ -56,13 +55,9 @@ function SidebarLink({
         "
       />
 
-      <div className="font-semibold text-foreground">
-        {label}
-      </div>
+      <div className="font-semibold text-foreground">{label}</div>
 
-      <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-        {description}
-      </div>
+      <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</div>
     </Link>
   );
 }
@@ -140,69 +135,25 @@ export function DashboardPage() {
       </div>
     );
   }
-  const profileCompleted =
-    completion.percentage >= 100;
+
+  const profileCompleted = completion.percentage >= 100;
 
   const profileAndApplicationsBlock = (
-    <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+    <div className="max-w-md">
+      {!profileCompleted && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="text-lg font-semibold">Profile Completion</h2>
 
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-lg font-semibold">
-          Profile Completion
-        </h2>
+          <p className="mt-2 text-3xl font-bold">{completion.percentage}%</p>
 
-        <p className="mt-2 text-3xl font-bold">
-          {completion.percentage}%
-        </p>
-
-        <div className="mt-4 space-y-2 text-sm">
-          <div>
-            {completion.profile ? "✓" : "✗"} Basic Profile
-          </div>
-
-          <div>
-            {completion.resume ? "✓" : "✗"} Resume
-          </div>
-
-          <div>
-            {completion.academics ? "✓" : "✗"} Academic Details
-          </div>
-
-          <div>
-            {completion.skills ? "✓" : "✗"} Skills Profile
+          <div className="mt-4 space-y-2 text-sm">
+            <div>{completion.profile ? "✓" : "✗"} Basic Profile</div>
+            <div>{completion.resume ? "✓" : "✗"} Resume</div>
+            <div>{completion.academics ? "✓" : "✗"} Academic Details</div>
+            <div>{completion.skills ? "✓" : "✗"} Skills Profile</div>
           </div>
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-lg font-semibold">
-          Recent Applications
-        </h2>
-
-        <div className="mt-3 space-y-3">
-          {dashboard.recentApplications.map((item) => (
-            <div
-              key={item.application_id}
-              className="rounded-lg border border-border p-3"
-            >
-              <div className="font-medium">
-                {item.opportunity_title}
-              </div>
-
-              <div className="text-sm text-muted-foreground">
-                {item.application_status}
-              </div>
-            </div>
-          ))}
-
-          {dashboard.recentApplications.length === 0 ? (
-            <div className="text-sm text-muted-foreground">
-              No applications yet.
-            </div>
-          ) : null}
-        </div>
-      </div>
-
+      )}
     </div>
   );
 
@@ -261,13 +212,9 @@ export function DashboardPage() {
           </div>
 
           <div className="mt-4">
-            <div className="font-semibold">
-              {completionName}
-            </div>
+            <div className="font-semibold">{completionName}</div>
 
-            <div className="text-sm text-white/70">
-              Student
-            </div>
+            <div className="text-sm text-white/70">Student</div>
           </div>
 
           <div className="mt-5">
@@ -288,11 +235,27 @@ export function DashboardPage() {
         </div>
 
         <div className="space-y-3">
-          <SidebarLink to="/dashboard" label="Dashboard" description="Your overview and analytics." />
+          <SidebarLink
+            to="/dashboard"
+            label="Dashboard"
+            description="Your overview and analytics."
+          />
           <SidebarLink to="/profile" label="Profile" description="Update your personal details." />
-          <SidebarLink to="/opportunities" label="Opportunities" description="Browse available roles." />
-          <SidebarLink to="/my-applications" label="My Applications" description="Track your applications." />
-          <SidebarLink to="/student/noc" label="NOC Requests" description="Submit and track NOC status." />
+          <SidebarLink
+            to="/opportunities"
+            label="Opportunities"
+            description="Browse available roles."
+          />
+          <SidebarLink
+            to="/my-applications"
+            label="My Applications"
+            description="Track your applications."
+          />
+          <SidebarLink
+            to="/student/noc"
+            label="NOC Requests"
+            description="Submit and track NOC status."
+          />
         </div>
       </aside>
 
@@ -314,18 +277,15 @@ export function DashboardPage() {
   "
         >
           <div className="relative z-10">
-            <div className="text-sm font-medium text-white/80">
-              Student Workspace
-            </div>
+            <div className="text-sm font-medium text-white/80">Student Workspace</div>
 
             <h1 className="mt-2 text-4xl font-bold tracking-tight">
               Welcome{completionName ? `, ${completionName}` : ""}
             </h1>
 
             <p className="mt-3 max-w-2xl text-white/80">
-              Track opportunities, applications,
-              placement progress, attendance and
-              NOC activities from a single workspace.
+              Track opportunities, applications, placement progress, attendance and NOC activities
+              from a single workspace.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -387,36 +347,72 @@ export function DashboardPage() {
           />
         </div>
 
-        {!profileCompleted && (
-          <div className="mt-8">
-            {profileAndApplicationsBlock}
-          </div>
-        )}
-
-        <section className="mt-8 grid gap-4">
-
-          <div className="rounded-lg border border-border bg-card p-5">
-            <h2 className="text-lg font-semibold">My Placement Analytics</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              This section is loaded only for your own student profile.
-            </p>
-
-            <div className="mt-5">
-
-              <StudentAnalyticsSection
-                report={studentAnalytics}
-                loading={analyticsLoading}
-              />
-
-              {profileCompleted && (
-                <div className="mt-6">
-                  {profileAndApplicationsBlock}
+        {!profileCompleted ? (
+          <div className="mt-8">{profileAndApplicationsBlock}</div>
+        ) : !studentAnalytics ? (
+          <div className="mt-8 rounded-lg border border-border bg-card p-5">
+            <div
+              className="
+                rounded-3xl
+                border
+                border-dashed
+                border-primary/20
+                bg-primary/5
+                p-10
+                text-center
+              "
+            >
+              <div className="mx-auto max-w-2xl">
+                <div
+                  className="
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-[0.18em]
+                    text-primary
+                  "
+                >
+                  Placement Ready
                 </div>
-              )}
 
+                <h3 className="mt-3 text-3xl font-bold">Your Profile Is Complete 🚀</h3>
+
+                <p className="mt-4 text-muted-foreground">
+                  Participate in your first campus opportunity to unlock placement analytics,
+                  attendance tracking, application insights and participation history.
+                </p>
+
+                <Link
+                  to="/opportunities"
+                  className="
+                    mt-6
+                    inline-flex
+                    rounded-xl
+                    bg-primary
+                    px-6
+                    py-3
+                    font-medium
+                    text-white
+                  "
+                >
+                  Browse Opportunities
+                </Link>
+              </div>
             </div>
           </div>
-        </section>
+        ) : (
+          <section className="mt-8 grid gap-4">
+            <div className="rounded-lg border border-border bg-card p-5">
+              <h2 className="text-lg font-semibold">My Placement Analytics</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                This section is loaded only for your own student profile.
+              </p>
+
+              <StudentAnalyticsSection report={studentAnalytics} loading={analyticsLoading} />
+            </div>
+          </section>
+        )}
+
         <PortalFooter />
       </main>
     </div>
