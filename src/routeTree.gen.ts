@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
+import { Route as OnboardingSubmittedRouteImport } from './routes/onboarding-submitted'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MyApplicationsRouteImport } from './routes/my-applications'
 import { Route as LoginRouteImport } from './routes/login'
@@ -50,6 +51,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const OpportunitiesRoute = OpportunitiesRouteImport.update({
   id: '/opportunities',
   path: '/opportunities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingSubmittedRoute = OnboardingSubmittedRouteImport.update({
+  id: '/onboarding-submitted',
+  path: '/onboarding-submitted',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/my-applications': typeof MyApplicationsRoute
   '/onboarding': typeof OnboardingRoute
+  '/onboarding-submitted': typeof OnboardingSubmittedRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/my-applications': typeof MyApplicationsRoute
   '/onboarding': typeof OnboardingRoute
+  '/onboarding-submitted': typeof OnboardingSubmittedRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/my-applications': typeof MyApplicationsRoute
   '/onboarding': typeof OnboardingRoute
+  '/onboarding-submitted': typeof OnboardingSubmittedRoute
   '/opportunities': typeof OpportunitiesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/my-applications'
     | '/onboarding'
+    | '/onboarding-submitted'
     | '/opportunities'
     | '/profile'
     | '/reset-password'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/my-applications'
     | '/onboarding'
+    | '/onboarding-submitted'
     | '/opportunities'
     | '/profile'
     | '/reset-password'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/my-applications'
     | '/onboarding'
+    | '/onboarding-submitted'
     | '/opportunities'
     | '/profile'
     | '/reset-password'
@@ -358,6 +370,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MyApplicationsRoute: typeof MyApplicationsRoute
   OnboardingRoute: typeof OnboardingRoute
+  OnboardingSubmittedRoute: typeof OnboardingSubmittedRoute
   OpportunitiesRoute: typeof OpportunitiesRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -401,6 +414,13 @@ declare module '@tanstack/react-router' {
       path: '/opportunities'
       fullPath: '/opportunities'
       preLoaderRoute: typeof OpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding-submitted': {
+      id: '/onboarding-submitted'
+      path: '/onboarding-submitted'
+      fullPath: '/onboarding-submitted'
+      preLoaderRoute: typeof OnboardingSubmittedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -593,6 +613,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MyApplicationsRoute: MyApplicationsRoute,
   OnboardingRoute: OnboardingRoute,
+  OnboardingSubmittedRoute: OnboardingSubmittedRoute,
   OpportunitiesRoute: OpportunitiesRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
