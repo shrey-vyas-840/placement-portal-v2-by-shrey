@@ -3,518 +3,332 @@ import { adminOpportunityService } from "@/services/adminOpportunityService";
 import { NOC_EMAIL_CONFIG } from "@/config/hodMapping";
 
 type OpportunityMailWorkspaceModalProps = {
-    open: boolean;
-    opportunityId: string | null;
-    onClose: () => void;
+  open: boolean;
+  opportunityId: string | null;
+  onClose: () => void;
 };
 
 export function OpportunityMailWorkspaceModal({
-    open,
-    opportunityId,
-    onClose,
+  open,
+  opportunityId,
+  onClose,
 }: OpportunityMailWorkspaceModalProps) {
+  const [mailWorkspaceOpportunity, setMailWorkspaceOpportunity] = useState<any>(null);
 
-    const [
-        mailWorkspaceOpportunity,
-        setMailWorkspaceOpportunity,
-    ] = useState<any>(null);
+  const [mailWorkspaceDraft, setMailWorkspaceDraft] = useState<any>(null);
 
-    const [
-        mailWorkspaceDraft,
-        setMailWorkspaceDraft,
-    ] = useState<any>(null);
+  const [mailWorkspaceLoading, setMailWorkspaceLoading] = useState(false);
 
-    const [
-        mailWorkspaceLoading,
-        setMailWorkspaceLoading,
-    ] = useState(false);
+  const [mailWorkspaceAttachJD, setMailWorkspaceAttachJD] = useState(false);
 
-    const [
-        mailWorkspaceAttachJD,
-        setMailWorkspaceAttachJD,
-    ] = useState(false);
+  const [mailWorkspaceAttachFiles, setMailWorkspaceAttachFiles] = useState(false);
 
-    const [
-        mailWorkspaceAttachFiles,
-        setMailWorkspaceAttachFiles,
-    ] = useState(false);
+  const [mailWorkspaceUrgent, setMailWorkspaceUrgent] = useState(true);
 
-    const [
-        mailWorkspaceUrgent,
-        setMailWorkspaceUrgent,
-    ] = useState(true);
+  const [mailWorkspaceHighlightPPO, setMailWorkspaceHighlightPPO] = useState(true);
 
-    const [
-        mailWorkspaceHighlightPPO,
-        setMailWorkspaceHighlightPPO,
-    ] = useState(true);
+  const [mailWorkspaceSpecialInstruction, setMailWorkspaceSpecialInstruction] = useState("");
 
-    const [
-        mailWorkspaceSpecialInstruction,
-        setMailWorkspaceSpecialInstruction,
-    ] = useState("");
+  const [mailWorkspaceCompanyConversation, setMailWorkspaceCompanyConversation] = useState("");
 
-    const [
-        mailWorkspaceCompanyConversation,
-        setMailWorkspaceCompanyConversation,
-    ] = useState("");
+  const [mailWorkspaceBody, setMailWorkspaceBody] = useState("");
 
-    const [
-        mailWorkspaceBody,
-        setMailWorkspaceBody,
-    ] = useState("");
+  const [mailWorkspaceRecipientsFetched, setMailWorkspaceRecipientsFetched] = useState(false);
 
-    const [
-        mailWorkspaceRecipientsFetched,
-        setMailWorkspaceRecipientsFetched,
-    ] = useState(false);
+  const [mailWorkspaceRecipientPayload, setMailWorkspaceRecipientPayload] = useState<any>(null);
 
-    const [
-        mailWorkspaceRecipientPayload,
-        setMailWorkspaceRecipientPayload,
-    ] = useState<any>(null);
+  const [mailWorkspaceCompanyLogoUrl, setMailWorkspaceCompanyLogoUrl] = useState<string | null>(
+    null,
+  );
 
-    const [
-        mailWorkspaceCompanyLogoUrl,
-        setMailWorkspaceCompanyLogoUrl,
-    ] = useState<string | null>(null);
+  const [mailWorkspaceCompanyDescription, setMailWorkspaceCompanyDescription] = useState("");
 
-    const [
-        mailWorkspaceCompanyDescription,
-        setMailWorkspaceCompanyDescription,
-    ] = useState("");
+  const [mailWorkspaceCompanyWebsite, setMailWorkspaceCompanyWebsite] = useState("");
 
-    const [
-        mailWorkspaceCompanyWebsite,
-        setMailWorkspaceCompanyWebsite,
-    ] = useState("");
+  const [mailWorkspaceCompanyLocation, setMailWorkspaceCompanyLocation] = useState("");
 
-    const [
-        mailWorkspaceCompanyLocation,
-        setMailWorkspaceCompanyLocation,
-    ] = useState("");
+  const [mailWorkspaceLowestPackage, setMailWorkspaceLowestPackage] = useState<number | null>(null);
 
-    const [
-        mailWorkspaceLowestPackage,
-        setMailWorkspaceLowestPackage
-    ] = useState<number | null>(null);
+  const [mailWorkspaceHighestPackage, setMailWorkspaceHighestPackage] = useState<number | null>(
+    null,
+  );
 
-    const [
-        mailWorkspaceHighestPackage,
-        setMailWorkspaceHighestPackage
-    ] = useState<number | null>(null);
+  const [mailWorkspaceBondYears, setMailWorkspaceBondYears] = useState<number | null>(null);
 
-    const [
-        mailWorkspaceBondYears,
-        setMailWorkspaceBondYears
-    ] = useState<number | null>(null);
+  const [mailWorkspaceDriveType, setMailWorkspaceDriveType] = useState("");
 
-    const [
-        mailWorkspaceDriveType,
-        setMailWorkspaceDriveType
-    ] = useState("");
+  const [mailWorkspaceDriveMode, setMailWorkspaceDriveMode] = useState("");
 
-    const [
-        mailWorkspaceDriveMode,
-        setMailWorkspaceDriveMode
-    ] = useState("");
+  const [mailWorkspaceIndustryType, setMailWorkspaceIndustryType] = useState("");
 
-    const [
-        mailWorkspaceIndustryType,
-        setMailWorkspaceIndustryType
-    ] = useState("");
+  const [mailWorkspaceCompanySize, setMailWorkspaceCompanySize] = useState("");
 
-    const [
-        mailWorkspaceCompanySize,
-        setMailWorkspaceCompanySize
-    ] = useState("");
+  const [mailWorkspaceStipendEnabled, setMailWorkspaceStipendEnabled] = useState(false);
+  const [mailWorkspaceStipendAmount, setMailWorkspaceStipendAmount] = useState("");
 
-    const [mailWorkspaceStipendEnabled, setMailWorkspaceStipendEnabled] = useState(false);
-    const [mailWorkspaceStipendAmount, setMailWorkspaceStipendAmount] = useState("");
+  const [mailWorkspacePpoEnabled, setMailWorkspacePpoEnabled] = useState(false);
 
-    const [mailWorkspacePpoEnabled, setMailWorkspacePpoEnabled] = useState(false);
+  const MAX_AUTO_BCC = 500;
 
-    const MAX_AUTO_BCC = 500;
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text);
+  }
 
-    function copyToClipboard(text: string) {
-        navigator.clipboard.writeText(text);
+  function normalizeMailBody(input: string) {
+    return (
+      input
+
+        // remove html tags except mark
+        .replace(/<\/?(?!mark\b)[^>]+>/gi, "")
+
+        // remove markdown headings only
+        .replace(/^#{1,6}\s+/gm, "")
+
+        .replace(/#/g, "")
+        .replace(/\*/g, "")
+        .replace(/\**/g, "")
+        .replace(/##/g, "")
+
+        // remove code blocks
+        .replace(/`{1,3}/g, "")
+
+        // keep bullet points
+        .replace(/^\s*[-*]\s+/gm, "• ")
+
+        // collapse spacing
+        .replace(/\n{3,}/g, "\n\n")
+
+        .trim()
+    );
+  }
+
+  async function openMailWorkspace(opportunity: any) {
+    setMailWorkspaceLoading(true);
+
+    try {
+      const workspace: any = await adminOpportunityService.getOpportunityMailWorkspace(
+        opportunity.opportunity_id,
+      );
+
+      setMailWorkspaceOpportunity(workspace);
+      setMailWorkspaceCompanyConversation("");
+
+      setMailWorkspaceCompanyLogoUrl(workspace.companyLogoUrl || null);
+
+      setMailWorkspaceCompanyDescription(workspace.companyDescription || "");
+
+      setMailWorkspaceCompanyWebsite(workspace.companyWebsite || "");
+
+      setMailWorkspaceCompanyLocation(workspace.companyLocation || "");
+
+      setMailWorkspaceLowestPackage(workspace.lowestPackage ?? null);
+
+      setMailWorkspaceHighestPackage(workspace.highestPackage ?? null);
+
+      setMailWorkspaceBondYears(workspace.bondYears ?? null);
+
+      setMailWorkspaceDriveType(workspace.driveType || "");
+
+      setMailWorkspaceDriveMode(workspace.driveMode || "");
+
+      setMailWorkspaceIndustryType(workspace.industryType || "");
+
+      setMailWorkspaceCompanySize(workspace.companySize || "");
+
+      setMailWorkspaceDraft({
+        opportunity_id: workspace.opportunity.opportunity_id,
+        opportunity_title: workspace.opportunity.opportunity_title || "",
+        opportunity_description: workspace.opportunity.opportunity_description || "",
+        application_end_date: workspace.opportunity.application_end_date
+          ? new Date(workspace.opportunity.application_end_date).toISOString().slice(0, 16)
+          : "",
+      });
+
+      setMailWorkspaceAttachJD(false);
+      setMailWorkspaceAttachFiles(false);
+      setMailWorkspaceUrgent(true);
+      setMailWorkspaceHighlightPPO(true);
+      setMailWorkspaceSpecialInstruction("");
+      setMailWorkspaceBody("");
+      setMailWorkspaceRecipientsFetched(false);
+      setMailWorkspaceRecipientPayload(null);
+
+      setMailWorkspaceStipendEnabled(false);
+      setMailWorkspaceStipendAmount("");
+      setMailWorkspacePpoEnabled(false);
+    } finally {
+      setMailWorkspaceLoading(false);
+    }
+  }
+
+  async function saveWorkspaceChanges() {
+    if (!mailWorkspaceDraft || !mailWorkspaceOpportunity) {
+      return;
     }
 
-    function normalizeMailBody(input: string) {
+    try {
+      await adminOpportunityService.updateOpportunity(
+        mailWorkspaceOpportunity.opportunity.opportunity_id,
+        {
+          opportunity_title: mailWorkspaceDraft.opportunity_title,
 
-        return input
+          opportunity_description: mailWorkspaceDraft.opportunity_description,
 
-            // remove html tags except mark
-            .replace(/<\/?(?!mark\b)[^>]+>/gi, "")
+          application_end_date: new Date(mailWorkspaceDraft.application_end_date).toISOString(),
+        },
+      );
 
-            // remove markdown headings only
-            .replace(/^#{1,6}\s+/gm, "")
+      alert("Opportunity updated successfully.");
 
-            .replace(/#/g, "")
-            .replace(/\*/g, "")
-            .replace(/\**/g, "")
-            .replace(/##/g, "")
+      await openMailWorkspace({
+        opportunity_id: mailWorkspaceOpportunity.opportunity.opportunity_id,
+      });
+    } catch (error) {
+      console.error(error);
 
-            // remove code blocks
-            .replace(/`{1,3}/g, "")
+      alert("Failed to update opportunity.");
+    }
+  }
 
-            // keep bullet points
-            .replace(/^\s*[-*]\s+/gm, "• ")
-
-            // collapse spacing
-            .replace(/\n{3,}/g, "\n\n")
-
-            .trim();
+  async function fetchRecipientsFromWorkspace() {
+    if (!mailWorkspaceOpportunity) {
+      return;
     }
 
-    async function openMailWorkspace(opportunity: any) {
-        setMailWorkspaceLoading(true);
+    try {
+      const workspace: any = await adminOpportunityService.getOpportunityMailWorkspace(
+        mailWorkspaceOpportunity.opportunity.opportunity_id,
+      );
 
-        try {
-            const workspace: any =
-                await adminOpportunityService
-                    .getOpportunityMailWorkspace(
-                        opportunity.opportunity_id
-                    );
+      setMailWorkspaceRecipientPayload({
+        studentEmails: workspace.studentEmails || [],
 
-            setMailWorkspaceOpportunity(workspace);
-            setMailWorkspaceCompanyConversation("");
+        hodEmails: workspace.hodEmails || [],
+      });
 
-            setMailWorkspaceCompanyLogoUrl(
-                workspace.companyLogoUrl || null
-            );
+      setMailWorkspaceRecipientsFetched(true);
+    } catch (error) {
+      console.error(error);
 
-            setMailWorkspaceCompanyDescription(
-                workspace.companyDescription || ""
-            );
+      alert("Failed to fetch recipients.");
+    }
+  }
 
-            setMailWorkspaceCompanyWebsite(
-                workspace.companyWebsite || ""
-            );
-
-            setMailWorkspaceCompanyLocation(
-                workspace.companyLocation || ""
-            );
-
-            setMailWorkspaceLowestPackage(
-                workspace.lowestPackage ?? null
-            );
-
-            setMailWorkspaceHighestPackage(
-                workspace.highestPackage ?? null
-            );
-
-            setMailWorkspaceBondYears(
-                workspace.bondYears ?? null
-            );
-
-            setMailWorkspaceDriveType(
-                workspace.driveType || ""
-            );
-
-            setMailWorkspaceDriveMode(
-                workspace.driveMode || ""
-            );
-
-            setMailWorkspaceIndustryType(
-                workspace.industryType || ""
-            );
-
-            setMailWorkspaceCompanySize(
-                workspace.companySize || ""
-            );
-
-            setMailWorkspaceDraft({
-                opportunity_id:
-                    workspace.opportunity.opportunity_id,
-                opportunity_title:
-                    workspace.opportunity.opportunity_title || "",
-                opportunity_description:
-                    workspace.opportunity.opportunity_description || "",
-                application_end_date:
-                    workspace.opportunity.application_end_date
-                        ? new Date(
-                            workspace.opportunity.application_end_date
-                        )
-                            .toISOString()
-                            .slice(0, 16)
-                        : "",
-            });
-
-            setMailWorkspaceAttachJD(false);
-            setMailWorkspaceAttachFiles(false);
-            setMailWorkspaceUrgent(true);
-            setMailWorkspaceHighlightPPO(true);
-            setMailWorkspaceSpecialInstruction("");
-            setMailWorkspaceBody("");
-            setMailWorkspaceRecipientsFetched(false);
-            setMailWorkspaceRecipientPayload(null);
-
-            setMailWorkspaceStipendEnabled(false);
-            setMailWorkspaceStipendAmount("");
-            setMailWorkspacePpoEnabled(false);
-        } finally {
-            setMailWorkspaceLoading(false);
-        }
+  function buildMailPrompt() {
+    if (!mailWorkspaceOpportunity || !mailWorkspaceDraft) {
+      return "";
     }
 
-    async function saveWorkspaceChanges() {
+    const companyName = mailWorkspaceOpportunity.opportunity.company_name || "Company";
 
-        if (
-            !mailWorkspaceDraft ||
-            !mailWorkspaceOpportunity
-        ) {
-            return;
-        }
+    const roleName =
+      mailWorkspaceDraft.opportunity_title ||
+      mailWorkspaceOpportunity.opportunity.drive_name ||
+      "Role";
 
-        try {
+    const companyDescription = mailWorkspaceCompanyDescription.trim();
 
-            await adminOpportunityService.updateOpportunity(
-                mailWorkspaceOpportunity.opportunity.opportunity_id,
-                {
-                    opportunity_title:
-                        mailWorkspaceDraft.opportunity_title,
+    const companyWebsite = mailWorkspaceCompanyWebsite.trim();
 
-                    opportunity_description:
-                        mailWorkspaceDraft.opportunity_description,
+    const companyLocation = mailWorkspaceCompanyLocation.trim();
 
-                    application_end_date:
-                        new Date(
-                            mailWorkspaceDraft.application_end_date
-                        ).toISOString(),
-                }
-            );
+    const industryType = mailWorkspaceIndustryType.trim();
 
-            alert(
-                "Opportunity updated successfully."
-            );
+    const companySize = mailWorkspaceCompanySize.trim();
 
-            await openMailWorkspace({
-                opportunity_id:
-                    mailWorkspaceOpportunity.opportunity.opportunity_id,
-            });
+    const driveType = mailWorkspaceDriveType.trim();
 
-        } catch (error) {
+    const driveMode = mailWorkspaceDriveMode.trim();
 
-            console.error(error);
+    const deadlineText = mailWorkspaceDraft.application_end_date
+      ? new Date(mailWorkspaceDraft.application_end_date).toLocaleString()
+      : "Not specified";
 
-            alert(
-                "Failed to update opportunity."
-            );
+    const packageParts = [
+      mailWorkspaceLowestPackage != null ? `${mailWorkspaceLowestPackage} LPA` : "",
+      mailWorkspaceHighestPackage != null ? `${mailWorkspaceHighestPackage} LPA` : "",
+    ].filter(Boolean);
 
-        }
-    }
+    const packageText = packageParts.length ? packageParts.join(" - ") : "";
 
-    async function fetchRecipientsFromWorkspace() {
+    const bondYearsText = mailWorkspaceBondYears != null ? `${mailWorkspaceBondYears} Years` : "";
 
-        if (
-            !mailWorkspaceOpportunity
-        ) {
-            return;
-        }
+    const stipendLine =
+      mailWorkspaceStipendEnabled && mailWorkspaceStipendAmount.trim()
+        ? `- Stipend: ${mailWorkspaceStipendAmount.trim()}`
+        : "";
 
-        try {
+    const ppoLine = mailWorkspacePpoEnabled
+      ? "- PPO Opportunity: Mention only if explicitly available."
+      : "";
 
-            const workspace: any =
-                await adminOpportunityService
-                    .getOpportunityMailWorkspace(
-                        mailWorkspaceOpportunity.opportunity.opportunity_id
-                    );
+    const institutes = mailWorkspaceOpportunity.eligibility.allowedInstitutes.join(", ");
 
-            setMailWorkspaceRecipientPayload({
-                studentEmails:
-                    workspace.studentEmails || [],
+    const degrees = mailWorkspaceOpportunity.eligibility.allowedDegrees.join(", ");
 
-                hodEmails:
-                    workspace.hodEmails || [],
-            });
+    const branches = mailWorkspaceOpportunity.eligibility.allowedBranches.join(", ");
 
-            setMailWorkspaceRecipientsFetched(
-                true
-            );
+    const batches = mailWorkspaceOpportunity.eligibility.allowedBatches.join(", ");
 
-        } catch (error) {
+    const specialInstruction = mailWorkspaceSpecialInstruction.trim() || "None";
 
-            console.error(error);
+    const companyConversation = mailWorkspaceCompanyConversation.trim();
 
-            alert(
-                "Failed to fetch recipients."
-            );
+    const registrationPortalUrl = "Student Opportunity Portal";
 
-        }
-    }
+    // const registrationPortalUrl =
+    //     `${window.location.origin}/student/opportunities`;
 
-    function buildMailPrompt() {
-        if (
-            !mailWorkspaceOpportunity ||
-            !mailWorkspaceDraft
-        ) {
-            return "";
-        }
+    const companyProfileBlock = [
+      `Company Name: ${companyName}`,
 
-        const companyName =
-            mailWorkspaceOpportunity.opportunity.company_name ||
-            "Company";
+      companyWebsite ? `Official Website: ${companyWebsite}` : "",
 
-        const roleName =
-            mailWorkspaceDraft.opportunity_title ||
-            mailWorkspaceOpportunity.opportunity.drive_name ||
-            "Role";
+      industryType ? `Industry Type: ${industryType}` : "",
 
-        const companyDescription =
-            mailWorkspaceCompanyDescription.trim();
+      companyLocation ? `Hiring Location: ${companyLocation}` : "",
 
-        const companyWebsite =
-            mailWorkspaceCompanyWebsite.trim();
+      companySize ? `Company Size: ${companySize}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-        const companyLocation =
-            mailWorkspaceCompanyLocation.trim();
+    const jobRoleBlock = [
+      `- Role: ${roleName}`,
+      driveType ? `- Drive Type: ${driveType}` : "",
+      driveMode ? `- Drive Mode: ${driveMode}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-        const industryType =
-            mailWorkspaceIndustryType.trim();
+    const compensationBlock = [packageText ? `- Package: ${packageText}` : "", stipendLine]
+      .filter(Boolean)
+      .join("\n");
 
-        const companySize =
-            mailWorkspaceCompanySize.trim();
+    const internshipBlock = [ppoLine].filter(Boolean).join("\n");
 
-        const driveType =
-            mailWorkspaceDriveType.trim();
+    const eligibilityBlock = [
+      `- Institutes: ${institutes}`,
+      `- Degrees: ${degrees}`,
+      `- Branches: ${branches}`,
+      `- Passing Batches: ${batches}`,
+      `- Minimum CGPA: ${mailWorkspaceOpportunity?.eligibility.minimumCgpa}`,
+      `- Maximum Backlogs: ${mailWorkspaceOpportunity?.eligibility.maximumActiveBacklogs}`,
+    ].join("\n");
 
-        const driveMode =
-            mailWorkspaceDriveMode.trim();
+    const importantNotesBlock = [
+      mailWorkspaceAttachJD ? "- JD will be attached by admin." : "",
+      mailWorkspaceAttachFiles ? "- Additional files will be attached by admin." : "",
 
-        const deadlineText =
-            mailWorkspaceDraft.application_end_date
-                ?
-                new Date(
-                    mailWorkspaceDraft.application_end_date
-                ).toLocaleString()
-                :
-                "Not specified";
+      "- Do not use markdown headings (#, ##, ###).",
+      "- Do not invent missing information.",
+      "- Omit any unavailable line completely.",
+      "- Do not include Selection Process unless the Special Instruction explicitly asks for it.",
+    ]
+      .filter(Boolean)
+      .join("\n");
 
-        const packageParts = [
-            mailWorkspaceLowestPackage != null
-                ? `${mailWorkspaceLowestPackage} LPA`
-                : "",
-            mailWorkspaceHighestPackage != null
-                ? `${mailWorkspaceHighestPackage} LPA`
-                : "",
-        ].filter(Boolean);
-
-        const packageText =
-            packageParts.length
-                ? packageParts.join(" - ")
-                : "";
-
-        const bondYearsText =
-            mailWorkspaceBondYears != null
-                ? `${mailWorkspaceBondYears} Years`
-                : "";
-
-        const stipendLine =
-            mailWorkspaceStipendEnabled &&
-                mailWorkspaceStipendAmount.trim()
-                ? `- Stipend: ${mailWorkspaceStipendAmount.trim()}`
-                : "";
-
-        const ppoLine =
-            mailWorkspacePpoEnabled
-                ? "- PPO Opportunity: Mention only if explicitly available."
-                : "";
-
-        const institutes =
-            mailWorkspaceOpportunity.eligibility.allowedInstitutes.join(", ");
-
-        const degrees =
-            mailWorkspaceOpportunity.eligibility.allowedDegrees.join(", ");
-
-        const branches =
-            mailWorkspaceOpportunity.eligibility.allowedBranches.join(", ");
-
-        const batches =
-            mailWorkspaceOpportunity.eligibility.allowedBatches.join(", ");
-
-        const specialInstruction =
-            mailWorkspaceSpecialInstruction.trim() || "None";
-
-        const companyConversation =
-            mailWorkspaceCompanyConversation.trim();
-
-        const registrationPortalUrl =
-            "Student Opportunity Portal";
-
-        // const registrationPortalUrl =
-        //     `${window.location.origin}/student/opportunities`;
-
-        const companyProfileBlock = [
-            `Company Name: ${companyName}`,
-
-            companyWebsite
-                ? `Official Website: ${companyWebsite}`
-                : "",
-
-            industryType
-                ? `Industry Type: ${industryType}`
-                : "",
-
-            companyLocation
-                ? `Hiring Location: ${companyLocation}`
-                : "",
-
-            companySize
-                ? `Company Size: ${companySize}`
-                : "",
-        ]
-            .filter(Boolean)
-            .join("\n");
-
-        const jobRoleBlock = [
-            `- Role: ${roleName}`,
-            driveType ? `- Drive Type: ${driveType}` : "",
-            driveMode ? `- Drive Mode: ${driveMode}` : "",
-        ]
-            .filter(Boolean)
-            .join("\n");
-
-        const compensationBlock = [
-            packageText ? `- Package: ${packageText}` : "",
-            stipendLine,
-        ]
-            .filter(Boolean)
-            .join("\n");
-
-        const internshipBlock = [
-            ppoLine,
-        ]
-            .filter(Boolean)
-            .join("\n");
-
-        const eligibilityBlock = [
-            `- Institutes: ${institutes}`,
-            `- Degrees: ${degrees}`,
-            `- Branches: ${branches}`,
-            `- Passing Batches: ${batches}`,
-            `- Minimum CGPA: ${mailWorkspaceOpportunity?.eligibility.minimumCgpa}`,
-            `- Maximum Backlogs: ${mailWorkspaceOpportunity?.eligibility.maximumActiveBacklogs}`,
-        ].join("\n");
-
-        const importantNotesBlock = [
-
-            mailWorkspaceAttachJD
-                ? "- JD will be attached by admin."
-                : "",
-            mailWorkspaceAttachFiles
-                ? "- Additional files will be attached by admin."
-                : "",
-
-            "- Do not use markdown headings (#, ##, ###).",
-            "- Do not invent missing information.",
-            "- Omit any unavailable line completely.",
-            "- Do not include Selection Process unless the Special Instruction explicitly asks for it.",
-        ]
-            .filter(Boolean)
-            .join("\n");
-
-        return `
+    return `
 STRICT REQUIREMENTS:
 
 Generate an official placement email.
@@ -587,224 +401,160 @@ ${companyConversation || "None"}
 
 Generate only the final email body.
     `;
+  }
+
+  function buildSubjectLine() {
+    if (!mailWorkspaceOpportunity || !mailWorkspaceDraft) {
+      return "";
     }
 
+    const company = mailWorkspaceOpportunity.opportunity.company_name || "Company";
 
-    function buildSubjectLine() {
-        if (
-            !mailWorkspaceOpportunity ||
-            !mailWorkspaceDraft
-        ) {
-            return "";
-        }
+    const role =
+      mailWorkspaceDraft.opportunity_title ||
+      mailWorkspaceOpportunity.opportunity.drive_name ||
+      "Role";
 
-        const company =
-            mailWorkspaceOpportunity.opportunity.company_name ||
-            "Company";
+    const packageParts = [
+      mailWorkspaceLowestPackage != null ? `${mailWorkspaceLowestPackage} LPA` : "",
+      mailWorkspaceHighestPackage != null ? `${mailWorkspaceHighestPackage} LPA` : "",
+    ].filter(Boolean);
 
-        const role =
-            mailWorkspaceDraft.opportunity_title ||
-            mailWorkspaceOpportunity.opportunity.drive_name ||
-            "Role";
+    const packageText = packageParts.length ? packageParts.join(" - ") : "";
 
-        const packageParts = [
-            mailWorkspaceLowestPackage != null
-                ? `${mailWorkspaceLowestPackage} LPA`
-                : "",
-            mailWorkspaceHighestPackage != null
-                ? `${mailWorkspaceHighestPackage} LPA`
-                : "",
-        ].filter(Boolean);
+    const deadline = mailWorkspaceDraft.application_end_date
+      ? new Date(mailWorkspaceDraft.application_end_date).toLocaleString()
+      : "";
 
-        const packageText =
-            packageParts.length
-                ? packageParts.join(" - ")
-                : "";
+    const locationText = mailWorkspaceCompanyLocation.trim()
+      ? ` || Location: ${mailWorkspaceCompanyLocation.trim()}`
+      : "";
 
-        const deadline =
-            mailWorkspaceDraft.application_end_date
-                ?
-                new Date(
-                    mailWorkspaceDraft.application_end_date
-                ).toLocaleString()
-                :
-                "";
+    const prefix = mailWorkspaceUrgent ? "Urgent: Job Opportunity" : "Job Opportunity";
 
-        const locationText =
-            mailWorkspaceCompanyLocation.trim()
-                ? ` || Location: ${mailWorkspaceCompanyLocation.trim()}`
-                : "";
+    return `${prefix} || Company: ${company}${locationText} || Role: ${role}${packageText ? ` || Package: ${packageText}` : ""} || Registration Deadline: ${deadline}`;
+  }
 
-        const prefix =
-            mailWorkspaceUrgent
-                ? "Urgent: Job Opportunity"
-                : "Job Opportunity";
+  function buildMailPackage() {
+    const body = normalizeMailBody(mailWorkspaceBody);
 
-        return `${prefix} || Company: ${company}${locationText} || Role: ${role}${packageText ? ` || Package: ${packageText}` : ""} || Registration Deadline: ${deadline}`;
+    if (!mailWorkspaceRecipientPayload || !body) {
+      return null;
     }
 
+    const studentEmails = mailWorkspaceRecipientPayload.studentEmails || [];
 
-    function buildMailPackage() {
-        const body =
-            normalizeMailBody(mailWorkspaceBody);
+    const shouldAutoFillBcc = studentEmails.length <= MAX_AUTO_BCC;
 
-        if (
-            !mailWorkspaceRecipientPayload ||
-            !body
-        ) {
-            return null;
-        }
+    const to = NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL;
 
-        const studentEmails =
-            mailWorkspaceRecipientPayload.studentEmails || [];
+    const cc = [
+      NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL,
+      ...(mailWorkspaceRecipientPayload.hodEmails || []),
+    ]
+      .filter(Boolean)
+      .join(", ");
 
-        const shouldAutoFillBcc =
-            studentEmails.length <= MAX_AUTO_BCC;
+    const bcc = shouldAutoFillBcc ? studentEmails.join(", ") : "";
 
-        const to =
-            NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL;
+    return {
+      to,
+      cc,
+      bcc,
+      subject: buildSubjectLine(),
+      body,
+      studentEmails,
+      hodEmails: mailWorkspaceRecipientPayload.hodEmails || [],
+      shouldAutoFillBcc,
+    };
+  }
 
-        const cc = [
-            NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL,
-            ...(mailWorkspaceRecipientPayload.hodEmails || [])
-        ]
-            .filter(Boolean)
-            .join(", ");
+  async function copyStudentEmails() {
+    const emails = mailWorkspaceRecipientPayload?.studentEmails || [];
 
-        const bcc =
-            shouldAutoFillBcc
-                ? studentEmails.join(", ")
-                : "";
+    await navigator.clipboard.writeText(emails.join(", "));
 
-        return {
-            to,
-            cc,
-            bcc,
-            subject:
-                buildSubjectLine(),
-            body,
-            studentEmails,
-            hodEmails:
-                mailWorkspaceRecipientPayload.hodEmails || [],
-            shouldAutoFillBcc,
-        };
+    alert(`${emails.length} student emails copied.`);
+  }
+
+  async function copyHodEmails() {
+    const emails = mailWorkspaceRecipientPayload?.hodEmails || [];
+
+    await navigator.clipboard.writeText(emails.join(", "));
+
+    alert(`${emails.length} HOD emails copied.`);
+  }
+
+  async function copyMailPackage() {
+    const mail = buildMailPackage();
+    if (!mail) {
+      alert("Paste the final ChatGPT mail body first.");
+      return;
     }
 
+    await navigator.clipboard.writeText(
+      [
+        `TO: ${mail.to}`,
+        `CC: ${mail.cc}`,
+        `BCC: ${mail.studentEmails.join(", ")}`,
+        `SUBJECT: ${mail.subject}`,
+        "",
+        mail.body,
+      ].join("\n"),
+    );
 
-    async function copyStudentEmails() {
+    alert("Mail package copied.");
+  }
 
-        const emails =
-            mailWorkspaceRecipientPayload?.studentEmails || [];
+  function openGmailDraft() {
+    const mail = buildMailPackage();
 
-        await navigator.clipboard.writeText(
-            emails.join(", ")
-        );
-
-        alert(
-            `${emails.length} student emails copied.`
-        );
+    if (!mail) {
+      alert("Paste the final ChatGPT mail body first.");
+      return;
     }
 
-    async function copyHodEmails() {
+    const gmailUrl =
+      `https://mail.google.com/mail/?view=cm&fs=1` +
+      `&to=${encodeURIComponent(mail.to)}` +
+      `&cc=${encodeURIComponent(mail.cc)}` +
+      `&bcc=${encodeURIComponent(mail.bcc)}` +
+      `&su=${encodeURIComponent(mail.subject)}`;
 
-        const emails =
-            mailWorkspaceRecipientPayload?.hodEmails || [];
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
 
-        await navigator.clipboard.writeText(
-            emails.join(", ")
-        );
+    navigator.clipboard.writeText(mail.body);
 
-        alert(
-            `${emails.length} HOD emails copied.`
-        );
+    alert("Gmail draft opened. Mail body copied to clipboard. Paste it into Gmail.");
+  }
+
+  useEffect(() => {
+    if (!open || !opportunityId) {
+      return;
     }
 
-    async function copyMailPackage() {
-        const mail = buildMailPackage();
-        if (!mail) {
-            alert("Paste the final ChatGPT mail body first.");
-            return;
-        }
+    openMailWorkspace({
+      opportunity_id: opportunityId,
+    });
+  }, [open, opportunityId]);
 
-        await navigator.clipboard.writeText(
-            [
-                `TO: ${mail.to}`,
-                `CC: ${mail.cc}`,
-                `BCC: ${mail.studentEmails.join(", ")}`,
-                `SUBJECT: ${mail.subject}`,
-                "",
-                mail.body,
-            ].join("\n")
-        );
-
-        alert("Mail package copied.");
-    }
-
-    function openGmailDraft() {
-
-        const mail = buildMailPackage();
-
-        if (!mail) {
-            alert("Paste the final ChatGPT mail body first.");
-            return;
-        }
-
-        const gmailUrl =
-            `https://mail.google.com/mail/?view=cm&fs=1` +
-            `&to=${encodeURIComponent(mail.to)}` +
-            `&cc=${encodeURIComponent(mail.cc)}` +
-            `&bcc=${encodeURIComponent(mail.bcc)}` +
-            `&su=${encodeURIComponent(mail.subject)}`;
-
-        window.open(
-            gmailUrl,
-            "_blank",
-            "noopener,noreferrer"
-        );
-
-        navigator.clipboard.writeText(mail.body);
-
-        alert(
-            "Gmail draft opened. Mail body copied to clipboard. Paste it into Gmail."
-        );
-    }
-
-    useEffect(() => {
-
-        if (!open || !opportunityId) {
-            return;
-        }
-
-        openMailWorkspace({
-            opportunity_id: opportunityId,
-        });
-
-    }, [open, opportunityId]);
-
-    if (!open) {
-        return null;
-    }
-    if (
-        !mailWorkspaceLoading &&
-        !mailWorkspaceOpportunity
-    ) {
-        return (
-            <div className="p-6">
-                Loading workspace...
-            </div>
-        );
-    }
-    return (
-        <div
-            className="
+  if (!open) {
+    return null;
+  }
+  if (!mailWorkspaceLoading && !mailWorkspaceOpportunity) {
+    return <div className="p-6">Loading workspace...</div>;
+  }
+  return (
+    <div
+      className="
 fixed inset-0 z-[9999]
 bg-black/50
 flex items-center justify-center
 p-4
 "
-        >
-            <div
-                className="
+    >
+      <div
+        className="
 bg-white
 w-full
 max-w-7xl
@@ -813,288 +563,252 @@ overflow-y-auto
 rounded-lg
 p-6
 "
-            >
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h2 className="text-xl font-bold">
-                            Opportunity Mail Workspace
-                        </h2>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Create prompt, send to ChatGPT, paste the final mail body, then generate recipients.
-                        </p>
-                    </div>
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold">Opportunity Mail Workspace</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create prompt, send to ChatGPT, paste the final mail body, then generate recipients.
+            </p>
+          </div>
 
-                    <button
-                        type="button"
-                        className="rounded border px-3 py-1"
-                        onClick={() => {
-                            setMailWorkspaceOpportunity(null);
-                            setMailWorkspaceDraft(null);
-                            setMailWorkspaceBody("");
-                            setMailWorkspaceRecipientsFetched(false);
-                            setMailWorkspaceRecipientPayload(null);
+          <button
+            type="button"
+            className="rounded border px-3 py-1"
+            onClick={() => {
+              setMailWorkspaceOpportunity(null);
+              setMailWorkspaceDraft(null);
+              setMailWorkspaceBody("");
+              setMailWorkspaceRecipientsFetched(false);
+              setMailWorkspaceRecipientPayload(null);
 
-                            setMailWorkspaceCompanyLogoUrl(null);
-                            setMailWorkspaceCompanyDescription("");
-                            setMailWorkspaceCompanyWebsite("");
-                            setMailWorkspaceCompanyLocation("");
+              setMailWorkspaceCompanyLogoUrl(null);
+              setMailWorkspaceCompanyDescription("");
+              setMailWorkspaceCompanyWebsite("");
+              setMailWorkspaceCompanyLocation("");
 
-                            setMailWorkspaceLowestPackage(null);
-                            setMailWorkspaceHighestPackage(null);
-                            setMailWorkspaceBondYears(null);
-                            setMailWorkspaceDriveType("");
-                            setMailWorkspaceDriveMode("");
-                            setMailWorkspaceIndustryType("");
-                            setMailWorkspaceCompanySize("");
+              setMailWorkspaceLowestPackage(null);
+              setMailWorkspaceHighestPackage(null);
+              setMailWorkspaceBondYears(null);
+              setMailWorkspaceDriveType("");
+              setMailWorkspaceDriveMode("");
+              setMailWorkspaceIndustryType("");
+              setMailWorkspaceCompanySize("");
 
-                            setMailWorkspaceStipendEnabled(false);
-                            setMailWorkspaceStipendAmount("");
-                            setMailWorkspacePpoEnabled(false);
-                            setMailWorkspaceCompanyConversation("");
-                            onClose();
-                        }}
-                    >
-                        Close
-                    </button>
+              setMailWorkspaceStipendEnabled(false);
+              setMailWorkspaceStipendAmount("");
+              setMailWorkspacePpoEnabled(false);
+              setMailWorkspaceCompanyConversation("");
+              onClose();
+            }}
+          >
+            Close
+          </button>
+        </div>
+
+        {mailWorkspaceLoading ? (
+          <div className="mt-6 rounded border p-4">Loading workspace...</div>
+        ) : (
+          <>
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              <div className="rounded border p-4 space-y-3">
+                <h3 className="font-semibold">Temporary Opportunity Info</h3>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Opportunity Title</label>
+                  <input
+                    className="w-full rounded border px-3 py-2"
+                    value={mailWorkspaceDraft?.opportunity_title || ""}
+                    onChange={(e) =>
+                      setMailWorkspaceDraft({
+                        ...mailWorkspaceDraft,
+                        opportunity_title: e.target.value,
+                      })
+                    }
+                  />
                 </div>
 
-                {
-                    mailWorkspaceLoading ? (
-                        <div className="mt-6 rounded border p-4">
-                            Loading workspace...
-                        </div>
-                    ) : (
-                        <>
-                            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                                <div className="rounded border p-4 space-y-3">
-                                    <h3 className="font-semibold">
-                                        Temporary Opportunity Info
-                                    </h3>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Opportunity Description</label>
+                  <textarea
+                    rows={10}
+                    className="w-full rounded border px-3 py-2"
+                    value={mailWorkspaceDraft?.opportunity_description || ""}
+                    onChange={(e) =>
+                      setMailWorkspaceDraft({
+                        ...mailWorkspaceDraft,
+                        opportunity_description: e.target.value,
+                      })
+                    }
+                  />
+                </div>
 
-                                    <div>
-                                        <label className="mb-1 block text-sm font-medium">
-                                            Opportunity Title
-                                        </label>
-                                        <input
-                                            className="w-full rounded border px-3 py-2"
-                                            value={mailWorkspaceDraft?.opportunity_title || ""}
-                                            onChange={(e) =>
-                                                setMailWorkspaceDraft({
-                                                    ...mailWorkspaceDraft,
-                                                    opportunity_title: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Application Deadline</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded border px-3 py-2"
+                    value={mailWorkspaceDraft?.application_end_date || ""}
+                    onChange={(e) =>
+                      setMailWorkspaceDraft({
+                        ...mailWorkspaceDraft,
+                        application_end_date: e.target.value,
+                      })
+                    }
+                  />
+                </div>
 
-                                    <div>
-                                        <label className="mb-1 block text-sm font-medium">
-                                            Opportunity Description
-                                        </label>
-                                        <textarea
-                                            rows={10}
-                                            className="w-full rounded border px-3 py-2"
-                                            value={mailWorkspaceDraft?.opportunity_description || ""}
-                                            onChange={(e) =>
-                                                setMailWorkspaceDraft({
-                                                    ...mailWorkspaceDraft,
-                                                    opportunity_description: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </div>
+                <button
+                  type="button"
+                  className="rounded border px-4 py-2"
+                  onClick={saveWorkspaceChanges}
+                >
+                  Save Changes To Database
+                </button>
+              </div>
 
-                                    <div>
-                                        <label className="mb-1 block text-sm font-medium">
-                                            Application Deadline
-                                        </label>
-                                        <input
-                                            type="datetime-local"
-                                            className="w-full rounded border px-3 py-2"
-                                            value={mailWorkspaceDraft?.application_end_date || ""}
-                                            onChange={(e) =>
-                                                setMailWorkspaceDraft({
-                                                    ...mailWorkspaceDraft,
-                                                    application_end_date: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </div>
+              <div className="rounded border p-4 space-y-3">
+                <h3 className="font-semibold">Eligibility Snapshot</h3>
 
-                                    <button
-                                        type="button"
-                                        className="rounded border px-4 py-2"
-                                        onClick={saveWorkspaceChanges}
-                                    >
-                                        Save Changes To Database
-                                    </button>
-                                </div>
+                <div className="text-sm">
+                  <div>
+                    Institutes:{" "}
+                    <b>
+                      {mailWorkspaceOpportunity?.eligibility?.allowedInstitutes.length
+                        ? mailWorkspaceOpportunity.eligibility.allowedInstitutes.join(", ")
+                        : "All"}
+                    </b>
+                  </div>
+                  <div>
+                    Degrees:{" "}
+                    <b>
+                      {mailWorkspaceOpportunity?.eligibility?.allowedDegrees?.length
+                        ? mailWorkspaceOpportunity.eligibility.allowedDegrees.join(", ")
+                        : "All"}
+                    </b>
+                  </div>
+                  <div>
+                    Branches:{" "}
+                    <b>
+                      {mailWorkspaceOpportunity?.eligibility?.allowedBranches?.length
+                        ? mailWorkspaceOpportunity.eligibility.allowedBranches.join(", ")
+                        : "All"}
+                    </b>
+                  </div>
+                  <div>
+                    Batches:{" "}
+                    <b>
+                      {mailWorkspaceOpportunity?.eligibility?.allowedBatches?.length
+                        ? mailWorkspaceOpportunity.eligibility.allowedBatches.join(", ")
+                        : "All"}
+                    </b>
+                  </div>
+                  <div>
+                    Minimum CGPA: <b>{mailWorkspaceOpportunity?.eligibility?.minimumCgpa ?? "-"}</b>
+                  </div>
+                  <div>
+                    Max Backlogs:{" "}
+                    <b>{mailWorkspaceOpportunity?.eligibility?.maximumActiveBacklogs ?? "-"}</b>
+                  </div>
+                </div>
 
-                                <div className="rounded border p-4 space-y-3">
-                                    <h3 className="font-semibold">
-                                        Eligibility Snapshot
-                                    </h3>
+                <div className="rounded bg-slate-50 p-3 text-sm">
+                  Eligible Students:{" "}
+                  <b>{mailWorkspaceOpportunity?.eligibleStudents?.length ?? 0}</b>
+                  <br /> HOD CC Emails: <b>{mailWorkspaceOpportunity?.hodEmails?.length ?? 0}</b>
+                </div>
+              </div>
+            </div>
 
-                                    <div className="text-sm">
-                                        <div>
-                                            Institutes:{" "}
-                                            <b>
-                                                {mailWorkspaceOpportunity?.eligibility?.allowedInstitutes.length
-                                                    ? mailWorkspaceOpportunity.eligibility.allowedInstitutes.join(", ")
-                                                    : "All"}
-                                            </b>
-                                        </div>
-                                        <div>
-                                            Degrees:{" "}
-                                            <b>
-                                                {mailWorkspaceOpportunity?.eligibility?.allowedDegrees?.length
-                                                    ? mailWorkspaceOpportunity.eligibility.allowedDegrees.join(", ")
-                                                    : "All"}
-                                            </b>
-                                        </div>
-                                        <div>
-                                            Branches:{" "}
-                                            <b>
-                                                {mailWorkspaceOpportunity?.eligibility?.allowedBranches?.length
-                                                    ? mailWorkspaceOpportunity.eligibility.allowedBranches.join(", ")
-                                                    : "All"}
-                                            </b>
-                                        </div>
-                                        <div>
-                                            Batches:{" "}
-                                            <b>
-                                                {mailWorkspaceOpportunity?.eligibility?.allowedBatches?.length
-                                                    ? mailWorkspaceOpportunity.eligibility.allowedBatches.join(", ")
-                                                    : "All"}
-                                            </b>
-                                        </div>
-                                        <div>
-                                            Minimum CGPA:{" "}
-                                            <b>
-                                                {mailWorkspaceOpportunity?.eligibility?.minimumCgpa ?? "-"}
-                                            </b>
-                                        </div>
-                                        <div>
-                                            Max Backlogs:{" "}
-                                            <b>
-                                                {mailWorkspaceOpportunity?.eligibility?.maximumActiveBacklogs ?? "-"}
-                                            </b>
-                                        </div>
-                                    </div>
+            <label className="flex items-center gap-2 rounded border p-3">
+              <input
+                type="checkbox"
+                checked={mailWorkspaceStipendEnabled}
+                onChange={(e) => setMailWorkspaceStipendEnabled(e.target.checked)}
+              />
+              Add Internship / Apprenticeship Stipend
+            </label>
 
-                                    <div className="rounded bg-slate-50 p-3 text-sm">
-                                        Eligible Students:{" "}
-                                        <b>{mailWorkspaceOpportunity?.eligibleStudents?.length ?? 0}</b>
-                                        <br />{" "}
-                                        HOD CC Emails:{" "}
-                                        <b>{mailWorkspaceOpportunity?.hodEmails?.length ?? 0}</b>
-                                    </div>
-                                </div>
-                            </div>
+            {mailWorkspaceStipendEnabled ? (
+              <div>
+                <label className="mb-1 block text-sm font-medium">Stipend Amount</label>
+                <input
+                  className="w-full rounded border px-3 py-2"
+                  value={mailWorkspaceStipendAmount}
+                  onChange={(e) => setMailWorkspaceStipendAmount(e.target.value)}
+                  placeholder="e.g. 15000 per month"
+                />
+              </div>
+            ) : null}
 
-                            <label className="flex items-center gap-2 rounded border p-3">
-                                <input
-                                    type="checkbox"
-                                    checked={mailWorkspaceStipendEnabled}
-                                    onChange={(e) => setMailWorkspaceStipendEnabled(e.target.checked)}
-                                />
-                                Add Internship / Apprenticeship Stipend
-                            </label>
+            <label className="flex items-center gap-2 rounded border p-3">
+              <input
+                type="checkbox"
+                checked={mailWorkspacePpoEnabled}
+                onChange={(e) => setMailWorkspacePpoEnabled(e.target.checked)}
+              />
+              PPO Opportunity Available
+            </label>
 
-                            {mailWorkspaceStipendEnabled ? (
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">
-                                        Stipend Amount
-                                    </label>
-                                    <input
-                                        className="w-full rounded border px-3 py-2"
-                                        value={mailWorkspaceStipendAmount}
-                                        onChange={(e) => setMailWorkspaceStipendAmount(e.target.value)}
-                                        placeholder="e.g. 15000 per month"
-                                    />
-                                </div>
-                            ) : null}
+            <div className="mt-6 rounded border p-4 space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="flex items-center gap-2 rounded border p-3">
+                  <input
+                    type="checkbox"
+                    checked={mailWorkspaceAttachJD}
+                    onChange={(e) => setMailWorkspaceAttachJD(e.target.checked)}
+                  />
+                  I will attach JD
+                </label>
 
-                            <label className="flex items-center gap-2 rounded border p-3">
-                                <input
-                                    type="checkbox"
-                                    checked={mailWorkspacePpoEnabled}
-                                    onChange={(e) => setMailWorkspacePpoEnabled(e.target.checked)}
-                                />
-                                PPO Opportunity Available
-                            </label>
+                <label className="flex items-center gap-2 rounded border p-3">
+                  <input
+                    type="checkbox"
+                    checked={mailWorkspaceAttachFiles}
+                    onChange={(e) => setMailWorkspaceAttachFiles(e.target.checked)}
+                  />
+                  I will attach files
+                </label>
 
-                            <div className="mt-6 rounded border p-4 space-y-4">
-                                <div className="grid gap-3 md:grid-cols-2">
-                                    <label className="flex items-center gap-2 rounded border p-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={mailWorkspaceAttachJD}
-                                            onChange={(e) =>
-                                                setMailWorkspaceAttachJD(e.target.checked)
-                                            }
-                                        />
-                                        I will attach JD
-                                    </label>
+                <label className="flex items-center gap-2 rounded border p-3">
+                  <input
+                    type="checkbox"
+                    checked={mailWorkspaceUrgent}
+                    onChange={(e) => setMailWorkspaceUrgent(e.target.checked)}
+                  />
+                  Mark as urgent
+                </label>
 
-                                    <label className="flex items-center gap-2 rounded border p-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={mailWorkspaceAttachFiles}
-                                            onChange={(e) =>
-                                                setMailWorkspaceAttachFiles(e.target.checked)
-                                            }
-                                        />
-                                        I will attach files
-                                    </label>
+                <label className="flex items-center gap-2 rounded border p-3">
+                  <input
+                    type="checkbox"
+                    checked={mailWorkspaceHighlightPPO}
+                    onChange={(e) => setMailWorkspaceHighlightPPO(e.target.checked)}
+                  />
+                  Highlight PPO
+                </label>
+              </div>
 
-                                    <label className="flex items-center gap-2 rounded border p-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={mailWorkspaceUrgent}
-                                            onChange={(e) =>
-                                                setMailWorkspaceUrgent(e.target.checked)
-                                            }
-                                        />
-                                        Mark as urgent
-                                    </label>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Special Instruction</label>
+                <textarea
+                  rows={3}
+                  className="w-full rounded border px-3 py-2"
+                  placeholder="Add custom instructions for ChatGPT here..."
+                  value={mailWorkspaceSpecialInstruction}
+                  onChange={(e) => setMailWorkspaceSpecialInstruction(e.target.value)}
+                />
+              </div>
 
-                                    <label className="flex items-center gap-2 rounded border p-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={mailWorkspaceHighlightPPO}
-                                            onChange={(e) =>
-                                                setMailWorkspaceHighlightPPO(e.target.checked)
-                                            }
-                                        />
-                                        Highlight PPO
-                                    </label>
-                                </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Company Conversation / HR Discussion
+                </label>
 
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">
-                                        Special Instruction
-                                    </label>
-                                    <textarea
-                                        rows={3}
-                                        className="w-full rounded border px-3 py-2"
-                                        placeholder="Add custom instructions for ChatGPT here..."
-                                        value={mailWorkspaceSpecialInstruction}
-                                        onChange={(e) =>
-                                            setMailWorkspaceSpecialInstruction(e.target.value)
-                                        }
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">
-                                        Company Conversation / HR Discussion
-                                    </label>
-
-                                    <textarea
-                                        rows={8}
-                                        className="w-full rounded border px-3 py-2"
-                                        placeholder="
+                <textarea
+                  rows={8}
+                  className="w-full rounded border px-3 py-2"
+                  placeholder="
 Paste HR emails,
 WhatsApp conversations,
 meeting notes,
@@ -1104,198 +818,170 @@ selection process,
 company requirements,
 or any communication received from company.
 "
-                                        value={mailWorkspaceCompanyConversation}
-                                        onChange={(e) =>
-                                            setMailWorkspaceCompanyConversation(
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </div>
+                  value={mailWorkspaceCompanyConversation}
+                  onChange={(e) => setMailWorkspaceCompanyConversation(e.target.value)}
+                />
+              </div>
 
-                                <div className="flex flex-wrap gap-3">
-                                    <button
-                                        type="button"
-                                        className="rounded border px-4 py-2"
-                                        onClick={() =>
-                                            copyToClipboard(buildMailPrompt())
-                                        }
-                                    >
-                                        Copy Prompt
-                                    </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="rounded border px-4 py-2"
+                  onClick={() => copyToClipboard(buildMailPrompt())}
+                >
+                  Copy Prompt
+                </button>
 
-                                    <button
-                                        type="button"
-                                        className="rounded border px-4 py-2"
-                                        onClick={() =>
-                                            window.open(
-                                                "https://chatgpt.com/?temporary-chat=true",
-                                                "_blank"
-                                            )
-                                        }
-                                    >
-                                        Open ChatGPT
-                                    </button>
-                                </div>
+                <button
+                  type="button"
+                  className="rounded border px-4 py-2"
+                  onClick={() => window.open("https://chatgpt.com/?temporary-chat=true", "_blank")}
+                >
+                  Open ChatGPT
+                </button>
+              </div>
 
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">
-                                        Generated Prompt
-                                    </label>
-                                    <textarea
-                                        rows={22}
-                                        readOnly
-                                        className="w-full rounded border bg-slate-50 px-3 py-2 text-sm"
-                                        value={buildMailPrompt()}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="mt-6 rounded border p-4 space-y-4">
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">
-                                        Paste ChatGPT Output Here
-                                    </label>
-                                    <textarea
-                                        rows={18}
-                                        className="w-full rounded border px-3 py-2"
-                                        placeholder="Paste the final mail body copied from ChatGPT..."
-                                        value={mailWorkspaceBody}
-                                        onChange={(e) =>
-                                            setMailWorkspaceBody(e.target.value)
-                                        }
-                                    />
-                                </div>
-
-                                {mailWorkspaceBody.trim() && (
-                                    <button
-                                        type="button"
-                                        className="rounded border px-4 py-2"
-                                        onClick={fetchRecipientsFromWorkspace}
-                                    >
-                                        Fetch Recipient Lists
-                                    </button>
-                                )}
-
-                                {mailWorkspaceRecipientsFetched && mailWorkspaceRecipientPayload && (
-                                    <>
-                                        <div className="rounded bg-slate-50 p-4 text-sm space-y-3">
-                                            <div>
-                                                Students in BCC: {" "}
-                                                <b>
-                                                    {mailWorkspaceRecipientPayload.studentEmails.length}
-                                                    {" "}
-                                                    Eligible Candidates
-                                                </b>
-                                            </div>
-
-                                            <div>
-                                                HODs in CC: {" "}
-                                                <b>
-                                                    {mailWorkspaceRecipientPayload.hodEmails.length}
-                                                    {" "}
-                                                    HOD emails
-                                                </b>
-                                            </div>
-
-                                            <div className="rounded border bg-white p-3">
-                                                <div className="mb-2 flex items-center justify-between gap-3">
-                                                    <div className="font-semibold">
-                                                        Student Emails
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        className="rounded border px-3 py-1"
-                                                        onClick={copyStudentEmails}
-                                                    >
-                                                        Copy Student Emails
-                                                    </button>
-                                                </div>
-
-                                                <textarea
-                                                    readOnly
-                                                    rows={10}
-                                                    className="w-full rounded border bg-slate-50 px-3 py-2 font-mono text-xs"
-                                                    value={mailWorkspaceRecipientPayload.studentEmails.join(", ")}
-                                                />
-
-                                                <div className="mt-2 text-xs text-muted-foreground">
-                                                    {mailWorkspaceRecipientPayload.studentEmails.length > MAX_AUTO_BCC
-                                                        ? "More than 500 student emails were found. Gmail draft will not auto-fill BCC. Use Copy Student Emails and paste manually in BCC."
-                                                        : "Auto BCC is enabled in Gmail draft for this recipient count."
-                                                    }
-                                                </div>
-                                            </div>
-
-                                            <div className="rounded border bg-white p-3">
-                                                <div className="mb-2 flex items-center justify-between gap-3">
-                                                    <div className="font-semibold">
-                                                        HOD Emails
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        className="rounded border px-3 py-1"
-                                                        onClick={copyHodEmails}
-                                                    >
-                                                        Copy HOD Emails
-                                                    </button>
-                                                </div>
-
-                                                <textarea
-                                                    readOnly
-                                                    rows={8}
-                                                    className="w-full rounded border bg-slate-50 px-3 py-2 font-mono text-xs"
-                                                    value={mailWorkspaceRecipientPayload.hodEmails.join(", ")}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid gap-3 md:grid-cols-2">
-                                            <button
-                                                type="button"
-                                                className="rounded border px-4 py-2"
-                                                onClick={copyMailPackage}
-                                            >
-                                                Copy Full Mail Package
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className="rounded border px-4 py-2"
-                                                onClick={openGmailDraft}
-                                            >
-                                                Open Gmail Draft
-                                            </button>
-                                        </div>
-
-                                        <div className="rounded border p-4 text-sm">
-                                            <div><b>TO:</b> {NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL}</div>
-                                            <div>
-                                                <b>CC:</b>{" "}
-                                                {[
-                                                    NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL,
-                                                    ...mailWorkspaceRecipientPayload.hodEmails,
-                                                ].join(", ")}
-                                            </div>
-                                            <div>
-                                                <b>BCC:</b>{" "}
-                                                {mailWorkspaceRecipientPayload.studentEmails.length > MAX_AUTO_BCC
-                                                    ? "Use Copy Student Emails"
-                                                    : mailWorkspaceRecipientPayload.studentEmails.join(", ")}
-                                            </div>
-                                            <div className="mt-3">
-                                                <b>Subject:</b> {buildSubjectLine()}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                            </div>
-                        </>
-                    )}
+              <div>
+                <label className="mb-1 block text-sm font-medium">Generated Prompt</label>
+                <textarea
+                  rows={22}
+                  readOnly
+                  className="w-full rounded border bg-slate-50 px-3 py-2 text-sm"
+                  value={buildMailPrompt()}
+                />
+              </div>
             </div>
-        </div>
-    );
+
+            <div className="mt-6 rounded border p-4 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium">Paste ChatGPT Output Here</label>
+                <textarea
+                  rows={18}
+                  className="w-full rounded border px-3 py-2"
+                  placeholder="Paste the final mail body copied from ChatGPT..."
+                  value={mailWorkspaceBody}
+                  onChange={(e) => setMailWorkspaceBody(e.target.value)}
+                />
+              </div>
+
+              {mailWorkspaceBody.trim() && (
+                <button
+                  type="button"
+                  className="rounded border px-4 py-2"
+                  onClick={fetchRecipientsFromWorkspace}
+                >
+                  Fetch Recipient Lists
+                </button>
+              )}
+
+              {mailWorkspaceRecipientsFetched && mailWorkspaceRecipientPayload && (
+                <>
+                  <div className="rounded bg-slate-50 p-4 text-sm space-y-3">
+                    <div>
+                      Students in BCC:{" "}
+                      <b>
+                        {mailWorkspaceRecipientPayload.studentEmails.length} Eligible Candidates
+                      </b>
+                    </div>
+
+                    <div>
+                      HODs in CC: <b>{mailWorkspaceRecipientPayload.hodEmails.length} HOD emails</b>
+                    </div>
+
+                    <div className="rounded border bg-white p-3">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <div className="font-semibold">Student Emails</div>
+
+                        <button
+                          type="button"
+                          className="rounded border px-3 py-1"
+                          onClick={copyStudentEmails}
+                        >
+                          Copy Student Emails
+                        </button>
+                      </div>
+
+                      <textarea
+                        readOnly
+                        rows={10}
+                        className="w-full rounded border bg-slate-50 px-3 py-2 font-mono text-xs"
+                        value={mailWorkspaceRecipientPayload.studentEmails.join(", ")}
+                      />
+
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {mailWorkspaceRecipientPayload.studentEmails.length > MAX_AUTO_BCC
+                          ? "More than 500 student emails were found. Gmail draft will not auto-fill BCC. Use Copy Student Emails and paste manually in BCC."
+                          : "Auto BCC is enabled in Gmail draft for this recipient count."}
+                      </div>
+                    </div>
+
+                    <div className="rounded border bg-white p-3">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <div className="font-semibold">HOD Emails</div>
+
+                        <button
+                          type="button"
+                          className="rounded border px-3 py-1"
+                          onClick={copyHodEmails}
+                        >
+                          Copy HOD Emails
+                        </button>
+                      </div>
+
+                      <textarea
+                        readOnly
+                        rows={8}
+                        className="w-full rounded border bg-slate-50 px-3 py-2 font-mono text-xs"
+                        value={mailWorkspaceRecipientPayload.hodEmails.join(", ")}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <button
+                      type="button"
+                      className="rounded border px-4 py-2"
+                      onClick={copyMailPackage}
+                    >
+                      Copy Full Mail Package
+                    </button>
+
+                    <button
+                      type="button"
+                      className="rounded border px-4 py-2"
+                      onClick={openGmailDraft}
+                    >
+                      Open Gmail Draft
+                    </button>
+                  </div>
+
+                  <div className="rounded border p-4 text-sm">
+                    <div>
+                      <b>TO:</b> {NOC_EMAIL_CONFIG.PLACEMENT_CELL_EMAIL}
+                    </div>
+                    <div>
+                      <b>CC:</b>{" "}
+                      {[
+                        NOC_EMAIL_CONFIG.DEPUTY_TNP_EMAIL,
+                        ...mailWorkspaceRecipientPayload.hodEmails,
+                      ].join(", ")}
+                    </div>
+                    <div>
+                      <b>BCC:</b>{" "}
+                      {mailWorkspaceRecipientPayload.studentEmails.length > MAX_AUTO_BCC
+                        ? "Use Copy Student Emails"
+                        : mailWorkspaceRecipientPayload.studentEmails.join(", ")}
+                    </div>
+                    <div className="mt-3">
+                      <b>Subject:</b> {buildSubjectLine()}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }

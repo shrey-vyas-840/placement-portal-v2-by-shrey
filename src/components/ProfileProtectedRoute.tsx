@@ -1,9 +1,8 @@
 import { Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { studentService } from "@/services/studentService";
-import { getOnboardingByStudentId } from "@/services/studentOnboardingService";
 import { isDeveloperEmail } from "@/services/identityPolicyService";
+import { getDraftByAuthProviderId } from "@/services/studentOnboardingDraftService";
 
 type Props = {
   children: React.ReactNode;
@@ -33,9 +32,9 @@ export function ProfileProtectedRoute({ children }: Props) {
       }
 
       try {
-        const profile = await studentService.getProfileByUserId(user.id);
+        const draft = await getDraftByAuthProviderId(user.id);
 
-        if (!profile) {
+        if (!draft) {
           if (active) {
             setAllowed(false);
             setLoading(false);
@@ -43,12 +42,15 @@ export function ProfileProtectedRoute({ children }: Props) {
           return;
         }
 
-        const onboarding = await getOnboardingByStudentId(profile.student_id);
+        if (!draft.onboarding_completed) {
+          if (active) {
+            setAllowed(false);
+            setLoading(false);
+          }
+          return;
+        }
 
-        if (
-          !onboarding ||
-          onboarding.onboarding_status !== "COMPLETED"
-        ) {
+        if (draft.approval_status !== "ACTIVE") {
           if (active) {
             setAllowed(false);
             setLoading(false);
@@ -74,18 +76,14 @@ export function ProfileProtectedRoute({ children }: Props) {
   }, [user]);
 
   if (status === "loading" || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowed && !isDeveloperEmail(user.email)) {
+  if (user && !loading) {
     return <Navigate to="/onboarding" replace />;
   }
 
