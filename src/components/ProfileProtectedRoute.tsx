@@ -50,7 +50,7 @@ export function ProfileProtectedRoute({ children }: Props) {
           return;
         }
 
-        if (draft.approval_status !== "ACTIVE") {
+        if (draft.approval_status !== "PROFILE_APPROVED" && draft.approval_status !== "ACTIVE") {
           if (active) {
             setAllowed(false);
             setLoading(false);
@@ -73,7 +73,7 @@ export function ProfileProtectedRoute({ children }: Props) {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, status]);
 
   if (status === "loading" || loading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
@@ -83,8 +83,8 @@ export function ProfileProtectedRoute({ children }: Props) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user && !loading) {
-    return <Navigate to="/onboarding" replace />;
+  if (!allowed) {
+    return <Navigate to="/onboarding-submitted" replace />;
   }
 
   return <>{children}</>;

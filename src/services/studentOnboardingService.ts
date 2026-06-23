@@ -30,12 +30,22 @@ export async function getPostLoginRoute(
   _email?: string | null,
 ): Promise<string> {
   const profile = await studentService.getProfileByUserId(authProviderId);
-
   if (profile) {
     return "/";
   }
 
-  return "/onboarding";
+  const { getDraftByAuthProviderId } = await import("@/services/studentOnboardingDraftService");
+  const draft = await getDraftByAuthProviderId(authProviderId);
+
+  if (!draft) {
+    return "/onboarding";
+  }
+
+  if (draft.approval_status === "PROFILE_APPROVED" || draft.approval_status === "ACTIVE") {
+    return "/";
+  }
+
+  return "/onboarding-submitted";
 }
 
 export function buildOptOutMailTo(options: {

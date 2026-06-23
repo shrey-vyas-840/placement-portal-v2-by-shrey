@@ -56,7 +56,7 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
                 return;
               }
 
-              await approveOnboardingDraft(draft.auth_provider_id, session.user.id);
+              await approveOnboardingDraft(draft.draft_id, session.user.id);
 
               console.log("APPROVE SUCCESS");
 
@@ -81,7 +81,7 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
               return;
             }
 
-            await rejectOnboardingDraft(draft.auth_provider_id, session.user.id, reason);
+            await rejectOnboardingDraft(draft.draft_id, session.user.id, reason);
 
             alert("Rejected");
           }}

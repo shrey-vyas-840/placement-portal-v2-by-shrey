@@ -203,13 +203,19 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
 
   const edited = draft.edited_profile ?? {};
 
-  const existingAcademic = await (supabase as any)
-    .from("student_academic_details")
-    .select("academic_id")
-    .eq("student_id", profile.student_id)
-    .maybeSingle();
+const { data: academicRows, error: academicLookupError } = await (supabase as any)
+  .from("student_academic_details")
+  .select("academic_id")
+  .eq("student_id", profile.student_id);
 
-  if (!existingAcademic.data) {
+console.log("ACADEMIC LOOKUP", academicRows);
+console.log("ACADEMIC LOOKUP ERROR", academicLookupError);
+
+if (academicLookupError) {
+  throw academicLookupError;
+}
+
+ if (!academicRows || academicRows.length === 0) {
     const graduationYear = Number(edited.graduation_year) || null;
     const academicPayload = {
       student_id: profile.student_id,

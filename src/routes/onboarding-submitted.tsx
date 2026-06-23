@@ -7,11 +7,13 @@ import { getDraftByAuthProviderId } from "@/services/studentOnboardingDraftServi
 function ProtectedOnboardingSubmitted() {
   const { user } = useAuth();
 
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
     async function load() {
       if (!user) {
+        setRedirectTo("/login");
         setAllowed(false);
         return;
       }
@@ -19,24 +21,29 @@ function ProtectedOnboardingSubmitted() {
       const draft = await getDraftByAuthProviderId(user.id);
 
       if (!draft) {
+        setRedirectTo("/onboarding");
         setAllowed(false);
         return;
       }
 
-      const hasSubmitted = draft.onboarding_stage === "SUBMITTED";
+      if (draft.approval_status === "PROFILE_APPROVED" || draft.approval_status === "ACTIVE") {
+        setRedirectTo("/");
+        setAllowed(false);
+        return;
+      }
 
-      setAllowed(hasSubmitted);
+      setAllowed(true);
     }
 
     load();
   }, [user]);
 
-  if (allowed === null) {
-    return <div>Loading...</div>;
+  if (redirectTo) {
+    return <Navigate to={redirectTo} replace />;
   }
 
-  if (!allowed) {
-    return <Navigate to="/onboarding" replace />;
+  if (allowed === null) {
+    return <div>Loading...</div>;
   }
 
   return <OnboardingSubmittedPage />;

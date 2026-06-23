@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
+import { authService } from "@/services/authService";
 
 export function OnboardingSubmittedPage() {
   const navigate = useNavigate();
@@ -25,13 +26,19 @@ export function OnboardingSubmittedPage() {
 
         <Button
           className="mt-8"
-          onClick={() =>
-            navigate({
-              to: "/login",
-            })
-          }
+          onClick={async () => {
+            try {
+              await authService.signOut();
+
+              navigate({
+                to: "/login",
+              });
+            } catch (error) {
+              console.error("LOGOUT ERROR", error);
+            }
+          }}
         >
-          Return To Login
+          Logout & Return To Login
         </Button>
       </div>
     </div>

@@ -114,7 +114,6 @@ export async function ensureDraftForUser(
 
   return data as StudentOnboardingDraftRow;
 }
-
 export async function saveDraft(
   input: SaveStudentOnboardingDraftInput,
 ): Promise<StudentOnboardingDraftRow> {
@@ -154,10 +153,26 @@ export async function saveDraft(
       input.onboardingCompleted !== undefined
         ? input.onboardingCompleted
         : (existing?.onboarding_completed ?? false),
-    approval_status: input.approvalStatus,
-    approval_reason: input.approvalReason,
-    approved_by: input.approvedBy,
-    approved_at: input.approvedAt,
+
+    // Preserve admin review metadata unless an explicit admin write happens elsewhere.
+    approval_status:
+      input.approvalStatus !== undefined
+        ? input.approvalStatus
+        : (existing?.approval_status ?? null),
+    approval_reason:
+      input.approvalReason !== undefined
+        ? input.approvalReason
+        : (existing?.approval_reason ?? null),
+    approved_by:
+      input.approvedBy !== undefined ? input.approvedBy : (existing?.approved_by ?? null),
+    approved_at:
+      input.approvedAt !== undefined ? input.approvedAt : (existing?.approved_at ?? null),
+    reviewed_by: existing?.reviewed_by ?? null,
+    reviewed_at: existing?.reviewed_at ?? null,
+    rejection_reason: existing?.rejection_reason ?? null,
+    mail_confirmation_received: existing?.mail_confirmation_received ?? false,
+    mail_confirmation_at: existing?.mail_confirmation_at ?? null,
+    mail_type: existing?.mail_type ?? null,
   };
 
   const { data, error } = await (supabase as any)
@@ -172,7 +187,6 @@ export async function saveDraft(
 
   return data as StudentOnboardingDraftRow;
 }
-
 export async function completeDraft(
   input: SaveStudentOnboardingDraftInput,
 ): Promise<StudentOnboardingDraftRow> {
@@ -187,15 +201,14 @@ export async function getPendingApprovalDrafts() {
   const { data, error } = await (supabase as any)
     .from("student_onboarding_drafts")
     .select("*")
-    .eq("onboarding_completed", true)
-    .is("approval_status", null)
+    .or("approval_status.is.null,approval_status.eq.PENDING_PROFILE_VERIFICATION")
     .order("updated_at", { ascending: false });
 
   if (error) {
     throw error;
   }
 
-  return data ?? [];
+  return (data ?? []) as StudentOnboardingDraftRow[];
 }
 
 export async function getDraftByEnrollmentNo(enrollmentNo: string) {
@@ -211,61 +224,104 @@ export async function getDraftByEnrollmentNo(enrollmentNo: string) {
 
   return data;
 }
-
-export async function approveOnboardingDraft(authProviderId: string, adminUserId: string) {
-  const { data: draft, error: draftError } = await (supabase as any)
+async function resolveDraftByIdentifier(identifier: string): Promise<StudentOnboardingDraftRow> {
+  const byDraftId = await (supabase as any)
     .from("student_onboarding_drafts")
     .select("*")
-    .eq("auth_provider_id", authProviderId)
-    .single();
+    .eq("draft_id", identifier)
+    .maybeSingle();
 
-  if (draftError) {
-    throw draftError;
+  if (byDraftId.error) {
+    throw byDraftId.error;
   }
+
+  if (byDraftId.data) {
+    return byDraftId.data as StudentOnboardingDraftRow;
+  }
+
+  const byAuthProviderId = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .select("*")
+    .eq("auth_provider_id", identifier)
+    .maybeSingle();
+
+  if (byAuthProviderId.error) {
+    throw byAuthProviderId.error;
+  }
+
+  if (!byAuthProviderId.data) {
+    throw new Error("Onboarding draft not found.");
+  }
+
+  return byAuthProviderId.data as StudentOnboardingDraftRow;
+}
+
+export async function approveOnboardingDraft(identifier: string, adminUserId: string) {
+  const draft = await resolveDraftByIdentifier(identifier);
+  console.log("APPROVAL IDENTIFIER", identifier);
+  console.log("RESOLVED DRAFT ID", draft.draft_id);
+  console.log("RESOLVED AUTH ID", draft.auth_provider_id);
+  console.log("RESOLVED STATUS", draft.approval_status);
 
   await provisionStudentFromApprovedDraft(draft);
 
-  const { error } = await (supabase as any)
+  const now = new Date().toISOString();
+  console.log("UPDATING DRAFT", draft.draft_id);
+  const { data, error } = await (supabase as any)
     .from("student_onboarding_drafts")
     .update({
-      approval_status: "APPROVED",
+      approval_status: "PROFILE_APPROVED",
       onboarding_completed: true,
-      approved_by: adminUserId,
-      approved_at: new Date().toISOString(),
-      reviewed_by: adminUserId,
-      reviewed_at: new Date().toISOString(),
+      approval_reason: null,
       rejection_reason: null,
+      approved_by: adminUserId,
+      approved_at: now,
+      reviewed_by: adminUserId,
+      reviewed_at: now,
     })
-    .eq("auth_provider_id", authProviderId);
-
+    .eq("draft_id", draft.draft_id)
+    .select("draft_id, approval_status, approved_by")
+    .maybeSingle();
+  console.log("APPROVAL UPDATE RESULT", data);
+  console.log("APPROVAL UPDATE ERROR", error);
   if (error) {
     throw error;
   }
+
+  return data as StudentOnboardingDraftRow;
 }
 
 export async function rejectOnboardingDraft(
-  authProviderId: string,
+  identifier: string,
   adminUserId: string,
   reason: string,
 ) {
-  const { error } = await (supabase as any)
+  const draft = await resolveDraftByIdentifier(identifier);
+  const now = new Date().toISOString();
+
+  const { data, error } = await (supabase as any)
     .from("student_onboarding_drafts")
     .update({
-      approval_status: "REJECTED",
+      approval_status: "PROFILE_REJECTED",
+      onboarding_completed: false,
       approval_reason: reason,
       rejection_reason: reason,
-      approved_by: adminUserId,
-      approved_at: new Date().toISOString(),
+      approved_by: null,
+      approved_at: null,
       reviewed_by: adminUserId,
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: now,
     })
-    .eq("auth_provider_id", authProviderId);
-
+    .eq("draft_id", draft.draft_id)
+    .select("*")
+    .maybeSingle();
+  console.log("REJECTION UPDATE RESULT", data);
+  console.log("REJECTION UPDATE ERROR", error);
   if (error) {
     throw error;
   }
-}
 
+  return data as StudentOnboardingDraftRow;
+}
 export async function getDraftById(draftId: string) {
   const { data, error } = await (supabase as any)
     .from("student_onboarding_drafts")
