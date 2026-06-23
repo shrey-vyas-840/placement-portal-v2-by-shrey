@@ -4,22 +4,16 @@ import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 
 import { AdminOnboardingReviewPage } from "@/pages/AdminOnboardingReviewPage";
 
-export const Route =
-  createFileRoute(
-    "/admin/onboarding-review/$draftId",
-  )({
-    component: ReviewRoute,
-  });
+export const Route = createFileRoute("/admin/onboarding-review/$draftId")({
+  component: ReviewRoute,
+});
 
 function ReviewRoute() {
-  const { draftId } =
-    Route.useParams();
+  const { draftId } = Route.useParams();
 
   return (
     <AdminProtectedRoute>
-      <AdminOnboardingReviewPage
-        draftId={draftId}
-      />
+      <AdminOnboardingReviewPage draftId={draftId} />
     </AdminProtectedRoute>
   );
 }

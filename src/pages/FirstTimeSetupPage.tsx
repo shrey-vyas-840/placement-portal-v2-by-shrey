@@ -1411,7 +1411,7 @@ Enrollment No. ${enteredEnrollment}
                                 optOutEmailRequested: confirmed,
                               },
                             });
-                          }}  
+                          }}
                         >
                           Open Gmail Draft
                         </Button>

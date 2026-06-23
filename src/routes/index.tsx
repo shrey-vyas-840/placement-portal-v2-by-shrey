@@ -14,10 +14,5 @@ function Index() {
       </div>
     );
   }
-  return (
-    <Navigate
-      to={status === "authenticated" ? "/dashboard" : "/login"}
-      replace
-    />
-  );
+  return <Navigate to={status === "authenticated" ? "/dashboard" : "/login"} replace />;
 }

@@ -5,11 +5,7 @@ import { rbacService } from "@/services/rbacService";
 import { isDeveloperEmail } from "@/services/identityPolicyService";
 import type { ReactNode } from "react";
 
-export function AdminProtectedRoute({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function AdminProtectedRoute({ children }: { children: ReactNode }) {
   const { user, status } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -43,11 +39,7 @@ export function AdminProtectedRoute({
   }, [user]);
 
   if (status === "loading" || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
   if (!user) {

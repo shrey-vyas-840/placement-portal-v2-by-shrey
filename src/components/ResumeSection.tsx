@@ -72,16 +72,14 @@ export function ResumeSection({ studentId, authUserId, existingUrl, onSaved }: P
           </p>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            1️⃣ Upload your resume to Google Drive, OneDrive or Dropbox 
+            1️⃣ Upload your resume to Google Drive, OneDrive or Dropbox
           </p>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            2️⃣ Go to Manage Access & Make it public. 
+            2️⃣ Go to Manage Access & Make it public.
           </p>
 
-          <p className="mt-2 text-sm text-muted-foreground">
-            3️⃣ Paste the shareable Link.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">3️⃣ Paste the shareable Link.</p>
         </div>
 
         <div

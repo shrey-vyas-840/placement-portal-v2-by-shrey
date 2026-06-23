@@ -1,19 +1,7 @@
-import {
-    createFileRoute,
-} from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
+import { AdminOpportunitiesPage } from "@/pages/AdminOpportunitiesPage";
 
-import {
-    AdminOpportunitiesPage,
-} from "@/pages/AdminOpportunitiesPage";
-
-
-export const Route =
-    createFileRoute(
-        "/admin/opportunities/",
-    )({
-
-        component:
-            AdminOpportunitiesPage,
-
-    });
+export const Route = createFileRoute("/admin/opportunities/")({
+  component: AdminOpportunitiesPage,
+});

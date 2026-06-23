@@ -298,49 +298,39 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
           )}
         </div>
 
-<div className="mb-8 grid gap-4 md:grid-cols-4">
+        <div className="mb-8 grid gap-4 md:grid-cols-4">
+          <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-blue-50 to-white p-5">
+            <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              Current CGPA
+            </div>
 
-  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-blue-50 to-white p-5">
-    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-      Current CGPA
-    </div>
+            <div className="mt-2 text-3xl font-bold text-primary">{cgpa || "-"}</div>
+          </div>
 
-    <div className="mt-2 text-3xl font-bold text-primary">
-      {cgpa || "-"}
-    </div>
-  </div>
+          <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-cyan-50 to-white p-5">
+            <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              Semester
+            </div>
 
-  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-cyan-50 to-white p-5">
-    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-      Semester
-    </div>
+            <div className="mt-2 text-3xl font-bold text-cyan-600">{currentSemester || "-"}</div>
+          </div>
 
-    <div className="mt-2 text-3xl font-bold text-cyan-600">
-      {currentSemester || "-"}
-    </div>
-  </div>
+          <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-emerald-50 to-white p-5">
+            <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              Active Backlogs
+            </div>
 
-  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-emerald-50 to-white p-5">
-    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-      Active Backlogs
-    </div>
+            <div className="mt-2 text-3xl font-bold text-emerald-600">{activeBacklogs || "0"}</div>
+          </div>
 
-    <div className="mt-2 text-3xl font-bold text-emerald-600">
-      {activeBacklogs || "0"}
-    </div>
-  </div>
+          <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-violet-50 to-white p-5">
+            <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              Graduation Year
+            </div>
 
-  <div className="min-h-[110px] rounded-2xl border border-primary/10 bg-gradient-to-br from-violet-50 to-white p-5">
-    <div className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
-      Graduation Year
-    </div>
-
-    <div className="mt-2 text-3xl font-bold text-violet-600">
-      {graduationYear || "-"}
-    </div>
-  </div>
-
-</div>
+            <div className="mt-2 text-3xl font-bold text-violet-600">{graduationYear || "-"}</div>
+          </div>
+        </div>
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <div

@@ -88,7 +88,9 @@ export const adminAttendanceExportService = {
       worksheet.addRow([
         index + 1,
         row.student_master?.enrollment_no ?? "",
-        `${row.student_master?.first_name ?? ""} ${row.student_master?.middle_name ?? ""} ${row.student_master?.last_name ?? ""}`.replace(/\s+/g, " ").trim(),
+        `${row.student_master?.first_name ?? ""} ${row.student_master?.middle_name ?? ""} ${row.student_master?.last_name ?? ""}`
+          .replace(/\s+/g, " ")
+          .trim(),
         row.academic?.current_institute_name ?? "",
         row.academic?.current_branch_name ?? "",
         row.attendance_status === "PRESENT" ? "P" : row.attendance_status === "ABSENT" ? "A" : "",

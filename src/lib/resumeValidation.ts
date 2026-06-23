@@ -1,6 +1,4 @@
-export function isValidResumeUrl(
-  url: string,
-): boolean {
+export function isValidResumeUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
 
@@ -13,10 +11,7 @@ export function isValidResumeUrl(
       "www.dropbox.com",
     ];
 
-    return allowedHosts.some(
-      (host) =>
-        parsed.hostname === host,
-    );
+    return allowedHosts.some((host) => parsed.hostname === host);
   } catch {
     return false;
   }

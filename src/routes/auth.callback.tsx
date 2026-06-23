@@ -78,9 +78,5 @@ function AuthCallback() {
     };
   }, [navigate]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      Signing you in...
-    </div>
-  );
+  return <div className="flex min-h-screen items-center justify-center">Signing you in...</div>;
 }

@@ -14,11 +14,7 @@ const SELECTED_STATUSES = new Set([
   "Offer Made",
 ]);
 
-const SHORTLISTED_STATUSES = new Set([
-  "Shortlisted",
-  "Shortlist",
-  "Shortlist Pending",
-]);
+const SHORTLISTED_STATUSES = new Set(["Shortlisted", "Shortlist", "Shortlist Pending"]);
 
 const PRESENT_STATUSES = new Set(["PRESENT"]);
 const ABSENT_STATUSES = new Set(["ABSENT"]);
@@ -185,7 +181,9 @@ function percent(part: number, total: number) {
 }
 
 function normalizeBranchName(value: string | null | undefined) {
-  return String(value ?? "").trim().toLowerCase();
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
 }
 
 function safeDate(value: unknown): string | null {
@@ -222,33 +220,18 @@ function countDistinct(values: Array<string | null | undefined>) {
 }
 
 async function fetchKpis(): Promise<DashboardKpis> {
-  const [
-    studentsResult,
-    drivesResult,
-    opportunitiesResult,
-    applicationsResult,
-    attendanceResult,
-  ] = await Promise.all([
-    db
-      .from("student_master")
-      .select("student_id, placement_preference, placement_status"),
+  const [studentsResult, drivesResult, opportunitiesResult, applicationsResult, attendanceResult] =
+    await Promise.all([
+      db.from("student_master").select("student_id, placement_preference, placement_status"),
 
-    db
-      .from("drive_master")
-      .select("drive_id")
-      .eq("is_active", true)
-      .eq("is_deleted", false),
+      db.from("drive_master").select("drive_id").eq("is_active", true).eq("is_deleted", false),
 
-    db
-      .from("opportunity_master")
-      .select("opportunity_id, application_status"),
+      db.from("opportunity_master").select("opportunity_id, application_status"),
 
-    db
-      .from("student_opportunity_applications")
-      .select("application_id, application_status"),
+      db.from("student_opportunity_applications").select("application_id, application_status"),
 
-    db.from("attendance_records").select("attendance_id, attendance_status"),
-  ]);
+      db.from("attendance_records").select("attendance_id, attendance_status"),
+    ]);
 
   const students = toArray<any>(studentsResult.data);
   const drives = toArray<any>(drivesResult.data);
@@ -260,12 +243,8 @@ async function fetchKpis(): Promise<DashboardKpis> {
   const interestedStudents = students.filter(
     (item) => item.placement_preference === "Interested",
   ).length;
-  const unplacedStudents = students.filter(
-    (item) => item.placement_status === "Unplaced",
-  ).length;
-  const placedStudents = students.filter(
-    (item) => item.placement_status === "Placed",
-  ).length;
+  const unplacedStudents = students.filter((item) => item.placement_status === "Unplaced").length;
+  const placedStudents = students.filter((item) => item.placement_status === "Placed").length;
 
   const totalDrives = drives.length;
   const totalApplications = applications.length;
@@ -292,10 +271,7 @@ async function fetchKpis(): Promise<DashboardKpis> {
     shortlistedApplications,
     Math.max(totalApplications, 1),
   );
-  const opportunityUtilizationRate = percent(
-    openOpportunities,
-    Math.max(totalDrives, 1),
-  );
+  const opportunityUtilizationRate = percent(openOpportunities, Math.max(totalDrives, 1));
 
   return {
     totalStudents,
@@ -329,10 +305,7 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
     };
   }
 
-  const [
-    drivesResult,
-    opportunitiesResult,
-  ] = await Promise.all([
+  const [drivesResult, opportunitiesResult] = await Promise.all([
     db
       .from("drive_master")
       .select(
@@ -371,15 +344,13 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const drives = toArray<any>(drivesResult.data);
   const opportunities = toArray<any>(opportunitiesResult.data);
-  const opportunityIds = uniqueStrings(
-    opportunities.map((item) => item.opportunity_id),
-  );
+  const opportunityIds = uniqueStrings(opportunities.map((item) => item.opportunity_id));
 
   const applicationsResult = opportunityIds.length
     ? await db
-      .from("student_opportunity_applications")
-      .select(
-        `
+        .from("student_opportunity_applications")
+        .select(
+          `
           application_id,
           opportunity_id,
           student_id,
@@ -387,9 +358,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           applied_at,
           updated_at
         `,
-      )
-      .in("opportunity_id", opportunityIds)
-      .order("applied_at", { ascending: false })
+        )
+        .in("opportunity_id", opportunityIds)
+        .order("applied_at", { ascending: false })
     : { data: [], error: null };
 
   const applications = toArray<any>(applicationsResult.data);
@@ -397,9 +368,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const roundsResult = opportunityIds.length
     ? await db
-      .from("attendance_rounds")
-      .select(
-        `
+        .from("attendance_rounds")
+        .select(
+          `
           round_id,
           opportunity_id,
           round_number,
@@ -409,10 +380,10 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-      )
-      .in("opportunity_id", opportunityIds)
-      .eq("is_active", true)
-      .order("round_number", { ascending: true })
+        )
+        .in("opportunity_id", opportunityIds)
+        .eq("is_active", true)
+        .order("round_number", { ascending: true })
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -420,9 +391,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const attendanceResult = roundIds.length
     ? await db
-      .from("attendance_records")
-      .select(
-        `
+        .from("attendance_records")
+        .select(
+          `
           attendance_id,
           round_id,
           student_id,
@@ -433,17 +404,18 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-      )
-      .in("round_id", roundIds)
-      .order("marked_at", { ascending: false })
+        )
+        .in("round_id", roundIds)
+        .order("marked_at", { ascending: false })
     : { data: [], error: null };
 
   const attendance = toArray<any>(attendanceResult.data);
 
   const academicsResult = studentIds.length
     ? await db
-      .from("student_academic_details")
-      .select(`
+        .from("student_academic_details")
+        .select(
+          `
     student_id,
     current_institute_name,
     current_degree_level,
@@ -451,8 +423,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
     graduation_year,
     current_cgpa,
     active_backlogs
-`)
-      .in("student_id", studentIds)
+`,
+        )
+        .in("student_id", studentIds)
     : { data: [], error: null };
 
   const academics = toArray<any>(academicsResult.data);
@@ -499,23 +472,17 @@ function buildDriveTrendPoint(
   drive: AnyRecord,
   ctx: Awaited<ReturnType<typeof loadDriveAnalyticsContext>>,
 ): DriveTrendPoint {
-  const driveOpportunities = ctx.opportunities.filter(
-    (item) => item.drive_id === drive.drive_id,
-  );
+  const driveOpportunities = ctx.opportunities.filter((item) => item.drive_id === drive.drive_id);
   const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
   const driveApplications = ctx.applications.filter((item) =>
     opportunityIds.includes(item.opportunity_id),
   );
-  const driveRounds = ctx.rounds.filter((item) =>
-    opportunityIds.includes(item.opportunity_id),
-  );
+  const driveRounds = ctx.rounds.filter((item) => opportunityIds.includes(item.opportunity_id));
   const driveAttendance = ctx.attendance.filter((item) =>
     driveRounds.some((round) => round.round_id === item.round_id),
   );
 
-  const registeredStudents = countDistinct(
-    driveApplications.map((item) => item.student_id),
-  );
+  const registeredStudents = countDistinct(driveApplications.map((item) => item.student_id));
   const shortlistedStudents = countDistinct(
     driveApplications
       .filter((item) => isShortlistedStatus(item.application_status))
@@ -550,9 +517,7 @@ async function buildBranchAnalytics(
   driveId: string,
   ctx: Awaited<ReturnType<typeof loadDriveAnalyticsContext>>,
 ): Promise<BranchAnalyticsItem[]> {
-  const eligibilityRow = ctx.eligibility?.find(
-    (e: AnyRecord) => e.drive_id === driveId,
-  );
+  const eligibilityRow = ctx.eligibility?.find((e: AnyRecord) => e.drive_id === driveId);
 
   if (!eligibilityRow?.allowed_branches) {
     return [];
@@ -591,11 +556,13 @@ async function buildBranchAnalytics(
   // Determine eligible counts from student academic details and student master records.
   const branchStudentRows = branches.length
     ? toArray<any>(
-      (await db
-        .from("student_academic_details")
-        .select("student_id, current_branch_name")
-        .in("current_branch_name", branches)).data,
-    )
+        (
+          await db
+            .from("student_academic_details")
+            .select("student_id, current_branch_name")
+            .in("current_branch_name", branches)
+        ).data,
+      )
     : [];
 
   const branchStudentIds = uniqueStrings(
@@ -610,13 +577,11 @@ async function buildBranchAnalytics(
 
   const validStudentIds = branchStudentIds.length
     ? new Set(
-      toArray<any>(
-        (await db
-          .from("student_master")
-          .select("student_id")
-          .in("student_id", branchStudentIds)).data,
-      ).map((item) => item.student_id),
-    )
+        toArray<any>(
+          (await db.from("student_master").select("student_id").in("student_id", branchStudentIds))
+            .data,
+        ).map((item) => item.student_id),
+      )
     : new Set<string>();
 
   branchStudentRows.forEach((item) => {
@@ -626,16 +591,12 @@ async function buildBranchAnalytics(
     branch.eligible_students += 1;
   });
 
-  const driveOpportunities = ctx.opportunities.filter(
-    (item) => item.drive_id === driveId,
-  );
+  const driveOpportunities = ctx.opportunities.filter((item) => item.drive_id === driveId);
   const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
   const driveApplications = ctx.applications.filter((item) =>
     opportunityIds.includes(item.opportunity_id),
   );
-  const driveRounds = ctx.rounds.filter((item) =>
-    opportunityIds.includes(item.opportunity_id),
-  );
+  const driveRounds = ctx.rounds.filter((item) => opportunityIds.includes(item.opportunity_id));
   const driveAttendance = ctx.attendance.filter((item) =>
     driveRounds.some((round) => round.round_id === item.round_id),
   );
@@ -643,13 +604,15 @@ async function buildBranchAnalytics(
   const driveAttendanceByStudent = new Map<string, { present: boolean; absent: boolean }>();
   driveAttendance.forEach((record) => {
     const branchName = normalizeBranchName(
-      ctx.academics.find((item) => item.student_id === record.student_id)
-        ?.current_branch_name,
+      ctx.academics.find((item) => item.student_id === record.student_id)?.current_branch_name,
     );
     const branch = branchAnalyticsMap.get(branchName);
     if (!branch || !record.student_id) return;
 
-    const stats = driveAttendanceByStudent.get(record.student_id) ?? { present: false, absent: false };
+    const stats = driveAttendanceByStudent.get(record.student_id) ?? {
+      present: false,
+      absent: false,
+    };
     if (record.attendance_status === "PRESENT") {
       stats.present = true;
     } else if (record.attendance_status === "ABSENT") {
@@ -675,8 +638,7 @@ async function buildBranchAnalytics(
 
   driveApplications.forEach((application) => {
     const branchName = normalizeBranchName(
-      ctx.academics.find((item) => item.student_id === application.student_id)
-        ?.current_branch_name,
+      ctx.academics.find((item) => item.student_id === application.student_id)?.current_branch_name,
     );
     const branch = branchAnalyticsMap.get(branchName);
     if (!branch || !application.student_id) return;
@@ -705,13 +667,14 @@ async function buildBranchAnalytics(
     branch.shortlisted_students = branchShortlistedSet.get(branchName)?.size ?? 0;
     branch.selected_students = branchSelectedSet.get(branchName)?.size ?? 0;
 
-    const presentCount = Array.from(driveAttendanceByStudent.entries())
-      .filter(([studentId, stats]) => {
+    const presentCount = Array.from(driveAttendanceByStudent.entries()).filter(
+      ([studentId, stats]) => {
         const studentBranch = normalizeBranchName(
           ctx.academics.find((item) => item.student_id === studentId)?.current_branch_name,
         );
         return studentBranch === branchName && stats.present;
-      }).length;
+      },
+    ).length;
 
     branch.present_students = presentCount;
   });
@@ -742,22 +705,16 @@ function buildOpportunityPipelineReport(
   const drive = ctx.drives.find((item) => item.drive_id === driveId);
   if (!drive) return null;
 
-  const driveOpportunities = ctx.opportunities.filter(
-    (item) => item.drive_id === driveId,
-  );
+  const driveOpportunities = ctx.opportunities.filter((item) => item.drive_id === driveId);
   const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
   const driveApplications = ctx.applications.filter((item) =>
     opportunityIds.includes(item.opportunity_id),
   );
-  const driveRounds = ctx.rounds.filter((item) =>
-    opportunityIds.includes(item.opportunity_id),
-  );
+  const driveRounds = ctx.rounds.filter((item) => opportunityIds.includes(item.opportunity_id));
   const driveAttendance = ctx.attendance.filter((item) =>
     driveRounds.some((round) => round.round_id === item.round_id),
   );
-  const registeredStudentsSet = new Set(
-    driveApplications.map((item) => item.student_id),
-  );
+  const registeredStudentsSet = new Set(driveApplications.map((item) => item.student_id));
   const shortlistedStudentsSet = new Set(
     driveApplications
       .filter((item) => isShortlistedStatus(item.application_status))
@@ -775,73 +732,69 @@ function buildOpportunityPipelineReport(
   );
   const roundClearedAggregate = new Set<string>();
 
-  const opportunityBreakdown: OpportunityPipelineItem[] = driveOpportunities.map(
-    (opportunity) => {
-      const applications = driveApplications.filter(
-        (item) => item.opportunity_id === opportunity.opportunity_id,
-      );
-      const oppRounds = driveRounds.filter(
-        (item) => item.opportunity_id === opportunity.opportunity_id,
-      );
-      const oppAttendance = driveAttendance.filter((record) =>
-        oppRounds.some((round) => round.round_id === record.round_id),
-      );
+  const opportunityBreakdown: OpportunityPipelineItem[] = driveOpportunities.map((opportunity) => {
+    const applications = driveApplications.filter(
+      (item) => item.opportunity_id === opportunity.opportunity_id,
+    );
+    const oppRounds = driveRounds.filter(
+      (item) => item.opportunity_id === opportunity.opportunity_id,
+    );
+    const oppAttendance = driveAttendance.filter((record) =>
+      oppRounds.some((round) => round.round_id === record.round_id),
+    );
 
-      const perStudentRecords = new Map<string, AnyRecord[]>();
-      oppAttendance.forEach((record) => {
-        const list = perStudentRecords.get(record.student_id) ?? [];
-        list.push(record);
-        list.sort((a, b) => {
-          const roundA = oppRounds.find((round) => round.round_id === a.round_id);
-          const roundB = oppRounds.find((round) => round.round_id === b.round_id);
-          return (
-            (roundA?.round_number ?? 0) - (roundB?.round_number ?? 0) ||
-            new Date(String(a.marked_at ?? a.created_at ?? 0)).getTime() -
+    const perStudentRecords = new Map<string, AnyRecord[]>();
+    oppAttendance.forEach((record) => {
+      const list = perStudentRecords.get(record.student_id) ?? [];
+      list.push(record);
+      list.sort((a, b) => {
+        const roundA = oppRounds.find((round) => round.round_id === a.round_id);
+        const roundB = oppRounds.find((round) => round.round_id === b.round_id);
+        return (
+          (roundA?.round_number ?? 0) - (roundB?.round_number ?? 0) ||
+          new Date(String(a.marked_at ?? a.created_at ?? 0)).getTime() -
             new Date(String(b.marked_at ?? b.created_at ?? 0)).getTime()
-          );
-        });
-        perStudentRecords.set(record.student_id, list);
+        );
       });
+      perStudentRecords.set(record.student_id, list);
+    });
 
-      const roundClearedStudents = new Set<string>();
-      perStudentRecords.forEach((records, studentId) => {
-        const latest = records[records.length - 1];
-        if (latest?.attendance_status === "PRESENT") {
-          roundClearedStudents.add(studentId);
-          roundClearedAggregate.add(studentId);
-        }
-      });
+    const roundClearedStudents = new Set<string>();
+    perStudentRecords.forEach((records, studentId) => {
+      const latest = records[records.length - 1];
+      if (latest?.attendance_status === "PRESENT") {
+        roundClearedStudents.add(studentId);
+        roundClearedAggregate.add(studentId);
+      }
+    });
 
-      return {
-        opportunity_id: opportunity.opportunity_id,
-        opportunity_title: opportunity.opportunity_title ?? "Untitled Opportunity",
-        total_applications: applications.length,
-        registered_students: countDistinct(applications.map((item) => item.student_id)),
-        present_students: countDistinct(
-          oppAttendance
-            .filter((item) => item.attendance_status === "PRESENT")
-            .map((item) => item.student_id),
-        ),
-        round_cleared_students: roundClearedStudents.size,
-        shortlisted_students: countDistinct(
-          applications
-            .filter((item) => isShortlistedStatus(item.application_status))
-            .map((item) => item.student_id),
-        ),
-        selected_students: countDistinct(
-          applications
-            .filter((item) => isSelectedStatus(item.application_status))
-            .map((item) => item.student_id),
-        ),
-      };
-    },
-  );
+    return {
+      opportunity_id: opportunity.opportunity_id,
+      opportunity_title: opportunity.opportunity_title ?? "Untitled Opportunity",
+      total_applications: applications.length,
+      registered_students: countDistinct(applications.map((item) => item.student_id)),
+      present_students: countDistinct(
+        oppAttendance
+          .filter((item) => item.attendance_status === "PRESENT")
+          .map((item) => item.student_id),
+      ),
+      round_cleared_students: roundClearedStudents.size,
+      shortlisted_students: countDistinct(
+        applications
+          .filter((item) => isShortlistedStatus(item.application_status))
+          .map((item) => item.student_id),
+      ),
+      selected_students: countDistinct(
+        applications
+          .filter((item) => isSelectedStatus(item.application_status))
+          .map((item) => item.student_id),
+      ),
+    };
+  });
 
   const eligibleRows = ctx.eligibility.filter((item) => item.drive_id === driveId);
   const eligibleStudents =
-    eligibleRows.length > 0
-      ? countDistinct(eligibleRows.map((item) => item.student_id))
-      : null;
+    eligibleRows.length > 0 ? countDistinct(eligibleRows.map((item) => item.student_id)) : null;
 
   const registeredStudents = registeredStudentsSet.size;
   const presentStudents = presentStudentsSet.size;
@@ -916,11 +869,7 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   const studentId = student.student_id as string;
 
-  const [
-    applicationsResult,
-    attendanceResult,
-    activeDrivesResult,
-  ] = await Promise.all([
+  const [applicationsResult, attendanceResult, activeDrivesResult] = await Promise.all([
     db
       .from("student_opportunity_applications")
       .select(
@@ -963,7 +912,6 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
       .eq("is_active", true)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false }),
-
   ]);
 
   const applications = toArray<any>(applicationsResult.data);
@@ -987,15 +935,15 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   const opportunitiesResult = opportunityIds.length
     ? await db
-      .from("opportunity_master")
-      .select(
-        `
+        .from("opportunity_master")
+        .select(
+          `
           opportunity_id,
           drive_id,
           opportunity_title
         `,
-      )
-      .in("opportunity_id", opportunityIds)
+        )
+        .in("opportunity_id", opportunityIds)
     : { data: [], error: null };
 
   const opportunities = toArray<any>(opportunitiesResult.data);
@@ -1005,16 +953,16 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   const roundIds = uniqueStrings(attendance.map((item) => item.round_id));
   const roundsResult = roundIds.length
     ? await db
-      .from("attendance_rounds")
-      .select(
-        `
+        .from("attendance_rounds")
+        .select(
+          `
           round_id,
           opportunity_id,
           round_number,
           round_name
         `,
-      )
-      .in("round_id", roundIds)
+        )
+        .in("round_id", roundIds)
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -1055,8 +1003,7 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   const eligibleDrives = eligibilityRows.length
     ? countDistinct(eligibilityRows.map((item) => item.drive_id))
     : null;
-  const unregisteredDrives =
-    (eligibleDrives ?? totalActiveDrives) - registeredDriveIds.size;
+  const unregisteredDrives = (eligibleDrives ?? totalActiveDrives) - registeredDriveIds.size;
 
   const driveBreakdown: StudentDriveBreakdownItem[] = activeDrives.map((drive) => {
     const driveOpportunityIds = opportunities
@@ -1074,7 +1021,9 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
     const hasPresent = driveAttendance.some((record) => record.attendance_status === "PRESENT");
     const hasAbsent = driveAttendance.some((record) => record.attendance_status === "ABSENT");
-    const shortlisted = driveApplications.some((item) => isShortlistedStatus(item.application_status));
+    const shortlisted = driveApplications.some((item) =>
+      isShortlistedStatus(item.application_status),
+    );
     const selected = driveApplications.some((item) => isSelectedStatus(item.application_status));
     const registered = driveApplications.length > 0;
     const eligible = eligibilityRows.some((item) => item.drive_id === drive.drive_id);
@@ -1114,7 +1063,8 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
     absent_drives: absentDriveIds.size,
     unregistered_drives: Math.max(unregisteredDrives, 0),
     applications_count: applications.length,
-    shortlisted_count: applications.filter((item) => isShortlistedStatus(item.application_status)).length,
+    shortlisted_count: applications.filter((item) => isShortlistedStatus(item.application_status))
+      .length,
     selected_count: applications.filter((item) => isSelectedStatus(item.application_status)).length,
     attendance_percentage: percent(
       presentDriveIds.size,
@@ -1202,31 +1152,31 @@ async function fetchRecentActivity(limit = 15): Promise<RecentActivityItem[]> {
   const [studentsResult, roundRowsResult] = await Promise.all([
     studentIds.length
       ? db
-        .from("student_master")
-        .select(
-          `
+          .from("student_master")
+          .select(
+            `
             student_id,
             enrollment_no,
             first_name,
             middle_name,
             last_name
           `,
-        )
-        .in("student_id", studentIds)
+          )
+          .in("student_id", studentIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
 
     roundIds.length
       ? db
-        .from("attendance_rounds")
-        .select(
-          `
+          .from("attendance_rounds")
+          .select(
+            `
             round_id,
             opportunity_id,
             round_number,
             round_name
           `,
-        )
-        .in("round_id", roundIds)
+          )
+          .in("round_id", roundIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
   ]);
 
@@ -1461,12 +1411,8 @@ export async function getDashboardSnapshot(options: DashboardSnapshotOptions = {
   const branchDistribution = selectedDriveId
     ? await getDriveBranchDistribution(selectedDriveId)
     : [];
-  const branchAnalytics = selectedDriveId
-    ? await getDriveBranchAnalytics(selectedDriveId)
-    : [];
-  const pipeline = selectedDriveId
-    ? await getOpportunityPipeline(selectedDriveId)
-    : null;
+  const branchAnalytics = selectedDriveId ? await getDriveBranchAnalytics(selectedDriveId) : [];
+  const pipeline = selectedDriveId ? await getOpportunityPipeline(selectedDriveId) : null;
   const studentDrilldown = options.enrollmentNo
     ? await getStudentDrilldown(options.enrollmentNo)
     : null;

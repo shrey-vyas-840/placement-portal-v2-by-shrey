@@ -14,11 +14,7 @@ const SELECTED_STATUSES = new Set([
   "Offer Made",
 ]);
 
-const SHORTLISTED_STATUSES = new Set([
-  "Shortlisted",
-  "Shortlist",
-  "Shortlist Pending",
-]);
+const SHORTLISTED_STATUSES = new Set(["Shortlisted", "Shortlist", "Shortlist Pending"]);
 
 const PRESENT_STATUSES = new Set(["PRESENT"]);
 const ABSENT_STATUSES = new Set(["ABSENT"]);
@@ -209,7 +205,9 @@ function fullName(parts: {
 }
 
 function normalize(value: unknown) {
-  return String(value ?? "").trim().toLowerCase();
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
 }
 
 function parseDelimitedList(value: unknown) {
@@ -290,23 +288,16 @@ function evaluateEligibility(student: AnyRecord, rule: AnyRecord) {
 }
 
 async function fetchKpis(): Promise<DashboardKpis> {
-  const [
-    studentsResult,
-    drivesResult,
-    opportunitiesResult,
-    applicationsResult,
-    attendanceResult,
-  ] = await Promise.all([
-    db.from("student_master").select("student_id, placement_preference, placement_status"),
-    db
-      .from("drive_master")
-      .select("drive_id")
-      .eq("is_active", true)
-      .eq("is_deleted", false),
-    db.from("opportunity_master").select("opportunity_id, application_status"),
-    db.from("student_opportunity_applications").select("application_id, application_status, student_id"),
-    db.from("attendance_records").select("attendance_id, attendance_status"),
-  ]);
+  const [studentsResult, drivesResult, opportunitiesResult, applicationsResult, attendanceResult] =
+    await Promise.all([
+      db.from("student_master").select("student_id, placement_preference, placement_status"),
+      db.from("drive_master").select("drive_id").eq("is_active", true).eq("is_deleted", false),
+      db.from("opportunity_master").select("opportunity_id, application_status"),
+      db
+        .from("student_opportunity_applications")
+        .select("application_id, application_status, student_id"),
+      db.from("attendance_records").select("attendance_id, attendance_status"),
+    ]);
 
   const students = toArray<any>(studentsResult.data);
   const drives = toArray<any>(drivesResult.data);
@@ -315,30 +306,57 @@ async function fetchKpis(): Promise<DashboardKpis> {
   const attendance = toArray<any>(attendanceResult.data);
 
   const totalStudents = students.length;
-  const interestedStudents = students.filter((item) => item.placement_preference === "Interested").length;
+  const interestedStudents = students.filter(
+    (item) => item.placement_preference === "Interested",
+  ).length;
   const unplacedStudents = students.filter((item) => item.placement_status === "Unplaced").length;
   const placedStudents = students.filter((item) => item.placement_status === "Placed").length;
 
   const totalDrives = drives.length;
   const totalApplications = applications.length;
-  const shortlistedApplications = applications.filter((item) => isShortlistedStatus(item.application_status)).length;
-  const selectedApplications = applications.filter((item) => isSelectedStatus(item.application_status)).length;
+  const shortlistedApplications = applications.filter((item) =>
+    isShortlistedStatus(item.application_status),
+  ).length;
+  const selectedApplications = applications.filter((item) =>
+    isSelectedStatus(item.application_status),
+  ).length;
   const selectedStudents = countDistinct(
-    applications.filter((item) => isSelectedStatus(item.application_status)).map((item) => item.student_id),
+    applications
+      .filter((item) => isSelectedStatus(item.application_status))
+      .map((item) => item.student_id),
   );
-  const openOpportunities = opportunities.filter((item) => item.application_status === "Open").length;
+  const openOpportunities = opportunities.filter(
+    (item) => item.application_status === "Open",
+  ).length;
 
-  const attendancePresent = attendance.filter((item) => PRESENT_STATUSES.has(String(item.attendance_status))).length;
-  const attendanceAbsent = attendance.filter((item) => ABSENT_STATUSES.has(String(item.attendance_status))).length;
+  const attendancePresent = attendance.filter((item) =>
+    PRESENT_STATUSES.has(String(item.attendance_status)),
+  ).length;
+  const attendanceAbsent = attendance.filter((item) =>
+    ABSENT_STATUSES.has(String(item.attendance_status)),
+  ).length;
   const attendanceRecords = attendance.length;
 
-  const attendanceRate = percent(attendancePresent, Math.max(attendancePresent + attendanceAbsent, 1));
+  const attendanceRate = percent(
+    attendancePresent,
+    Math.max(attendancePresent + attendanceAbsent, 1),
+  );
   const placementRate = percent(placedStudents, Math.max(totalStudents, 1));
-  const applicationConversionRate = percent(shortlistedApplications, Math.max(totalApplications, 1));
+  const applicationConversionRate = percent(
+    shortlistedApplications,
+    Math.max(totalApplications, 1),
+  );
   const opportunityUtilizationRate = percent(openOpportunities, Math.max(totalDrives, 1));
-  const averageApplicationsPerDrive = totalDrives ? toFixedNumber(totalApplications / totalDrives) : 0;
-  const averageAttendancePerDrive = totalDrives ? toFixedNumber(attendanceRecords / totalDrives) : 0;
-  const averageShortlistingPercentage = percent(shortlistedApplications, Math.max(totalApplications, 1));
+  const averageApplicationsPerDrive = totalDrives
+    ? toFixedNumber(totalApplications / totalDrives)
+    : 0;
+  const averageAttendancePerDrive = totalDrives
+    ? toFixedNumber(attendanceRecords / totalDrives)
+    : 0;
+  const averageShortlistingPercentage = percent(
+    shortlistedApplications,
+    Math.max(totalApplications, 1),
+  );
   const averageSelectionPercentage = percent(selectedApplications, Math.max(totalApplications, 1));
 
   return {
@@ -413,10 +431,8 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
       )
       .in("drive_id", driveIds)
       .order("created_at", { ascending: false }),
-    db
-      .from("student_academic_details")
-      .select(
-        `
+    db.from("student_academic_details").select(
+      `
         student_id,
         current_institute_name,
         current_degree_level,
@@ -425,7 +441,7 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
         active_backlogs,
         graduation_year
       `,
-      ),
+    ),
   ]);
 
   const drives = toArray<any>(drivesResult.data);
@@ -435,9 +451,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const applicationsResult = opportunityIds.length
     ? await db
-      .from("student_opportunity_applications")
-      .select(
-        `
+        .from("student_opportunity_applications")
+        .select(
+          `
           application_id,
           opportunity_id,
           student_id,
@@ -445,9 +461,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           applied_at,
           updated_at
         `,
-      )
-      .in("opportunity_id", opportunityIds)
-      .order("applied_at", { ascending: false })
+        )
+        .in("opportunity_id", opportunityIds)
+        .order("applied_at", { ascending: false })
     : { data: [], error: null };
 
   const applications = toArray<any>(applicationsResult.data);
@@ -455,9 +471,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const roundsResult = opportunityIds.length
     ? await db
-      .from("attendance_rounds")
-      .select(
-        `
+        .from("attendance_rounds")
+        .select(
+          `
           round_id,
           opportunity_id,
           round_number,
@@ -467,10 +483,10 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-      )
-      .in("opportunity_id", opportunityIds)
-      .eq("is_active", true)
-      .order("round_number", { ascending: true })
+        )
+        .in("opportunity_id", opportunityIds)
+        .eq("is_active", true)
+        .order("round_number", { ascending: true })
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -478,9 +494,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
 
   const attendanceResult = roundIds.length
     ? await db
-      .from("attendance_records")
-      .select(
-        `
+        .from("attendance_records")
+        .select(
+          `
           attendance_id,
           round_id,
           student_id,
@@ -491,9 +507,9 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           created_at,
           updated_at
         `,
-      )
-      .in("round_id", roundIds)
-      .order("marked_at", { ascending: false })
+        )
+        .in("round_id", roundIds)
+        .order("marked_at", { ascending: false })
     : { data: [], error: null };
 
   const attendance = toArray<any>(attendanceResult.data);
@@ -540,19 +556,29 @@ function buildDriveTrendPoint(
 ): DriveTrendPoint {
   const driveOpportunities = ctx.opportunities.filter((item) => item.drive_id === drive.drive_id);
   const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
-  const driveApplications = ctx.applications.filter((item) => opportunityIds.includes(item.opportunity_id));
+  const driveApplications = ctx.applications.filter((item) =>
+    opportunityIds.includes(item.opportunity_id),
+  );
   const driveRounds = ctx.rounds.filter((item) => opportunityIds.includes(item.opportunity_id));
-  const driveAttendance = ctx.attendance.filter((item) => driveRounds.some((round) => round.round_id === item.round_id));
+  const driveAttendance = ctx.attendance.filter((item) =>
+    driveRounds.some((round) => round.round_id === item.round_id),
+  );
 
   const registeredStudents = countDistinct(driveApplications.map((item) => item.student_id));
   const shortlistedStudents = countDistinct(
-    driveApplications.filter((item) => isShortlistedStatus(item.application_status)).map((item) => item.student_id),
+    driveApplications
+      .filter((item) => isShortlistedStatus(item.application_status))
+      .map((item) => item.student_id),
   );
   const selectedStudents = countDistinct(
-    driveApplications.filter((item) => isSelectedStatus(item.application_status)).map((item) => item.student_id),
+    driveApplications
+      .filter((item) => isSelectedStatus(item.application_status))
+      .map((item) => item.student_id),
   );
   const presentStudents = countDistinct(
-    driveAttendance.filter((item) => item.attendance_status === "PRESENT").map((item) => item.student_id),
+    driveAttendance
+      .filter((item) => item.attendance_status === "PRESENT")
+      .map((item) => item.student_id),
   );
 
   return {
@@ -575,7 +601,9 @@ function buildBranchDistributionPoint(
 ): DriveBranchDistributionPoint[] {
   const driveOpportunities = ctx.opportunities.filter((item) => item.drive_id === driveId);
   const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
-  const driveApplications = ctx.applications.filter((item) => opportunityIds.includes(item.opportunity_id));
+  const driveApplications = ctx.applications.filter((item) =>
+    opportunityIds.includes(item.opportunity_id),
+  );
   const studentIds = uniqueStrings(driveApplications.map((item) => item.student_id));
 
   const branchCounts = new Map<string, number>();
@@ -593,7 +621,9 @@ function buildBranchDistributionPoint(
       student_count,
       percentage: total ? Math.round((student_count / total) * 100) : 0,
     }))
-    .sort((a, b) => b.student_count - a.student_count || a.branch_name.localeCompare(b.branch_name));
+    .sort(
+      (a, b) => b.student_count - a.student_count || a.branch_name.localeCompare(b.branch_name),
+    );
 }
 
 function buildOpportunityPipelineReport(
@@ -605,25 +635,41 @@ function buildOpportunityPipelineReport(
 
   const driveOpportunities = ctx.opportunities.filter((item) => item.drive_id === driveId);
   const opportunityIds = driveOpportunities.map((item) => item.opportunity_id);
-  const driveApplications = ctx.applications.filter((item) => opportunityIds.includes(item.opportunity_id));
+  const driveApplications = ctx.applications.filter((item) =>
+    opportunityIds.includes(item.opportunity_id),
+  );
   const driveRounds = ctx.rounds.filter((item) => opportunityIds.includes(item.opportunity_id));
-  const driveAttendance = ctx.attendance.filter((item) => driveRounds.some((round) => round.round_id === item.round_id));
+  const driveAttendance = ctx.attendance.filter((item) =>
+    driveRounds.some((round) => round.round_id === item.round_id),
+  );
   const registeredStudentsSet = new Set(driveApplications.map((item) => item.student_id));
   const shortlistedStudentsSet = new Set(
-    driveApplications.filter((item) => isShortlistedStatus(item.application_status)).map((item) => item.student_id),
+    driveApplications
+      .filter((item) => isShortlistedStatus(item.application_status))
+      .map((item) => item.student_id),
   );
   const selectedStudentsSet = new Set(
-    driveApplications.filter((item) => isSelectedStatus(item.application_status)).map((item) => item.student_id),
+    driveApplications
+      .filter((item) => isSelectedStatus(item.application_status))
+      .map((item) => item.student_id),
   );
   const presentStudentsSet = new Set(
-    driveAttendance.filter((item) => item.attendance_status === "PRESENT").map((item) => item.student_id),
+    driveAttendance
+      .filter((item) => item.attendance_status === "PRESENT")
+      .map((item) => item.student_id),
   );
   const roundClearedAggregate = new Set<string>();
 
   const opportunityBreakdown: OpportunityPipelineItem[] = driveOpportunities.map((opportunity) => {
-    const applications = driveApplications.filter((item) => item.opportunity_id === opportunity.opportunity_id);
-    const oppRounds = driveRounds.filter((item) => item.opportunity_id === opportunity.opportunity_id);
-    const oppAttendance = driveAttendance.filter((record) => oppRounds.some((round) => round.round_id === record.round_id));
+    const applications = driveApplications.filter(
+      (item) => item.opportunity_id === opportunity.opportunity_id,
+    );
+    const oppRounds = driveRounds.filter(
+      (item) => item.opportunity_id === opportunity.opportunity_id,
+    );
+    const oppAttendance = driveAttendance.filter((record) =>
+      oppRounds.some((round) => round.round_id === record.round_id),
+    );
 
     const perStudentRecords = new Map<string, AnyRecord[]>();
     oppAttendance.forEach((record) => {
@@ -634,7 +680,8 @@ function buildOpportunityPipelineReport(
         const roundB = oppRounds.find((round) => round.round_id === b.round_id);
         return (
           (roundA?.round_number ?? 0) - (roundB?.round_number ?? 0) ||
-          new Date(String(a.marked_at ?? a.created_at ?? 0)).getTime() - new Date(String(b.marked_at ?? b.created_at ?? 0)).getTime()
+          new Date(String(a.marked_at ?? a.created_at ?? 0)).getTime() -
+            new Date(String(b.marked_at ?? b.created_at ?? 0)).getTime()
         );
       });
       perStudentRecords.set(record.student_id, list);
@@ -657,23 +704,27 @@ function buildOpportunityPipelineReport(
       applied_students: applications.length,
       registered_students: countDistinct(applications.map((item) => item.student_id)),
       present_students: countDistinct(
-        oppAttendance.filter((item) => item.attendance_status === "PRESENT").map((item) => item.student_id),
+        oppAttendance
+          .filter((item) => item.attendance_status === "PRESENT")
+          .map((item) => item.student_id),
       ),
       round_cleared_students: roundClearedStudents.size,
       shortlisted_students: countDistinct(
-        applications.filter((item) => isShortlistedStatus(item.application_status)).map((item) => item.student_id),
+        applications
+          .filter((item) => isShortlistedStatus(item.application_status))
+          .map((item) => item.student_id),
       ),
       selected_students: countDistinct(
-        applications.filter((item) => isSelectedStatus(item.application_status)).map((item) => item.student_id),
+        applications
+          .filter((item) => isSelectedStatus(item.application_status))
+          .map((item) => item.student_id),
       ),
     };
   });
 
   const eligibleRows = ctx.eligibility.filter((item) => item.drive_id === driveId);
   const eligibleStudents =
-    eligibleRows.length > 0
-      ? countDistinct(eligibleRows.map((item) => item.student_id))
-      : null;
+    eligibleRows.length > 0 ? countDistinct(eligibleRows.map((item) => item.student_id)) : null;
 
   const registeredStudents = registeredStudentsSet.size;
   const appliedStudents = registeredStudents;
@@ -749,11 +800,7 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   const studentId = student.student_id as string;
 
-  const [
-    applicationsResult,
-    attendanceResult,
-    activeDrivesResult,
-  ] = await Promise.all([
+  const [applicationsResult, attendanceResult, activeDrivesResult] = await Promise.all([
     db
       .from("student_opportunity_applications")
       .select(
@@ -815,15 +862,15 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   const opportunityIds = uniqueStrings(applications.map((item) => item.opportunity_id));
   const opportunitiesResult = opportunityIds.length
     ? await db
-      .from("opportunity_master")
-      .select(
-        `
+        .from("opportunity_master")
+        .select(
+          `
           opportunity_id,
           drive_id,
           opportunity_title
         `,
-      )
-      .in("opportunity_id", opportunityIds)
+        )
+        .in("opportunity_id", opportunityIds)
     : { data: [], error: null };
 
   const opportunities = toArray<any>(opportunitiesResult.data);
@@ -833,16 +880,16 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   const roundIds = uniqueStrings(attendance.map((item) => item.round_id));
   const roundsResult = roundIds.length
     ? await db
-      .from("attendance_rounds")
-      .select(
-        `
+        .from("attendance_rounds")
+        .select(
+          `
           round_id,
           opportunity_id,
           round_number,
           round_name
         `,
-      )
-      .in("round_id", roundIds)
+        )
+        .in("round_id", roundIds)
     : { data: [], error: null };
 
   const rounds = toArray<any>(roundsResult.data);
@@ -931,7 +978,8 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
     absent_drives: absentDriveIds.size,
     unregistered_drives: Math.max(unregisteredDrives, 0),
     applications_count: applications.length,
-    shortlisted_count: applications.filter((item) => isShortlistedStatus(item.application_status)).length,
+    shortlisted_count: applications.filter((item) => isShortlistedStatus(item.application_status))
+      .length,
     selected_count: applications.filter((item) => isSelectedStatus(item.application_status)).length,
     attendance_percentage: percent(
       presentDriveIds.size,
@@ -942,37 +990,38 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 }
 
 async function fetchRecentActivity(limit = 10): Promise<RecentActivityItem[]> {
-  const [applicationsResult, attendanceResult, drivesResult, opportunitiesResult] = await Promise.all([
-    db
-      .from("student_opportunity_applications")
-      .select(
-        `
+  const [applicationsResult, attendanceResult, drivesResult, opportunitiesResult] =
+    await Promise.all([
+      db
+        .from("student_opportunity_applications")
+        .select(
+          `
         application_id,
         opportunity_id,
         student_id,
         application_status,
         applied_at
       `,
-      )
-      .order("applied_at", { ascending: false })
-      .limit(limit),
-    db
-      .from("attendance_records")
-      .select(
-        `
+        )
+        .order("applied_at", { ascending: false })
+        .limit(limit),
+      db
+        .from("attendance_records")
+        .select(
+          `
         attendance_id,
         round_id,
         student_id,
         attendance_status,
         marked_at
       `,
-      )
-      .order("marked_at", { ascending: false })
-      .limit(limit),
-    db
-      .from("drive_master")
-      .select(
-        `
+        )
+        .order("marked_at", { ascending: false })
+        .limit(limit),
+      db
+        .from("drive_master")
+        .select(
+          `
         drive_id,
         drive_name,
         company_id,
@@ -981,25 +1030,25 @@ async function fetchRecentActivity(limit = 10): Promise<RecentActivityItem[]> {
           company_name
         )
       `,
-      )
-      .eq("is_active", true)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: false })
-      .limit(Math.max(5, Math.ceil(limit / 3))),
-    db
-      .from("opportunity_master")
-      .select(
-        `
+        )
+        .eq("is_active", true)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(Math.max(5, Math.ceil(limit / 3))),
+      db
+        .from("opportunity_master")
+        .select(
+          `
         opportunity_id,
         drive_id,
         opportunity_title,
         created_at,
         application_status
       `,
-      )
-      .order("created_at", { ascending: false })
-      .limit(Math.max(5, Math.ceil(limit / 3))),
-  ]);
+        )
+        .order("created_at", { ascending: false })
+        .limit(Math.max(5, Math.ceil(limit / 3))),
+    ]);
 
   const applications = toArray<any>(applicationsResult.data);
   const attendance = toArray<any>(attendanceResult.data);
@@ -1015,30 +1064,30 @@ async function fetchRecentActivity(limit = 10): Promise<RecentActivityItem[]> {
   const [studentsResult, roundRowsResult] = await Promise.all([
     studentIds.length
       ? db
-        .from("student_master")
-        .select(
-          `
+          .from("student_master")
+          .select(
+            `
             student_id,
             enrollment_no,
             first_name,
             middle_name,
             last_name
           `,
-        )
-        .in("student_id", studentIds)
+          )
+          .in("student_id", studentIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
     roundIds.length
       ? db
-        .from("attendance_rounds")
-        .select(
-          `
+          .from("attendance_rounds")
+          .select(
+            `
             round_id,
             opportunity_id,
             round_number,
             round_name
           `,
-        )
-        .in("round_id", roundIds)
+          )
+          .in("round_id", roundIds)
       : Promise.resolve({ data: [] as AnyRecord[], error: null }),
   ]);
 
@@ -1064,7 +1113,9 @@ async function fetchRecentActivity(limit = 10): Promise<RecentActivityItem[]> {
         opportunity?.opportunity_title ?? "Opportunity",
         drive?.drive_name ? `Drive: ${drive.drive_name}` : null,
         application.application_status ? `Status: ${application.application_status}` : null,
-      ].filter(Boolean).join(" • "),
+      ]
+        .filter(Boolean)
+        .join(" • "),
       occurred_at: safeDate(application.applied_at),
       drive_id: opportunity?.drive_id ?? null,
       opportunity_id: application.opportunity_id,
@@ -1087,7 +1138,9 @@ async function fetchRecentActivity(limit = 10): Promise<RecentActivityItem[]> {
         drive?.drive_name ?? null,
         opportunity?.opportunity_title ?? null,
         round?.round_name ? `Round ${round.round_number}: ${round.round_name}` : null,
-      ].filter(Boolean).join(" • "),
+      ]
+        .filter(Boolean)
+        .join(" • "),
       occurred_at: safeDate(record.marked_at ?? record.created_at),
       drive_id: opportunity?.drive_id ?? null,
       opportunity_id: round?.opportunity_id ?? null,
@@ -1133,7 +1186,9 @@ async function fetchRecentActivity(limit = 10): Promise<RecentActivityItem[]> {
       description: [
         opportunity?.opportunity_title ?? null,
         drive?.drive_name ? `Drive: ${drive.drive_name}` : null,
-      ].filter(Boolean).join(" • "),
+      ]
+        .filter(Boolean)
+        .join(" • "),
       occurred_at: safeDate(round.created_at),
       drive_id: opportunity?.drive_id ?? null,
       opportunity_id: round.opportunity_id,
@@ -1231,7 +1286,6 @@ export async function getRecentActivity(limit = 10) {
   return fetchRecentActivity(limit);
 }
 
-
 export const adminStudentService = {
   async getAllStudents() {
     const { data, error } = await db
@@ -1288,7 +1342,8 @@ export const adminStudentService = {
 
     const { data: documents } = await db
       .from("student_documents")
-      .select(`
+      .select(
+        `
         *,
         document_metadata:document_metadata_id (
           document_metadata_id,
@@ -1299,7 +1354,8 @@ export const adminStudentService = {
           created_at,
           is_active
         )
-      `)
+      `,
+      )
       .eq("student_id", studentId)
       .eq("is_active", true)
       .order("created_at", { ascending: false });
@@ -1343,13 +1399,15 @@ export const adminStudentService = {
 
     const { data: resumeDocuments } = await db
       .from("student_documents")
-      .select(`
+      .select(
+        `
         *,
         document_metadata (
           storage_url,
           document_type
         )
-      `)
+      `,
+      )
       .eq("student_id", profile.student_id)
       .eq("is_active", true);
 
@@ -1366,13 +1424,13 @@ export const adminStudentService = {
     const academicsComplete = !!academics?.current_cgpa && !!academics?.graduation_year;
 
     const skillsComplete =
-      !!skills?.technical_skills &&
-      !!skills?.programming_languages &&
-      !!skills?.linkedin_url;
+      !!skills?.technical_skills && !!skills?.programming_languages && !!skills?.linkedin_url;
 
     const resumeComplete = !!resume?.document_metadata?.storage_url;
 
-    const completed = [profileComplete, academicsComplete, skillsComplete, resumeComplete].filter(Boolean).length;
+    const completed = [profileComplete, academicsComplete, skillsComplete, resumeComplete].filter(
+      Boolean,
+    ).length;
 
     return Math.round((completed / 4) * 100);
   },
@@ -1424,36 +1482,33 @@ export const adminStudentService = {
   },
 
   async getFilterOptions() {
-    const { data: academics } = await db
-      .from("student_academic_details")
-      .select(`
+    const { data: academics } = await db.from("student_academic_details").select(`
         current_institute_name,
         current_branch_name,
         graduation_year
       `);
 
-    const institutes: string[] = [...new Set((academics ?? []).map((a: any) => a.current_institute_name))]
-      .filter(Boolean) as string[];
+    const institutes: string[] = [
+      ...new Set((academics ?? []).map((a: any) => a.current_institute_name)),
+    ].filter(Boolean) as string[];
 
-    const branches: string[] = [...new Set((academics ?? []).map((a: any) => a.current_branch_name))]
-      .filter(Boolean) as string[];
+    const branches: string[] = [
+      ...new Set((academics ?? []).map((a: any) => a.current_branch_name)),
+    ].filter(Boolean) as string[];
 
-    const graduationYears: number[] = [...new Set((academics ?? []).map((a: any) => a.graduation_year))]
-      .filter(Boolean) as number[];
+    const graduationYears: number[] = [
+      ...new Set((academics ?? []).map((a: any) => a.graduation_year)),
+    ].filter(Boolean) as number[];
 
     return {
       institutes,
       branches,
       graduationYears,
-   
     };
-    
   },
 
   async getAcademicMap() {
-    const { data, error } = await db
-      .from("student_academic_details")
-      .select(`
+    const { data, error } = await db.from("student_academic_details").select(`
         student_id,
         current_cgpa,
         current_branch_name,
@@ -1461,27 +1516,20 @@ export const adminStudentService = {
         graduation_year
       `);
 
-      if (error) {
-    console.error(
-        "Academic Map Error:",
-        error,
-    );
-    throw error;
-}
+    if (error) {
+      console.error("Academic Map Error:", error);
+      throw error;
+    }
     if (error) throw error;
     return data ?? [];
   },
 };
 
-
 // ===== PART 2 =====
 // APPEND DIRECTLY AFTER PART 1
 // DO NOT MODIFY PART 1
 
-export async function searchStudents(
-  query: string,
-  limit = 10,
-): Promise<StudentSearchResult[]> {
+export async function searchStudents(query: string, limit = 10): Promise<StudentSearchResult[]> {
   const search = query.trim();
 
   if (!search) {
@@ -1490,7 +1538,8 @@ export async function searchStudents(
 
   const { data, error } = await db
     .from("student_master")
-    .select(`
+    .select(
+      `
       student_id,
       user_id,
       enrollment_no,
@@ -1501,7 +1550,8 @@ export async function searchStudents(
       personal_email,
       placement_preference,
       placement_status
-    `)
+    `,
+    )
     .limit(200);
 
   if (error) {
@@ -1514,9 +1564,7 @@ export async function searchStudents(
     .map((student) => {
       const matches: string[] = [];
 
-      if (
-        normalize(student.enrollment_no).includes(normalizedSearch)
-      ) {
+      if (normalize(student.enrollment_no).includes(normalizedSearch)) {
         matches.push("enrollment");
       }
 
@@ -1526,19 +1574,11 @@ export async function searchStudents(
         matches.push("name");
       }
 
-      if (
-        normalize(student.institute_email).includes(
-          normalizedSearch,
-        )
-      ) {
+      if (normalize(student.institute_email).includes(normalizedSearch)) {
         matches.push("institute_email");
       }
 
-      if (
-        normalize(student.personal_email).includes(
-          normalizedSearch,
-        )
-      ) {
+      if (normalize(student.personal_email).includes(normalizedSearch)) {
         matches.push("personal_email");
       }
 
@@ -1549,27 +1589,18 @@ export async function searchStudents(
         first_name: student.first_name,
         middle_name: student.middle_name ?? null,
         last_name: student.last_name ?? null,
-        institute_email:
-          student.institute_email ?? null,
-        personal_email:
-          student.personal_email ?? null,
-        placement_preference:
-          student.placement_preference ?? null,
-        placement_status:
-          student.placement_status ?? null,
+        institute_email: student.institute_email ?? null,
+        personal_email: student.personal_email ?? null,
+        placement_preference: student.placement_preference ?? null,
+        placement_status: student.placement_status ?? null,
         match_sources: matches,
       } satisfies StudentSearchResult;
     })
-    .filter(
-      (student) => student.match_sources.length > 0,
-    )
+    .filter((student) => student.match_sources.length > 0)
     .sort((a, b) => {
       return (
-        b.match_sources.length -
-        a.match_sources.length ||
-        a.enrollment_no.localeCompare(
-          b.enrollment_no,
-        )
+        b.match_sources.length - a.match_sources.length ||
+        a.enrollment_no.localeCompare(b.enrollment_no)
       );
     })
     .slice(0, limit);
@@ -1578,69 +1609,37 @@ export async function searchStudents(
 export async function getDashboardSnapshot(
   options: DashboardSnapshotOptions = {},
 ): Promise<DashboardSnapshot> {
-  const driveTrendLimit =
-    options.driveTrendLimit ?? 10;
+  const driveTrendLimit = options.driveTrendLimit ?? 10;
 
-  const recentActivityLimit =
-    options.recentActivityLimit ?? 10;
+  const recentActivityLimit = options.recentActivityLimit ?? 10;
 
-  const [
-    kpis,
-    driveTrend,
-    recentActivity,
-  ] = await Promise.all([
+  const [kpis, driveTrend, recentActivity] = await Promise.all([
     fetchKpis(),
     fetchLatestDriveTrend(driveTrendLimit),
     fetchRecentActivity(recentActivityLimit),
   ]);
 
-  const selectedDriveId =
-    options.selectedDriveId ??
-    driveTrend[0]?.drive_id ??
-    null;
+  const selectedDriveId = options.selectedDriveId ?? driveTrend[0]?.drive_id ?? null;
 
-  let branchDistribution:
-    | DriveBranchDistributionPoint[]
-    = [];
+  let branchDistribution: DriveBranchDistributionPoint[] = [];
 
-  let pipeline:
-    | OpportunityPipelineReport
-    | null = null;
+  let pipeline: OpportunityPipelineReport | null = null;
 
   if (selectedDriveId) {
-    const ctx =
-      await loadDriveAnalyticsContext([
-        selectedDriveId,
-      ]);
+    const ctx = await loadDriveAnalyticsContext([selectedDriveId]);
 
-    branchDistribution =
-      buildBranchDistributionPoint(
-        selectedDriveId,
-        ctx,
-      );
+    branchDistribution = buildBranchDistributionPoint(selectedDriveId, ctx);
 
-    pipeline =
-      buildOpportunityPipelineReport(
-        selectedDriveId,
-        ctx,
-      );
+    pipeline = buildOpportunityPipelineReport(selectedDriveId, ctx);
   }
 
-  const studentDrilldown =
-    options.enrollmentNo?.trim()
-      ? await fetchStudentDrilldown(
-        options.enrollmentNo,
-      )
-      : null;
+  const studentDrilldown = options.enrollmentNo?.trim()
+    ? await fetchStudentDrilldown(options.enrollmentNo)
+    : null;
 
-  const studentSearchResults =
-    options.studentSearchQuery?.trim()
-      ? await searchStudents(
-        options.studentSearchQuery,
-        options.studentSearchLimit ??
-        10,
-      )
-      : [];
+  const studentSearchResults = options.studentSearchQuery?.trim()
+    ? await searchStudents(options.studentSearchQuery, options.studentSearchLimit ?? 10)
+    : [];
 
   return {
     kpis,
@@ -1651,13 +1650,11 @@ export async function getDashboardSnapshot(
     studentDrilldown,
     studentSearchResults,
     recentActivity,
-    refreshedAt:
-      new Date().toISOString(),
+    refreshedAt: new Date().toISOString(),
   };
 }
 
-export const adminDashboardAnalyticsService =
-{
+export const adminDashboardAnalyticsService = {
   getDashboardKpis,
   getDriveTrend,
   getDriveBranchDistribution,

@@ -76,7 +76,8 @@ async function getAcademicDetails(studentIds: string[]) {
 
   const { data, error } = await (supabase as any)
     .from("student_academic_details")
-    .select(`
+    .select(
+      `
       student_id,
       current_institute_name,
       current_branch_name,
@@ -84,7 +85,8 @@ async function getAcademicDetails(studentIds: string[]) {
       current_cgpa,
       graduation_year,
       active_backlogs
-    `)
+    `,
+    )
     .in("student_id", studentIds);
 
   if (error) throw error;
@@ -106,7 +108,8 @@ export const adminAttendanceService = {
   async getDrives() {
     const { data, error } = await (supabase as any)
       .from("drive_master")
-      .select(`
+      .select(
+        `
         drive_id,
         drive_name,
         company_id,
@@ -114,7 +117,8 @@ export const adminAttendanceService = {
         company_master (
           company_name
         )
-      `)
+      `,
+      )
       .eq("is_active", true)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
@@ -126,7 +130,8 @@ export const adminAttendanceService = {
   async getOpportunitiesByDrive(driveId: string) {
     const { data, error } = await (supabase as any)
       .from("opportunity_master")
-      .select(`
+      .select(
+        `
         opportunity_id,
         drive_id,
         opportunity_title,
@@ -136,7 +141,8 @@ export const adminAttendanceService = {
         application_start_date,
         application_end_date,
         created_at
-      `)
+      `,
+      )
       .eq("drive_id", driveId)
       .order("created_at", { ascending: false });
 
@@ -182,7 +188,8 @@ export const adminAttendanceService = {
   async getOpportunityApplicants(opportunityId: string) {
     const { data: applications, error } = await (supabase as any)
       .from("student_opportunity_applications")
-      .select(`
+      .select(
+        `
         application_id,
         opportunity_id,
         student_id,
@@ -197,7 +204,8 @@ export const adminAttendanceService = {
           middle_name,
           last_name
         )
-      `)
+      `,
+      )
       .eq("opportunity_id", opportunityId)
       .order("applied_at", { ascending: true });
 
@@ -208,9 +216,7 @@ export const adminAttendanceService = {
     const academics = await getAcademicDetails(studentIds);
 
     return students.map((row) => {
-      const academic = academics.find(
-        (item: any) => item.student_id === row.student_id,
-      );
+      const academic = academics.find((item: any) => item.student_id === row.student_id);
 
       return {
         ...row,
@@ -252,10 +258,14 @@ export const adminAttendanceService = {
     return rows;
   },
 
-  async getWorkspace(opportunityId: string, roundId?: string | null): Promise<OpportunityWorkspace> {
+  async getWorkspace(
+    opportunityId: string,
+    roundId?: string | null,
+  ): Promise<OpportunityWorkspace> {
     const { data: opportunity, error: opportunityError } = await (supabase as any)
       .from("opportunity_master")
-      .select(`
+      .select(
+        `
         opportunity_id,
         drive_id,
         opportunity_title,
@@ -274,7 +284,8 @@ export const adminAttendanceService = {
             company_name
           )
         )
-      `)
+      `,
+      )
       .eq("opportunity_id", opportunityId)
       .maybeSingle();
 
@@ -307,10 +318,7 @@ export const adminAttendanceService = {
     };
   },
 
-  async saveAttendanceRows(
-    roundId: string,
-    rows: AttendanceSaveRow[],
-  ) {
+  async saveAttendanceRows(roundId: string, rows: AttendanceSaveRow[]) {
     const userId = await getCurrentUserAccountId();
 
     const presentOrAbsent = rows.filter(
@@ -322,21 +330,19 @@ export const adminAttendanceService = {
       .map((row) => row.student_id);
 
     if (presentOrAbsent.length > 0) {
-      const { error: upsertError } = await (supabase as any)
-        .from("attendance_records")
-        .upsert(
-          presentOrAbsent.map((row) => ({
-            round_id: roundId,
-            student_id: row.student_id,
-            attendance_status: row.attendance_status,
-            remarks: normalizeRemark(row.attendance_remarks),
-            marked_by: userId,
-            marked_at: new Date().toISOString(),
-          })),
-          {
-            onConflict: "round_id,student_id",
-          },
-        );
+      const { error: upsertError } = await (supabase as any).from("attendance_records").upsert(
+        presentOrAbsent.map((row) => ({
+          round_id: roundId,
+          student_id: row.student_id,
+          attendance_status: row.attendance_status,
+          remarks: normalizeRemark(row.attendance_remarks),
+          marked_by: userId,
+          marked_at: new Date().toISOString(),
+        })),
+        {
+          onConflict: "round_id,student_id",
+        },
+      );
 
       if (upsertError) throw upsertError;
     }
@@ -355,14 +361,16 @@ export const adminAttendanceService = {
   async getConsolidatedRows(driveId: string) {
     const { data: drive, error: driveError } = await (supabase as any)
       .from("drive_master")
-      .select(`
+      .select(
+        `
         drive_id,
         drive_name,
         created_at,
         company_master (
           company_name
         )
-      `)
+      `,
+      )
       .eq("drive_id", driveId)
       .maybeSingle();
 
@@ -371,14 +379,16 @@ export const adminAttendanceService = {
 
     const { data: opportunities, error: opportunitiesError } = await (supabase as any)
       .from("opportunity_master")
-      .select(`
+      .select(
+        `
         opportunity_id,
         opportunity_title,
         application_status,
         application_start_date,
         application_end_date,
         created_at
-      `)
+      `,
+      )
       .eq("drive_id", driveId)
       .order("created_at", { ascending: false });
 

@@ -67,14 +67,9 @@ export const ELIGIBILITY_MAPPING = {
       "Microbiology",
     ],
 
-    BCA: [
-      "BCA",
-    ],
+    BCA: ["BCA"],
 
-    MCA: [
-      "IMCA (BCA + MCA)",
-      "MCA",
-    ],
+    MCA: ["IMCA (BCA + MCA)", "MCA"],
   },
 
   IIDEA: {
@@ -85,65 +80,36 @@ export const ELIGIBILITY_MAPPING = {
       "Communication Design (Graphic Design)",
     ],
 
-    "M.Des": [
-      "Fashion Design",
-      "Interior Design",
-      "UI-UX Design",
-    ],
+    "M.Des": ["Fashion Design", "Interior Design", "UI-UX Design"],
 
-    "B.Arch": [
-      "Bachelor of Architecture",
-    ],
+    "B.Arch": ["Bachelor of Architecture"],
   },
 
   IIL: {
-    "LLB (Hons)": [
-      "Law",
-    ],
+    "LLB (Hons)": ["Law"],
 
-    "Integrated BA LLB (Hons)": [
-      "Law",
-    ],
+    "Integrated BA LLB (Hons)": ["Law"],
 
-    "Integrated BBA LLB (Hons)": [
-      "Law",
-    ],
+    "Integrated BBA LLB (Hons)": ["Law"],
   },
 
   IIMS: {
-    BBA: [
-      "Aviation Management",
-      "BBA",
-    ],
+    BBA: ["Aviation Management", "BBA"],
 
-    "BBA + MBA": [
-      "Dual Degree",
-    ],
+    "BBA + MBA": ["Dual Degree"],
 
-    MBA: [
-      "IMBA (BBA + MBA)",
-      "Finance",
-      "Human Resource",
-    ],
+    MBA: ["IMBA (BBA + MBA)", "Finance", "Human Resource"],
   },
 
   IISHLS: {
-    "B.Com": [
-      "Bachelor of Commerce (Hons)",
-    ],
+    "B.Com": ["Bachelor of Commerce (Hons)"],
 
-    "B.A.": [
-      "English (Hons)",
-    ],
+    "B.A.": ["English (Hons)"],
   },
 
   IIPR: {
-    "B.Pharm": [
-      "Bachelor of Pharmacy",
-    ],
+    "B.Pharm": ["Bachelor of Pharmacy"],
 
-    "B.Pharm (D to D)": [
-      "Pharmacy",
-    ],
+    "B.Pharm (D to D)": ["Pharmacy"],
   },
 };

@@ -16,33 +16,22 @@ function mapRegistryPlacementPreference(
 ): StudentMaster["placement_preference"] {
   const normalized = (value ?? "").trim().toLowerCase();
 
-  if (
-    normalized.includes("higher") ||
-    normalized.includes("master")
-  ) {
+  if (normalized.includes("higher") || normalized.includes("master")) {
     return "Higher Studies";
   }
 
-  if (
-    normalized.includes("entrepreneur") ||
-    normalized.includes("startup")
-  ) {
+  if (normalized.includes("entrepreneur") || normalized.includes("startup")) {
     return "Entrepreneurship";
   }
 
-  if (
-    normalized.includes("not") ||
-    normalized.includes("out")
-  ) {
+  if (normalized.includes("not") || normalized.includes("out")) {
     return "Not Interested";
   }
 
   return "Interested";
 }
 
-async function resolvePortalUserId(
-  authUserId: string,
-): Promise<string | null> {
+async function resolvePortalUserId(authUserId: string): Promise<string | null> {
   const { data, error } = await (supabase as any)
     .from("user_accounts")
     .select("user_id")
@@ -57,9 +46,7 @@ async function resolvePortalUserId(
 }
 
 export const studentService = {
-  async getProfileByUserId(
-    authUserId: string,
-  ): Promise<StudentMaster | null> {
+  async getProfileByUserId(authUserId: string): Promise<StudentMaster | null> {
     const userId = await resolvePortalUserId(authUserId);
 
     if (!userId) {
@@ -89,12 +76,11 @@ export const studentService = {
       throw new Error("User account not found.");
     }
 
-    const { data: existingProfile, error: existingError } =
-      await (supabase as any)
-        .from("student_master")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+    const { data: existingProfile, error: existingError } = await (supabase as any)
+      .from("student_master")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
 
     if (existingError) {
       throw existingError;
@@ -104,8 +90,7 @@ export const studentService = {
       return existingProfile as StudentMaster;
     }
 
-    const instituteEmail =
-      registry.institute_email_id || registry.email_address;
+    const instituteEmail = registry.institute_email_id || registry.email_address;
 
     const { data, error } = await (supabase as any)
       .from("student_master")
@@ -122,9 +107,7 @@ export const studentService = {
         gender: registry.gender ?? null,
         date_of_birth: registry.date_of_birth ?? null,
         profile_photo_document_id: null,
-        placement_preference: mapRegistryPlacementPreference(
-          registry.placement_preference_text,
-        ),
+        placement_preference: mapRegistryPlacementPreference(registry.placement_preference_text),
         placement_status: "Unplaced",
         created_by_type: "Auto Generated",
         is_active: true,
@@ -162,10 +145,7 @@ export const studentService = {
     return this.createProfileFromRegistry(authUserId, registry);
   },
 
-  async updateProfile(
-    id: string,
-    patch: StudentMasterUpdate,
-  ): Promise<StudentMaster> {
+  async updateProfile(id: string, patch: StudentMasterUpdate): Promise<StudentMaster> {
     const { data, error } = await (supabase as any)
       .from("student_master")
       .update(patch)
@@ -214,32 +194,33 @@ export const studentService = {
       };
     }
 
-    const [applicationsResult, attendanceResult, recentResult] =
-      await Promise.all([
-        (supabase as any)
-          .from("student_opportunity_applications")
-          .select("application_status")
-          .eq("student_id", profile.student_id),
+    const [applicationsResult, attendanceResult, recentResult] = await Promise.all([
+      (supabase as any)
+        .from("student_opportunity_applications")
+        .select("application_status")
+        .eq("student_id", profile.student_id),
 
-        (supabase as any)
-          .from("attendance_records")
-          .select("attendance_status")
-          .eq("student_id", profile.student_id),
+      (supabase as any)
+        .from("attendance_records")
+        .select("attendance_status")
+        .eq("student_id", profile.student_id),
 
-        (supabase as any)
-          .from("student_opportunity_applications")
-          .select(`
+      (supabase as any)
+        .from("student_opportunity_applications")
+        .select(
+          `
                 application_id,
                 application_status,
                 applied_at,
                 opportunity_master (
                     opportunity_title
                 )
-            `)
-          .eq("student_id", profile.student_id)
-          .order("applied_at", { ascending: false })
-          .limit(5),
-      ]);
+            `,
+        )
+        .eq("student_id", profile.student_id)
+        .order("applied_at", { ascending: false })
+        .limit(5),
+    ]);
 
     const applications = applicationsResult.data ?? [];
     const attendance = attendanceResult.data ?? [];
@@ -261,11 +242,7 @@ export const studentService = {
     const attendancePercentage =
       attendancePresent + attendanceAbsent === 0
         ? 0
-        : Math.round(
-          (attendancePresent /
-            (attendancePresent + attendanceAbsent)) *
-          100,
-        );
+        : Math.round((attendancePresent / (attendancePresent + attendanceAbsent)) * 100);
 
     return {
       appliedCount,

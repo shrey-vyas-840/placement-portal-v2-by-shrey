@@ -2,13 +2,11 @@ import { adminDashboardAnalyticsService } from "@/services/adminDashboardAnalyti
 import { studentService } from "@/services/studentService";
 
 export async function getMyStudentDrilldown(userId: string) {
-    const profile = await studentService.getProfileByUserId(userId);
+  const profile = await studentService.getProfileByUserId(userId);
 
-    if (!profile?.enrollment_no) {
-        return null;
-    }
+  if (!profile?.enrollment_no) {
+    return null;
+  }
 
-    return adminDashboardAnalyticsService.getStudentDrilldown(
-        profile.enrollment_no
-    );
+  return adminDashboardAnalyticsService.getStudentDrilldown(profile.enrollment_no);
 }

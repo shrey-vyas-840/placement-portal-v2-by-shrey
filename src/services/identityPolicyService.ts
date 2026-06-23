@@ -1,10 +1,6 @@
-export const DEVELOPER_EMAILS = [
-  "shreyvyas.23.cse@iite.indusuni.ac.in",
-  "vs.shrey@gmail.com",
-];
+export const DEVELOPER_EMAILS = ["shreyvyas.23.cse@iite.indusuni.ac.in", "vs.shrey@gmail.com"];
 
-export const INSTITUTIONAL_EMAIL_REGEX =
-  /^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)?indusuni\.ac\.in$/i;
+export const INSTITUTIONAL_EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)?indusuni\.ac\.in$/i;
 
 export function normalizeEmail(email?: string | null): string {
   return (email ?? "").trim().toLowerCase();

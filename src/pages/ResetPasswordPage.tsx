@@ -4,8 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { authService } from "@/services/authService";
 
-const STRONG_PASSWORD_REGEX =
-  /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{7,}$/;
+const STRONG_PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{7,}$/;
 
 function isStrongPassword(value: string): boolean {
   return STRONG_PASSWORD_REGEX.test(value);
@@ -16,12 +15,9 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
 
   const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(
-    null,
-  );
+  const [error, setError] = useState<string | null>(null);
 
   if (status === "loading") {
     return (
@@ -35,18 +31,14 @@ export function ResetPasswordPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold">
-            Reset Password
-          </h1>
+          <h1 className="text-2xl font-semibold">Reset Password</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Open the password reset link from your email first.
           </p>
 
           <button
             type="button"
-            onClick={() =>
-              navigate({ to: "/login", replace: true })
-            }
+            onClick={() => navigate({ to: "/login", replace: true })}
             className="mt-6 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             Back to Login
@@ -56,9 +48,7 @@ export function ResetPasswordPage() {
     );
   }
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -80,11 +70,7 @@ export function ResetPasswordPage() {
       await authService.signOut();
       navigate({ to: "/login", replace: true });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Password update failed",
-      );
+      setError(err instanceof Error ? err.message : "Password update failed");
     } finally {
       setSaving(false);
     }
@@ -93,12 +79,8 @@ export function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">
-          Reset Password
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Set a new password for your account.
-        </p>
+        <h1 className="text-2xl font-semibold">Reset Password</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Set a new password for your account.</p>
 
         {error ? (
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -108,9 +90,7 @@ export function ResetPasswordPage() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">
-              New Password
-            </label>
+            <label className="mb-1 block text-sm font-medium">New Password</label>
             <input
               type="password"
               value={newPassword}
@@ -122,15 +102,11 @@ export function ResetPasswordPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">
-              Confirm Password
-            </label>
+            <label className="mb-1 block text-sm font-medium">Confirm Password</label>
             <input
               type="password"
               value={confirmPassword}
-              onChange={(e) =>
-                setConfirmPassword(e.target.value)
-              }
+              onChange={(e) => setConfirmPassword(e.target.value)}
               onPaste={(e) => e.preventDefault()}
               onCopy={(e) => e.preventDefault()}
               onCut={(e) => e.preventDefault()}

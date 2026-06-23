@@ -20,9 +20,7 @@ function getFullName(row: AttendanceDraftRow) {
 }
 
 function getDistinct(values: Array<string | null | undefined>) {
-  return Array.from(new Set(values.filter(Boolean) as string[])).sort((a, b) =>
-    a.localeCompare(b),
-  );
+  return Array.from(new Set(values.filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b));
 }
 
 export function AdminAttendancePage() {
@@ -175,17 +173,14 @@ export function AdminAttendancePage() {
       const searchMatch =
         searchText === "" || enrollment.includes(searchText) || name.includes(searchText);
 
-      const instituteMatch =
-        instituteFilter === DEFAULT_FILTER || institute === instituteFilter;
+      const instituteMatch = instituteFilter === DEFAULT_FILTER || institute === instituteFilter;
       const degreeMatch = degreeFilter === DEFAULT_FILTER || degree === degreeFilter;
       const branchMatch = branchFilter === DEFAULT_FILTER || branch === branchFilter;
       const yearMatch = yearFilter === DEFAULT_FILTER || year === yearFilter;
       const applicationStatusMatch =
-        applicationStatusFilter === DEFAULT_FILTER ||
-        applicationStatus === applicationStatusFilter;
+        applicationStatusFilter === DEFAULT_FILTER || applicationStatus === applicationStatusFilter;
       const attendanceStatusMatch =
-        attendanceStatusFilter === DEFAULT_FILTER ||
-        attendanceStatus === attendanceStatusFilter;
+        attendanceStatusFilter === DEFAULT_FILTER || attendanceStatus === attendanceStatusFilter;
 
       return (
         searchMatch &&
@@ -230,15 +225,10 @@ export function AdminAttendancePage() {
     const total = rows.length;
 
     const marked = rows.filter(
-      (row) =>
-        row.attendance_status === "PRESENT" ||
-        row.attendance_status === "ABSENT",
+      (row) => row.attendance_status === "PRESENT" || row.attendance_status === "ABSENT",
     ).length;
 
-    const percentage =
-      total === 0
-        ? 0
-        : Math.round((marked / total) * 100);
+    const percentage = total === 0 ? 0 : Math.round((marked / total) * 100);
 
     return {
       total,
@@ -261,7 +251,11 @@ export function AdminAttendancePage() {
   );
   const years = useMemo(
     () =>
-      getDistinct(rows.map((row) => row.academic?.graduation_year ? String(row.academic.graduation_year) : null)),
+      getDistinct(
+        rows.map((row) =>
+          row.academic?.graduation_year ? String(row.academic.graduation_year) : null,
+        ),
+      ),
     [rows],
   );
   const applicationStatuses = useMemo(
@@ -276,10 +270,7 @@ export function AdminAttendancePage() {
 
     return getDistinct(
       rows
-        .filter(
-          (row) =>
-            row.academic?.current_institute_name === instituteFilter,
-        )
+        .filter((row) => row.academic?.current_institute_name === instituteFilter)
         .map((row) => row.academic?.current_degree_level),
     );
   }, [rows, instituteFilter, degrees]);
@@ -288,24 +279,14 @@ export function AdminAttendancePage() {
     let source = rows;
 
     if (instituteFilter !== DEFAULT_FILTER) {
-      source = source.filter(
-        (row) =>
-          row.academic?.current_institute_name === instituteFilter,
-      );
+      source = source.filter((row) => row.academic?.current_institute_name === instituteFilter);
     }
 
     if (degreeFilter !== DEFAULT_FILTER) {
-      source = source.filter(
-        (row) =>
-          row.academic?.current_degree_level === degreeFilter,
-      );
+      source = source.filter((row) => row.academic?.current_degree_level === degreeFilter);
     }
 
-    return getDistinct(
-      source.map(
-        (row) => row.academic?.current_branch_name,
-      ),
-    );
+    return getDistinct(source.map((row) => row.academic?.current_branch_name));
   }, [rows, instituteFilter, degreeFilter]);
 
   function toggleStudentSelection(studentId: string) {
@@ -319,48 +300,33 @@ export function AdminAttendancePage() {
   function toggleSelectAllVisible() {
     const visibleIds = visibleRows.map((row) => row.student_id);
 
-    const allSelected = visibleIds.every((id) =>
-      selectedStudentIds.includes(id),
-    );
+    const allSelected = visibleIds.every((id) => selectedStudentIds.includes(id));
 
     if (allSelected) {
-      setSelectedStudentIds((current) =>
-        current.filter((id) => !visibleIds.includes(id)),
-      );
+      setSelectedStudentIds((current) => current.filter((id) => !visibleIds.includes(id)));
     } else {
-      setSelectedStudentIds((current) => [
-        ...new Set([...current, ...visibleIds]),
-      ]);
+      setSelectedStudentIds((current) => [...new Set([...current, ...visibleIds])]);
     }
   }
 
-  function updateRow(
-    studentId: string,
-    patch: Partial<AttendanceDraftRow>,
-  ) {
+  function updateRow(studentId: string, patch: Partial<AttendanceDraftRow>) {
     setRows((current) =>
-      current.map((row) =>
-        row.student_id === studentId
-          ? { ...row, ...patch }
-          : row,
-      ),
+      current.map((row) => (row.student_id === studentId ? { ...row, ...patch } : row)),
     );
 
     setHasUnsavedChanges(true);
   }
 
-  function applyBulkStatus(
-    status: AttendanceDraftRow["attendance_status"],
-  ) {
+  function applyBulkStatus(status: AttendanceDraftRow["attendance_status"]) {
     const selected = new Set(selectedStudentIds);
 
     setRows((current) =>
       current.map((row) =>
         selected.has(row.student_id)
           ? {
-            ...row,
-            attendance_status: status,
-          }
+              ...row,
+              attendance_status: status,
+            }
           : row,
       ),
     );
@@ -453,12 +419,11 @@ export function AdminAttendancePage() {
   async function handleDownloadConsolidated() {
     if (
       hasUnsavedChanges &&
-      !window.confirm(
-        "You have unsaved attendance changes. Continue and discard them?",
-      )
+      !window.confirm("You have unsaved attendance changes. Continue and discard them?")
     ) {
       return;
-    } if (!selectedDriveId) {
+    }
+    if (!selectedDriveId) {
       alert("Select a drive first.");
       return;
     }
@@ -497,10 +462,7 @@ export function AdminAttendancePage() {
             >
               Download Consolidated Sheet
             </button>
-            <Link
-              to="/admin"
-              className="rounded border px-4 py-2 text-sm font-medium"
-            >
+            <Link to="/admin" className="rounded border px-4 py-2 text-sm font-medium">
               Back to Admin
             </Link>
           </div>
@@ -513,9 +475,7 @@ export function AdminAttendancePage() {
         ) : null}
 
         {notice ? (
-          <div className="mt-4 rounded-lg border border-border bg-card p-4 text-sm">
-            {notice}
-          </div>
+          <div className="mt-4 rounded-lg border border-border bg-card p-4 text-sm">{notice}</div>
         ) : null}
 
         <div className="mt-6 grid gap-4 md:grid-cols-6">
@@ -536,23 +496,15 @@ export function AdminAttendancePage() {
             <div className="mt-2 text-3xl font-bold">{rows.length}</div>
           </div>
           <div className="rounded-lg border p-4">
-            <div className="text-sm text-muted-foreground">
-              Selected Students
-            </div>
+            <div className="text-sm text-muted-foreground">Selected Students</div>
 
-            <div className="mt-2 text-3xl font-bold">
-              {selectedCount}
-            </div>
+            <div className="mt-2 text-3xl font-bold">{selectedCount}</div>
           </div>
 
           <div className="rounded-lg border p-4">
-            <div className="text-sm text-muted-foreground">
-              Attendance Completion
-            </div>
+            <div className="text-sm text-muted-foreground">Attendance Completion</div>
 
-            <div className="mt-2 text-3xl font-bold">
-              {completionStats.percentage}%
-            </div>
+            <div className="mt-2 text-3xl font-bold">{completionStats.percentage}%</div>
           </div>
         </div>
 
@@ -565,9 +517,7 @@ export function AdminAttendancePage() {
               onChange={(e) => {
                 if (
                   hasUnsavedChanges &&
-                  !window.confirm(
-                    "You have unsaved attendance changes. Discard them?",
-                  )
+                  !window.confirm("You have unsaved attendance changes. Discard them?")
                 ) {
                   return;
                 }
@@ -593,9 +543,7 @@ export function AdminAttendancePage() {
               onChange={(e) => {
                 if (
                   hasUnsavedChanges &&
-                  !window.confirm(
-                    "You have unsaved attendance changes. Discard them?",
-                  )
+                  !window.confirm("You have unsaved attendance changes. Discard them?")
                 ) {
                   return;
                 }
@@ -607,10 +555,7 @@ export function AdminAttendancePage() {
             >
               <option value="">Select opportunity</option>
               {opportunities.map((opportunity) => (
-                <option
-                  key={opportunity.opportunity_id}
-                  value={opportunity.opportunity_id}
-                >
+                <option key={opportunity.opportunity_id} value={opportunity.opportunity_id}>
                   {opportunity.opportunity_title}
                 </option>
               ))}
@@ -625,9 +570,7 @@ export function AdminAttendancePage() {
               onChange={(e) => {
                 if (
                   hasUnsavedChanges &&
-                  !window.confirm(
-                    "You have unsaved attendance changes. Discard them?",
-                  )
+                  !window.confirm("You have unsaved attendance changes. Discard them?")
                 ) {
                   return;
                 }
@@ -650,18 +593,14 @@ export function AdminAttendancePage() {
         <div className="mt-6 rounded-lg border p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold">
-                Round Progress
-              </h2>
+              <h2 className="font-semibold">Round Progress</h2>
 
               <p className="text-sm text-muted-foreground">
                 {completionStats.marked} of {completionStats.total} students marked
               </p>
             </div>
 
-            <div className="font-semibold">
-              {completionStats.percentage}%
-            </div>
+            <div className="font-semibold">{completionStats.percentage}%</div>
           </div>
 
           <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-muted">
@@ -722,10 +661,9 @@ export function AdminAttendancePage() {
                 key={round.round_id}
                 type="button"
                 onClick={() => setSelectedRoundId(round.round_id)}
-                className={`rounded-full border px-4 py-2 text-sm ${selectedRoundId === round.round_id
-                  ? "bg-foreground text-background"
-                  : ""
-                  }`}
+                className={`rounded-full border px-4 py-2 text-sm ${
+                  selectedRoundId === round.round_id ? "bg-foreground text-background" : ""
+                }`}
               >
                 {round.round_number}. {round.round_name}
               </button>
@@ -820,9 +758,7 @@ export function AdminAttendancePage() {
             </select>
 
             <div className="flex items-center gap-3 lg:col-span-4">
-              <span className="text-sm font-medium">
-                Show Rows
-              </span>
+              <span className="text-sm font-medium">Show Rows</span>
 
               <select
                 className="rounded border bg-background px-3 py-2"
@@ -883,12 +819,7 @@ export function AdminAttendancePage() {
           <div
             className="overflow-auto"
             style={{
-              maxHeight:
-                rowsPerView <= 10
-                  ? "500px"
-                  : rowsPerView <= 50
-                    ? "700px"
-                    : "900px",
+              maxHeight: rowsPerView <= 10 ? "500px" : rowsPerView <= 50 ? "700px" : "900px",
             }}
           >
             <table className="min-w-full text-left text-sm">
@@ -899,9 +830,7 @@ export function AdminAttendancePage() {
                       type="checkbox"
                       checked={
                         visibleRows.length > 0 &&
-                        visibleRows.every((row) =>
-                          selectedStudentIds.includes(row.student_id),
-                        )
+                        visibleRows.every((row) => selectedStudentIds.includes(row.student_id))
                       }
                       onChange={toggleSelectAllVisible}
                     />
@@ -924,9 +853,7 @@ export function AdminAttendancePage() {
                       <input
                         type="checkbox"
                         checked={selectedStudentIds.includes(row.student_id)}
-                        onChange={() =>
-                          toggleStudentSelection(row.student_id)
-                        }
+                        onChange={() => toggleStudentSelection(row.student_id)}
                       />
                     </td>
                     <td className="px-4 py-3">{row.student_master?.enrollment_no ?? "-"}</td>
@@ -991,7 +918,6 @@ export function AdminAttendancePage() {
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

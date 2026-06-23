@@ -24,16 +24,14 @@ export async function ensureUserProvisioned() {
     return;
   }
 
-  const { error } = await (supabase as any)
-    .from("user_accounts")
-    .insert({
-      auth_provider_id: user.id,
-      email_address: normalizedEmail,
-      account_status: "Active",
-      email_verified: true,
-      created_by_type: "Auto Generated",
-      is_active: true,
-    });
+  const { error } = await (supabase as any).from("user_accounts").insert({
+    auth_provider_id: user.id,
+    email_address: normalizedEmail,
+    account_status: "Active",
+    email_verified: true,
+    created_by_type: "Auto Generated",
+    is_active: true,
+  });
 
   if (error) {
     console.error("USER ACCOUNT ERROR", error);

@@ -1,369 +1,185 @@
 import { supabase } from "@/lib/supabase";
 
 export const adminExportService = {
+  async getOpportunityExportData(opportunityId: string) {
+    const { data: applications, error } = await (supabase as any)
 
-    async getOpportunityExportData(
-        opportunityId: string,
-    ) {
+      .from("student_opportunity_applications")
 
-        const { data: applications, error } =
-            await (supabase as any)
+      .select("*")
 
-                .from(
-                    "student_opportunity_applications"
-                )
+      .eq("opportunity_id", opportunityId)
 
-                .select("*")
+      .order("applied_at", {
+        ascending: false,
+      });
 
-                .eq(
-                    "opportunity_id",
-                    opportunityId
-                )
+    if (error) {
+      throw error;
+    }
 
-                .order(
-                    "applied_at",
-                    {
-                        ascending: false,
-                    }
-                );
+    const studentIds = applications?.map((x: any) => x.student_id) ?? [];
 
-        if (error) {
-            throw error;
-        }
+    if (studentIds.length === 0) {
+      return {
+        rows: [],
+        dynamicQuestions: [],
+      };
+    }
 
-        const studentIds =
-            applications?.map(
-                (x: any) => x.student_id
-            ) ?? [];
+    const { data: profiles } = await (supabase as any)
 
-        if (
-            studentIds.length === 0
-        ) {
+      .from("student_master")
 
-            return {
-                rows: [],
-                dynamicQuestions: [],
-            };
+      .select("*")
 
-        }
+      .in("student_id", studentIds);
 
-        const {
-            data: profiles,
-        } =
-            await (supabase as any)
+    const { data: academics } = await (supabase as any)
 
-                .from(
-                    "student_master"
-                )
+      .from("student_academic_details")
 
-                .select("*")
+      .select("*")
 
-                .in(
-                    "student_id",
-                    studentIds
-                );
+      .in("student_id", studentIds);
 
-        const {
-            data: academics,
-        } =
-            await (supabase as any)
+    const { data: skills } = await (supabase as any)
 
-                .from(
-                    "student_academic_details"
-                )
+      .from("student_skill_profile")
 
-                .select("*")
+      .select("*")
 
-                .in(
-                    "student_id",
-                    studentIds
-                );
+      .in("student_id", studentIds);
 
-        const {
-            data: skills,
-        } =
-            await (supabase as any)
+    const { data: documents } = await (supabase as any)
 
-                .from(
-                    "student_skill_profile"
-                )
+      .from("student_documents")
 
-                .select("*")
-
-                .in(
-                    "student_id",
-                    studentIds
-                );
-
-        const {
-            data: documents,
-        } =
-            await (supabase as any)
-
-                .from(
-                    "student_documents"
-                )
-
-                .select(`
+      .select(
+        `
                     *,
                     document_metadata:document_metadata_id (
                         document_name,
                         document_type,
                         storage_url
                     )
-                `)
+                `,
+      )
 
-                .in(
-                    "student_id",
-                    studentIds
-                )
+      .in("student_id", studentIds)
 
-                .eq(
-                    "is_active",
-                    true
-                );
+      .eq("is_active", true);
 
-        const {
-            data: questions,
-        } =
-            await (supabase as any)
+    const { data: questions } = await (supabase as any)
 
-                .from(
-                    "opportunity_questions"
-                )
+      .from("opportunity_questions")
 
-                .select("*")
+      .select("*")
 
-                .eq(
-                    "opportunity_id",
-                    opportunityId
-                )
+      .eq("opportunity_id", opportunityId)
 
-                .order(
-                    "position"
-                );
+      .order("position");
 
-        const applicationIds =
-            applications.map(
-                (x: any) =>
-                    x.application_id
-            );
+    const applicationIds = applications.map((x: any) => x.application_id);
 
-        const {
-            data: answers,
-        } =
-            await (supabase as any)
+    const { data: answers } = await (supabase as any)
 
-                .from(
-                    "opportunity_question_answers"
-                )
+      .from("opportunity_question_answers")
 
-                .select("*")
+      .select("*")
 
-                .in(
-                    "application_id",
-                    applicationIds
-                );
+      .in("application_id", applicationIds);
 
-        const rows =
-            applications.map(
-                (
-                    application: any
-                ) => {
+    const rows = applications.map((application: any) => {
+      const profile = profiles?.find((x: any) => x.student_id === application.student_id);
 
-                    const profile =
-                        profiles?.find(
-                            (x: any) =>
-                                x.student_id
-                                ===
-                                application.student_id
-                        );
+      const academic = academics?.find((x: any) => x.student_id === application.student_id);
 
-                    const academic =
-                        academics?.find(
-                            (x: any) =>
-                                x.student_id
-                                ===
-                                application.student_id
-                        );
+      const skill = skills?.find((x: any) => x.student_id === application.student_id);
 
-                    const skill =
-                        skills?.find(
-                            (x: any) =>
-                                x.student_id
-                                ===
-                                application.student_id
-                        );
+      const resume = documents?.find(
+        (x: any) =>
+          x.student_id === application.student_id &&
+          x.document_metadata?.document_type === "Resume",
+      );
 
-                    const resume =
-                        documents?.find(
-                            (x: any) =>
-                                x.student_id
-                                ===
-                                application.student_id
-                                &&
-                                x.document_metadata
-                                    ?.document_type
-                                ===
-                                "Resume"
-                        );
+      const answerMap: any = {};
 
-                    const answerMap: any =
-                        {};
+      questions?.forEach((q: any) => {
+        const answer = answers?.find(
+          (a: any) =>
+            a.application_id === application.application_id && a.question_id === q.question_id,
+        );
 
-                    questions?.forEach(
-                        (
-                            q: any
-                        ) => {
+        if (!answer) {
+          answerMap[q.question_title] = "";
 
-                            const answer =
-                                answers?.find(
-                                    (
-                                        a: any
-                                    ) =>
+          return;
+        }
 
-                                        a.application_id
-                                        ===
-                                        application.application_id
+        const value = answer.answer?.value;
 
-                                        &&
+        if (value && typeof value === "object" && value.fileUrl) {
+          answerMap[q.question_title] = value.fileUrl;
+        } else {
+          answerMap[q.question_title] = value ?? "";
+        }
+      });
 
-                                        a.question_id
-                                        ===
-                                        q.question_id
-                                );
+      return {
+        application,
 
-                            if (!answer) {
+        profile,
 
-                                answerMap[
-                                    q.question_title
-                                ] = "";
+        academic,
 
-                                return;
-                            }
+        skill,
 
-                            const value =
-                                answer.answer?.value;
+        resumeUrl: resume?.document_metadata?.storage_url || "",
 
-                            if (
-                                value
-                                &&
-                                typeof value
-                                ===
-                                "object"
-                                &&
-                                value.fileUrl
-                            ) {
+        answers: answerMap,
+      };
+    });
 
-                                answerMap[
-                                    q.question_title
-                                ] =
-                                    value.fileUrl;
+    const { data: opportunity } = await (supabase as any)
 
-                            } else {
+      .from("opportunity_master")
 
-                                answerMap[
-                                    q.question_title
-                                ] =
-                                    value ?? "";
-
-                            }
-
-                        });
-
-                    return {
-
-                        application,
-
-                        profile,
-
-                        academic,
-
-                        skill,
-
-                        resumeUrl:
-                            resume
-                                ?.document_metadata
-                                ?.storage_url
-                            || "",
-
-                        answers:
-                            answerMap,
-
-                    };
-
-                }
-            );
-
-        const {
-            data: opportunity,
-        } =
-            await (supabase as any)
-
-                .from(
-                    "opportunity_master"
-                )
-
-                .select(`
+      .select(
+        `
             opportunity_title,
             drive_master(
                 company_id
             )
-        `)
+        `,
+      )
 
-                .eq(
-                    "opportunity_id",
-                    opportunityId
-                )
+      .eq("opportunity_id", opportunityId)
 
-                .single();
+      .single();
 
-        let companyName = "";
+    let companyName = "";
 
-        if (
-            opportunity?.drive_master
-                ?.company_id
-        ) {
+    if (opportunity?.drive_master?.company_id) {
+      const { data: company } = await (supabase as any)
 
-            const {
-                data: company,
-            } =
-                await (supabase as any)
+        .from("company_master")
 
-                    .from(
-                        "company_master"
-                    )
+        .select("company_name")
 
-                    .select(
-                        "company_name"
-                    )
+        .eq("company_id", opportunity.drive_master.company_id)
 
-                    .eq(
-                        "company_id",
-                        opportunity.drive_master.company_id
-                    )
+        .single();
 
-                    .single();
+      companyName = company?.company_name || "";
+    }
 
-            companyName =
-                company?.company_name || "";
+    return {
+      rows,
 
-        }
+      companyName,
 
-        return {
-
-            rows,
-
-            companyName,
-
-            dynamicQuestions:
-                questions?.map(
-                    (q: any) =>
-                        q.question_title
-                ) || [],
-
-        };
-
-    },
-
+      dynamicQuestions: questions?.map((q: any) => q.question_title) || [],
+    };
+  },
 };

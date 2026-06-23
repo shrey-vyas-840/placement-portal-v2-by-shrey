@@ -7,62 +7,35 @@ export interface UserRole {
 }
 
 export const rbacService = {
-  async getCurrentUserRole(
-    authUserId: string,
-  ) {
-    const {
-      data: account,
-      error: accountError,
-    } = await (supabase as any)
+  async getCurrentUserRole(authUserId: string) {
+    const { data: account, error: accountError } = await (supabase as any)
       .from("user_accounts")
       .select("user_id")
-      .eq(
-        "auth_provider_id",
-        authUserId,
-      )
+      .eq("auth_provider_id", authUserId)
       .maybeSingle();
 
-    if (accountError)
-      throw accountError;
+    if (accountError) throw accountError;
 
-    if (!account)
-      return null;
+    if (!account) return null;
 
-    const {
-      data: userRole,
-      error: userRoleError,
-    } = await (supabase as any)
+    const { data: userRole, error: userRoleError } = await (supabase as any)
       .from("user_roles")
       .select("*")
-      .eq(
-        "user_id",
-        account.user_id,
-      )
+      .eq("user_id", account.user_id)
       .eq("is_active", true)
       .maybeSingle();
 
-    if (userRoleError)
-      throw userRoleError;
+    if (userRoleError) throw userRoleError;
 
-    if (!userRole)
-      return null;
+    if (!userRole) return null;
 
-    const {
-      data: role,
-      error: roleError,
-    } = await (supabase as any)
+    const { data: role, error: roleError } = await (supabase as any)
       .from("roles")
-      .select(
-        "role_id, role_name",
-      )
-      .eq(
-        "role_id",
-        userRole.role_id,
-      )
+      .select("role_id, role_name")
+      .eq("role_id", userRole.role_id)
       .maybeSingle();
 
-    if (roleError)
-      throw roleError;
+    if (roleError) throw roleError;
 
     return role;
   },

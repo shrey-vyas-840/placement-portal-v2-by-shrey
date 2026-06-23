@@ -10,11 +10,7 @@ type Question = {
   options: string[];
 };
 
-export function AdminQuestionBuilderPage({
-  opportunityId,
-}: {
-  opportunityId: string;
-}) {
+export function AdminQuestionBuilderPage({ opportunityId }: { opportunityId: string }) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [original, setOriginal] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +31,7 @@ export function AdminQuestionBuilderPage({
       question_type: q.question_type ?? "text",
       is_required: q.is_required ?? false,
       validation: q.validation ?? {},
-      options:
-        q.opportunity_question_options?.map((o: any) => o.option_text) || [],
+      options: q.opportunity_question_options?.map((o: any) => o.option_text) || [],
     }));
 
     setQuestions(formatted);
@@ -46,7 +41,7 @@ export function AdminQuestionBuilderPage({
 
   const hasChanges = useMemo(
     () => JSON.stringify(questions) !== JSON.stringify(original),
-    [questions, original]
+    [questions, original],
   );
 
   function addQuestion() {
@@ -128,9 +123,7 @@ export function AdminQuestionBuilderPage({
       const copy = [...prev];
       copy[index] = {
         ...copy[index],
-        options: (copy[index].options || []).filter(
-          (_, i) => i !== optionIndex
-        ),
+        options: (copy[index].options || []).filter((_, i) => i !== optionIndex),
       };
       return copy;
     });
@@ -167,10 +160,7 @@ export function AdminQuestionBuilderPage({
             return;
           }
 
-          if (
-            q.validation?.maxSizeMb !== undefined &&
-            Number(q.validation?.maxSizeMb) <= 0
-          ) {
+          if (q.validation?.maxSizeMb !== undefined && Number(q.validation?.maxSizeMb) <= 0) {
             alert(`"${q.question_title}" maximum file size must be greater than 0`);
             return;
           }
@@ -201,7 +191,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Min Length"
             value={q.validation?.minLength || ""}
             onChange={(e) =>
-              updateValidation(index, "minLength", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "minLength",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
 
@@ -211,7 +205,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Max Length"
             value={q.validation?.maxLength || ""}
             onChange={(e) =>
-              updateValidation(index, "maxLength", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "maxLength",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
 
@@ -219,11 +217,9 @@ export function AdminQuestionBuilderPage({
             <input
               type="checkbox"
               checked={q.validation?.alphaOnly || false}
-              onChange={(e) =>
-                updateValidation(index, "alphaOnly", e.target.checked)
-              }
-            />
-            {" "}Only Alphabets
+              onChange={(e) => updateValidation(index, "alphaOnly", e.target.checked)}
+            />{" "}
+            Only Alphabets
           </label>
         </div>
       );
@@ -238,7 +234,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Min Length"
             value={q.validation?.minLength || ""}
             onChange={(e) =>
-              updateValidation(index, "minLength", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "minLength",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
 
@@ -248,7 +248,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Max Length"
             value={q.validation?.maxLength || ""}
             onChange={(e) =>
-              updateValidation(index, "maxLength", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "maxLength",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
         </div>
@@ -284,7 +288,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Minimum Digits"
             value={q.validation?.minDigits || ""}
             onChange={(e) =>
-              updateValidation(index, "minDigits", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "minDigits",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
 
@@ -294,7 +302,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Maximum Digits"
             value={q.validation?.maxDigits || ""}
             onChange={(e) =>
-              updateValidation(index, "maxDigits", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "maxDigits",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
         </div>
@@ -308,18 +320,14 @@ export function AdminQuestionBuilderPage({
             className="border p-2 w-full"
             type="date"
             value={q.validation?.minDate || ""}
-            onChange={(e) =>
-              updateValidation(index, "minDate", e.target.value)
-            }
+            onChange={(e) => updateValidation(index, "minDate", e.target.value)}
           />
 
           <input
             className="border p-2 w-full"
             type="date"
             value={q.validation?.maxDate || ""}
-            onChange={(e) =>
-              updateValidation(index, "maxDate", e.target.value)
-            }
+            onChange={(e) => updateValidation(index, "maxDate", e.target.value)}
           />
         </div>
       );
@@ -334,7 +342,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Minimum Selections"
             value={q.validation?.minSelection || ""}
             onChange={(e) =>
-              updateValidation(index, "minSelection", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "minSelection",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
 
@@ -344,7 +356,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Maximum Selections"
             value={q.validation?.maxSelection || ""}
             onChange={(e) =>
-              updateValidation(index, "maxSelection", e.target.value === "" ? "" : Number(e.target.value))
+              updateValidation(
+                index,
+                "maxSelection",
+                e.target.value === "" ? "" : Number(e.target.value),
+              )
             }
           />
         </div>
@@ -460,10 +476,11 @@ export function AdminQuestionBuilderPage({
             placeholder="Maximum File Size (MB)"
             value={q.validation?.maxSizeMb || ""}
             onChange={(e) =>
-              updateValidation(index, "maxSizeMb", e.target.value === "" ? "" : Math.max(
-                0,
-                Number(e.target.value)
-              ))
+              updateValidation(
+                index,
+                "maxSizeMb",
+                e.target.value === "" ? "" : Math.max(0, Number(e.target.value)),
+              )
             }
           />
         </div>
@@ -492,37 +509,26 @@ export function AdminQuestionBuilderPage({
           {saving ? "Saving..." : "Save Questions"}
         </button>
 
-        <button
-          className="border px-4 py-2"
-          disabled={!hasChanges}
-          onClick={resetChanges}
-        >
+        <button className="border px-4 py-2" disabled={!hasChanges} onClick={resetChanges}>
           Cancel Changes
         </button>
       </div>
 
       {questions.map((q, index) => (
-        <div
-          key={`${q.question_id}-${index}`}
-          className="mb-6 rounded border p-5"
-        >
+        <div key={`${q.question_id}-${index}`} className="mb-6 rounded border p-5">
           <h3 className="mb-4 font-semibold">Question {index + 1}</h3>
 
           <input
             className="w-full border p-3"
             placeholder="Question title"
             value={q.question_title}
-            onChange={(e) =>
-              updateQuestion(index, "question_title", e.target.value)
-            }
+            onChange={(e) => updateQuestion(index, "question_title", e.target.value)}
           />
 
           <select
             className="mt-3 border p-2"
             value={q.question_type}
-            onChange={(e) =>
-              updateQuestion(index, "question_type", e.target.value)
-            }
+            onChange={(e) => updateQuestion(index, "question_type", e.target.value)}
           >
             <option value="text">Short Answer</option>
             <option value="paragraph">Paragraph</option>
@@ -551,19 +557,13 @@ export function AdminQuestionBuilderPage({
                     }}
                   />
 
-                  <button
-                    className="border px-3"
-                    onClick={() => removeOption(index, optionIndex)}
-                  >
+                  <button className="border px-3" onClick={() => removeOption(index, optionIndex)}>
                     Remove
                   </button>
                 </div>
               ))}
 
-              <button
-                className="border px-3 py-1"
-                onClick={() => addOption(index)}
-              >
+              <button className="border px-3 py-1" onClick={() => addOption(index)}>
                 + Option
               </button>
             </div>
@@ -573,25 +573,17 @@ export function AdminQuestionBuilderPage({
             <input
               type="checkbox"
               checked={q.is_required}
-              onChange={(e) =>
-                updateQuestion(index, "is_required", e.target.checked)
-              }
+              onChange={(e) => updateQuestion(index, "is_required", e.target.checked)}
             />{" "}
             Required
           </label>
 
           <div className="mt-5 flex gap-3">
-            <button
-              className="border px-3 py-1"
-              onClick={() => duplicateQuestion(index)}
-            >
+            <button className="border px-3 py-1" onClick={() => duplicateQuestion(index)}>
               Duplicate
             </button>
 
-            <button
-              className="border px-3 py-1"
-              onClick={() => deleteQuestion(index)}
-            >
+            <button className="border px-3 py-1" onClick={() => deleteQuestion(index)}>
               Delete
             </button>
           </div>

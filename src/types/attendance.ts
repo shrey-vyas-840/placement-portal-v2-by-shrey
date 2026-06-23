@@ -2,10 +2,7 @@ export type AttendanceStatus = "PRESENT" | "ABSENT";
 
 export type AttendanceDraftStatus = AttendanceStatus | "NOT_MARKED";
 
-export type AttendanceFilterStatus =
-  | "All"
-  | AttendanceStatus
-  | "NOT_MARKED";
+export type AttendanceFilterStatus = "All" | AttendanceStatus | "NOT_MARKED";
 
 export interface AttendanceDrive {
   drive_id: string;

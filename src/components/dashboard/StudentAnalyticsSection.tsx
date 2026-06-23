@@ -176,7 +176,6 @@ export function StudentAnalyticsSection({
     return <LoadingSkeleton />;
   }
 
-  
   if (!report) {
     return (
       <EmptyState

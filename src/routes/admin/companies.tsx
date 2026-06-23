@@ -4,13 +4,10 @@ import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 
 import { AdminCompaniesPage } from "@/pages/AdminCompaniesPage";
 
-export const Route =
-    createFileRoute(
-        "/admin/companies",
-    )({
-        component: () => (
-            <AdminProtectedRoute>
-                <AdminCompaniesPage />
-            </AdminProtectedRoute>
-        ),
-    });
+export const Route = createFileRoute("/admin/companies")({
+  component: () => (
+    <AdminProtectedRoute>
+      <AdminCompaniesPage />
+    </AdminProtectedRoute>
+  ),
+});

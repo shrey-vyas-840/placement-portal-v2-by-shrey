@@ -7,7 +7,7 @@ import { AdminOpportunitiesPage } from "@/pages/AdminOpportunitiesPage";
 export const Route = createFileRoute("/admin/")({
   component: () => (
     <AdminProtectedRoute>
-    <AdminDashboardPage />
+      <AdminDashboardPage />
     </AdminProtectedRoute>
   ),
 });

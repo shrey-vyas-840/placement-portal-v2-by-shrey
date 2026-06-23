@@ -37,13 +37,7 @@ export interface StudentMaster {
 }
 
 export type StudentMasterUpdate = Partial<
-  Omit<
-    StudentMaster,
-    "student_id" |
-    "user_id" |
-    "created_at" |
-    "updated_at"
-  >
+  Omit<StudentMaster, "student_id" | "user_id" | "created_at" | "updated_at">
 >;
 
 export interface StudentSkillProfile {
@@ -64,4 +58,3 @@ export interface StudentSkillProfile {
   project_count?: number;
   profile_score?: number;
 }
-

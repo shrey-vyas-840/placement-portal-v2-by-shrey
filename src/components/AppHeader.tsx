@@ -15,10 +15,7 @@ export function AppHeader() {
   return (
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link
-          to="/dashboard"
-          className="text-base font-semibold text-foreground"
-        >
+        <Link to="/dashboard" className="text-base font-semibold text-foreground">
           {APP_METADATA.appName}
         </Link>
         <nav className="flex items-center gap-2" aria-label="Primary">

@@ -1,41 +1,13 @@
-import {
-    createFileRoute,
-} from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-import {
-    AdminOpportunityApplicantsPage,
-} from "@/pages/AdminOpportunityApplicantsPage";
+import { AdminOpportunityApplicantsPage } from "@/pages/AdminOpportunityApplicantsPage";
 
-
-export const Route =
-    createFileRoute(
-        "/admin/opportunities/$opportunityId"
-    )({
-
-        component:
-            AdminOpportunityRoute,
-
-    });
-
+export const Route = createFileRoute("/admin/opportunities/$opportunityId")({
+  component: AdminOpportunityRoute,
+});
 
 function AdminOpportunityRoute() {
+  const { opportunityId } = Route.useParams();
 
-    const {
-        opportunityId,
-    } =
-        Route.useParams();
-
-
-    return (
-
-        <AdminOpportunityApplicantsPage
-
-            opportunityId={
-                opportunityId
-            }
-
-        />
-
-    );
-
+  return <AdminOpportunityApplicantsPage opportunityId={opportunityId} />;
 }

@@ -215,7 +215,11 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                         throw new Error("Unable to determine current admin user.");
                       }
 
-                      await rejectOnboardingDraft(draft.auth_provider_id, session.user.id, rejectionReason);
+                      await rejectOnboardingDraft(
+                        draft.auth_provider_id,
+                        session.user.id,
+                        rejectionReason,
+                      );
 
                       const refreshed = await getDraftByEnrollmentNo(data.profile.enrollment_no);
 

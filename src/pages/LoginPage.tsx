@@ -59,11 +59,7 @@ export function LoginPage() {
         }
       } catch (err) {
         if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to continue",
-          );
+          setError(err instanceof Error ? err.message : "Unable to continue");
         }
       }
     };
@@ -75,9 +71,7 @@ export function LoginPage() {
     };
   }, [status, user?.id, user?.email, navigate]);
 
-  const handleLoginPassword = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleLoginPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
     setError(null);
@@ -97,10 +91,7 @@ export function LoginPage() {
     try {
       setSubmitting(true);
 
-      const data = await authService.signInWithEmailPassword(
-        normalizedEmail,
-        loginPassword,
-      );
+      const data = await authService.signInWithEmailPassword(normalizedEmail, loginPassword);
 
       if (!isDeveloperEmail(normalizedEmail)) {
         await ensureUserProvisioned();
@@ -161,10 +152,7 @@ export function LoginPage() {
     try {
       setSubmitting(true);
 
-      const data = await authService.verifyLoginOtp(
-        normalizedEmail,
-        otp.trim(),
-      );
+      const data = await authService.verifyLoginOtp(normalizedEmail, otp.trim());
 
       const authUserId = data.session?.user?.id;
 
@@ -193,9 +181,7 @@ export function LoginPage() {
     }
   };
 
-  const handleForgotPassword = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
     setError(null);
@@ -214,9 +200,7 @@ export function LoginPage() {
       setMode("login");
       setLoginEmail(normalizedEmail);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Password reset failed",
-      );
+      setError(err instanceof Error ? err.message : "Password reset failed");
     } finally {
       setSubmitting(false);
     }
@@ -228,8 +212,8 @@ export function LoginPage() {
         <div>
           <div className="text-4xl font-bold">Indus Placement Nexus</div>
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/85">
-            Secure placement portal for verified students, onboarding,
-            analytics, NOC, and approvals.
+            Secure placement portal for verified students, onboarding, analytics, NOC, and
+            approvals.
           </p>
 
           <div className="mt-10 grid gap-3 text-sm text-white/80">
@@ -246,9 +230,7 @@ export function LoginPage() {
       <section className="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-foreground">
-              Welcome Back!
-            </h1>
+            <h1 className="text-2xl font-semibold text-foreground">Welcome Back!</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Sign in, first time access, or reset password.
             </p>
@@ -263,9 +245,7 @@ export function LoginPage() {
                 setMessage(null);
               }}
               className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                mode === "login"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground"
+                mode === "login" ? "bg-primary text-primary-foreground" : "text-foreground"
               }`}
             >
               Login
@@ -279,9 +259,7 @@ export function LoginPage() {
                 setMessage(null);
               }}
               className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                mode === "firstTime"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground"
+                mode === "firstTime" ? "bg-primary text-primary-foreground" : "text-foreground"
               }`}
             >
               First Time
@@ -295,9 +273,7 @@ export function LoginPage() {
                 setMessage(null);
               }}
               className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                mode === "forgot"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground"
+                mode === "forgot" ? "bg-primary text-primary-foreground" : "text-foreground"
               }`}
             >
               Forgot
@@ -332,9 +308,7 @@ export function LoginPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Password
-                </label>
+                <label className="mb-1 block text-sm font-medium">Password</label>
                 <input
                   type="password"
                   value={loginPassword}
@@ -369,9 +343,7 @@ export function LoginPage() {
 
               {phase === "otp" ? (
                 <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    OTP
-                  </label>
+                  <label className="mb-1 block text-sm font-medium">OTP</label>
                   <input
                     type="text"
                     value={otp}
@@ -391,11 +363,7 @@ export function LoginPage() {
                 onClick={phase === "email" ? handleSendOtp : handleVerifyOtp}
                 disabled={submitting}
               >
-                {submitting
-                  ? "Please wait..."
-                  : phase === "email"
-                    ? "Send OTP"
-                    : "Verify OTP"}
+                {submitting ? "Please wait..." : phase === "email" ? "Send OTP" : "Verify OTP"}
               </Button>
 
               {phase === "otp" ? (
