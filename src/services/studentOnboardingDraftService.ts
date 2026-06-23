@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { normalizeEmail } from "@/services/identityPolicyService";
+import { provisionStudentFromApprovedDraft } from "@/services/studentProvisioningService";
 import type { StudentMasterRegistryRow } from "@/services/studentRegistryService";
 
 export type OnboardingStage =
@@ -30,6 +31,12 @@ export interface StudentOnboardingDraftRow {
   approval_reason: string | null;
   approved_by: string | null;
   approved_at: string | null;
+  mail_confirmation_received?: boolean;
+  mail_confirmation_at?: string | null;
+  mail_type?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  rejection_reason?: string | null;
 }
 
 export interface SaveStudentOnboardingDraftInput {
@@ -174,5 +181,101 @@ export async function completeDraft(
     policyAccepted: true,
     finalConfirmation: true,
   });
-};
+}
 
+export async function getPendingApprovalDrafts() {
+  const { data, error } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .select("*")
+    .eq("onboarding_completed", true)
+    .is("approval_status", null)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function getDraftByEnrollmentNo(enrollmentNo: string) {
+  const { data, error } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .select("*")
+    .eq("enrollment_no", enrollmentNo)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function approveOnboardingDraft(authProviderId: string, adminUserId: string) {
+  const { data: draft, error: draftError } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .select("*")
+    .eq("auth_provider_id", authProviderId)
+    .single();
+
+  if (draftError) {
+    throw draftError;
+  }
+
+  await provisionStudentFromApprovedDraft(draft);
+
+  const { error } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .update({
+      approval_status: "APPROVED",
+      onboarding_completed: true,
+      approved_by: adminUserId,
+      approved_at: new Date().toISOString(),
+      reviewed_by: adminUserId,
+      reviewed_at: new Date().toISOString(),
+      rejection_reason: null,
+    })
+    .eq("auth_provider_id", authProviderId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function rejectOnboardingDraft(
+  authProviderId: string,
+  adminUserId: string,
+  reason: string,
+) {
+  const { error } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .update({
+      approval_status: "REJECTED",
+      approval_reason: reason,
+      rejection_reason: reason,
+      approved_by: adminUserId,
+      approved_at: new Date().toISOString(),
+      reviewed_by: adminUserId,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("auth_provider_id", authProviderId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function getDraftById(draftId: string) {
+  const { data, error } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .select("*")
+    .eq("draft_id", draftId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}

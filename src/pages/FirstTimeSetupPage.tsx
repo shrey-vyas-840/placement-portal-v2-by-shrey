@@ -35,6 +35,9 @@ type EditableProfile = {
   alternate_contact_number: string;
   gender: "" | "Male" | "Female" | "Other";
   date_of_birth: string;
+
+  graduation_year: string;
+
   placement_preference: "Interested" | "Not Interested" | "Higher Studies" | "Entrepreneurship";
 };
 
@@ -48,6 +51,9 @@ const EMPTY_PROFILE: EditableProfile = {
   alternate_contact_number: "",
   gender: "",
   date_of_birth: "",
+
+  graduation_year: "",
+
   placement_preference: "Interested",
 };
 
@@ -98,6 +104,8 @@ function registryToProfile(
     alternate_contact_number: "",
     gender: (text(registry.gender) as EditableProfile["gender"]) || "",
     date_of_birth: text(registry.date_of_birth),
+    graduation_year: "",
+
     placement_preference: mapPlacementPreference(registry.placement_preference_text),
   };
 }
@@ -127,6 +135,9 @@ function draftProfileToProfile(
     alternate_contact_number: text(draft.alternate_contact_number),
     gender: (text(draft.gender) as EditableProfile["gender"]) || "",
     date_of_birth: text(draft.date_of_birth) || text(registry?.date_of_birth),
+
+    graduation_year: text(draft.graduation_year),
+
     placement_preference: mapPlacementPreference(
       text(draft.placement_preference) || registry?.placement_preference_text,
     ),
@@ -141,10 +152,16 @@ function stageToStep(stage?: string | null): Step {
     case "PROFILE_READY":
       return 3;
 
+    case "QUESTIONNAIRE_IN_PROGRESS":
+      return 3;
+
     case "QUESTIONNAIRE_DONE":
       return 4;
 
     case "POLICY_ACCEPTED":
+      return 5;
+
+    case "SUBMITTED":
       return 5;
 
     default:
@@ -651,6 +668,14 @@ Enrollment No. ${enteredEnrollment}
       errors.personal_email = "Personal email is required.";
     }
 
+    const graduationYear = Number(profile.graduation_year);
+
+    if (!profile.graduation_year.trim()) {
+      errors.graduation_year = "Graduation year is required.";
+    } else if (Number.isNaN(graduationYear) || graduationYear < 2024 || graduationYear > 2028) {
+      errors.graduation_year = "Graduation year must be between 2024 and 2028.";
+    }
+
     setProfileErrors(errors);
 
     return Object.keys(errors).length === 0;
@@ -1136,6 +1161,28 @@ Enrollment No. ${enteredEnrollment}
                         />
                       </div>
 
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">Graduation Year</label>
+                        <input
+                          type="number"
+                          min="2024"
+                          max="2028"
+                          value={profile.graduation_year}
+                          onChange={(e) =>
+                            setProfile((current) => ({
+                              ...current,
+                              graduation_year: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:border-primary"
+                        />{" "}
+                        {profileErrors.graduation_year ? (
+                          <div className="mt-1 text-xs text-red-600">
+                            {profileErrors.graduation_year}
+                          </div>
+                        ) : null}
+                      </div>
+
                       <div className="sm:col-span-2">
                         <label className="mb-1 block text-sm font-medium">
                           Placement Preference
@@ -1248,12 +1295,28 @@ Enrollment No. ${enteredEnrollment}
                         <div className="mt-3 flex gap-2">
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
+                              console.log(item.label, "YES CLICKED");
                               item.setValue(true);
 
                               if (item.label === "Letter of Recommendation Required") {
                                 setLorAnswered(true);
                               }
+
+                              await persistDraft({
+                                onboardingStage: "QUESTIONNAIRE_IN_PROGRESS",
+                                questionnaireAnswers: {
+                                  careerGoal,
+                                  competitiveExam,
+                                  startupPlan,
+                                  higherStudies:
+                                    item.label === "Planning Masters" ? true : higherStudies,
+                                  abroadPlan: item.label === "Planning Abroad" ? true : abroadPlan,
+                                  lorAnswered,
+                                  lorRequired,
+                                  optOutEmailRequested,
+                                },
+                              });
                             }}
                             className={`rounded-xl px-4 py-2 text-sm font-medium ${
                               item.value
@@ -1266,12 +1329,28 @@ Enrollment No. ${enteredEnrollment}
 
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
+                              console.log(item.label, "NO CLICKED");
                               item.setValue(false);
 
                               if (item.label === "Letter of Recommendation Required") {
                                 setLorAnswered(true);
                               }
+
+                              await persistDraft({
+                                onboardingStage: "QUESTIONNAIRE_IN_PROGRESS",
+                                questionnaireAnswers: {
+                                  careerGoal,
+                                  competitiveExam,
+                                  startupPlan,
+                                  higherStudies:
+                                    item.label === "Planning Masters" ? false : higherStudies,
+                                  abroadPlan: item.label === "Planning Abroad" ? false : abroadPlan,
+                                  lorAnswered,
+                                  lorRequired,
+                                  optOutEmailRequested,
+                                },
+                              });
                             }}
                             className={`rounded-xl px-4 py-2 text-sm font-medium ${
                               !item.value
@@ -1307,7 +1386,7 @@ Enrollment No. ${enteredEnrollment}
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => {
+                          onClick={async () => {
                             const gmailUrl = buildOptOutGmailUrl({
                               studentName:
                                 `${profile.first_name} ${profile.last_name}`.trim() || "Student",
@@ -1317,14 +1396,22 @@ Enrollment No. ${enteredEnrollment}
 
                             window.open(gmailUrl, "_blank", "noopener,noreferrer");
 
-                            navigator.clipboard.writeText(autoGeneratedOptOutReason);
+                            await navigator.clipboard.writeText(autoGeneratedOptOutReason);
 
                             const confirmed = window.confirm(
                               "Gmail draft opened. If body is empty, paste the copied content. Have you successfully sent the email?",
                             );
 
                             setOptOutEmailRequested(confirmed);
-                          }}
+
+                            await persistDraft({
+                              onboardingStage: "QUESTIONNAIRE_IN_PROGRESS",
+                              questionnaireAnswers: {
+                                ...questionnairePayload,
+                                optOutEmailRequested: confirmed,
+                              },
+                            });
+                          }}  
                         >
                           Open Gmail Draft
                         </Button>

@@ -16,16 +16,14 @@ function ProtectedOnboardingSubmitted() {
         return;
       }
 
-      const draft =
-        await getDraftByAuthProviderId(user.id);
+      const draft = await getDraftByAuthProviderId(user.id);
 
       if (!draft) {
         setAllowed(false);
         return;
       }
 
-      const hasSubmitted =
-        draft.onboarding_completed === true;
+      const hasSubmitted = draft.onboarding_stage === "SUBMITTED";
 
       setAllowed(hasSubmitted);
     }
@@ -38,19 +36,12 @@ function ProtectedOnboardingSubmitted() {
   }
 
   if (!allowed) {
-    return (
-      <Navigate
-        to="/onboarding"
-        replace
-      />
-    );
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <OnboardingSubmittedPage />;
 }
 
-export const Route = createFileRoute(
-  "/onboarding-submitted",
-)({
+export const Route = createFileRoute("/onboarding-submitted")({
   component: ProtectedOnboardingSubmitted,
 });

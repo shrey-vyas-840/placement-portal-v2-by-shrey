@@ -26,6 +26,7 @@ import { Route as StudentNocRouteImport } from './routes/student/noc'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
+import { Route as AdminOnboardingApprovalsRouteImport } from './routes/admin/onboarding-approvals'
 import { Route as AdminNocRouteImport } from './routes/admin/noc'
 import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
 import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
@@ -36,6 +37,7 @@ import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/oppo
 import { Route as HodReviewTokenRouteImport } from './routes/hod/review.$token'
 import { Route as AdminQuestionsOpportunityIdRouteImport } from './routes/admin/questions.$opportunityId'
 import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
+import { Route as AdminOnboardingReviewDraftIdRouteImport } from './routes/admin/onboarding-review.$draftId'
 import { Route as AdminExportOpportunityIdRouteImport } from './routes/admin/export.$opportunityId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -123,6 +125,12 @@ const AdminOpportunitiesRoute = AdminOpportunitiesRouteImport.update({
   path: '/admin/opportunities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminOnboardingApprovalsRoute =
+  AdminOnboardingApprovalsRouteImport.update({
+    id: '/admin/onboarding-approvals',
+    path: '/admin/onboarding-approvals',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminNocRoute = AdminNocRouteImport.update({
   id: '/admin/noc',
   path: '/admin/noc',
@@ -175,6 +183,12 @@ const AdminOpportunitiesOpportunityIdRoute =
     path: '/$opportunityId',
     getParentRoute: () => AdminOpportunitiesRoute,
   } as any)
+const AdminOnboardingReviewDraftIdRoute =
+  AdminOnboardingReviewDraftIdRouteImport.update({
+    id: '/admin/onboarding-review/$draftId',
+    path: '/admin/onboarding-review/$draftId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminExportOpportunityIdRoute =
   AdminExportOpportunityIdRouteImport.update({
     id: '/admin/export/$opportunityId',
@@ -198,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/noc': typeof AdminNocRoute
+  '/admin/onboarding-approvals': typeof AdminOnboardingApprovalsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -207,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
+  '/admin/onboarding-review/$draftId': typeof AdminOnboardingReviewDraftIdRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
   '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
   '/hod/review/$token': typeof HodReviewTokenRoute
@@ -228,6 +244,7 @@ export interface FileRoutesByTo {
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/noc': typeof AdminNocRoute
+  '/admin/onboarding-approvals': typeof AdminOnboardingApprovalsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
@@ -236,6 +253,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/hod': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
+  '/admin/onboarding-review/$draftId': typeof AdminOnboardingReviewDraftIdRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
   '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
   '/hod/review/$token': typeof HodReviewTokenRoute
@@ -258,6 +276,7 @@ export interface FileRoutesById {
   '/admin/companies': typeof AdminCompaniesRoute
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/noc': typeof AdminNocRoute
+  '/admin/onboarding-approvals': typeof AdminOnboardingApprovalsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -267,6 +286,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/hod/': typeof HodIndexRoute
   '/admin/export/$opportunityId': typeof AdminExportOpportunityIdRoute
+  '/admin/onboarding-review/$draftId': typeof AdminOnboardingReviewDraftIdRoute
   '/admin/opportunities/$opportunityId': typeof AdminOpportunitiesOpportunityIdRoute
   '/admin/questions/$opportunityId': typeof AdminQuestionsOpportunityIdRoute
   '/hod/review/$token': typeof HodReviewTokenRoute
@@ -290,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/noc'
+    | '/admin/onboarding-approvals'
     | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
@@ -299,6 +320,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/hod/'
     | '/admin/export/$opportunityId'
+    | '/admin/onboarding-review/$draftId'
     | '/admin/opportunities/$opportunityId'
     | '/admin/questions/$opportunityId'
     | '/hod/review/$token'
@@ -320,6 +342,7 @@ export interface FileRouteTypes {
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/noc'
+    | '/admin/onboarding-approvals'
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
@@ -328,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/hod'
     | '/admin/export/$opportunityId'
+    | '/admin/onboarding-review/$draftId'
     | '/admin/opportunities/$opportunityId'
     | '/admin/questions/$opportunityId'
     | '/hod/review/$token'
@@ -349,6 +373,7 @@ export interface FileRouteTypes {
     | '/admin/companies'
     | '/admin/drives'
     | '/admin/noc'
+    | '/admin/onboarding-approvals'
     | '/admin/opportunities'
     | '/admin/students'
     | '/auth/callback'
@@ -358,6 +383,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/hod/'
     | '/admin/export/$opportunityId'
+    | '/admin/onboarding-review/$draftId'
     | '/admin/opportunities/$opportunityId'
     | '/admin/questions/$opportunityId'
     | '/hod/review/$token'
@@ -380,6 +406,7 @@ export interface RootRouteChildren {
   AdminCompaniesRoute: typeof AdminCompaniesRoute
   AdminDrivesRoute: typeof AdminDrivesRoute
   AdminNocRoute: typeof AdminNocRoute
+  AdminOnboardingApprovalsRoute: typeof AdminOnboardingApprovalsRoute
   AdminOpportunitiesRoute: typeof AdminOpportunitiesRouteWithChildren
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -389,6 +416,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   HodIndexRoute: typeof HodIndexRoute
   AdminExportOpportunityIdRoute: typeof AdminExportOpportunityIdRoute
+  AdminOnboardingReviewDraftIdRoute: typeof AdminOnboardingReviewDraftIdRoute
   AdminQuestionsOpportunityIdRoute: typeof AdminQuestionsOpportunityIdRoute
   HodReviewTokenRoute: typeof HodReviewTokenRoute
 }
@@ -514,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOpportunitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/onboarding-approvals': {
+      id: '/admin/onboarding-approvals'
+      path: '/admin/onboarding-approvals'
+      fullPath: '/admin/onboarding-approvals'
+      preLoaderRoute: typeof AdminOnboardingApprovalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/noc': {
       id: '/admin/noc'
       path: '/admin/noc'
@@ -584,6 +619,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOpportunitiesOpportunityIdRouteImport
       parentRoute: typeof AdminOpportunitiesRoute
     }
+    '/admin/onboarding-review/$draftId': {
+      id: '/admin/onboarding-review/$draftId'
+      path: '/admin/onboarding-review/$draftId'
+      fullPath: '/admin/onboarding-review/$draftId'
+      preLoaderRoute: typeof AdminOnboardingReviewDraftIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/export/$opportunityId': {
       id: '/admin/export/$opportunityId'
       path: '/admin/export/$opportunityId'
@@ -623,6 +665,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCompaniesRoute: AdminCompaniesRoute,
   AdminDrivesRoute: AdminDrivesRoute,
   AdminNocRoute: AdminNocRoute,
+  AdminOnboardingApprovalsRoute: AdminOnboardingApprovalsRoute,
   AdminOpportunitiesRoute: AdminOpportunitiesRouteWithChildren,
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
@@ -632,6 +675,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   HodIndexRoute: HodIndexRoute,
   AdminExportOpportunityIdRoute: AdminExportOpportunityIdRoute,
+  AdminOnboardingReviewDraftIdRoute: AdminOnboardingReviewDraftIdRoute,
   AdminQuestionsOpportunityIdRoute: AdminQuestionsOpportunityIdRoute,
   HodReviewTokenRoute: HodReviewTokenRoute,
 }
