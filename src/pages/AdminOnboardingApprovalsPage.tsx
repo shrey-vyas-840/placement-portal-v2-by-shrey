@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-
-import { getPendingOnboardingDrafts } from "@/services/adminOnboardingService";
+import {
+  getPendingOnboardingDrafts,
+  searchOnboardingStudents,
+} from "@/services/adminOnboardingService";
 
 import {
   approveOnboardingDraft,
@@ -26,38 +28,35 @@ export function AdminOnboardingApprovalsPage() {
   const [approvedStatus, setApprovedStatus] = useState("ALL");
   const [rejectedStatus, setRejectedStatus] = useState("ALL");
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [globalResults, setGlobalResults] = useState<any[]>([]);
+  const [globalLoading, setGlobalLoading] = useState(false);
+
   const activeRows = rows.filter(
     (row) =>
       row.approval_status !== "PROFILE_APPROVED" && row.approval_status !== "PROFILE_REJECTED",
   );
 
   const uncategorizedStudents = activeRows.filter((row) => {
-  const registry =
-    row.registry_snapshot?.placement_preference_text?.toLowerCase() ?? "";
+    const registry = row.registry_snapshot?.placement_preference_text?.toLowerCase() ?? "";
 
-  const student =
-    row.edited_profile?.placement_preference?.toLowerCase() ?? "";
+    const student = row.edited_profile?.placement_preference?.toLowerCase() ?? "";
 
-  const isInterested =
-    registry.includes("opt") &&
-    registry.includes("in") &&
-    student === "interested";
+    const isInterested =
+      registry.includes("opt") && registry.includes("in") && student === "interested";
 
-  const isChanged =
-    registry.includes("opt") &&
-    registry.includes("in") &&
-    student !== "interested";
+    const isChanged =
+      registry.includes("opt") && registry.includes("in") && student !== "interested";
 
-  const isOptedOut =
-    registry.includes("out");
+    const isOptedOut = registry.includes("out");
 
-  return !isInterested && !isChanged && !isOptedOut;
-});
+    return !isInterested && !isChanged && !isOptedOut;
+  });
 
-console.log(
-  "UNCATEGORIZED STUDENTS",
-  uncategorizedStudents
-);
+  console.log("UNCATEGORIZED STUDENTS", uncategorizedStudents);
 
   const interestedStudents = activeRows.filter((row) => {
     const registry = row.registry_snapshot?.placement_preference_text?.toLowerCase() ?? "";
@@ -87,92 +86,196 @@ console.log(
 
   useEffect(() => {
     async function load() {
-      const data = await getPendingOnboardingDrafts();
+      const result = await getPendingOnboardingDrafts();
 
-      console.log("ONBOARDING DRAFTS", data);
+      setRows(result.rows);
 
-      setRows(data);
       setLoading(false);
     }
 
     void load();
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        if (!globalSearch.trim()) {
+          setGlobalResults([]);
+          return;
+        }
+
+        setGlobalLoading(true);
+
+        const data = await searchOnboardingStudents(globalSearch);
+
+        setGlobalResults(data);
+      } finally {
+        setGlobalLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [globalSearch]);
+
   if (loading) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="mx-auto max-w-[1600px] space-y-6 p-6">Loading...</div>;
   }
 
-return (
-  <div className="w-full max-w-none space-y-6 p-6">
-    <div>
-      <h1 className="text-3xl font-bold">Onboarding Approvals</h1>
-    </div>
+  return (
+    <div className="mx-auto max-w-[1600px] space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-bold">Onboarding Approvals</h1>
+      </div>
 
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <div className="rounded-xl border bg-background p-4">
+          <div className="text-sm text-muted-foreground">Pending Review</div>
 
-      <div className="rounded-xl border bg-background p-4">
-        <div className="text-sm text-muted-foreground">
-          Pending Review
+          <div className="mt-2 text-3xl font-bold">{activeRows.length}</div>
         </div>
 
-        <div className="mt-2 text-3xl font-bold">
-          {activeRows.length}
+        <div className="rounded-xl border bg-background p-4">
+          <div className="text-sm text-muted-foreground">Interested</div>
+
+          <div className="mt-2 text-3xl font-bold">{interestedStudents.length}</div>
+        </div>
+
+        <div className="rounded-xl border bg-background p-4">
+          <div className="text-sm text-muted-foreground">Preference Changed</div>
+
+          <div className="mt-2 text-3xl font-bold">{changedPreferenceStudents.length}</div>
+        </div>
+
+        <div className="rounded-xl border bg-background p-4">
+          <div className="text-sm text-muted-foreground">Opted-Out</div>
+
+          <div className="mt-2 text-3xl font-bold">{optedOutStudents.length}</div>
+        </div>
+
+        <div className="rounded-xl border bg-background p-4">
+          <div className="text-sm text-muted-foreground">Approved</div>
+
+          <div className="mt-2 text-3xl font-bold">{approvedStudents.length}</div>
+        </div>
+
+        <div className="rounded-xl border bg-background p-4">
+          <div className="text-sm text-muted-foreground">Rejected</div>
+
+          <div className="mt-2 text-3xl font-bold">{rejectedStudents.length}</div>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-background p-4">
-        <div className="text-sm text-muted-foreground">
-          Interested
-        </div>
+      <div className="rounded-2xl border bg-card p-6 shadow-sm">
+        <h2 className="text-xl font-semibold">Global Student Search</h2>
 
-        <div className="mt-2 text-3xl font-bold">
-          {interestedStudents.length}
-        </div>
+        <p className="mt-1 text-sm text-muted-foreground">Search entire onboarding database.</p>
+
+        <input
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          placeholder="Search enrollment number or email..."
+          className="mt-4 w-full rounded-xl border px-3 py-2"
+        />
+
+        {globalLoading ? <div className="mt-4 text-sm">Searching...</div> : null}
+
+        {globalResults.length > 0 ? (
+          <div className="mt-4 overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="p-3 text-left">Enrollment</th>
+                  <th className="p-3 text-left">Email</th>
+                  <th className="p-3 text-left">Status</th>
+                  <th className="p-3 text-left">Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {globalResults.map((row) => (
+                  <tr key={row.draft_id} className="border-b">
+                    <td className="p-3">{row.enrollment_no}</td>
+
+                    <td className="p-3">{row.email_address}</td>
+
+                    <td className="p-3">{formatApprovalStatus(row.approval_status)}</td>
+
+                    <td className="p-3">
+                      <div className="flex gap-2">
+                        <Link
+                          to="/admin/onboarding-review/$draftId"
+                          params={{
+                            draftId: row.draft_id,
+                          }}
+                          className="rounded-lg border px-3 py-1"
+                        >
+                          Review
+                        </Link>
+
+                        <button
+                          onClick={async () => {
+                            try {
+                              const session = await authService.getSession();
+
+                              if (!session?.user?.id) {
+                                alert("Admin session not found");
+                                return;
+                              }
+
+                              await approveOnboardingDraft(row.draft_id, session.user.id);
+
+                              window.location.reload();
+                            } catch (error) {
+                              alert(error instanceof Error ? error.message : "Approval failed");
+                            }
+                          }}
+                          className="rounded-lg bg-green-600 px-3 py-1 text-white"
+                        >
+                          Approve
+                        </button>
+
+                        <button
+                          onClick={async () => {
+                            const reason = window.prompt("Enter rejection reason");
+
+                            if (!reason?.trim()) {
+                              return;
+                            }
+
+                            try {
+                              const session = await authService.getSession();
+
+                              if (!session?.user?.id) {
+                                alert("Admin session not found");
+                                return;
+                              }
+
+                              await rejectOnboardingDraft(
+                                row.draft_id,
+                                session.user.id,
+                                reason.trim(),
+                              );
+
+                              window.location.reload();
+                            } catch (error) {
+                              alert(error instanceof Error ? error.message : "Rejection failed");
+                            }
+                          }}
+                          className="rounded-lg bg-red-600 px-3 py-1 text-white"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </div>
 
-      <div className="rounded-xl border bg-background p-4">
-        <div className="text-sm text-muted-foreground">
-          Preference Changed
-        </div>
-
-        <div className="mt-2 text-3xl font-bold">
-          {changedPreferenceStudents.length}
-        </div>
-      </div>
-
-      <div className="rounded-xl border bg-background p-4">
-        <div className="text-sm text-muted-foreground">
-          Opted-Out
-        </div>
-
-        <div className="mt-2 text-3xl font-bold">
-          {optedOutStudents.length}
-        </div>
-      </div>
-
-      <div className="rounded-xl border bg-background p-4">
-        <div className="text-sm text-muted-foreground">
-          Approved
-        </div>
-
-        <div className="mt-2 text-3xl font-bold">
-          {approvedStudents.length}
-        </div>
-      </div>
-
-      <div className="rounded-xl border bg-background p-4">
-        <div className="text-sm text-muted-foreground">
-          Rejected
-        </div>
-
-        <div className="mt-2 text-3xl font-bold">
-          {rejectedStudents.length}
-        </div>
-      </div>
-
-    </div>
-
-    <div className="grid gap-6">
+      <div className="grid gap-6 xl:grid-cols-1">
         <SectionTable
           title={`Interested Students (${interestedStudents.length})`}
           rows={interestedStudents}
@@ -217,6 +320,28 @@ return (
           statusFilter={rejectedStatus}
           onStatusFilterChange={setRejectedStatus}
         />
+
+        <div className="flex items-center justify-center gap-3 py-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-lg border px-4 py-2"
+          >
+            Previous
+          </button>
+
+          <span className="font-medium">
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg border px-4 py-2"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -270,8 +395,8 @@ function SectionTable({
   });
 
   return (
-    <div className="overflow-hidden rounded-xl border">
-      <div className="border-b bg-muted p-4 space-y-3">
+    <div className="w-full overflow-hidden rounded-2xl border bg-card shadow-sm">
+      <div className="border-b bg-muted/40 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">{title}</h2>
 
@@ -368,8 +493,8 @@ function SectionTable({
         </div>
       </div>
 
-      <div className="max-h-[400px] overflow-auto">
-        <table className="w-full">
+      <div className="max-h-[420px] overflow-auto">
+        <table className="w-full min-w-[1400px] text-sm">
           <thead>
             <tr className="border-b">
               <th className="p-3 text-left">
@@ -394,6 +519,7 @@ function SectionTable({
               <th className="p-3 text-left">Status</th>
               <th className="p-3 text-left">Reviewed At</th>
               <th className="p-3 text-left">Admin</th>
+              <th className="p-3 text-left">Reason</th>
               <th className="p-3 text-left">Action</th>
             </tr>
           </thead>
@@ -427,6 +553,8 @@ function SectionTable({
                 </td>
 
                 <td className="p-3">{row.reviewed_by ?? "-"}</td>
+
+                <td className="p-3">{row.rejection_reason ?? "-"}</td>
 
                 <td className="p-3">
                   <Link

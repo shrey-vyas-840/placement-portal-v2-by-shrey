@@ -81,6 +81,8 @@ export function WorkspaceCatalogPage() {
           <MenuLink to="/admin/attendance" label="Attendance System" />
 
           <MenuLink to="/admin/noc" label="NOC Automation Workflow" />
+
+          <MenuLink to="/admin/onboarding-approvals" label="Onboarding Management" />
         </div>
 
         {/* HOD */}

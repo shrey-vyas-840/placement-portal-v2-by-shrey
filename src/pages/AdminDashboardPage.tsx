@@ -78,6 +78,12 @@ const NAV_ITEMS: NavItem[] = [
     description: "NOC workflow and approvals.",
     badge: "N",
   },
+  {
+  to: "/admin/onboarding-approvals",
+  label: "Onboarding",
+  description: "Student onboarding review and approvals.",
+  badge: "OB",
+},
 ];
 
 const CHART_COLORS = [
