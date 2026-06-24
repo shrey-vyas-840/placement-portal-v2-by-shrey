@@ -230,6 +230,26 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
             <div>Approval Status: {formatApprovalStatus(draft.approval_status)}</div>
           </div>
         </div>
+
+        <div className="rounded-xl border p-4">
+          <h2 className="mb-3 text-lg font-semibold">Review History</h2>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>Approved By: {draft.approved_by ?? "-"}</div>
+
+            <div>
+              Approved At: {draft.approved_at ? new Date(draft.approved_at).toLocaleString() : "-"}
+            </div>
+
+            <div>Reviewed By: {draft.reviewed_by ?? "-"}</div>
+
+            <div>
+              Reviewed At: {draft.reviewed_at ? new Date(draft.reviewed_at).toLocaleString() : "-"}
+            </div>
+
+            <div className="col-span-2">Rejection Reason: {draft.rejection_reason ?? "-"}</div>
+          </div>
+        </div>
       </div>
 
       {draft.approval_status === "PENDING_PROFILE_VERIFICATION" && (
