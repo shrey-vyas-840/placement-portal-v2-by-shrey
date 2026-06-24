@@ -8,6 +8,36 @@ import {
 
 import { authService } from "@/services/authService";
 
+function formatRegistryStatus(value?: string | null) {
+  const normalized = value?.toLowerCase() ?? "";
+
+  if (normalized.includes("out")) {
+    return "Placement Opted-Out";
+  }
+
+  if (normalized.includes("in")) {
+    return "Placement Opted-In";
+  }
+
+  return "-";
+}
+
+function formatApprovalStatus(status?: string | null) {
+  switch (status) {
+    case "PENDING_PROFILE_VERIFICATION":
+      return "Pending Review";
+
+    case "PROFILE_APPROVED":
+      return "Approved";
+
+    case "PROFILE_REJECTED":
+      return "Rejected";
+
+    default:
+      return "Pending";
+  }
+}
+
 export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
   const [draft, setDraft] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -96,11 +126,6 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
               <span className="font-medium">Branch:</span>{" "}
               {draft.registry_snapshot?.bachelors_degree_branch ?? "-"}
             </div>
-
-            <div>
-              <span className="font-medium">Registry Participation Status:</span>{" "}
-              {draft.registry_snapshot?.placement_preference_text ?? "-"}
-            </div>
           </div>
         </div>
 
@@ -110,7 +135,7 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <span className="font-medium">Registry Participation Status:</span>{" "}
-              {draft.registry_snapshot?.placement_preference_text ?? "-"}
+              {formatRegistryStatus(draft.registry_snapshot?.placement_preference_text)}
             </div>
 
             <div>
@@ -119,15 +144,15 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
             </div>
           </div>
 
-          {draft.registry_snapshot?.placement_preference_text &&
-            draft.edited_profile?.placement_preference &&
-            (draft.registry_snapshot.placement_preference_text.toLowerCase().includes("out") ||
+          {draft.edited_profile?.placement_preference &&
+            (draft.registry_snapshot?.placement_preference_text?.toLowerCase().includes("out") ||
               draft.edited_profile.placement_preference !== "Interested") && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
                 <div className="font-semibold text-amber-800">Preference Requires Review</div>
 
                 <div className="mt-2 text-sm">
-                  Registry Status: {draft.registry_snapshot?.placement_preference_text}
+                  Registry Status:{" "}
+                  {formatRegistryStatus(draft.registry_snapshot?.placement_preference_text)}
                 </div>
 
                 <div className="text-sm">
@@ -136,7 +161,6 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
               </div>
             )}
         </div>
-
         <div className="rounded-xl border p-4">
           <h2 className="mb-3 text-lg font-semibold">Questionnaire Responses</h2>
 
@@ -203,7 +227,7 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
 
             <div>Onboarding Completed: {draft.onboarding_completed ? "Yes" : "No"}</div>
 
-            <div>Approval Status: {draft.approval_status ?? "Pending"}</div>
+            <div>Approval Status: {formatApprovalStatus(draft.approval_status)}</div>
           </div>
         </div>
       </div>
