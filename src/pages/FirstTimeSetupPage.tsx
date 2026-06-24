@@ -76,8 +76,22 @@ function mapPlacementPreference(value?: string | null): EditableProfile["placeme
     return "Entrepreneurship";
   }
 
-  if (raw.includes("not")) {
+  if (
+    raw.includes("not") ||
+    raw.includes("optout") ||
+    raw.includes("opt-out") ||
+    raw.includes("opt out")
+  ) {
     return "Not Interested";
+  }
+
+  if (
+    raw.includes("optin") ||
+    raw.includes("opt-in") ||
+    raw.includes("opt in") ||
+    raw.includes("interested")
+  ) {
+    return "Interested";
   }
 
   return "Interested";
@@ -563,20 +577,13 @@ Enrollment No. ${enteredEnrollment}
         passwordCreated: true,
         registryFound: Boolean(registry),
         registrySnapshot: registry,
-        editedProfile: {
-          ...profile,
-          institute_email: user.email ?? profile.institute_email,
-        },
-      });
-
-      setProfile(
-        registry
+        editedProfile: registry
           ? registryToProfile(registry, user.email ?? "")
           : {
               ...profile,
               institute_email: user.email ?? profile.institute_email,
             },
-      );
+      });
 
       setRegistrySnapshot(registry);
       setRegistryFound(Boolean(registry));
