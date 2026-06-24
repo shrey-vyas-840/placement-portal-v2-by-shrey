@@ -41,6 +41,7 @@ function formatApprovalStatus(status?: string | null) {
 export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
   const [draft, setDraft] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showGeneratedMail, setShowGeneratedMail] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -60,250 +61,400 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
   if (!draft) {
     return <div className="p-8">Draft not found.</div>;
   }
-
   return (
-    <div className="p-8 space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 p-6">
       <h1 className="text-3xl font-bold">Onboarding Review</h1>
+      {draft.approval_status === "PENDING_PROFILE_VERIFICATION" && (
+        <div
+          className="
+    sticky
+    top-4
+    z-30
+    mb-4
+    flex
+    justify-end
+    gap-3
+    rounded-2xl
+    border
+    bg-white/90
+    p-4
+    backdrop-blur
+    shadow-lg
+  "
+        >
+          {draft.approval_status === "PENDING_PROFILE_VERIFICATION" && (
+            <div className="flex gap-3">
+              <button
+                className="rounded bg-green-600 px-4 py-2 text-white"
+                onClick={async () => {
+                  try {
+                    const session = await authService.getSession();
+
+                    if (!session?.user?.id) {
+                      alert("No admin session");
+                      return;
+                    }
+
+                    await approveOnboardingDraft(draft.draft_id, session.user.id);
+
+                    alert("Approved");
+
+                    window.location.reload();
+                  } catch (error) {
+                    alert(error instanceof Error ? error.message : "Approve failed");
+                  }
+                }}
+              >
+                Approve
+              </button>
+
+              <button
+                className="rounded bg-red-600 px-4 py-2 text-white"
+                onClick={async () => {
+                  const rejectionReason = window.prompt("Please enter rejection reason");
+
+                  if (!rejectionReason?.trim()) {
+                    return;
+                  }
+
+                  const session = await authService.getSession();
+
+                  if (!session?.user?.id) {
+                    return;
+                  }
+
+                  await rejectOnboardingDraft(
+                    draft.draft_id,
+                    session.user.id,
+                    rejectionReason.trim(),
+                  );
+
+                  alert("Rejected");
+
+                  window.location.reload();
+                }}
+              >
+                Reject
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-6">
-        <div className="rounded-xl border p-4">
-          <h2 className="mb-3 text-lg font-semibold">Student Information</h2>
+        <div className="rounded-2xl border bg-card space-y-6 p-6 shadow-sm">
+          <h2 className="text-xl font-semibold">Student Information</h2>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span className="font-medium">Enrollment:</span> {draft.enrollment_no}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <ReviewField label="Enrollment Number" value={draft.enrollment_no} />
 
-            <div>
-              <span className="font-medium">Email:</span> {draft.email_address}
-            </div>
-
-            <div>
-              <span className="font-medium">First Name:</span>{" "}
-              {draft.edited_profile?.first_name ?? "-"}
-            </div>
-
-            <div>
-              <span className="font-medium">Last Name:</span>{" "}
-              {draft.edited_profile?.last_name ?? "-"}
-            </div>
-
-            <div>
-              <span className="font-medium">Contact:</span>{" "}
-              {draft.edited_profile?.contact_number ?? "-"}
-            </div>
-
-            <div>
-              <span className="font-medium">Gender:</span> {draft.edited_profile?.gender ?? "-"}
-            </div>
-
-            <div>
-              <span className="font-medium">DOB:</span> {draft.edited_profile?.date_of_birth ?? "-"}
-            </div>
-
-            <div>
-              <span className="font-medium">Graduation Year:</span>{" "}
-              {draft.edited_profile?.graduation_year ?? "-"}
-            </div>
+            <ReviewField label="Email:" value={draft.email_address} />
+            <ReviewField label="First Name:" value={draft.edited_profile?.first_name ?? "-"} />
+            <ReviewField label="Last Name:" value={draft.edited_profile?.last_name ?? "-"} />
+            <ReviewField label="Gender:" value={draft.edited_profile?.gender ?? "-"} />
+            <ReviewField label="Contact:" value={draft.edited_profile?.contact_number ?? "-"} />
+            <ReviewField
+              label="Date of Birth:"
+              value={draft.edited_profile?.date_of_birth ?? "-"}
+            />
+            <ReviewField
+              label="Graduation Year:"
+              value={draft.edited_profile?.graduation_year ?? "-"}
+            />
           </div>
         </div>
 
-        <div className="rounded-xl border p-4">
-          <h2 className="mb-3 text-lg font-semibold">Registry Snapshot</h2>
+        <div
+          className="
+  rounded-3xl
+  border
+  border-border/50
+  bg-white
+  space-y-4
+  p-6
+  shadow-sm
+"
+        >
+          <h2 className="text-xl font-semibold">Registry Snapshot</h2>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span className="font-medium">Institute:</span>{" "}
-              {draft.registry_snapshot?.institute_name ?? "-"}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <ReviewField label="Institute" value={draft.registry_snapshot?.institute_name ?? "-"} />
 
-            <div>
-              <span className="font-medium">Degree:</span>{" "}
-              {draft.registry_snapshot?.current_degree ?? "-"}
-            </div>
+            <ReviewField label="Degree" value={draft.registry_snapshot?.current_degree ?? "-"} />
 
-            <div>
-              <span className="font-medium">Branch:</span>{" "}
-              {draft.registry_snapshot?.bachelors_degree_branch ?? "-"}
-            </div>
+            <ReviewField
+              label="Branch"
+              value={draft.registry_snapshot?.bachelors_degree_branch ?? "-"}
+            />
           </div>
         </div>
 
-        <div className="rounded-xl border p-4">
-          <h2 className="mb-3 text-lg font-semibold">Student Preference</h2>
+        <div
+          className="
+  rounded-3xl
+  border
+  border-border/50
+  bg-white
+  space-y-6
+  p-6
+  shadow-sm
+"
+        >
+          <h2 className="text-xl font-semibold">Student Preference</h2>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span className="font-medium">Registry Participation Status:</span>{" "}
-              {formatRegistryStatus(draft.registry_snapshot?.placement_preference_text)}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <ReviewField
+              label="Registry Participation Status"
+              value={formatRegistryStatus(draft.registry_snapshot?.placement_preference_text)}
+            />
 
-            <div>
-              <span className="font-medium">Student Placement Preference:</span>{" "}
-              {draft.edited_profile?.placement_preference ?? "-"}
-            </div>
+            <ReviewField
+              label="Student Placement Preference"
+              value={draft.edited_profile?.placement_preference ?? "-"}
+            />
           </div>
 
           {draft.edited_profile?.placement_preference &&
             (draft.registry_snapshot?.placement_preference_text?.toLowerCase().includes("out") ||
               draft.edited_profile.placement_preference !== "Interested") && (
-              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
-                <div className="font-semibold text-amber-800">Preference Requires Review</div>
+              <div
+                className="
+    mt-6
+    rounded-2xl
+    border
+    border-amber-300
+    bg-gradient-to-r
+    from-amber-50
+    to-orange-50
+    p-5
+    shadow-sm
+  "
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-xl">⚠️</div>
 
-                <div className="mt-2 text-sm">
-                  Registry Status:{" "}
-                  {formatRegistryStatus(draft.registry_snapshot?.placement_preference_text)}
-                </div>
+                  <div>
+                    <div className="font-semibold text-amber-900">Preference Requires Review</div>
 
-                <div className="text-sm">
-                  Student Selected: {draft.edited_profile?.placement_preference}
+                    <div className="mt-2 text-sm text-amber-800">
+                      Registry Status:{" "}
+                      {formatRegistryStatus(draft.registry_snapshot?.placement_preference_text)}
+                    </div>
+
+                    <div className="text-sm text-amber-800">
+                      Student Selected: {draft.edited_profile?.placement_preference}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
         </div>
-        <div className="rounded-xl border p-4">
-          <h2 className="mb-3 text-lg font-semibold">Questionnaire Responses</h2>
+        <div
+          className="
+  rounded-3xl
+  border
+  border-border/50
+  bg-white
+  space-y-4
+  p-6
+  shadow-sm
+"
+        >
+          <h2 className="text-xl font-semibold">Questionnaire Responses</h2>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span className="font-medium">Career Goal:</span>{" "}
-              {draft.questionnaire_answers?.careerGoal ?? "-"}
-            </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <ReviewField
+              label="Career Goal"
+              value={draft.questionnaire_answers?.careerGoal ?? "-"}
+            />
 
-            <div>
-              <span className="font-medium">Abroad Plan:</span>{" "}
-              {draft.questionnaire_answers?.abroadPlan ? "Yes" : "No"}
-            </div>
+            <ReviewField
+              label="Abroad Plan"
+              value={draft.questionnaire_answers?.abroadPlan ? "Yes" : "No"}
+            />
 
-            <div>
-              <span className="font-medium">Higher Studies:</span>{" "}
-              {draft.questionnaire_answers?.higherStudies ? "Yes" : "No"}
-            </div>
+            <ReviewField
+              label="Higher Studies"
+              value={draft.questionnaire_answers?.higherStudies ? "Yes" : "No"}
+            />
 
-            <div>
-              <span className="font-medium">Startup Plan:</span>{" "}
-              {draft.questionnaire_answers?.startupPlan ? "Yes" : "No"}
-            </div>
+            <ReviewField
+              label="Startup Plan"
+              value={draft.questionnaire_answers?.startupPlan ? "Yes" : "No"}
+            />
 
-            <div>
-              <span className="font-medium">LOR Required:</span>{" "}
-              {draft.questionnaire_answers?.lorRequired ? "Yes" : "No"}
-            </div>
+            <ReviewField
+              label="LOR Required"
+              value={draft.questionnaire_answers?.lorRequired ? "Yes" : "No"}
+            />
 
-            <div>
-              <span className="font-medium">Competitive Exam:</span>{" "}
-              {draft.questionnaire_answers?.competitiveExam ? "Yes" : "No"}
-            </div>
+            <ReviewField
+              label="Competitive Exam"
+              value={draft.questionnaire_answers?.competitiveExam ? "Yes" : "No"}
+            />
 
-            <div>
-              <span className="font-medium">Opt-Out Required:</span>{" "}
-              {draft.questionnaire_answers?.optOutRequired ? "Yes" : "No"}
-            </div>
+            <ReviewField
+              label="Opt-Out Required"
+              value={draft.questionnaire_answers?.optOutRequired ? "Yes" : "No"}
+            />
 
-            <div>
-              <span className="font-medium">Opt-Out Email Sent:</span>{" "}
-              {draft.questionnaire_answers?.optOutEmailRequested ? "Yes" : "No"}
-            </div>
+            <ReviewField
+              label="Opt-Out Email Sent"
+              value={draft.questionnaire_answers?.optOutEmailRequested ? "Yes" : "No"}
+            />
           </div>
         </div>
 
         {draft.questionnaire_answers?.optOutReason && (
-          <div className="mt-4 rounded-xl border border-border bg-background p-4">
-            <div className="mb-2 font-semibold">Generated Opt-Out Request</div>
+          <div
+            className="
+  rounded-3xl
+  border
+  border-border/50
+  bg-white
+  p-6
+  shadow-sm
+"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Generated Opt-Out Request</h2>
 
-            <pre className="whitespace-pre-wrap text-sm">
-              {draft.questionnaire_answers.optOutReason}
-            </pre>
+                <p className="text-sm text-muted-foreground">
+                  Generated automatically from onboarding responses.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowGeneratedMail(!showGeneratedMail)}
+                className="
+  rounded-xl
+  border
+  px-4
+  py-2
+  font-medium
+  transition-all
+  hover:bg-slate-50
+  hover:shadow-md
+"
+              >
+                {showGeneratedMail ? "Hide Mail" : "View Mail"}
+              </button>
+            </div>
+
+            {showGeneratedMail && (
+              <div className="rounded-xl border bg-muted/30 p-4">
+                <pre
+                  className="
+    whitespace-pre-wrap
+    rounded-2xl
+    border
+    bg-white
+    space-y-6
+    p-6
+    text-sm
+    leading-7
+    shadow-inner
+  "
+                >
+                  {draft.questionnaire_answers.optOutReason}
+                </pre>
+              </div>
+            )}
           </div>
         )}
 
-        <div className="rounded-xl border p-4">
-          <h2 className="mb-3 text-lg font-semibold">Policy & Submission</h2>
+        <div
+          className="
+    rounded-3xl
+    border
+    border-border/50
+    bg-white
+    space-y-6
+    p-6
+    shadow-sm
+  "
+        >
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Policy & Submission</h2>
 
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>Policy Accepted: {draft.policy_accepted ? "Yes" : "No"}</div>
+            <p className="text-sm text-muted-foreground">
+              Final onboarding declarations and verification status.
+            </p>
+          </div>
 
-            <div>Final Confirmation: {draft.final_confirmation ? "Yes" : "No"}</div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <ReviewField label="Policy Accepted" value={draft.policy_accepted ? "Yes" : "No"} />
 
-            <div>Onboarding Completed: {draft.onboarding_completed ? "Yes" : "No"}</div>
+            <ReviewField
+              label="Final Confirmation"
+              value={draft.final_confirmation ? "Yes" : "No"}
+            />
 
-            <div>Approval Status: {formatApprovalStatus(draft.approval_status)}</div>
+            <ReviewField
+              label="Onboarding Completed"
+              value={draft.onboarding_completed ? "Yes" : "No"}
+            />
+
+            <ReviewField
+              label="Approval Status"
+              value={formatApprovalStatus(draft.approval_status)}
+            />
           </div>
         </div>
-
-        <div className="rounded-xl border p-4">
-          <h2 className="mb-3 text-lg font-semibold">Review History</h2>
+        <div className="rounded-2xl border bg-card space-y-6 p-6 shadow-sm">
+          <h2 className="text-xl font-semibold space-y-6 p-2">Review History</h2>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>Approved By: {draft.approved_by ?? "-"}</div>
+            <ReviewField label="Approved By" value={draft.approved_by ?? "-"} />
 
-            <div>
-              Approved At: {draft.approved_at ? new Date(draft.approved_at).toLocaleString() : "-"}
-            </div>
+            <ReviewField
+              label="Approved At"
+              value={draft.approved_at ? new Date(draft.approved_at).toLocaleString() : "-"}
+            />
 
-            <div>Reviewed By: {draft.reviewed_by ?? "-"}</div>
+            <ReviewField label="Reviewed By:" value={draft.reviewed_by ?? "-"} />
 
-            <div>
-              Reviewed At: {draft.reviewed_at ? new Date(draft.reviewed_at).toLocaleString() : "-"}
-            </div>
-
-            <div className="col-span-2">Rejection Reason: {draft.rejection_reason ?? "-"}</div>
+            <ReviewField
+              label="Reviewed At:"
+              value={draft.reviewed_at ? new Date(draft.reviewed_at).toLocaleString() : "-"}
+            />
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {draft.approval_status === "PENDING_PROFILE_VERIFICATION" && (
-        <div className="flex gap-3">
-          <button
-            className="rounded bg-green-600 px-4 py-2 text-white"
-            onClick={async () => {
-              try {
-                const session = await authService.getSession();
+function ReviewField({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div
+      className="
+        rounded-2xl
+        border
+        border-border/80
+        bg-white
+        p-4
+        transition-all
+        hover:-translate-y-1
+        hover:border-primary/60
+        hover:bg-slate-50
+        hover:shadow-md
+      "
+    >
+      <div
+        className="
+          text-xs
+          uppercase
+          tracking-[0.12em]
+          text-muted-foreground
+        "
+      >
+        {label}
+      </div>
 
-                if (!session?.user?.id) {
-                  alert("No admin session");
-                  return;
-                }
-
-                await approveOnboardingDraft(draft.draft_id, session.user.id);
-
-                alert("Approved");
-
-                window.location.reload();
-              } catch (error) {
-                alert(error instanceof Error ? error.message : "Approve failed");
-              }
-            }}
-          >
-            Approve
-          </button>
-
-          <button
-            className="rounded bg-red-600 px-4 py-2 text-white"
-            onClick={async () => {
-              const rejectionReason = window.prompt("Please enter rejection reason");
-
-              if (!rejectionReason?.trim()) {
-                return;
-              }
-
-              const session = await authService.getSession();
-
-              if (!session?.user?.id) {
-                return;
-              }
-
-              await rejectOnboardingDraft(draft.draft_id, session.user.id, rejectionReason.trim());
-
-              alert("Rejected");
-
-              window.location.reload();
-            }}
-          >
-            Reject
-          </button>
-        </div>
-      )}
+      <div className="mt-2 font-semibold">{value || "-"}</div>
     </div>
   );
 }
