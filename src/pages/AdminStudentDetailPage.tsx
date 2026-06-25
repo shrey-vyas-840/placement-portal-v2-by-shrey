@@ -16,12 +16,21 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
+  const [restrictions, setRestrictions] = useState<any[]>([]);
+  const [restrictionType, setRestrictionType] = useState("ATTENDANCE_RESTRICTION");
+  const [restrictionReason, setRestrictionReason] = useState("");
+  const [restrictionLoading, setRestrictionLoading] = useState(false);
+
   useEffect(() => {
     async function load() {
       try {
         const result = await adminStudentService.getStudentById(studentId);
 
         setData(result);
+
+        const restrictionData = await adminStudentService.getStudentRestrictions(studentId);
+
+        setRestrictions(restrictionData);
 
         if (result?.profile?.enrollment_no) {
           const onboardingDraft = await getDraftByEnrollmentNo(result.profile.enrollment_no);
@@ -120,6 +129,122 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-5">
+            <h2 className="font-semibold">Placement Restrictions</h2>
+
+            <div className="mt-4 grid gap-3">
+              <select
+                value={restrictionType}
+                onChange={(e) => setRestrictionType(e.target.value)}
+                className="rounded border p-2"
+              >
+                <option value="ATTENDANCE_RESTRICTION">Attendance Restriction</option>
+
+                <option value="GRIEVANCE_RESTRICTION">Grievance Restriction</option>
+
+                <option value="MISBEHAVIOR_RESTRICTION">Misbehavior Restriction</option>
+
+                <option value="CUSTOM">Custom Restriction</option>
+              </select>
+
+              <textarea
+                rows={4}
+                value={restrictionReason}
+                onChange={(e) => setRestrictionReason(e.target.value)}
+                placeholder="Restriction reason"
+                className="rounded border p-3"
+              />
+
+              <button
+                type="button"
+                disabled={
+                  restrictionLoading || (restrictionType === "CUSTOM" && !restrictionReason.trim())
+                }
+                onClick={async () => {
+                  try {
+                    setRestrictionLoading(true);
+
+                    const session = await authService.getSession();
+
+                    if (!session?.user?.id) {
+                      throw new Error("Unable to determine admin.");
+                    }
+
+                    const finalReason =
+                      restrictionType === "CUSTOM"
+                        ? restrictionReason
+                        : restrictionReason ||
+                          {
+                            ATTENDANCE_RESTRICTION: "Attendance shortage",
+                            GRIEVANCE_RESTRICTION: "Student grievance case under review",
+                            MISBEHAVIOR_RESTRICTION: "Student conduct review in progress",
+                          }[restrictionType];
+
+                    await adminStudentService.createRestriction({
+                      student_id: studentId,
+                      restriction_type: restrictionType,
+                      restriction_reason: finalReason ?? "",
+                      restricted_by: session.user.id,
+                    });
+
+                    const refreshed = await adminStudentService.getStudentRestrictions(studentId);
+
+                    setRestrictions(refreshed);
+
+                    setRestrictionReason("");
+                  } catch (err) {
+                    console.error(err);
+                    alert("Unable to create restriction.");
+                  } finally {
+                    setRestrictionLoading(false);
+                  }
+                }}
+                className="rounded bg-red-600 px-4 py-2 text-white"
+              >
+                Apply Restriction
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {restrictions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No restrictions found.</p>
+              ) : (
+                restrictions.map((restriction) => (
+                  <div key={restriction.restriction_id} className="rounded border p-3">
+                    <p>
+                      <strong>Type:</strong> {restriction.restriction_type}
+                    </p>
+
+                    <p>
+                      <strong>Reason:</strong> {restriction.restriction_reason}
+                    </p>
+
+                    <p>
+                      <strong>Status:</strong> {restriction.is_active ? "Active" : "Removed"}
+                    </p>
+
+                    {restriction.is_active && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await adminStudentService.removeRestriction(restriction.restriction_id);
+
+                          const refreshed =
+                            await adminStudentService.getStudentRestrictions(studentId);
+
+                          setRestrictions(refreshed);
+                        }}
+                        className="mt-3 rounded border px-3 py-1"
+                      >
+                        Remove Restriction
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

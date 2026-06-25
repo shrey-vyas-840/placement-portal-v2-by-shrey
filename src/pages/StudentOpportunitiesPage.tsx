@@ -145,6 +145,16 @@ export function StudentOpportunitiesPage() {
           <div className="absolute right-10 bottom-0 h-24 w-24 rounded-full bg-white/20" />
         </div>
 
+        {opportunities.some((x) => x.restriction_active) && (
+          <div className="mt-6 rounded-2xl border border-red-300 bg-red-50 p-5">
+            <div className="font-semibold text-red-700">Placement Restriction Active</div>
+
+            <p className="mt-2 text-sm text-red-600">
+              {opportunities.find((x) => x.restriction_active)?.restriction_reason}
+            </p>
+          </div>
+        )}
+
         <div
           className="
         mt-6
@@ -155,12 +165,10 @@ xl:grid-cols-3
 2xl:grid-cols-4
     "
         >
-          {opportunities
-            .filter((opportunity) => opportunity.eligibility_status === "Eligible")
-            .map((opportunity) => (
-              <div
-                key={opportunity.opportunity_id}
-                className="
+          {opportunities.map((opportunity) => (
+            <div
+              key={opportunity.opportunity_id}
+              className="
     group
     relative
     overflow-hidden
@@ -177,9 +185,9 @@ backdrop-blur-sm
 hover:shadow-2xl
 hover:border-primary/30
 "
-              >
-                <div
-                  className="
+            >
+              <div
+                className="
         absolute
         left-0
         top-0
@@ -190,12 +198,12 @@ hover:border-primary/30
         via-cyan-500
         to-emerald-500
     "
-                />
+              />
 
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-3">
-                    <div
-                      className="
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex gap-3">
+                  <div
+                    className="
         flex
         h-14
         w-14
@@ -211,84 +219,87 @@ hover:border-primary/30
         text-primary
         shadow-inner
     "
-                    >
-                      {(
-                        opportunity.drive_master?.company_master?.company_name?.[0] ?? "C"
-                      ).toUpperCase()}
-                    </div>
-
-                    <div>
-                      <h2 className="text-lg font-bold text-slate-900">
-                        {opportunity.drive_master?.company_master?.company_name ??
-                          opportunity.opportunity_title}
-                      </h2>
-
-                      <p className="mt-1 text-[11px] text-slate-500 line-clamp-1">
-                        {opportunity.opportunity_title}
-                      </p>
-                    </div>
+                  >
+                    {(
+                      opportunity.drive_master?.company_master?.company_name?.[0] ?? "C"
+                    ).toUpperCase()}
                   </div>
 
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">
+                      {opportunity.drive_master?.company_master?.company_name ??
+                        opportunity.opportunity_title}
+                    </h2>
+
+                    <p className="mt-1 text-[11px] text-slate-500 line-clamp-1">
+                      {opportunity.opportunity_title}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    opportunity.restriction_active
+                      ? "bg-red-50 text-red-700"
+                      : opportunity.eligibility_status === "Eligible"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {opportunity.restriction_active ? "Restricted" : opportunity.eligibility_status}
+                </span>
+              </div>
+              <div className="mt-3 space-y-1.5 text-xs">
+                {opportunity.eligibility_status !== "Eligible" && (
+                  <div className="rounded-lg bg-amber-50 p-2 text-amber-700">
+                    {opportunity.eligibility_reason}
+                  </div>
+                )}
+                <div className="flex justify-between gap-3">
                   <span
                     className="
-            rounded-full
-            bg-emerald-50
-            px-3
-            py-1
-            text-xs
-            font-medium
-            text-emerald-700
-        "
-                  >
-                    Eligible
-                  </span>
-                </div>
-                <div className="mt-3 space-y-1.5 text-xs">
-                  <div className="flex justify-between gap-3">
-                    <span
-                      className="
             font-medium
             text-blue-700
         "
-                    >
-                      Package
-                    </span>
+                  >
+                    Package
+                  </span>
 
-                    <span
-                      className="
+                  <span
+                    className="
             font-semibold
             text-right
             text-slate-900
         "
-                    >
-                      {opportunity.drive_master?.lowest_package_lpa &&
-                      opportunity.drive_master?.highest_package_lpa
-                        ? `₹ ${opportunity.drive_master.lowest_package_lpa} - ₹ ${opportunity.drive_master.highest_package_lpa} LPA`
-                        : "Not Specified"}
-                    </span>
-                  </div>
+                  >
+                    {opportunity.drive_master?.lowest_package_lpa &&
+                    opportunity.drive_master?.highest_package_lpa
+                      ? `₹ ${opportunity.drive_master.lowest_package_lpa} - ₹ ${opportunity.drive_master.highest_package_lpa} LPA`
+                      : "Not Specified"}
+                  </span>
+                </div>
 
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Drive Type</span>
+
+                  <span className="font-medium text-right">
+                    {opportunity.drive_master?.drive_type ?? "-"}
+                  </span>
+                </div>
+
+                {opportunity.drive_master?.bond_years ? (
                   <div className="flex justify-between gap-3">
-                    <span className="text-muted-foreground">Drive Type</span>
+                    <span className="text-muted-foreground">Bond</span>
 
                     <span className="font-medium text-right">
-                      {opportunity.drive_master?.drive_type ?? "-"}
+                      {opportunity.drive_master.bond_years} Years
                     </span>
                   </div>
+                ) : null}
 
-                  {opportunity.drive_master?.bond_years ? (
-                    <div className="flex justify-between gap-3">
-                      <span className="text-muted-foreground">Bond</span>
-
-                      <span className="font-medium text-right">
-                        {opportunity.drive_master.bond_years} Years
-                      </span>
-                    </div>
-                  ) : null}
-
-                  <div className="flex justify-between gap-3">
-                    <span
-                      className="
+                <div className="flex justify-between gap-3">
+                  <span
+                    className="
             rounded-full
             bg-amber-50
             px-
@@ -297,32 +308,32 @@ hover:border-primary/30
             font-semibold
             text-amber-700
         "
-                    >
-                      ⏳ Deadline
-                    </span>
+                  >
+                    ⏳ Deadline
+                  </span>
 
-                    <span className="font-medium">
-                      {new Date(opportunity.application_end_date).toLocaleDateString()}
-                    </span>
-                  </div>
+                  <span className="font-medium">
+                    {new Date(opportunity.application_end_date).toLocaleDateString()}
+                  </span>
                 </div>
+              </div>
 
-                <button
-                  disabled={opportunity.alreadyApplied}
-                  onClick={async () => {
-                    const qs = await adminQuestionService.getQuestions(opportunity.opportunity_id);
+              <button
+                disabled={opportunity.alreadyApplied || opportunity.restriction_active}
+                onClick={async () => {
+                  const qs = await adminQuestionService.getQuestions(opportunity.opportunity_id);
 
-                    if (qs.length > 0) {
-                      setSelectedOpportunity(opportunity);
+                  if (qs.length > 0) {
+                    setSelectedOpportunity(opportunity);
 
-                      setQuestions(qs);
+                    setQuestions(qs);
 
-                      return;
-                    }
+                    return;
+                  }
 
-                    apply(opportunity.opportunity_id);
-                  }}
-                  className={`
+                  apply(opportunity.opportunity_id);
+                }}
+                className={`
     mt-5
     w-full
     rounded-xl
@@ -333,14 +344,20 @@ hover:border-primary/30
     ${
       opportunity.alreadyApplied
         ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-        : "bg-primary text-white hover:scale-[1.02]"
+        : opportunity.restriction_active
+          ? "bg-red-50 text-red-700 border border-red-200"
+          : "bg-primary text-white hover:scale-[1.02]"
     }
 `}
-                >
-                  {opportunity.alreadyApplied ? "Applied ✓" : "Apply"}
-                </button>
-              </div>
-            ))}
+              >
+                {opportunity.alreadyApplied
+                  ? "Applied ✓"
+                  : opportunity.restriction_active
+                    ? "Restricted"
+                    : "Apply"}
+              </button>
+            </div>
+          ))}
         </div>
         {selectedOpportunity && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center">

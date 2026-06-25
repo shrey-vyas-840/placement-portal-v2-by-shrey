@@ -1523,6 +1523,66 @@ export const adminStudentService = {
     if (error) throw error;
     return data ?? [];
   },
+
+  async getStudentRestrictions(studentId: string) {
+    const { data, error } = await db
+      .from("student_restrictions")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("restricted_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? [];
+  },
+
+  async createRestriction(payload: {
+    student_id: string;
+    restriction_type: string;
+    restriction_reason: string;
+    restricted_by: string;
+    expires_at?: string | null;
+  }) {
+    const { error: deactivateError } = await db
+      .from("student_restrictions")
+      .update({
+        is_active: false,
+      })
+      .eq("student_id", payload.student_id)
+      .eq("is_active", true);
+
+    if (deactivateError) {
+      throw deactivateError;
+    }
+
+    const { error } = await db.from("student_restrictions").insert({
+      student_id: payload.student_id,
+      restriction_type: payload.restriction_type,
+      restriction_reason: payload.restriction_reason,
+      restricted_by: payload.restricted_by,
+      expires_at: payload.expires_at ?? null,
+      is_active: true,
+    });
+
+    if (error) {
+      throw error;
+    }
+  },
+
+  async removeRestriction(restrictionId: string) {
+    const { error } = await db
+      .from("student_restrictions")
+      .update({
+        is_active: false,
+      })
+      .eq("restriction_id", restrictionId);
+
+    if (error) {
+      throw error;
+    }
+  },
 };
 
 // ===== PART 2 =====
