@@ -1656,33 +1656,145 @@ export const adminStudentService = {
     }
   },
 
-  async getOpenOpportunities() {
+  async getStudentPlacementOpportunities(studentId: string) {
     const { data, error } = await db
-      .from("opportunity_master")
+      .from("student_opportunity_applications")
       .select(
         `
-            opportunity_id,
-            opportunity_title
-        `,
+      application_id,
+      opportunity_id,
+
+      opportunity:opportunity_master!student_opportunity_applications_opportunity_id_fkey(
+        opportunity_id,
+        opportunity_title,
+        drive_id,
+
+        drive:drive_master!opportunity_master_drive_id_fkey(
+          drive_id,
+          company_id,
+          highest_package_lpa,
+          lowest_package_lpa,
+
+          company:company_master!drive_master_company_id_fkey(
+            company_id,
+            company_name
+          )
+        )
       )
-      .eq("is_active", true)
-      .order("opportunity_title");
+    `,
+      )
+      .eq("student_id", studentId)
+      .order("applied_at", {
+        ascending: false,
+      });
 
     if (error) {
       throw error;
     }
 
-    return data ?? [];
+    return (data ?? []).map((item: any) => ({
+      application_id: item.application_id,
+
+      opportunity_id: item.opportunity?.opportunity_id,
+
+      opportunity_title: item.opportunity?.opportunity_title,
+
+      drive_id: item.opportunity?.drive?.drive_id,
+
+      company_id: item.opportunity?.drive?.company_id,
+
+      company_name: item.opportunity?.drive?.company?.company_name,
+
+      package_lpa: item.opportunity?.drive?.highest_package_lpa,
+    }));
   },
+
+  async getAvailablePlacementOverrideOpportunities(studentId: string) {
+
+  const student = await this.getStudentById(studentId);
+
+  const branch =
+    student.academics?.current_branch_name;
+
+  const graduationYear =
+    String(student.academics?.graduation_year ?? "");
+
+  const { data, error } = await db
+    .from("opportunity_master")
+    .select(`
+      opportunity_id,
+      opportunity_title,
+      application_status,
+      visible_to_students,
+
+      drive:drive_id(
+        drive_id,
+        company_id,
+        highest_package_lpa,
+
+        company:company_id(
+          company_name
+        ),
+
+        eligibility:drive_eligibility(
+          allowed_branches,
+          passing_out_batches
+        )
+      )
+    `)
+    .eq("application_status","Open")
+    .eq("visible_to_students",true);
+
+  if(error) throw error;
+
+  return (data ?? []).filter((item:any)=>{
+
+    const eligibility =
+      item.drive?.eligibility?.[0];
+
+    if(!eligibility) return false;
+
+    const branches =
+      String(
+        eligibility.allowed_branches ?? ""
+      )
+      .split(",")
+      .map((x:string)=>x.trim());
+
+    const batches =
+      String(
+        eligibility.passing_out_batches ?? ""
+      )
+      .split(",")
+      .map((x:string)=>x.trim());
+
+    return (
+      branches.includes(branch) &&
+      batches.includes(graduationYear)
+    );
+
+  });
+
+},
 
   async updatePlacementStatus(
     studentId: string,
     payload: {
       placement_status: "Placed" | "Unplaced";
+
       placed_company_name?: string | null;
+
       placed_package_lpa?: number | null;
-      placement_type?: "Campus Placement" | "Internship PPO" | "Off Campus" | null;
+
+      placement_type?: string | null;
+
       placed_at?: string | null;
+
+      opportunity_id?: string | null;
+
+      drive_id?: string | null;
+
+      company_id?: string | null;
     },
   ) {
     if (payload.placement_status === "Placed") {
@@ -1700,10 +1812,21 @@ export const adminStudentService = {
 
       const { error: insertError } = await db.from("student_placement_history").insert({
         student_id: studentId,
+
+        opportunity_id: payload.opportunity_id,
+
+        drive_id: payload.drive_id,
+
+        company_id: payload.company_id,
+
         company_name: payload.placed_company_name,
+
         package_lpa: payload.placed_package_lpa,
+
         placement_type: payload.placement_type,
+
         placed_at: payload.placed_at,
+
         is_current: true,
       });
 

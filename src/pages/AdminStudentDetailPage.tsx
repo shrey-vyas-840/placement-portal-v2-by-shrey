@@ -46,6 +46,11 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   const [overrideReason, setOverrideReason] = useState("");
   const [overrideLoading, setOverrideLoading] = useState(false);
   const [availableOpportunities, setAvailableOpportunities] = useState<any[]>([]);
+  const [overrideAvailableOpportunities, setOverrideAvailableOpportunities] = useState<any[]>([]);
+  const [selectedPlacementOpportunity, setSelectedPlacementOpportunity] = useState("");
+  const [manualCompany, setManualCompany] = useState("");
+  const [manualPackage, setManualPackage] = useState("");
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
 
   useEffect(() => {
     async function load() {
@@ -71,8 +76,15 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
         const overrideData = await adminStudentService.getStudentPlacementOverrides(studentId);
         setPlacementOverrides(overrideData);
 
-        const opportunities = await adminStudentService.getOpenOpportunities();
-        setAvailableOpportunities(opportunities);
+        const placementOpportunities =
+          await adminStudentService.getStudentPlacementOpportunities(studentId);
+
+        setAvailableOpportunities(placementOpportunities);
+
+        const overrideOpportunities =
+          await adminStudentService.getAvailablePlacementOverrideOpportunities(studentId);
+
+        setOverrideAvailableOpportunities(overrideOpportunities);
 
         if (result?.profile?.enrollment_no) {
           const onboardingDraft = await getDraftByEnrollmentNo(result.profile.enrollment_no);
@@ -250,33 +262,124 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                       <option value="Placed">Placed</option>
                     </select>
 
-                    <input
-                      type="text"
-                      value={placedCompany}
-                      onChange={(e) => setPlacedCompany(e.target.value)}
-                      placeholder="Company Name"
-                      className="rounded border p-2"
-                    />
+<div className="max-h-64 overflow-y-auto">
 
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={placedPackage}
-                      onChange={(e) => setPlacedPackage(e.target.value)}
-                      placeholder="Package (LPA)"
-                      className="rounded border p-2"
-                    />
+<select
+size={8}
+value={selectedPlacementOpportunity}
+onChange={(e) => {
+
+  const value = e.target.value;
+
+  setSelectedPlacementOpportunity(value);
+
+  if (value === "") {
+
+    setSelectedApplication(null);
+
+    return;
+
+  }
+
+  if (value === "OTHER") {
+
+    setSelectedApplication(null);
+
+    setManualCompany("");
+
+    setManualPackage("");
+
+    return;
+
+  }
+
+  const selected = availableOpportunities.find(
+    (item: any) => item.opportunity_id === value,
+  );
+
+  setSelectedApplication(selected);
+
+  setManualCompany(selected?.company_name ?? "");
+
+  setManualPackage(
+    selected?.package_lpa != null
+      ? String(selected.package_lpa)
+      : "",
+  );
+
+}}
+className="w-full min-h-[220px] rounded border p-2 md:col-span-2"
+>
+                      <option value="">Select Registered Opportunity</option>
+
+                      {availableOpportunities.map((item: any) => (
+                        <option key={item.opportunity_id} value={item.opportunity_id}>
+                          {item.opportunity_title}
+                        </option>
+                      ))}
+
+                      <option value="OTHER">Other (Off Campus)</option>
+                    </select>
+                    </div>
+
+                    {selectedApplication && (
+                      <div className="rounded-lg border bg-muted/20 p-4 md:col-span-2">
+                        <p>
+                          <strong>Company:</strong> {selectedApplication.company_name}
+                        </p>
+
+                        <p>
+                          <strong>Opportunity:</strong> {selectedApplication.opportunity_title}
+                        </p>
+
+                        <p>
+                          <strong>Package:</strong> {manualPackage || "-"}
+                          LPA
+                        </p>
+                      </div>
+                    )}
+
+                    {selectedPlacementOpportunity === "OTHER" && (
+                      <>
+                        <input
+                          type="text"
+                          placeholder="Company Name"
+                          value={manualCompany}
+                          onChange={(e) => setManualCompany(e.target.value)}
+                          className="rounded border p-2"
+                        />
+
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Package (LPA)"
+                          value={manualPackage}
+                          onChange={(e) => setManualPackage(e.target.value)}
+                          className="rounded border p-2"
+                        />
+                      </>
+                    )}
 
                     <select
                       value={placementType}
                       onChange={(e) => setPlacementType(e.target.value)}
                       className="rounded border p-2"
                     >
-                      <option>Campus Placement</option>
+                      <option value="">Select Placement Type</option>
 
-                      <option>Internship PPO</option>
+                      <option value="On Campus Internship + PPO">On Campus Internship + PPO</option>
 
-                      <option>Off Campus</option>
+                      <option value="On Campus Internship">On Campus Internship</option>
+
+                      <option value="On Campus Placement">On Campus Placement</option>
+
+                      <option value="Off Campus Internship + PPO">
+                        Off Campus Internship + PPO
+                      </option>
+
+                      <option value="Off Campus Internship">Off Campus Internship</option>
+
+                      <option value="Off Campus Placement">Off Campus Placement</option>
                     </select>
 
                     <input
@@ -294,19 +397,75 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                       try {
                         setPlacementLoading(true);
 
+                        if (placementStatus === "Placed" && !selectedPlacementOpportunity) {
+                          alert("Please select a registered opportunity or Other (Off Campus).");
+
+                          setPlacementLoading(false);
+
+                          return;
+                        }
+
+                        if (selectedPlacementOpportunity === "OTHER" && !manualCompany.trim()) {
+                          alert("Company Name is mandatory.");
+
+                          setPlacementLoading(false);
+
+                          return;
+                        }
+
+                        if (selectedPlacementOpportunity === "OTHER" && !manualPackage.trim()) {
+                          alert("Package is mandatory.");
+
+                          setPlacementLoading(false);
+
+                          return;
+                        }
+
+                        if (!placedDate && placementStatus === "Placed") {
+                          alert("Placement Date is mandatory.");
+
+                          setPlacementLoading(false);
+
+                          return;
+                        }
+
+                        if (placementStatus === "Placed" && !placementType) {
+                          alert("Placement Type is mandatory.");
+
+                          setPlacementLoading(false);
+
+                          return;
+                        }
+
                         await adminStudentService.updatePlacementStatus(studentId, {
                           placement_status: placementStatus as "Placed" | "Unplaced",
 
-                          placed_company_name: placedCompany || null,
+                          placed_company_name:
+                            selectedPlacementOpportunity === "OTHER"
+                              ? manualCompany
+                              : (selectedApplication?.company_name ?? null),
 
-                          placed_package_lpa: placedPackage ? Number(placedPackage) : null,
+                          placed_package_lpa:
+                            selectedPlacementOpportunity === "OTHER" ? Number(manualPackage) : null,
 
-                          placement_type: placementType as
-                            | "Campus Placement"
-                            | "Internship PPO"
-                            | "Off Campus",
+                          placement_type: placementType as any,
 
                           placed_at: placedDate || null,
+
+                          opportunity_id:
+                            selectedPlacementOpportunity === "OTHER"
+                              ? null
+                              : (selectedApplication?.opportunity_id ?? null),
+
+                          drive_id:
+                            selectedPlacementOpportunity === "OTHER"
+                              ? null
+                              : (selectedApplication?.drive_id ?? null),
+
+                          company_id:
+                            selectedPlacementOpportunity === "OTHER"
+                              ? null
+                              : (selectedApplication?.company_id ?? null),
                         });
 
                         const refreshed = await adminStudentService.getStudentById(studentId);
@@ -351,19 +510,22 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                       </label>
 
                       {overrideScope === "SPECIFIC" && (
-                        <select
-                          value={overrideOpportunityId}
-                          onChange={(e) => setOverrideOpportunityId(e.target.value)}
-                          className="w-full rounded border p-2"
-                        >
-                          <option value="">Select Opportunity</option>
+                        <div className="max-h-64 overflow-y-auto">
+                          <select
+                            size={8}
+                            value={overrideOpportunityId}
+                            onChange={(e) => setOverrideOpportunityId(e.target.value)}
+                            className="w-full min-h-[220px] rounded border p-2"
+                          >
+                            <option value="">Select Opportunity</option>
 
-                          {availableOpportunities.map((op) => (
-                            <option key={op.opportunity_id} value={op.opportunity_id}>
-                              {op.opportunity_title}
-                            </option>
-                          ))}
-                        </select>
+                            {overrideAvailableOpportunities.map((op) => (
+                              <option key={op.opportunity_id} value={op.opportunity_id}>
+                                {op.opportunity_title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       )}
 
                       <textarea
@@ -421,157 +583,71 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                     </div>
 
                     <div className="mt-8">
-
-<h3 className="font-semibold">
-
-Current Override
-
-</h3>
-
-<div className="mt-3">
-
-{placementOverrides.find(x=>x.is_active)
-
-? (
-
-<div className="rounded border p-4">
-
-<p>
-
-<b>Scope:</b>{" "}
-
-{placementOverrides.find(x=>x.is_active).override_scope}
-
-</p>
-
-<p>
-
-<b>Reason:</b>{" "}
-
-{placementOverrides.find(x=>x.is_active).override_reason}
-
-</p>
-
-<button
-
-type="button"
-
-className="mt-4 rounded border px-3 py-2"
-
-onClick={async()=>{
-
-await adminStudentService.removePlacementOverride(
-
-placementOverrides.find(x=>x.is_active).override_id
-
-);
-
-const refreshed=
-
-await adminStudentService
-
-.getStudentPlacementOverrides(studentId);
-
-setPlacementOverrides(refreshed);
-
-}}
-
->
-
-Remove Override
-
-</button>
-
-</div>
-
-)
-
-:(
-
-<p className="text-muted-foreground">
-
-No active override.
-
-</p>
-
-)}
-
-</div>
-
-</div>
-
-<div className="mt-8">
-
-<h3 className="font-semibold">
-
-Override History
-
-</h3>
-
-<div className="mt-4 space-y-3 max-h-64 overflow-y-auto">
-
-{placementOverrides.map(item=>(
-
-<div
-
-key={item.override_id}
-
-className="rounded border p-3"
-
->
-
-<p>
-
-<b>Scope:</b> {item.override_scope}
-
-</p>
-
-{item.opportunity_id && (
-
-<p>
-
-<b>Opportunity:</b>
-
-{" "}
-
-{item.opportunity_id}
-
-</p>
-
-)}
-
-<p>
-
-<b>Reason:</b>
-
-{" "}
-
-{item.override_reason}
-
-</p>
-
-<p>
-
-<b>Status:</b>
-
-{" "}
-
-{item.is_active
-
-? "Active"
-
-: "Removed"}
-
-</p>
-
-</div>
-
-))}
-
-</div>
-
-</div>
-
+                      <h3 className="font-semibold">Current Override</h3>
+
+                      <div className="mt-3">
+                        {placementOverrides.find((x) => x.is_active) ? (
+                          <div className="rounded border p-4">
+                            <p>
+                              <b>Scope:</b>{" "}
+                              {placementOverrides.find((x) => x.is_active).override_scope}
+                            </p>
+
+                            <p>
+                              <b>Reason:</b>{" "}
+                              {placementOverrides.find((x) => x.is_active).override_reason}
+                            </p>
+
+                            <button
+                              type="button"
+                              className="mt-4 rounded border px-3 py-2"
+                              onClick={async () => {
+                                await adminStudentService.removePlacementOverride(
+                                  placementOverrides.find((x) => x.is_active).override_id,
+                                );
+
+                                const refreshed =
+                                  await adminStudentService.getStudentPlacementOverrides(studentId);
+
+                                setPlacementOverrides(refreshed);
+                              }}
+                            >
+                              Remove Override
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">No active override.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-8">
+                      <h3 className="font-semibold">Override History</h3>
+
+                      <div className="mt-4 space-y-3 max-h-64 overflow-y-auto">
+                        {placementOverrides.map((item) => (
+                          <div key={item.override_id} className="rounded border p-3">
+                            <p>
+                              <b>Scope:</b> {item.override_scope}
+                            </p>
+
+                            {item.opportunity_id && (
+                              <p>
+                                <b>Opportunity:</b> {item.opportunity_id}
+                              </p>
+                            )}
+
+                            <p>
+                              <b>Reason:</b> {item.override_reason}
+                            </p>
+
+                            <p>
+                              <b>Status:</b> {item.is_active ? "Active" : "Removed"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
