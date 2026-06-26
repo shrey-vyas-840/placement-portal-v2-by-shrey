@@ -40,17 +40,21 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   const [placementType, setPlacementType] = useState("Campus Placement");
   const [placedDate, setPlacedDate] = useState("");
 
+  const [placementOverrides, setPlacementOverrides] = useState<any[]>([]);
+  const [overrideScope, setOverrideScope] = useState<"ALL" | "SPECIFIC">("ALL");
+  const [overrideOpportunityId, setOverrideOpportunityId] = useState("");
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideLoading, setOverrideLoading] = useState(false);
+  const [availableOpportunities, setAvailableOpportunities] = useState<any[]>([]);
+
   useEffect(() => {
     async function load() {
       try {
         const result = await adminStudentService.getStudentById(studentId);
 
         setData(result);
-
         setPlacementStatus(result.profile?.placement_status ?? "Unplaced");
-
         setPlacedCompany(result.currentPlacement?.company_name ?? "");
-
         setPlacedPackage(
           result.currentPlacement?.package_lpa != null
             ? String(result.currentPlacement.package_lpa)
@@ -58,14 +62,17 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
         );
 
         setPlacementType(result.currentPlacement?.placement_type ?? "Campus Placement");
-
         setPlacedDate(result.currentPlacement?.placed_at ?? "");
-
         setPlacementPreference(result.profile?.placement_preference ?? "Interested");
 
         const restrictionData = await adminStudentService.getStudentRestrictions(studentId);
-
         setRestrictions(restrictionData);
+
+        const overrideData = await adminStudentService.getStudentPlacementOverrides(studentId);
+        setPlacementOverrides(overrideData);
+
+        const opportunities = await adminStudentService.getOpenOpportunities();
+        setAvailableOpportunities(opportunities);
 
         if (result?.profile?.enrollment_no) {
           const onboardingDraft = await getDraftByEnrollmentNo(result.profile.enrollment_no);
@@ -315,6 +322,257 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                   >
                     Save Placement Status
                   </button>
+
+                  <div className="mt-8 border-t pt-6">
+                    <h3 className="text-lg font-semibold">Placement Override</h3>
+
+                    <div className="mt-5 space-y-4">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          checked={overrideScope === "ALL"}
+                          onChange={() => {
+                            setOverrideScope("ALL");
+                            setOverrideOpportunityId("");
+                          }}
+                        />
+                        Allow All Opportunities
+                      </label>
+
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          checked={overrideScope === "SPECIFIC"}
+                          onChange={() => {
+                            setOverrideScope("SPECIFIC");
+                          }}
+                        />
+                        Allow Specific Opportunity
+                      </label>
+
+                      {overrideScope === "SPECIFIC" && (
+                        <select
+                          value={overrideOpportunityId}
+                          onChange={(e) => setOverrideOpportunityId(e.target.value)}
+                          className="w-full rounded border p-2"
+                        >
+                          <option value="">Select Opportunity</option>
+
+                          {availableOpportunities.map((op) => (
+                            <option key={op.opportunity_id} value={op.opportunity_id}>
+                              {op.opportunity_title}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      <textarea
+                        rows={3}
+                        value={overrideReason}
+                        onChange={(e) => setOverrideReason(e.target.value)}
+                        placeholder="Reason"
+                        className="w-full rounded border p-3"
+                      />
+
+                      <button
+                        type="button"
+                        disabled={overrideLoading}
+                        className="rounded bg-primary px-4 py-2 text-white"
+                        onClick={async () => {
+                          try {
+                            setOverrideLoading(true);
+
+                            const session = await authService.getSession();
+
+                            if (!session?.user?.id) {
+                              throw new Error("Admin not found");
+                            }
+
+                            await adminStudentService.createPlacementOverride({
+                              student_id: studentId,
+
+                              override_scope: overrideScope,
+
+                              opportunity_id:
+                                overrideScope === "SPECIFIC" ? overrideOpportunityId : null,
+
+                              override_reason: overrideReason,
+
+                              granted_by: session.user.id,
+                            });
+
+                            const refreshed =
+                              await adminStudentService.getStudentPlacementOverrides(studentId);
+
+                            setPlacementOverrides(refreshed);
+
+                            setOverrideReason("");
+
+                            setOverrideOpportunityId("");
+
+                            alert("Override applied successfully.");
+                          } finally {
+                            setOverrideLoading(false);
+                          }
+                        }}
+                      >
+                        Apply Override
+                      </button>
+                    </div>
+
+                    <div className="mt-8">
+
+<h3 className="font-semibold">
+
+Current Override
+
+</h3>
+
+<div className="mt-3">
+
+{placementOverrides.find(x=>x.is_active)
+
+? (
+
+<div className="rounded border p-4">
+
+<p>
+
+<b>Scope:</b>{" "}
+
+{placementOverrides.find(x=>x.is_active).override_scope}
+
+</p>
+
+<p>
+
+<b>Reason:</b>{" "}
+
+{placementOverrides.find(x=>x.is_active).override_reason}
+
+</p>
+
+<button
+
+type="button"
+
+className="mt-4 rounded border px-3 py-2"
+
+onClick={async()=>{
+
+await adminStudentService.removePlacementOverride(
+
+placementOverrides.find(x=>x.is_active).override_id
+
+);
+
+const refreshed=
+
+await adminStudentService
+
+.getStudentPlacementOverrides(studentId);
+
+setPlacementOverrides(refreshed);
+
+}}
+
+>
+
+Remove Override
+
+</button>
+
+</div>
+
+)
+
+:(
+
+<p className="text-muted-foreground">
+
+No active override.
+
+</p>
+
+)}
+
+</div>
+
+</div>
+
+<div className="mt-8">
+
+<h3 className="font-semibold">
+
+Override History
+
+</h3>
+
+<div className="mt-4 space-y-3 max-h-64 overflow-y-auto">
+
+{placementOverrides.map(item=>(
+
+<div
+
+key={item.override_id}
+
+className="rounded border p-3"
+
+>
+
+<p>
+
+<b>Scope:</b> {item.override_scope}
+
+</p>
+
+{item.opportunity_id && (
+
+<p>
+
+<b>Opportunity:</b>
+
+{" "}
+
+{item.opportunity_id}
+
+</p>
+
+)}
+
+<p>
+
+<b>Reason:</b>
+
+{" "}
+
+{item.override_reason}
+
+</p>
+
+<p>
+
+<b>Status:</b>
+
+{" "}
+
+{item.is_active
+
+? "Active"
+
+: "Removed"}
+
+</p>
+
+</div>
+
+))}
+
+</div>
+
+</div>
+
+                  </div>
                 </div>
               </div>
             </div>
@@ -398,7 +656,7 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                 </div>
               </div>
 
-              <div className="mt-6 max-h-[420px] space-y-3 overflow-y-auto">
+              <div className="mt-6 max-h-[540px] space-y-3 overflow-y-auto">
                 {restrictions.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No restrictions found.</p>
                 ) : (

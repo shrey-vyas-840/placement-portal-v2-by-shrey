@@ -1656,6 +1656,25 @@ export const adminStudentService = {
     }
   },
 
+  async getOpenOpportunities() {
+    const { data, error } = await db
+      .from("opportunity_master")
+      .select(
+        `
+            opportunity_id,
+            opportunity_title
+        `,
+      )
+      .eq("is_active", true)
+      .order("opportunity_title");
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? [];
+  },
+
   async updatePlacementStatus(
     studentId: string,
     payload: {
