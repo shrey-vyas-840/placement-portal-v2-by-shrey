@@ -23,6 +23,14 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
 
   const [placementLoading, setPlacementLoading] = useState(false);
 
+  const [preferenceLoading, setPreferenceLoading] = useState(false);
+
+  const [placementPreference, setPlacementPreference] = useState(
+    data?.profile?.placement_preference ?? "Interested",
+  );
+
+  const [preferenceReason, setPreferenceReason] = useState("");
+
   const [placementStatus, setPlacementStatus] = useState(
     data?.profile?.placement_status ?? "Unplaced",
   );
@@ -40,17 +48,19 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
 
         setPlacementStatus(result.profile?.placement_status ?? "Unplaced");
 
-        setPlacedCompany(result.profile?.placed_company_name ?? "");
+        setPlacedCompany(result.currentPlacement?.company_name ?? "");
 
         setPlacedPackage(
-          result.profile?.placed_package_lpa != null
-            ? String(result.profile.placed_package_lpa)
+          result.currentPlacement?.package_lpa != null
+            ? String(result.currentPlacement.package_lpa)
             : "",
         );
 
-        setPlacementType(result.profile?.placement_type ?? "Campus Placement");
+        setPlacementType(result.currentPlacement?.placement_type ?? "Campus Placement");
 
-        setPlacedDate(result.profile?.placed_at ?? "");
+        setPlacedDate(result.currentPlacement?.placed_at ?? "");
+
+        setPlacementPreference(result.profile?.placement_preference ?? "Interested");
 
         const restrictionData = await adminStudentService.getStudentRestrictions(studentId);
 
@@ -82,15 +92,58 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
-       <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Student Profile Management</h1>
 
-  <h1 className="text-3xl font-bold">
-    Student Profile Management
-  </h1>
+          {/* Placement Preference button will be added here */}
+          <div className="mt-8 rounded-lg border p-5">
+            <h3 className="text-lg font-semibold">Placement Preference</h3>
 
-  {/* Placement Preference button will be added here */}
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">Current Preference</p>
 
-</div>
+              <p className="mt-1 font-medium">{placementPreference}</p>
+            </div>
+
+            <div className="mt-5">
+              <label className="text-sm font-medium">Reason</label>
+
+              <textarea
+                value={preferenceReason}
+                onChange={(e) => setPreferenceReason(e.target.value)}
+                rows={3}
+                className="mt-2 w-full rounded border p-3"
+                placeholder="Reason for changing placement preference..."
+              />
+            </div>
+
+            <button
+              type="button"
+              disabled={preferenceLoading}
+              onClick={async () => {
+                try {
+                  setPreferenceLoading(true);
+
+                  const nextPreference =
+                    placementPreference === "Interested" ? "Not Interested" : "Interested";
+
+                  await adminStudentService.updatePlacementPreference(studentId, nextPreference);
+
+                  setPlacementPreference(nextPreference);
+
+                  const refreshed = await adminStudentService.getStudentById(studentId);
+
+                  setData(refreshed);
+                } finally {
+                  setPreferenceLoading(false);
+                }
+              }}
+              className="mt-6 rounded bg-primary px-4 py-2 text-white"
+            >
+              {placementPreference === "Interested" ? "OPT-OUT" : "OPT-IN"}
+            </button>
+          </div>
+        </div>
 
         <div className="mt-8 space-y-8">
           {/* =========================
@@ -125,10 +178,9 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                     <strong>Contact:</strong> {data.profile.contact_number}
                   </p>
 
-                   <p>
+                  <p>
                     <strong>Gender:</strong> {data.profile.gender}
                   </p>
-
                 </div>
 
                 <div className="my-6 border-t" />

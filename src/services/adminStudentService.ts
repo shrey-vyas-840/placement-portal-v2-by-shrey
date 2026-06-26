@@ -1360,11 +1360,21 @@ export const adminStudentService = {
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
+    const { data: placementHistory } = await db
+      .from("student_placement_history")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("placed_at", { ascending: false });
+
+    const currentPlacement = placementHistory?.find((item: any) => item.is_current) ?? null;
+
     return {
       profile,
       academics,
       skills,
       documents,
+      placementHistory: placementHistory ?? [],
+      currentPlacement,
     };
   },
 
@@ -1647,41 +1657,75 @@ export const adminStudentService = {
   },
 
   async updatePlacementStatus(
-    studentId: string,
-    payload: {
-      placement_status: "Placed" | "Unplaced";
-      placed_company_name?: string | null;
-      placed_package_lpa?: number | null;
-      placement_type?: "Campus Placement" | "Internship PPO" | "Off Campus" | null;
-      placed_at?: string | null;
-    },
-  ) {
-    const updateData =
-      payload.placement_status === "Placed"
-        ? {
-            placement_status: "Placed",
-            placed_company_name: payload.placed_company_name ?? null,
-            placed_package_lpa: payload.placed_package_lpa ?? null,
-            placement_type: payload.placement_type ?? null,
-            placed_at: payload.placed_at ?? null,
-          }
-        : {
-            placement_status: "Unplaced",
-            placed_company_name: null,
-            placed_package_lpa: null,
-            placement_type: null,
-            placed_at: null,
-          };
+  studentId: string,
+  payload: {
+    placement_status: "Placed" | "Unplaced";
+    placed_company_name?: string | null;
+    placed_package_lpa?: number | null;
+    placement_type?: "Campus Placement" | "Internship PPO" | "Off Campus" | null;
+    placed_at?: string | null;
+  },
+) {
 
-    const { error } = await db
+  if (payload.placement_status === "Placed") {
+
+    const { error: deactivateError } = await db
+      .from("student_placement_history")
+      .update({
+        is_current: false,
+      })
+      .eq("student_id", studentId)
+      .eq("is_current", true);
+
+    if (deactivateError) {
+      throw deactivateError;
+    }
+
+    const { error: insertError } =
+      await db
+        .from("student_placement_history")
+        .insert({
+          student_id: studentId,
+          company_name: payload.placed_company_name,
+          package_lpa: payload.placed_package_lpa,
+          placement_type: payload.placement_type,
+          placed_at: payload.placed_at,
+          is_current: true,
+        });
+
+    if (insertError) {
+      throw insertError;
+    }
+
+  } else {
+
+    const { error: deactivateError } =
+      await db
+        .from("student_placement_history")
+        .update({
+          is_current: false,
+        })
+        .eq("student_id", studentId);
+
+    if (deactivateError) {
+      throw deactivateError;
+    }
+
+  }
+
+  const { error } =
+    await db
       .from("student_master")
-      .update(updateData)
+      .update({
+        placement_status: payload.placement_status,
+      })
       .eq("student_id", studentId);
 
-    if (error) {
-      throw error;
-    }
-  },
+  if (error) {
+    throw error;
+  }
+
+},
 
   async updatePlacementPreference(studentId: string, placementPreference: string) {
     const { error } = await db
