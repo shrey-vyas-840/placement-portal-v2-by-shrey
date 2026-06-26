@@ -30,6 +30,7 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   );
 
   const [preferenceReason, setPreferenceReason] = useState("");
+  const [preferenceDialogOpen, setPreferenceDialogOpen] = useState(false);
 
   const [placementStatus, setPlacementStatus] = useState(
     data?.profile?.placement_status ?? "Unplaced",
@@ -96,53 +97,16 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
           <h1 className="text-3xl font-bold">Student Profile Management</h1>
 
           {/* Placement Preference button will be added here */}
-          <div className="mt-8 rounded-lg border p-5">
-            <h3 className="text-lg font-semibold">Placement Preference</h3>
-
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground">Current Preference</p>
-
-              <p className="mt-1 font-medium">{placementPreference}</p>
-            </div>
-
-            <div className="mt-5">
-              <label className="text-sm font-medium">Reason</label>
-
-              <textarea
-                value={preferenceReason}
-                onChange={(e) => setPreferenceReason(e.target.value)}
-                rows={3}
-                className="mt-2 w-full rounded border p-3"
-                placeholder="Reason for changing placement preference..."
-              />
-            </div>
-
-            <button
-              type="button"
-              disabled={preferenceLoading}
-              onClick={async () => {
-                try {
-                  setPreferenceLoading(true);
-
-                  const nextPreference =
-                    placementPreference === "Interested" ? "Not Interested" : "Interested";
-
-                  await adminStudentService.updatePlacementPreference(studentId, nextPreference);
-
-                  setPlacementPreference(nextPreference);
-
-                  const refreshed = await adminStudentService.getStudentById(studentId);
-
-                  setData(refreshed);
-                } finally {
-                  setPreferenceLoading(false);
-                }
-              }}
-              className="mt-6 rounded bg-primary px-4 py-2 text-white"
-            >
-              {placementPreference === "Interested" ? "OPT-OUT" : "OPT-IN"}
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={preferenceLoading}
+            className="rounded-md bg-primary px-5 py-2 text-white"
+            onClick={() => {
+              setPreferenceDialogOpen(true);
+            }}
+          >
+            {placementPreference === "Interested" ? "OPT-OUT" : "OPT-IN"}
+          </button>
         </div>
 
         <div className="mt-8 space-y-8">
@@ -181,26 +145,31 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                   <p>
                     <strong>Gender:</strong> {data.profile.gender}
                   </p>
+
+                  <h2 className="text-lg font-semibold">Resume</h2>
+
+                  {data.documents?.map((doc: any) => (
+                    <div key={doc.student_document_id}>
+                      {doc.document_metadata?.storage_url && (
+                        <a
+                          href={doc.document_metadata.storage_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary underline"
+                        >
+                          Open Document
+                        </a>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
-                <div className="my-6 border-t" />
-
-                <h2 className="text-lg font-semibold">Resume</h2>
-
-                {data.documents?.map((doc: any) => (
-                  <div key={doc.student_document_id}>
-                    {doc.document_metadata?.storage_url && (
-                      <a
-                        href={doc.document_metadata.storage_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary underline"
-                      >
-                        Open Document
-                      </a>
-                    )}
-                  </div>
-                ))}
+                <div className="mt-4 rounded-lg border p-5">
+                  <p className="text-lg font-bold">
+                    Current Preference:{" "}
+                    {placementPreference === "Interested" ? "OPT-IN" : "OPT-OUT"}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -469,6 +438,69 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
               </div>
             </div>
           </div>
+
+          {preferenceDialogOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="w-[500px] rounded-xl bg-white p-6">
+                <h2 className="text-xl font-semibold">Change Placement Preference</h2>
+
+                <p className="mt-2 text-sm text-muted-foreground">Please provide a reason.</p>
+
+                <textarea
+                  rows={5}
+                  value={preferenceReason}
+                  onChange={(e) => setPreferenceReason(e.target.value)}
+                  className="mt-5 w-full rounded border p-3"
+                  placeholder="Reason..."
+                />
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreferenceDialogOpen(false);
+                      setPreferenceReason("");
+                    }}
+                    className="rounded border px-4 py-2"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded bg-primary px-5 py-2 text-white"
+                    onClick={async () => {
+                      if (!preferenceReason.trim()) {
+                        alert("Reason is mandatory.");
+                        return;
+                      }
+
+                      const nextPreference =
+                        placementPreference === "Interested" ? "Not Interested" : "Interested";
+
+                      await adminStudentService.updatePlacementPreference(
+                        studentId,
+                        nextPreference,
+                        preferenceReason.trim(),
+                      );
+
+                      const refreshed = await adminStudentService.getStudentById(studentId);
+
+                      setData(refreshed);
+
+                      setPlacementPreference(refreshed.profile.placement_preference);
+
+                      setPreferenceReason("");
+
+                      setPreferenceDialogOpen(false);
+                    }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {draft && (
             <div className="rounded-lg border p-5">
