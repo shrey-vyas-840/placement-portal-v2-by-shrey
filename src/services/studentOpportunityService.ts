@@ -27,6 +27,17 @@ export const studentOpportunityService = {
       .eq("student_id", studentId)
       .maybeSingle();
 
+    const { data: student } = await (supabase as any)
+      .from("student_master")
+      .select(
+        `
+    placement_preference,
+    placement_status
+    `,
+      )
+      .eq("student_id", studentId)
+      .maybeSingle();
+
     const { data: activeRestriction } = await (supabase as any)
       .from("student_restrictions")
       .select("*")
@@ -98,6 +109,10 @@ export const studentOpportunityService = {
           restriction_active: !!activeRestriction,
           restriction_type: activeRestriction?.restriction_type ?? null,
           restriction_reason: activeRestriction?.restriction_reason ?? null,
+          placement_preference: student?.placement_preference ?? null,
+          placement_status: student?.placement_status ?? null,
+          participation_allowed: student?.placement_preference === "Interested",
+          placement_allowed: student?.placement_status === "Unplaced",
         });
         continue;
       }
@@ -147,6 +162,15 @@ export const studentOpportunityService = {
         eligibility_status:
           instituteMatch && degreeMatch && cgpaMatch && backlogMatch ? "Eligible" : "Not Eligible",
         eligibility_reason: reason,
+        application_status: activeRestriction
+          ? "RESTRICTED"
+          : student?.placement_status !== "Unplaced"
+            ? "PLACED"
+            : student?.placement_preference !== "Interested"
+              ? "NOT_PARTICIPATING"
+              : instituteMatch && degreeMatch && cgpaMatch && backlogMatch
+                ? "ELIGIBLE"
+                : "INELIGIBLE",
         restriction_active: !!activeRestriction,
         restriction_type: activeRestriction?.restriction_type ?? null,
         restriction_reason: activeRestriction?.restriction_reason ?? null,
@@ -205,6 +229,78 @@ export const studentOpportunityService = {
         activeRestriction.restriction_reason ||
           "Your placement activities are currently restricted.",
       );
+
+      const { data: student } = await (supabase as any)
+        .from("student_master")
+        .select(
+          `
+    placement_preference,
+    placement_status
+    `,
+        )
+        .eq("student_id", studentId)
+        .maybeSingle();
+
+      if (!student) {
+        throw new Error("Student profile not found.");
+      }
+
+      if (student.placement_preference !== "Interested") {
+        throw new Error(
+          `Your current placement preference is "${student.placement_preference}". You are not eligible to apply.`,
+        );
+      }
+
+      if (student.placement_status !== "Unplaced") {
+        throw new Error("You have already been placed. Further applications are disabled.");
+      }
+
+      const { data: academic } = await (supabase as any)
+        .from("student_academic_details")
+        .select("*")
+        .eq("student_id", studentId)
+        .maybeSingle();
+
+      if (!academic) {
+        throw new Error("Academic details not found.");
+      }
+
+      const { data: eligibility } = await (supabase as any)
+        .from("drive_eligibility")
+        .select("*")
+        .eq("drive_id", opportunityId)
+        .maybeSingle();
+
+      if (eligibility) {
+        const institutes = splitCsvList(eligibility.allowed_institutes);
+        const degrees = splitCsvList(eligibility.allowed_degrees);
+
+        const instituteMatch =
+          institutes.length === 0 || institutes.includes(academic.current_institute_name);
+
+        const degreeMatch = degrees.length === 0 || degrees.includes(academic.current_degree_level);
+
+        const cgpaMatch = Number(academic.current_cgpa) >= Number(eligibility.minimum_cgpa || 0);
+
+        const backlogMatch =
+          Number(academic.active_backlogs) <= Number(eligibility.maximum_active_backlogs || 0);
+
+        if (!instituteMatch) {
+          throw new Error("Institute not eligible.");
+        }
+
+        if (!degreeMatch) {
+          throw new Error("Degree not eligible.");
+        }
+
+        if (!cgpaMatch) {
+          throw new Error("CGPA below required eligibility.");
+        }
+
+        if (!backlogMatch) {
+          throw new Error("Backlog criteria not met.");
+        }
+      }
     }
 
     const { data: application, error } = await (supabase as any)

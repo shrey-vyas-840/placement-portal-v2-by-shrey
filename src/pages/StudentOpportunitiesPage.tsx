@@ -239,11 +239,15 @@ hover:border-primary/30
 
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    opportunity.restriction_active
-                      ? "bg-red-50 text-red-700"
-                      : opportunity.eligibility_status === "Eligible"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
+                    opportunity.application_status === "RESTRICTED"
+                      ? "Restricted"
+                      : opportunity.application_status === "PLACED"
+                        ? "Placed"
+                        : opportunity.application_status === "NOT_PARTICIPATING"
+                          ? "Not Participating"
+                          : opportunity.application_status === "INELIGIBLE"
+                            ? "Ineligible"
+                            : "Eligible"
                   }`}
                 >
                   {opportunity.restriction_active ? "Restricted" : opportunity.eligibility_status}
@@ -319,7 +323,9 @@ hover:border-primary/30
               </div>
 
               <button
-                disabled={opportunity.alreadyApplied || opportunity.restriction_active}
+                disabled={
+                  opportunity.alreadyApplied || opportunity.application_status !== "ELIGIBLE"
+                }
                 onClick={async () => {
                   const qs = await adminQuestionService.getQuestions(opportunity.opportunity_id);
 
@@ -344,17 +350,29 @@ hover:border-primary/30
     ${
       opportunity.alreadyApplied
         ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-        : opportunity.restriction_active
+        : opportunity.application_status === "RESTRICTED"
           ? "bg-red-50 text-red-700 border border-red-200"
-          : "bg-primary text-white hover:scale-[1.02]"
+          : opportunity.application_status === "PLACED"
+            ? "bg-blue-50 text-blue-700 border border-blue-200"
+            : opportunity.application_status === "NOT_PARTICIPATING"
+              ? "bg-slate-100 text-slate-700 border border-slate-300"
+              : opportunity.application_status === "INELIGIBLE"
+                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                : "bg-primary text-white hover:scale-[1.02]"
     }
 `}
               >
                 {opportunity.alreadyApplied
                   ? "Applied ✓"
-                  : opportunity.restriction_active
+                  : opportunity.application_status === "RESTRICTED"
                     ? "Restricted"
-                    : "Apply"}
+                    : opportunity.application_status === "PLACED"
+                      ? "Placed"
+                      : opportunity.application_status === "NOT_PARTICIPATING"
+                        ? "Not Participating"
+                        : opportunity.application_status === "INELIGIBLE"
+                          ? "Ineligible"
+                          : "Apply"}
               </button>
             </div>
           ))}
