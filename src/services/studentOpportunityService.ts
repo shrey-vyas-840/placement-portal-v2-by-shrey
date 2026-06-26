@@ -216,7 +216,6 @@ export const studentOpportunityService = {
     if (existingApplication) {
       throw new Error("Already applied");
     }
-
     const { data: activeRestriction } = await (supabase as any)
       .from("student_restrictions")
       .select("*")
@@ -229,77 +228,87 @@ export const studentOpportunityService = {
         activeRestriction.restriction_reason ||
           "Your placement activities are currently restricted.",
       );
+    }
 
-      const { data: student } = await (supabase as any)
-        .from("student_master")
-        .select(
-          `
-    placement_preference,
-    placement_status
-    `,
-        )
-        .eq("student_id", studentId)
-        .maybeSingle();
+    const { data: student } = await (supabase as any)
+      .from("student_master")
+      .select(
+        `
+placement_preference,
+placement_status
+`,
+      )
+      .eq("student_id", studentId)
+      .maybeSingle();
 
-      if (!student) {
-        throw new Error("Student profile not found.");
+    if (!student) {
+      throw new Error("Student profile not found.");
+    }
+
+    if (student.placement_preference !== "Interested") {
+      throw new Error(
+        `Your current placement preference is "${student.placement_preference}". You are not eligible to apply.`,
+      );
+    }
+
+    if (student.placement_status !== "Unplaced") {
+      throw new Error("You have already been placed. Further applications are disabled.");
+    }
+
+    const { data: academic } = await (supabase as any)
+      .from("student_academic_details")
+      .select("*")
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    if (!academic) {
+      throw new Error("Academic details not found.");
+    }
+
+    const { data: opportunityRecord } = await (supabase as any)
+      .from("opportunity_master")
+      .select("drive_id")
+      .eq("opportunity_id", opportunityId)
+      .maybeSingle();
+
+    if (!opportunityRecord) {
+      throw new Error("Opportunity not found.");
+    }
+
+    const { data: eligibility } = await (supabase as any)
+      .from("drive_eligibility")
+      .select("*")
+      .eq("drive_id", opportunityRecord.drive_id)
+      .maybeSingle();
+
+    if (eligibility) {
+      const institutes = splitCsvList(eligibility.allowed_institutes);
+      const degrees = splitCsvList(eligibility.allowed_degrees);
+
+      const instituteMatch =
+        institutes.length === 0 || institutes.includes(academic.current_institute_name);
+
+      const degreeMatch = degrees.length === 0 || degrees.includes(academic.current_degree_level);
+
+      const cgpaMatch = Number(academic.current_cgpa) >= Number(eligibility.minimum_cgpa || 0);
+
+      const backlogMatch =
+        Number(academic.active_backlogs) <= Number(eligibility.maximum_active_backlogs || 0);
+
+      if (!instituteMatch) {
+        throw new Error("Institute not eligible.");
       }
 
-      if (student.placement_preference !== "Interested") {
-        throw new Error(
-          `Your current placement preference is "${student.placement_preference}". You are not eligible to apply.`,
-        );
+      if (!degreeMatch) {
+        throw new Error("Degree not eligible.");
       }
 
-      if (student.placement_status !== "Unplaced") {
-        throw new Error("You have already been placed. Further applications are disabled.");
+      if (!cgpaMatch) {
+        throw new Error("CGPA below required eligibility.");
       }
 
-      const { data: academic } = await (supabase as any)
-        .from("student_academic_details")
-        .select("*")
-        .eq("student_id", studentId)
-        .maybeSingle();
-
-      if (!academic) {
-        throw new Error("Academic details not found.");
-      }
-
-      const { data: eligibility } = await (supabase as any)
-        .from("drive_eligibility")
-        .select("*")
-        .eq("drive_id", opportunityId)
-        .maybeSingle();
-
-      if (eligibility) {
-        const institutes = splitCsvList(eligibility.allowed_institutes);
-        const degrees = splitCsvList(eligibility.allowed_degrees);
-
-        const instituteMatch =
-          institutes.length === 0 || institutes.includes(academic.current_institute_name);
-
-        const degreeMatch = degrees.length === 0 || degrees.includes(academic.current_degree_level);
-
-        const cgpaMatch = Number(academic.current_cgpa) >= Number(eligibility.minimum_cgpa || 0);
-
-        const backlogMatch =
-          Number(academic.active_backlogs) <= Number(eligibility.maximum_active_backlogs || 0);
-
-        if (!instituteMatch) {
-          throw new Error("Institute not eligible.");
-        }
-
-        if (!degreeMatch) {
-          throw new Error("Degree not eligible.");
-        }
-
-        if (!cgpaMatch) {
-          throw new Error("CGPA below required eligibility.");
-        }
-
-        if (!backlogMatch) {
-          throw new Error("Backlog criteria not met.");
-        }
+      if (!backlogMatch) {
+        throw new Error("Backlog criteria not met.");
       }
     }
 

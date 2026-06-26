@@ -6,21 +6,14 @@ export function AdminStudentsPage() {
   const [students, setStudents] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
-
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-
   const [interestFilter, setInterestFilter] = useState("All");
-
   const [placementFilter, setPlacementFilter] = useState("All");
-
   const [instituteFilter, setInstituteFilter] = useState("All");
-
   const [branchFilter, setBranchFilter] = useState("All");
-
   const [graduationFilter, setGraduationFilter] = useState("All");
-
   const [cgpaFilter, setCgpaFilter] = useState("All");
-
   const [filterOptions, setFilterOptions] = useState({
     institutes: [] as string[],
     branches: [] as string[],

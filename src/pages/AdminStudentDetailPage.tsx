@@ -21,12 +21,36 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   const [restrictionReason, setRestrictionReason] = useState("");
   const [restrictionLoading, setRestrictionLoading] = useState(false);
 
+  const [placementLoading, setPlacementLoading] = useState(false);
+
+  const [placementStatus, setPlacementStatus] = useState(
+    data?.profile?.placement_status ?? "Unplaced",
+  );
+  const [placedCompany, setPlacedCompany] = useState("");
+  const [placedPackage, setPlacedPackage] = useState("");
+  const [placementType, setPlacementType] = useState("Campus Placement");
+  const [placedDate, setPlacedDate] = useState("");
+
   useEffect(() => {
     async function load() {
       try {
         const result = await adminStudentService.getStudentById(studentId);
 
         setData(result);
+
+        setPlacementStatus(result.profile?.placement_status ?? "Unplaced");
+
+        setPlacedCompany(result.profile?.placed_company_name ?? "");
+
+        setPlacedPackage(
+          result.profile?.placed_package_lpa != null
+            ? String(result.profile.placed_package_lpa)
+            : "",
+        );
+
+        setPlacementType(result.profile?.placement_type ?? "Campus Placement");
+
+        setPlacedDate(result.profile?.placed_at ?? "");
 
         const restrictionData = await adminStudentService.getStudentRestrictions(studentId);
 
@@ -58,193 +82,339 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <h1 className="text-3xl font-bold">Student Details</h1>
+       <div className="flex items-center justify-between">
 
-        <div className="mt-8 space-y-6">
-          <div className="rounded-lg border p-5">
-            <h2 className="font-semibold">Profile</h2>
+  <h1 className="text-3xl font-bold">
+    Student Profile Management
+  </h1>
 
-            <p>
-              Name: {data.profile.first_name} {data.profile.last_name}
-            </p>
+  {/* Placement Preference button will be added here */}
 
-            <p>Enrollment: {data.profile.enrollment_no}</p>
+</div>
 
-            <p>Institute Email: {data.profile.institute_email}</p>
+        <div className="mt-8 space-y-8">
+          {/* =========================
+      TOP ROW
+  ========================== */}
 
-            <p>Contact: {data.profile.contact_number}</p>
-          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div id="profile-card" className="flex flex-col gap-6 rounded-xl border bg-card p-6">
+              {/* PROFILE + DOCUMENTS */}
 
-          <div className="rounded-lg border p-5">
-            <h2 className="font-semibold">Academics</h2>
+              <div className="rounded-lg border p-5">
+                <h2 className="text-lg font-semibold">Basic Details</h2>
 
-            <p>CGPA: {data.academics?.current_cgpa}</p>
-
-            <p>Semester: {data.academics?.current_semester}</p>
-
-            <p>Branch: {data.academics?.current_branch_name}</p>
-
-            <p>Graduation: {data.academics?.graduation_year}</p>
-          </div>
-
-          <div className="rounded-lg border p-5">
-            <h2 className="font-semibold">Skills</h2>
-
-            <p>Programming: {data.skills?.programming_languages}</p>
-
-            <p>Technical: {data.skills?.technical_skills}</p>
-
-            <p>Tools: {data.skills?.tools_and_technologies}</p>
-          </div>
-
-          <div className="rounded-lg border p-5">
-            <h2 className="font-semibold">Documents</h2>
-
-            <p className="mb-4">Total Documents: {data.documents?.length ?? 0}</p>
-
-            <div className="space-y-3">
-              {data.documents?.map((doc: any) => (
-                <div key={doc.student_document_id} className="rounded border p-3">
+                <div className="mt-4 space-y-1">
                   <p>
-                    <strong>Document:</strong> {doc.document_metadata?.document_name}
+                    <strong>Name:</strong> {data.profile.first_name} {data.profile.last_name}
                   </p>
 
                   <p>
-                    <strong>Type:</strong> {doc.document_metadata?.document_type}
+                    <strong>Enrollment:</strong> {data.profile.enrollment_no}
                   </p>
 
                   <p>
-                    <strong>Status:</strong> {doc.verification_status}
+                    <strong>Institute Email:</strong> {data.profile.institute_email}
                   </p>
 
-                  {doc.document_metadata?.storage_url && (
-                    <a
-                      href={doc.document_metadata.storage_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary underline"
-                    >
-                      Open Document
-                    </a>
-                  )}
+                  <p>
+                    <strong>Personal Email:</strong> {data.profile.personal_email}
+                  </p>
+
+                  <p>
+                    <strong>Contact:</strong> {data.profile.contact_number}
+                  </p>
+
+                   <p>
+                    <strong>Gender:</strong> {data.profile.gender}
+                  </p>
+
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="rounded-lg border p-5">
-            <h2 className="font-semibold">Placement Restrictions</h2>
+                <div className="my-6 border-t" />
 
-            <div className="mt-4 grid gap-3">
-              <select
-                value={restrictionType}
-                onChange={(e) => setRestrictionType(e.target.value)}
-                className="rounded border p-2"
-              >
-                <option value="ATTENDANCE_RESTRICTION">Attendance Restriction</option>
+                <h2 className="text-lg font-semibold">Resume</h2>
 
-                <option value="GRIEVANCE_RESTRICTION">Grievance Restriction</option>
-
-                <option value="MISBEHAVIOR_RESTRICTION">Misbehavior Restriction</option>
-
-                <option value="CUSTOM">Custom Restriction</option>
-              </select>
-
-              <textarea
-                rows={4}
-                value={restrictionReason}
-                onChange={(e) => setRestrictionReason(e.target.value)}
-                placeholder="Restriction reason"
-                className="rounded border p-3"
-              />
-
-              <button
-                type="button"
-                disabled={
-                  restrictionLoading || (restrictionType === "CUSTOM" && !restrictionReason.trim())
-                }
-                onClick={async () => {
-                  try {
-                    setRestrictionLoading(true);
-
-                    const session = await authService.getSession();
-
-                    if (!session?.user?.id) {
-                      throw new Error("Unable to determine admin.");
-                    }
-
-                    const finalReason =
-                      restrictionType === "CUSTOM"
-                        ? restrictionReason
-                        : restrictionReason ||
-                          {
-                            ATTENDANCE_RESTRICTION: "Attendance shortage",
-                            GRIEVANCE_RESTRICTION: "Student grievance case under review",
-                            MISBEHAVIOR_RESTRICTION: "Student conduct review in progress",
-                          }[restrictionType];
-
-                    await adminStudentService.createRestriction({
-                      student_id: studentId,
-                      restriction_type: restrictionType,
-                      restriction_reason: finalReason ?? "",
-                      restricted_by: session.user.id,
-                    });
-
-                    const refreshed = await adminStudentService.getStudentRestrictions(studentId);
-
-                    setRestrictions(refreshed);
-
-                    setRestrictionReason("");
-                  } catch (err) {
-                    console.error(err);
-                    alert("Unable to create restriction.");
-                  } finally {
-                    setRestrictionLoading(false);
-                  }
-                }}
-                className="rounded bg-red-600 px-4 py-2 text-white"
-              >
-                Apply Restriction
-              </button>
-            </div>
-
-            <div className="mt-6 space-y-3">
-              {restrictions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No restrictions found.</p>
-              ) : (
-                restrictions.map((restriction) => (
-                  <div key={restriction.restriction_id} className="rounded border p-3">
-                    <p>
-                      <strong>Type:</strong> {restriction.restriction_type}
-                    </p>
-
-                    <p>
-                      <strong>Reason:</strong> {restriction.restriction_reason}
-                    </p>
-
-                    <p>
-                      <strong>Status:</strong> {restriction.is_active ? "Active" : "Removed"}
-                    </p>
-
-                    {restriction.is_active && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await adminStudentService.removeRestriction(restriction.restriction_id);
-
-                          const refreshed =
-                            await adminStudentService.getStudentRestrictions(studentId);
-
-                          setRestrictions(refreshed);
-                        }}
-                        className="mt-3 rounded border px-3 py-1"
+                {data.documents?.map((doc: any) => (
+                  <div key={doc.student_document_id}>
+                    {doc.document_metadata?.storage_url && (
+                      <a
+                        href={doc.document_metadata.storage_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
                       >
-                        Remove Restriction
-                      </button>
+                        Open Document
+                      </a>
                     )}
                   </div>
-                ))
-              )}
+                ))}
+              </div>
+            </div>
+
+            <div id="academic-card" className="flex flex-col gap-6 rounded-xl border bg-card p-6">
+              {/* ACADEMICS + SKILLS */}
+
+              <div className="rounded-lg border p-5">
+                <h2 className="text-lg font-semibold">Academics</h2>
+
+                <div className="mt-4 space-y-1">
+                  <p>
+                    <strong>CGPA:</strong> {data.academics?.current_cgpa}
+                  </p>
+
+                  <p>
+                    <strong>Semester:</strong> {data.academics?.current_semester}
+                  </p>
+
+                  <p>
+                    <strong>Branch:</strong> {data.academics?.current_branch_name}
+                  </p>
+
+                  <p>
+                    <strong>Graduation:</strong> {data.academics?.graduation_year}
+                  </p>
+                </div>
+
+                <div className="my-6 border-t" />
+
+                <h2 className="text-lg font-semibold">Skills</h2>
+
+                <div className="mt-4 space-y-2">
+                  <p>
+                    <strong>Programming:</strong> {data.skills?.programming_languages}
+                  </p>
+
+                  <p>
+                    <strong>Technical:</strong> {data.skills?.technical_skills}
+                  </p>
+
+                  <p>
+                    <strong>Tools:</strong> {data.skills?.tools_and_technologies}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* =========================
+      BOTTOM ROW
+  ========================== */}
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div id="placement-card" className="rounded-xl border bg-card p-6">
+              {/* PLACEMENT */}
+
+              <div>
+                <h2 className="text-lg font-semibold">Placement Management</h2>
+
+                <div className="mt-6 rounded-lg border p-4">
+                  <h3 className="font-semibold">Placement Status</h3>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <select
+                      value={placementStatus}
+                      onChange={(e) => setPlacementStatus(e.target.value)}
+                      className="rounded border p-2"
+                    >
+                      <option value="Unplaced">Unplaced</option>
+
+                      <option value="Placed">Placed</option>
+                    </select>
+
+                    <input
+                      type="text"
+                      value={placedCompany}
+                      onChange={(e) => setPlacedCompany(e.target.value)}
+                      placeholder="Company Name"
+                      className="rounded border p-2"
+                    />
+
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={placedPackage}
+                      onChange={(e) => setPlacedPackage(e.target.value)}
+                      placeholder="Package (LPA)"
+                      className="rounded border p-2"
+                    />
+
+                    <select
+                      value={placementType}
+                      onChange={(e) => setPlacementType(e.target.value)}
+                      className="rounded border p-2"
+                    >
+                      <option>Campus Placement</option>
+
+                      <option>Internship PPO</option>
+
+                      <option>Off Campus</option>
+                    </select>
+
+                    <input
+                      type="date"
+                      value={placedDate}
+                      onChange={(e) => setPlacedDate(e.target.value)}
+                      className="rounded border p-2"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={placementLoading}
+                    onClick={async () => {
+                      try {
+                        setPlacementLoading(true);
+
+                        await adminStudentService.updatePlacementStatus(studentId, {
+                          placement_status: placementStatus as "Placed" | "Unplaced",
+
+                          placed_company_name: placedCompany || null,
+
+                          placed_package_lpa: placedPackage ? Number(placedPackage) : null,
+
+                          placement_type: placementType as
+                            | "Campus Placement"
+                            | "Internship PPO"
+                            | "Off Campus",
+
+                          placed_at: placedDate || null,
+                        });
+
+                        const refreshed = await adminStudentService.getStudentById(studentId);
+
+                        setData(refreshed);
+
+                        alert("Placement status updated successfully.");
+                      } finally {
+                        setPlacementLoading(false);
+                      }
+                    }}
+                    className="mt-4 rounded bg-primary px-4 py-2 text-white"
+                  >
+                    Save Placement Status
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="restriction-card" className="rounded-xl border bg-card p-6">
+              <h2 className="mb-6 text-lg font-semibold">Restriction Management</h2>
+              <div className="rounded-lg border p-5">
+                <div className="mt-4 grid gap-3">
+                  <select
+                    value={restrictionType}
+                    onChange={(e) => setRestrictionType(e.target.value)}
+                    className="rounded border p-2"
+                  >
+                    <option value="ATTENDANCE_RESTRICTION">Attendance Restriction</option>
+
+                    <option value="GRIEVANCE_RESTRICTION">Grievance Restriction</option>
+
+                    <option value="MISBEHAVIOR_RESTRICTION">Misbehavior Restriction</option>
+
+                    <option value="CUSTOM">Custom Restriction</option>
+                  </select>
+
+                  <textarea
+                    rows={4}
+                    value={restrictionReason}
+                    onChange={(e) => setRestrictionReason(e.target.value)}
+                    placeholder="Restriction reason"
+                    className="rounded border p-3"
+                  />
+
+                  <button
+                    type="button"
+                    disabled={
+                      restrictionLoading ||
+                      (restrictionType === "CUSTOM" && !restrictionReason.trim())
+                    }
+                    onClick={async () => {
+                      try {
+                        setRestrictionLoading(true);
+
+                        const session = await authService.getSession();
+
+                        if (!session?.user?.id) {
+                          throw new Error("Unable to determine admin.");
+                        }
+
+                        const finalReason =
+                          restrictionType === "CUSTOM"
+                            ? restrictionReason
+                            : restrictionReason ||
+                              {
+                                ATTENDANCE_RESTRICTION: "Attendance shortage",
+                                GRIEVANCE_RESTRICTION: "Student grievance case under review",
+                                MISBEHAVIOR_RESTRICTION: "Student conduct review in progress",
+                              }[restrictionType];
+
+                        await adminStudentService.createRestriction({
+                          student_id: studentId,
+                          restriction_type: restrictionType,
+                          restriction_reason: finalReason ?? "",
+                          restricted_by: session.user.id,
+                        });
+
+                        const refreshed =
+                          await adminStudentService.getStudentRestrictions(studentId);
+
+                        setRestrictions(refreshed);
+
+                        setRestrictionReason("");
+                      } catch (err) {
+                        console.error(err);
+                        alert("Unable to create restriction.");
+                      } finally {
+                        setRestrictionLoading(false);
+                      }
+                    }}
+                    className="rounded bg-red-600 px-4 py-2 text-white"
+                  >
+                    Apply Restriction
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 max-h-[420px] space-y-3 overflow-y-auto">
+                {restrictions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No restrictions found.</p>
+                ) : (
+                  restrictions.map((restriction) => (
+                    <div key={restriction.restriction_id} className="rounded border p-3">
+                      <p>
+                        <strong>Type:</strong> {restriction.restriction_type}
+                      </p>
+
+                      <p>
+                        <strong>Reason:</strong> {restriction.restriction_reason}
+                      </p>
+
+                      <p>
+                        <strong>Status:</strong> {restriction.is_active ? "Active" : "Removed"}
+                      </p>
+
+                      {restriction.is_active && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await adminStudentService.removeRestriction(restriction.restriction_id);
+
+                            const refreshed =
+                              await adminStudentService.getStudentRestrictions(studentId);
+
+                            setRestrictions(refreshed);
+                          }}
+                          className="mt-3 rounded border px-3 py-1"
+                        >
+                          Remove Restriction
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 

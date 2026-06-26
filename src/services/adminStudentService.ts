@@ -1583,6 +1583,141 @@ export const adminStudentService = {
       throw error;
     }
   },
+
+  async getStudentPlacementOverrides(studentId: string) {
+    const { data, error } = await db
+      .from("student_placement_overrides")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("granted_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? [];
+  },
+
+  async createPlacementOverride(payload: {
+    student_id: string;
+    override_scope: "ALL" | "SPECIFIC";
+    opportunity_id?: string | null;
+    override_reason: string;
+    granted_by: string;
+    expires_at?: string | null;
+  }) {
+    const { error: deactivateError } = await db
+      .from("student_placement_overrides")
+      .update({
+        is_active: false,
+      })
+      .eq("student_id", payload.student_id)
+      .eq("is_active", true);
+
+    if (deactivateError) {
+      throw deactivateError;
+    }
+
+    const { error } = await db.from("student_placement_overrides").insert({
+      student_id: payload.student_id,
+      override_scope: payload.override_scope,
+      opportunity_id: payload.opportunity_id ?? null,
+      override_reason: payload.override_reason,
+      granted_by: payload.granted_by,
+      expires_at: payload.expires_at ?? null,
+      is_active: true,
+    });
+
+    if (error) {
+      throw error;
+    }
+  },
+
+  async removePlacementOverride(overrideId: string) {
+    const { error } = await db
+      .from("student_placement_overrides")
+      .update({
+        is_active: false,
+      })
+      .eq("override_id", overrideId);
+
+    if (error) {
+      throw error;
+    }
+  },
+
+  async updatePlacementStatus(
+    studentId: string,
+    payload: {
+      placement_status: "Placed" | "Unplaced";
+      placed_company_name?: string | null;
+      placed_package_lpa?: number | null;
+      placement_type?: "Campus Placement" | "Internship PPO" | "Off Campus" | null;
+      placed_at?: string | null;
+    },
+  ) {
+    const updateData =
+      payload.placement_status === "Placed"
+        ? {
+            placement_status: "Placed",
+            placed_company_name: payload.placed_company_name ?? null,
+            placed_package_lpa: payload.placed_package_lpa ?? null,
+            placement_type: payload.placement_type ?? null,
+            placed_at: payload.placed_at ?? null,
+          }
+        : {
+            placement_status: "Unplaced",
+            placed_company_name: null,
+            placed_package_lpa: null,
+            placement_type: null,
+            placed_at: null,
+          };
+
+    const { error } = await db
+      .from("student_master")
+      .update(updateData)
+      .eq("student_id", studentId);
+
+    if (error) {
+      throw error;
+    }
+  },
+
+  async updatePlacementPreference(studentId: string, placementPreference: string) {
+    const { error } = await db
+      .from("student_master")
+      .update({
+        placement_preference: placementPreference,
+      })
+      .eq("student_id", studentId);
+
+    if (error) {
+      throw error;
+    }
+  },
+
+  async updateStudentPlacementStatusQuick(studentId: string, status: "Placed" | "Unplaced") {
+    return this.updatePlacementStatus(studentId, {
+      placement_status: status,
+    });
+  },
+
+  async togglePlacementPreference(studentId: string, currentPreference: string) {
+    const nextPreference = currentPreference === "Interested" ? "Not Interested" : "Interested";
+
+    const { error } = await db
+      .from("student_master")
+      .update({
+        placement_preference: nextPreference,
+      })
+      .eq("student_id", studentId);
+
+    if (error) {
+      throw error;
+    }
+
+    return nextPreference;
+  },
 };
 
 // ===== PART 2 =====
