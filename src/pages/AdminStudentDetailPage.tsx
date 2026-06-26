@@ -37,10 +37,12 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   );
   const [placedCompany, setPlacedCompany] = useState("");
   const [placedPackage, setPlacedPackage] = useState("");
-  const [placementType, setPlacementType] = useState("Campus Placement");
+  const [placementType, setPlacementType] = useState("");
   const [placedDate, setPlacedDate] = useState("");
 
   const [placementOverrides, setPlacementOverrides] = useState<any[]>([]);
+  const [showOverrideHistory, setShowOverrideHistory] = useState(false);
+  const [showRestrictionHistory, setShowRestrictionHistory] = useState(false);
   const [overrideScope, setOverrideScope] = useState<"ALL" | "SPECIFIC">("ALL");
   const [overrideOpportunityId, setOverrideOpportunityId] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
@@ -66,7 +68,7 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
             : "",
         );
 
-        setPlacementType(result.currentPlacement?.placement_type ?? "Campus Placement");
+        setPlacementType(result.currentPlacement?.placement_type ?? "");
         setPlacedDate(result.currentPlacement?.placed_at ?? "");
         setPlacementPreference(result.profile?.placement_preference ?? "Interested");
 
@@ -112,35 +114,52 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Student Profile Management</h1>
+        <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 shadow-lg">
+          <div className="flex items-center justify-between px-10 py-8">
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-blue-100">ADMIN WORKSPACE</p>
 
-          {/* Placement Preference button will be added here */}
-          <button
-            type="button"
-            disabled={preferenceLoading}
-            className="rounded-md bg-primary px-5 py-2 text-white"
-            onClick={() => {
-              setPreferenceDialogOpen(true);
-            }}
-          >
-            {placementPreference === "Interested" ? "OPT-OUT" : "OPT-IN"}
-          </button>
+              <h1 className="mt-2 text-4xl font-bold text-white">Student Profile Management</h1>
+
+              <p className="mt-2 text-blue-100">
+                Manage profile, placement, preference and restrictions.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={preferenceLoading}
+              className="rounded-full border-2 border-white bg-white/20 px-8 py-3 font-bold text-white backdrop-blur hover:bg-white hover:text-blue-700"
+              onClick={() => {
+                setPreferenceDialogOpen(true);
+              }}
+            >
+              {placementPreference === "Interested" ? "OPT-OUT" : "OPT-IN"}
+            </button>
+          </div>
         </div>
 
         <div className="mt-8 space-y-8">
           {/* =========================
       TOP ROW
   ========================== */}
+          <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+            <div
+              id="profile-card"
+              className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-lg"
+            >
+              <div className="border-b bg-muted/40 px-8 py-5">
+                <h2 className="text-xl font-bold">Basic Details</h2>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div id="profile-card" className="flex flex-col gap-6 rounded-xl border bg-card p-6">
-              {/* PROFILE + DOCUMENTS */}
+                <p className="text-m text-muted-foreground">
+                  Student profile, documents and placement preference
+                </p>
+              </div>
 
-              <div className="rounded-lg border p-5">
-                <h2 className="text-lg font-semibold">Basic Details</h2>
+              <div className="p-8">
+                {/* PROFILE + DOCUMENTS */}
 
-                <div className="mt-4 space-y-1">
+                <div className="mt-2 space-y-3 text-m">
                   <p>
                     <strong>Name:</strong> {data.profile.first_name} {data.profile.last_name}
                   </p>
@@ -165,7 +184,7 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                     <strong>Gender:</strong> {data.profile.gender}
                   </p>
 
-                  <h2 className="text-lg font-semibold">Resume</h2>
+                  <h3 className="mt-6 border-t pt-5 text-lg font-semibold">Resume</h3>
 
                   {data.documents?.map((doc: any) => (
                     <div key={doc.student_document_id}>
@@ -183,7 +202,7 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
                   ))}
                 </div>
 
-                <div className="mt-4 rounded-lg border p-5">
+                <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-5">
                   <p className="text-lg font-bold">
                     Current Preference:{" "}
                     {placementPreference === "Interested" ? "OPT-IN" : "OPT-OUT"}
@@ -192,35 +211,55 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
               </div>
             </div>
 
-            <div id="academic-card" className="flex flex-col gap-6 rounded-xl border bg-card p-6">
-              {/* ACADEMICS + SKILLS */}
+            <div
+              id="academic-card"
+              className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-lg"
+            >
+              <div className="border-b bg-muted/40 px-8 py-5">
+                <h2 className="text-xl font-bold">Academic Profile</h2>
 
-              <div className="rounded-lg border p-5">
-                <h2 className="text-lg font-semibold">Academics</h2>
+                <p className="text-m text-muted-foreground">Academics and technical skills</p>
+              </div>
 
-                <div className="mt-4 space-y-1">
+              <div className="p-8">
+                {/* ACADEMICS + SKILLS */}
+
+                <div className="mt-2 space-y-3 text-m">
                   <p>
-                    <strong>CGPA:</strong> {data.academics?.current_cgpa}
+                    <strong>SSC Marks:</strong> {data.academics?.tenth_percentage}
                   </p>
 
                   <p>
-                    <strong>Semester:</strong> {data.academics?.current_semester}
+                    <strong>{data.academics?.education_path} Marks:</strong>{" "}
+                    {data.academics?.education_path === "HSC"
+                      ? data.academics?.twelfth_percentage
+                      : data.academics?.education_path === "Diploma"
+                        ? data.academics?.diploma_percentage
+                        : "N/A"}
                   </p>
 
+                  <p>
+                    <strong>Institute:</strong> {data.academics?.current_institute_name}
+                  </p>
                   <p>
                     <strong>Branch:</strong> {data.academics?.current_branch_name}
                   </p>
-
+                  <p>
+                    <strong>Semester:</strong> {data.academics?.current_semester}
+                  </p>
+                  <p>
+                    <strong>CGPA:</strong> {data.academics?.current_cgpa}
+                  </p>
                   <p>
                     <strong>Graduation:</strong> {data.academics?.graduation_year}
                   </p>
                 </div>
 
-                <div className="my-6 border-t" />
+                <div className="my-8 border-t" />
 
                 <h2 className="text-lg font-semibold">Skills</h2>
 
-                <div className="mt-4 space-y-2">
+                <div className="mt-2 space-y-3">
                   <p>
                     <strong>Programming:</strong> {data.skills?.programming_languages}
                   </p>
@@ -241,281 +280,385 @@ export function AdminStudentDetailPage({ studentId }: { studentId: string }) {
       BOTTOM ROW
   ========================== */}
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div id="placement-card" className="rounded-xl border bg-card p-6">
-              {/* PLACEMENT */}
+          <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+            <div
+              id="placement-card"
+              className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-lg"
+            >
+              <div className="border-b bg-muted/40 px-8 py-5">
+                <h2 className="text-xl font-semibold">Placement Management</h2>
 
-              <div>
-                <h2 className="text-lg font-semibold">Placement Management</h2>
+                <p className="text-sm text-muted-foreground">
+                  Placement status and override management
+                </p>
+              </div>
 
-                <div className="mt-6 rounded-lg border p-4">
-                  <h3 className="font-semibold">Placement Status</h3>
+              <div className="p-6">
+                {/* PLACEMENT */}
 
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <select
-                      value={placementStatus}
-                      onChange={(e) => setPlacementStatus(e.target.value)}
-                      className="rounded border p-2"
-                    >
-                      <option value="Unplaced">Unplaced</option>
+                <div>
+                  <h3 className="text-xl font-semibold">Placement Status</h3>
 
-                      <option value="Placed">Placed</option>
-                    </select>
+                  <div className="mt-6 grid gap-6">
+                    <div>
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">
+                          Registered Opportunity
+                        </label>
+                        <div className="mt-2 grid gap-6 py-4">
+                          <select
+                            value={selectedPlacementOpportunity}
+                            onChange={(e) => {
+                              const value = e.target.value;
 
-<div className="max-h-64 overflow-y-auto">
+                              setSelectedPlacementOpportunity(value);
 
-<select
-size={8}
-value={selectedPlacementOpportunity}
-onChange={(e) => {
+                              if (value === "") {
+                                setSelectedApplication(null);
 
-  const value = e.target.value;
+                                return;
+                              }
 
-  setSelectedPlacementOpportunity(value);
+                              if (value === "OTHER") {
+                                setSelectedApplication(null);
 
-  if (value === "") {
+                                setManualCompany("");
 
-    setSelectedApplication(null);
+                                setManualPackage("");
 
-    return;
+                                return;
+                              }
 
-  }
+                              const selected = availableOpportunities.find(
+                                (item: any) => item.opportunity_id === value,
+                              );
 
-  if (value === "OTHER") {
+                              setSelectedApplication(selected);
 
-    setSelectedApplication(null);
+                              setManualCompany(selected?.company_name ?? "");
 
-    setManualCompany("");
+                              setManualPackage(
+                                selected?.package_lpa != null ? String(selected.package_lpa) : "",
+                              );
+                            }}
+                            className="w-full rounded-xl border bg-background px-3 py-3"
+                          >
+                            <option value="">Select Registered Opportunity</option>
 
-    setManualPackage("");
+                            {availableOpportunities.map((item: any) => (
+                              <option key={item.opportunity_id} value={item.opportunity_id}>
+                                {item.opportunity_title.length > 45
+                                  ? item.opportunity_title.slice(0, 45) + "..."
+                                  : item.opportunity_title}
+                              </option>
+                            ))}
 
-    return;
+                            <option value="OTHER">Other (Off Campus)</option>
+                          </select>
 
-  }
+                          {selectedApplication && (
+                            <div className="grid gap-2 rounded-2xl border border-primary/20 bg-primary/5 p-6">
+                              <p className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                                Company
+                              </p>
 
-  const selected = availableOpportunities.find(
-    (item: any) => item.opportunity_id === value,
-  );
+                              <p className="text-lg font-semibold text-foreground">
+                                {" "}
+                                {selectedApplication.company_name}
+                              </p>
 
-  setSelectedApplication(selected);
+                              <p className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                                Opportunity
+                              </p>
 
-  setManualCompany(selected?.company_name ?? "");
+                              <p className="text-lg font-semibold text-foreground">
+                                {" "}
+                                {selectedApplication.opportunity_title}
+                              </p>
 
-  setManualPackage(
-    selected?.package_lpa != null
-      ? String(selected.package_lpa)
-      : "",
-  );
+                              <p className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+                                Package
+                              </p>
 
-}}
-className="w-full min-h-[220px] rounded border p-2 md:col-span-2"
->
-                      <option value="">Select Registered Opportunity</option>
+                              <p className="text-lg font-semibold text-foreground">
+                                {manualPackage || "-"}
+                                LPA
+                              </p>
+                            </div>
+                          )}
 
-                      {availableOpportunities.map((item: any) => (
-                        <option key={item.opportunity_id} value={item.opportunity_id}>
-                          {item.opportunity_title}
-                        </option>
-                      ))}
+                          {selectedPlacementOpportunity === "OTHER" && (
+                            <div className="grid gap-5 md:grid-cols-2">
+                              <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                  Company Name
+                                </label>
 
-                      <option value="OTHER">Other (Off Campus)</option>
-                    </select>
-                    </div>
+                                <input
+                                  type="text"
+                                  value={manualCompany}
+                                  onChange={(e) => setManualCompany(e.target.value)}
+                                  placeholder="Enter company name"
+                                  className="w-full rounded-xl border px-3 py-2.5"
+                                />
+                              </div>
 
-                    {selectedApplication && (
-                      <div className="rounded-lg border bg-muted/20 p-4 md:col-span-2">
-                        <p>
-                          <strong>Company:</strong> {selectedApplication.company_name}
-                        </p>
+                              <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                  Package (LPA)
+                                </label>
 
-                        <p>
-                          <strong>Opportunity:</strong> {selectedApplication.opportunity_title}
-                        </p>
-
-                        <p>
-                          <strong>Package:</strong> {manualPackage || "-"}
-                          LPA
-                        </p>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={manualPackage}
+                                  onChange={(e) => setManualPackage(e.target.value)}
+                                  placeholder="5.50"
+                                  className="w-full rounded-xl border px-3 py-2.5"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
 
-                    {selectedPlacementOpportunity === "OTHER" && (
-                      <>
-                        <input
-                          type="text"
-                          placeholder="Company Name"
-                          value={manualCompany}
-                          onChange={(e) => setManualCompany(e.target.value)}
-                          className="rounded border p-2"
-                        />
+                      <div className="mt-6 grid gap-5 md:grid-cols-3">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">Placement Status</label>
 
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="Package (LPA)"
-                          value={manualPackage}
-                          onChange={(e) => setManualPackage(e.target.value)}
-                          className="rounded border p-2"
-                        />
-                      </>
-                    )}
+                          <select
+                            value={placementStatus}
+                            onChange={(e) => setPlacementStatus(e.target.value)}
+                            className="w-full rounded-xl border px-3 py-2.5"
+                          >
+                            <option value="Unplaced">Unplaced</option>
+                            <option value="Placed">Placed</option>
+                          </select>
+                        </div>
 
-                    <select
-                      value={placementType}
-                      onChange={(e) => setPlacementType(e.target.value)}
-                      className="rounded border p-2"
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">Placement Type</label>
+
+                          <select
+                            value={placementType}
+                            onChange={(e) => setPlacementType(e.target.value)}
+                            className="w-full rounded-xl border px-2.5 py-2.5"
+                          >
+                            <option value="">Placement Type</option>
+
+                            <option value="On Campus Internship + PPO">
+                              On Campus Internship + PPO
+                            </option>
+
+                            <option value="On Campus Internship">On Campus Internship</option>
+
+                            <option value="On Campus Placement">On Campus Placement</option>
+
+                            <option value="Off Campus Internship + PPO">
+                              Off Campus Internship + PPO
+                            </option>
+
+                            <option value="Off Campus Internship">Off Campus Internship</option>
+
+                            <option value="Off Campus Placement">Off Campus Placement</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">Placement Date</label>
+
+                          <input
+                            type="date"
+                            value={placedDate}
+                            onChange={(e) => setPlacedDate(e.target.value)}
+                            className="w-full rounded-xl border px-3 py-2.5"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={placementLoading}
+                      onClick={async () => {
+                        try {
+                          setPlacementLoading(true);
+                          if (placementStatus === "Placed" && placementType.trim() === "") {
+                            alert("Placement Type is mandatory.");
+                            return;
+                          }
+
+                          if (placementStatus === "Placed" && placedDate.trim() === "") {
+                            alert("Placement Date is mandatory.");
+                            return;
+                          }
+
+                          if (
+                            placementStatus === "Placed" &&
+                            selectedPlacementOpportunity === "OTHER" &&
+                            manualCompany.trim() === ""
+                          ) {
+                            alert("Company Name is mandatory.");
+                            return;
+                          }
+
+                          if (
+                            placementStatus === "Placed" &&
+                            selectedPlacementOpportunity === "OTHER" &&
+                            manualPackage.trim() === ""
+                          ) {
+                            alert("Package (LPA) is mandatory.");
+                            return;
+                          }
+                          if (!placementStatus) {
+                            alert("Placement Status is mandatory.");
+                            setPlacementLoading(false);
+                            return;
+                          }
+
+                          if (!placementType) {
+                            alert("Placement Type is mandatory.");
+                            setPlacementLoading(false);
+                            return;
+                          }
+
+                          if (placementStatus === "Placed" && !selectedPlacementOpportunity) {
+                            alert("Please select a registered opportunity or Other (Off Campus).");
+
+                            setPlacementLoading(false);
+
+                            return;
+                          }
+
+                          if (selectedPlacementOpportunity === "OTHER" && !manualCompany.trim()) {
+                            alert("Company Name is mandatory.");
+
+                            setPlacementLoading(false);
+
+                            return;
+                          }
+
+                          if (selectedPlacementOpportunity === "OTHER" && !manualPackage.trim()) {
+                            alert("Package is mandatory.");
+
+                            setPlacementLoading(false);
+
+                            return;
+                          }
+
+                          if (!placedDate && placementStatus === "Placed") {
+                            alert("Placement Date is mandatory.");
+
+                            setPlacementLoading(false);
+
+                            return;
+                          }
+
+                          if (placementStatus === "Placed" && !placementType) {
+                            alert("Placement Type is mandatory.");
+
+                            setPlacementLoading(false);
+
+                            return;
+                          }
+
+                          if (placementStatus === "Unplaced") {
+                            setSelectedPlacementOpportunity("");
+
+                            setSelectedApplication(null);
+
+                            setManualCompany("");
+
+                            setManualPackage("");
+                          }
+
+                          await adminStudentService.updatePlacementStatus(studentId, {
+                            placement_status: placementStatus as "Placed" | "Unplaced",
+
+                            placed_company_name:
+                              selectedPlacementOpportunity === "OTHER"
+                                ? manualCompany
+                                : (selectedApplication?.company_name ?? null),
+
+                            placed_package_lpa:
+                              selectedPlacementOpportunity === "OTHER"
+                                ? Number(manualPackage)
+                                : Number(selectedApplication?.package_lpa ?? 0),
+
+                            placement_type: placementType as any,
+
+                            placed_at: placedDate || null,
+
+                            opportunity_id:
+                              selectedPlacementOpportunity === "OTHER"
+                                ? null
+                                : (selectedApplication?.opportunity_id ?? null),
+
+                            drive_id:
+                              selectedPlacementOpportunity === "OTHER"
+                                ? null
+                                : (selectedApplication?.drive_id ?? null),
+
+                            company_id:
+                              selectedPlacementOpportunity === "OTHER"
+                                ? null
+                                : (selectedApplication?.company_id ?? null),
+                          });
+
+                          const refreshed = await adminStudentService.getStudentById(studentId);
+
+                          setData(refreshed);
+
+                          alert("Placement status updated successfully.");
+                        } finally {
+                          setPlacementLoading(false);
+                        }
+                      }}
+                      className="mt-6 w-full rounded-xl bg-primary py-3 font-bold text-white transition hover:opacity-90"
                     >
-                      <option value="">Select Placement Type</option>
-
-                      <option value="On Campus Internship + PPO">On Campus Internship + PPO</option>
-
-                      <option value="On Campus Internship">On Campus Internship</option>
-
-                      <option value="On Campus Placement">On Campus Placement</option>
-
-                      <option value="Off Campus Internship + PPO">
-                        Off Campus Internship + PPO
-                      </option>
-
-                      <option value="Off Campus Internship">Off Campus Internship</option>
-
-                      <option value="Off Campus Placement">Off Campus Placement</option>
-                    </select>
-
-                    <input
-                      type="date"
-                      value={placedDate}
-                      onChange={(e) => setPlacedDate(e.target.value)}
-                      className="rounded border p-2"
-                    />
+                      Save Placement Status
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    disabled={placementLoading}
-                    onClick={async () => {
-                      try {
-                        setPlacementLoading(true);
+                  <div className="mt-10 border-t pt-2">
+                    <h3 className="text-xl font-semibold">Placement Override</h3>
 
-                        if (placementStatus === "Placed" && !selectedPlacementOpportunity) {
-                          alert("Please select a registered opportunity or Other (Off Campus).");
+                    <p className="mb-6 text-sm text-muted-foreground">
+                      Allow placed students to participate in additional opportunities.
+                    </p>
+                    <div className="mt-5 space-y-5">
+                      <div className="grid grid-cols-2 gap-4">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            checked={overrideScope === "ALL"}
+                            onChange={() => {
+                              setOverrideScope("ALL");
+                              setOverrideOpportunityId("");
+                            }}
+                          />
+                          Allow All Opportunities
+                        </label>
 
-                          setPlacementLoading(false);
-
-                          return;
-                        }
-
-                        if (selectedPlacementOpportunity === "OTHER" && !manualCompany.trim()) {
-                          alert("Company Name is mandatory.");
-
-                          setPlacementLoading(false);
-
-                          return;
-                        }
-
-                        if (selectedPlacementOpportunity === "OTHER" && !manualPackage.trim()) {
-                          alert("Package is mandatory.");
-
-                          setPlacementLoading(false);
-
-                          return;
-                        }
-
-                        if (!placedDate && placementStatus === "Placed") {
-                          alert("Placement Date is mandatory.");
-
-                          setPlacementLoading(false);
-
-                          return;
-                        }
-
-                        if (placementStatus === "Placed" && !placementType) {
-                          alert("Placement Type is mandatory.");
-
-                          setPlacementLoading(false);
-
-                          return;
-                        }
-
-                        await adminStudentService.updatePlacementStatus(studentId, {
-                          placement_status: placementStatus as "Placed" | "Unplaced",
-
-                          placed_company_name:
-                            selectedPlacementOpportunity === "OTHER"
-                              ? manualCompany
-                              : (selectedApplication?.company_name ?? null),
-
-                          placed_package_lpa:
-                            selectedPlacementOpportunity === "OTHER" ? Number(manualPackage) : null,
-
-                          placement_type: placementType as any,
-
-                          placed_at: placedDate || null,
-
-                          opportunity_id:
-                            selectedPlacementOpportunity === "OTHER"
-                              ? null
-                              : (selectedApplication?.opportunity_id ?? null),
-
-                          drive_id:
-                            selectedPlacementOpportunity === "OTHER"
-                              ? null
-                              : (selectedApplication?.drive_id ?? null),
-
-                          company_id:
-                            selectedPlacementOpportunity === "OTHER"
-                              ? null
-                              : (selectedApplication?.company_id ?? null),
-                        });
-
-                        const refreshed = await adminStudentService.getStudentById(studentId);
-
-                        setData(refreshed);
-
-                        alert("Placement status updated successfully.");
-                      } finally {
-                        setPlacementLoading(false);
-                      }
-                    }}
-                    className="mt-4 rounded bg-primary px-4 py-2 text-white"
-                  >
-                    Save Placement Status
-                  </button>
-
-                  <div className="mt-8 border-t pt-6">
-                    <h3 className="text-lg font-semibold">Placement Override</h3>
-
-                    <div className="mt-5 space-y-4">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          checked={overrideScope === "ALL"}
-                          onChange={() => {
-                            setOverrideScope("ALL");
-                            setOverrideOpportunityId("");
-                          }}
-                        />
-                        Allow All Opportunities
-                      </label>
-
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          checked={overrideScope === "SPECIFIC"}
-                          onChange={() => {
-                            setOverrideScope("SPECIFIC");
-                          }}
-                        />
-                        Allow Specific Opportunity
-                      </label>
-
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            checked={overrideScope === "SPECIFIC"}
+                            onChange={() => {
+                              setOverrideScope("SPECIFIC");
+                            }}
+                          />
+                          Allow Specific Opportunity
+                        </label>
+                      </div>
                       {overrideScope === "SPECIFIC" && (
-                        <div className="max-h-64 overflow-y-auto">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">
+                            Registered Opportunity
+                          </label>
                           <select
-                            size={8}
                             value={overrideOpportunityId}
                             onChange={(e) => setOverrideOpportunityId(e.target.value)}
-                            className="w-full min-h-[220px] rounded border p-2"
+                            className="w-full rounded-xl border bg-background px-3 py-3"
                           >
                             <option value="">Select Opportunity</option>
 
@@ -539,7 +682,7 @@ className="w-full min-h-[220px] rounded border p-2 md:col-span-2"
                       <button
                         type="button"
                         disabled={overrideLoading}
-                        className="rounded bg-primary px-4 py-2 text-white"
+                        className="w-full rounded-xl bg-primary py-3 font-bold text-white transition hover:opacity-90"
                         onClick={async () => {
                           try {
                             setOverrideLoading(true);
@@ -548,6 +691,22 @@ className="w-full min-h-[220px] rounded border p-2 md:col-span-2"
 
                             if (!session?.user?.id) {
                               throw new Error("Admin not found");
+                            }
+
+                            if (!overrideReason.trim()) {
+                              alert("Override reason is mandatory.");
+
+                              setOverrideLoading(false);
+
+                              return;
+                            }
+
+                            if (overrideScope === "SPECIFIC" && !overrideOpportunityId) {
+                              alert("Please select an opportunity.");
+
+                              setOverrideLoading(false);
+
+                              return;
                             }
 
                             await adminStudentService.createPlacementOverride({
@@ -583,191 +742,241 @@ className="w-full min-h-[220px] rounded border p-2 md:col-span-2"
                     </div>
 
                     <div className="mt-8">
-                      <h3 className="font-semibold">Current Override</h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowOverrideHistory(!showOverrideHistory)}
+                        className="flex w-full items-center justify-between rounded-xl border bg-muted/30 px-4 py-3 text-left font-semibold"
+                      >
+                        <span>Override History</span>
 
-                      <div className="mt-3">
-                        {placementOverrides.find((x) => x.is_active) ? (
-                          <div className="rounded border p-4">
-                            <p>
-                              <b>Scope:</b>{" "}
-                              {placementOverrides.find((x) => x.is_active).override_scope}
-                            </p>
+                        <span>{showOverrideHistory ? "▲" : "▼"}</span>
+                      </button>
 
-                            <p>
-                              <b>Reason:</b>{" "}
-                              {placementOverrides.find((x) => x.is_active).override_reason}
-                            </p>
-
-                            <button
-                              type="button"
-                              className="mt-4 rounded border px-3 py-2"
-                              onClick={async () => {
-                                await adminStudentService.removePlacementOverride(
-                                  placementOverrides.find((x) => x.is_active).override_id,
-                                );
-
-                                const refreshed =
-                                  await adminStudentService.getStudentPlacementOverrides(studentId);
-
-                                setPlacementOverrides(refreshed);
-                              }}
-                            >
-                              Remove Override
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground">No active override.</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-8">
-                      <h3 className="font-semibold">Override History</h3>
-
-                      <div className="mt-4 space-y-3 max-h-64 overflow-y-auto">
-                        {placementOverrides.map((item) => (
-                          <div key={item.override_id} className="rounded border p-3">
-                            <p>
-                              <b>Scope:</b> {item.override_scope}
-                            </p>
-
-                            {item.opportunity_id && (
+                      {showOverrideHistory && (
+                        <div className="mt-4 space-y-3 max-h-86 overflow-y-auto">
+                          {placementOverrides.map((item) => (
+                            <div key={item.override_id} className="rounded border p-3">
                               <p>
-                                <b>Opportunity:</b> {item.opportunity_id}
+                                <b>Company:</b>
+
+                                {item.company_name ??
+                                  (item.override_scope === "ALL" ? "All Eligible Companies" : "-")}
                               </p>
-                            )}
 
-                            <p>
-                              <b>Reason:</b> {item.override_reason}
-                            </p>
+                              <p>
+                                <b>Opportunity:</b>
 
-                            <p>
-                              <b>Status:</b> {item.is_active ? "Active" : "Removed"}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                                {item.override_scope === "ALL"
+                                  ? "All Eligible Opportunities"
+                                  : item.opportunity_title}
+                              </p>
+
+                              <p>
+                                <b>Reason:</b> {item.override_reason}
+                              </p>
+                              {item.is_active && (
+                                <button
+                                  type="button"
+                                  className="mt-3 rounded-lg border border-red-500 px-3 py-2 text-red-600 hover:bg-red-50"
+                                  onClick={async () => {
+                                    await adminStudentService.removePlacementOverride(
+                                      item.override_id,
+                                    );
+
+                                    const refreshed =
+                                      await adminStudentService.getStudentPlacementOverrides(
+                                        studentId,
+                                      );
+
+                                    setPlacementOverrides(refreshed);
+                                  }}
+                                >
+                                  Stop Allowing
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div id="restriction-card" className="rounded-xl border bg-card p-6">
-              <h2 className="mb-6 text-lg font-semibold">Restriction Management</h2>
-              <div className="rounded-lg border p-5">
-                <div className="mt-4 grid gap-3">
-                  <select
-                    value={restrictionType}
-                    onChange={(e) => setRestrictionType(e.target.value)}
-                    className="rounded border p-2"
-                  >
-                    <option value="ATTENDANCE_RESTRICTION">Attendance Restriction</option>
+            <div
+              id="restriction-card"
+              className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-lg"
+            >
+              <div className="border-b bg-muted/40 px-8 py-5">
+                <h2 className="text-xl font-semibold">Restriction Management</h2>
 
-                    <option value="GRIEVANCE_RESTRICTION">Grievance Restriction</option>
+                <p className="text-sm text-muted-foreground">
+                  Manage student restrictions and history
+                </p>
+              </div>
 
-                    <option value="MISBEHAVIOR_RESTRICTION">Misbehavior Restriction</option>
+              <h3 className="mt-2 text-lg px-8 py-4 font-bold">Create Restriction</h3>
 
-                    <option value="CUSTOM">Custom Restriction</option>
-                  </select>
+              <p className="mb-6 px-8 text-m font-semibold text-muted-foreground">
+                Apply a temporary restriction to this student.
+              </p>
 
-                  <textarea
-                    rows={4}
-                    value={restrictionReason}
-                    onChange={(e) => setRestrictionReason(e.target.value)}
-                    placeholder="Restriction reason"
-                    className="rounded border p-3"
-                  />
+              <div className="p-6">
+                <div className="rounded-2xl border bg-background p-6">
+                  <div className="space-y-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium">Restriction Type</label>
 
-                  <button
-                    type="button"
-                    disabled={
-                      restrictionLoading ||
-                      (restrictionType === "CUSTOM" && !restrictionReason.trim())
-                    }
-                    onClick={async () => {
-                      try {
-                        setRestrictionLoading(true);
+                      <select
+                        value={restrictionType}
+                        onChange={(e) => setRestrictionType(e.target.value)}
+                        className="w-full rounded-xl border px-3 py-2.5"
+                      >
+                        <option value="ATTENDANCE_RESTRICTION">Attendance Restriction</option>
 
-                        const session = await authService.getSession();
+                        <option value="GRIEVANCE_RESTRICTION">Grievance Restriction</option>
 
-                        if (!session?.user?.id) {
-                          throw new Error("Unable to determine admin.");
+                        <option value="MISBEHAVIOR_RESTRICTION">Misbehavior Restriction</option>
+
+                        <option value="CUSTOM">Custom Restriction</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium">Reason</label>
+
+                      <textarea
+                        rows={4}
+                        value={restrictionReason}
+                        onChange={(e) => setRestrictionReason(e.target.value)}
+                        placeholder="Restriction reason"
+                        className="w-full rounded-xl border px-3 py-3"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={
+                        restrictionLoading ||
+                        (restrictionType === "CUSTOM" && !restrictionReason.trim())
+                      }
+                      onClick={async () => {
+                        try {
+                          setRestrictionLoading(true);
+
+                          const session = await authService.getSession();
+
+                          if (!session?.user?.id) {
+                            throw new Error("Unable to determine admin.");
+                          }
+
+                          const finalReason =
+                            restrictionType === "CUSTOM"
+                              ? restrictionReason
+                              : restrictionReason ||
+                                {
+                                  ATTENDANCE_RESTRICTION: "Attendance shortage",
+                                  GRIEVANCE_RESTRICTION: "Student grievance case under review",
+                                  MISBEHAVIOR_RESTRICTION: "Student conduct review in progress",
+                                }[restrictionType];
+
+                          await adminStudentService.createRestriction({
+                            student_id: studentId,
+                            restriction_type: restrictionType,
+                            restriction_reason: finalReason ?? "",
+                            restricted_by: session.user.id,
+                          });
+
+                          const refreshed =
+                            await adminStudentService.getStudentRestrictions(studentId);
+
+                          setRestrictions(refreshed);
+
+                          setRestrictionReason("");
+                        } catch (err) {
+                          console.error(err);
+                          alert("Unable to create restriction.");
+                        } finally {
+                          setRestrictionLoading(false);
                         }
+                      }}
+                      className="w-full rounded-xl bg-red-600 py-3 font-semibold text-white transition hover:bg-red-700"
+                    >
+                      Apply Restriction
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-                        const finalReason =
-                          restrictionType === "CUSTOM"
-                            ? restrictionReason
-                            : restrictionReason ||
-                              {
-                                ATTENDANCE_RESTRICTION: "Attendance shortage",
-                                GRIEVANCE_RESTRICTION: "Student grievance case under review",
-                                MISBEHAVIOR_RESTRICTION: "Student conduct review in progress",
-                              }[restrictionType];
+              <div className="mt-8 px-8">
+                <h3 className="mb-4 text-lg font-semibold">Current Restriction</h3>
 
-                        await adminStudentService.createRestriction({
-                          student_id: studentId,
-                          restriction_type: restrictionType,
-                          restriction_reason: finalReason ?? "",
-                          restricted_by: session.user.id,
-                        });
+                {restrictions.find((r) => r.is_active) ? (
+                  <div className="rounded-xl border bg-muted/20 p-4">
+                    <p>
+                      <b>Type:</b> {restrictions.find((r) => r.is_active)?.restriction_type}
+                    </p>
+
+                    <p className="mt-2">
+                      <b>Reason:</b> {restrictions.find((r) => r.is_active)?.restriction_reason}
+                    </p>
+
+                    <button
+                      type="button"
+                      className="mt-4 rounded-lg border border-red-500 px-4 py-2 text-red-600 hover:bg-red-50"
+                      onClick={async () => {
+                        const active = restrictions.find((r) => r.is_active);
+
+                        if (!active) return;
+
+                        await adminStudentService.removeRestriction(active.restriction_id);
 
                         const refreshed =
                           await adminStudentService.getStudentRestrictions(studentId);
 
                         setRestrictions(refreshed);
-
-                        setRestrictionReason("");
-                      } catch (err) {
-                        console.error(err);
-                        alert("Unable to create restriction.");
-                      } finally {
-                        setRestrictionLoading(false);
-                      }
-                    }}
-                    className="rounded bg-red-600 px-4 py-2 text-white"
-                  >
-                    Apply Restriction
-                  </button>
-                </div>
+                      }}
+                    >
+                      Remove Restriction
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border bg-muted/20 p-4 text-sm text-muted-foreground">
+                    No active restriction.
+                  </div>
+                )}
               </div>
 
-              <div className="mt-6 max-h-[540px] space-y-3 overflow-y-auto">
-                {restrictions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No restrictions found.</p>
-                ) : (
-                  restrictions.map((restriction) => (
-                    <div key={restriction.restriction_id} className="rounded border p-3">
-                      <p>
-                        <strong>Type:</strong> {restriction.restriction_type}
-                      </p>
+              <div className="mt-8 px-8 pb-8">
+                <button
+                  type="button"
+                  onClick={() => setShowRestrictionHistory(!showRestrictionHistory)}
+                  className="flex w-full items-center justify-between rounded-xl border bg-muted/30 px-4 py-3 font-semibold"
+                >
+                  <span>Restriction History</span>
 
-                      <p>
-                        <strong>Reason:</strong> {restriction.restriction_reason}
-                      </p>
+                  <span>{showRestrictionHistory ? "▲" : "▼"}</span>
+                </button>
 
-                      <p>
-                        <strong>Status:</strong> {restriction.is_active ? "Active" : "Removed"}
-                      </p>
+                {showRestrictionHistory && (
+                  <div className="mt-4 max-h-92 space-y-3 overflow-y-auto">
+                    {restrictions.map((restriction) => (
+                      <div key={restriction.restriction_id} className="rounded-lg border p-3">
+                        <p>
+                          <b>Type:</b> {restriction.restriction_type}
+                        </p>
 
-                      {restriction.is_active && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await adminStudentService.removeRestriction(restriction.restriction_id);
+                        <p>
+                          <b>Reason:</b> {restriction.restriction_reason}
+                        </p>
 
-                            const refreshed =
-                              await adminStudentService.getStudentRestrictions(studentId);
-
-                            setRestrictions(refreshed);
-                          }}
-                          className="mt-3 rounded border px-3 py-1"
-                        >
-                          Remove Restriction
-                        </button>
-                      )}
-                    </div>
-                  ))
+                        <p>
+                          <b>Status:</b> {restriction.is_active ? "Active" : "Removed"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

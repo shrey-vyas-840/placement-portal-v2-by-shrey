@@ -1597,17 +1597,42 @@ export const adminStudentService = {
   async getStudentPlacementOverrides(studentId: string) {
     const { data, error } = await db
       .from("student_placement_overrides")
-      .select("*")
+      .select(
+        `
+      *,
+      opportunity:opportunity_id(
+        opportunity_id,
+        opportunity_title,
+
+        drive:drive_id(
+          drive_id,
+
+          company:company_id(
+            company_name
+          )
+        )
+      )
+    `,
+      )
       .eq("student_id", studentId)
-      .order("granted_at", { ascending: false });
+      .order("granted_at", {
+        ascending: false,
+      });
 
     if (error) {
       throw error;
     }
 
-    return data ?? [];
-  },
+    return (data ?? []).map((item: any) => ({
+      ...item,
 
+      opportunity_title: item.opportunity?.opportunity_title ?? null,
+
+      company_name:
+        item.opportunity?.drive?.company?.company_name ??
+        (item.override_scope === "ALL" ? "All Eligible Companies" : null),
+    }));
+  },
   async createPlacementOverride(payload: {
     student_id: string;
     override_scope: "ALL" | "SPECIFIC";
@@ -1710,18 +1735,16 @@ export const adminStudentService = {
   },
 
   async getAvailablePlacementOverrideOpportunities(studentId: string) {
+    const student = await this.getStudentById(studentId);
 
-  const student = await this.getStudentById(studentId);
+    const branch = student.academics?.current_branch_name;
 
-  const branch =
-    student.academics?.current_branch_name;
+    const graduationYear = String(student.academics?.graduation_year ?? "");
 
-  const graduationYear =
-    String(student.academics?.graduation_year ?? "");
-
-  const { data, error } = await db
-    .from("opportunity_master")
-    .select(`
+    const { data, error } = await db
+      .from("opportunity_master")
+      .select(
+        `
       opportunity_id,
       opportunity_title,
       application_status,
@@ -1741,41 +1764,29 @@ export const adminStudentService = {
           passing_out_batches
         )
       )
-    `)
-    .eq("application_status","Open")
-    .eq("visible_to_students",true);
-
-  if(error) throw error;
-
-  return (data ?? []).filter((item:any)=>{
-
-    const eligibility =
-      item.drive?.eligibility?.[0];
-
-    if(!eligibility) return false;
-
-    const branches =
-      String(
-        eligibility.allowed_branches ?? ""
+    `,
       )
-      .split(",")
-      .map((x:string)=>x.trim());
+      .eq("application_status", "Open")
+      .eq("visible_to_students", true);
 
-    const batches =
-      String(
-        eligibility.passing_out_batches ?? ""
-      )
-      .split(",")
-      .map((x:string)=>x.trim());
+    if (error) throw error;
 
-    return (
-      branches.includes(branch) &&
-      batches.includes(graduationYear)
-    );
+    return (data ?? []).filter((item: any) => {
+      const eligibility = item.drive?.eligibility?.[0];
 
-  });
+      if (!eligibility) return false;
 
-},
+      const branches = String(eligibility.allowed_branches ?? "")
+        .split(",")
+        .map((x: string) => x.trim());
+
+      const batches = String(eligibility.passing_out_batches ?? "")
+        .split(",")
+        .map((x: string) => x.trim());
+
+      return branches.includes(branch) && batches.includes(graduationYear);
+    });
+  },
 
   async updatePlacementStatus(
     studentId: string,
@@ -1821,7 +1832,7 @@ export const adminStudentService = {
 
         company_name: payload.placed_company_name,
 
-        package_lpa: payload.placed_package_lpa,
+        package_lpa: Number(payload.placed_package_lpa ?? 0),
 
         placement_type: payload.placement_type,
 
