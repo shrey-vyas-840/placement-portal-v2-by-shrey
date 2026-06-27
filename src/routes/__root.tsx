@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/useAuth";
 import { APP_METADATA } from "@/config/appMetadata";
 import { BuildInfo } from "@/components/BuildInfo";
+import { Toaster } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -121,6 +122,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BuildInfo />
+
+        <Toaster position="top-right" richColors closeButton expand={false} duration={2500} />
+
         <Outlet />
       </AuthProvider>
     </QueryClientProvider>
