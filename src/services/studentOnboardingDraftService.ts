@@ -78,17 +78,94 @@ export async function getDraftByAuthProviderId(
   return (data as StudentOnboardingDraftRow | null) ?? null;
 }
 
+export async function getDraftForUser(
+  authProviderId: string,
+  emailAddress: string,
+): Promise<StudentOnboardingDraftRow> {
+  const normalizedEmail = normalizeDraftEmail(emailAddress);
+
+  // 1. Lookup by auth provider
+  const existing = await getDraftByAuthProviderId(authProviderId);
+
+  if (existing) {
+    return existing;
+  }
+
+  // 2. Lookup by email
+  const { data: existingByEmail, error: emailLookupError } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .select("*")
+    .eq("email_address", normalizedEmail)
+    .maybeSingle();
+
+  if (emailLookupError) {
+    throw emailLookupError;
+  }
+
+  // 3. Repair auth_provider_id
+  if (existingByEmail) {
+    const { data: repairedDraft, error: repairError } = await (supabase as any)
+      .from("student_onboarding_drafts")
+      .update({
+        auth_provider_id: authProviderId,
+      })
+      .eq("draft_id", existingByEmail.draft_id)
+      .select("*")
+      .single();
+
+    if (repairError) {
+      throw repairError;
+    }
+
+    return repairedDraft as StudentOnboardingDraftRow;
+  }
+
+  // 4. Create brand new draft
+  return ensureDraftForUser(authProviderId, normalizedEmail);
+}
+
 export async function ensureDraftForUser(
   authProviderId: string,
   emailAddress: string,
 ): Promise<StudentOnboardingDraftRow> {
   const normalizedEmail = normalizeDraftEmail(emailAddress);
 
+  // First: lookup by auth_provider_id
   const existing = await getDraftByAuthProviderId(authProviderId);
+
   if (existing) {
     return existing;
   }
 
+  // Second: lookup by email
+  const { data: existingByEmail, error: emailLookupError } = await (supabase as any)
+    .from("student_onboarding_drafts")
+    .select("*")
+    .eq("email_address", normalizedEmail)
+    .maybeSingle();
+
+  if (emailLookupError) {
+    throw emailLookupError;
+  }
+
+  if (existingByEmail) {
+    const { data: repairedDraft, error: repairError } = await (supabase as any)
+      .from("student_onboarding_drafts")
+      .update({
+        auth_provider_id: authProviderId,
+      })
+      .eq("draft_id", existingByEmail.draft_id)
+      .select("*")
+      .single();
+
+    if (repairError) {
+      throw repairError;
+    }
+
+    return repairedDraft as StudentOnboardingDraftRow;
+  }
+
+  // Third: create brand new draft
   const { data, error } = await (supabase as any)
     .from("student_onboarding_drafts")
     .insert({
@@ -114,10 +191,11 @@ export async function ensureDraftForUser(
 
   return data as StudentOnboardingDraftRow;
 }
+
 export async function saveDraft(
   input: SaveStudentOnboardingDraftInput,
 ): Promise<StudentOnboardingDraftRow> {
-  const existing = await getDraftByAuthProviderId(input.authProviderId);
+  const existing = await getDraftForUser(input.authProviderId, input.emailAddress);
 
   const nextRow = {
     auth_provider_id: input.authProviderId,

@@ -66,6 +66,20 @@ export const studentService = {
     return (data as StudentMaster | null) ?? null;
   },
 
+  async getProfileByPortalUserId(portalUserId: string): Promise<StudentMaster | null> {
+    const { data, error } = await (supabase as any)
+      .from("student_master")
+      .select("*")
+      .eq("user_id", portalUserId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return (data as StudentMaster | null) ?? null;
+  },
+
   async createProfileFromRegistry(
     authUserId: string,
     registry: StudentMasterRegistryRow,

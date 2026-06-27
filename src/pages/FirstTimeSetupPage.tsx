@@ -10,8 +10,7 @@ import { isStudentFieldLocked } from "@/config/studentFieldLocks";
 import { supabase } from "@/integrations/supabase/client";
 import {
   completeDraft,
-  ensureDraftForUser,
-  getDraftByAuthProviderId,
+  getDraftForUser,
   saveDraft,
   type StudentOnboardingDraftRow,
 } from "@/services/studentOnboardingDraftService";
@@ -385,11 +384,7 @@ Enrollment No. ${enteredEnrollment}
           return;
         }
 
-        let existingDraft = await getDraftByAuthProviderId(user.id);
-
-        if (!existingDraft) {
-          existingDraft = await ensureDraftForUser(user.id, user.email ?? "");
-        }
+        const existingDraft = await getDraftForUser(user.id, user.email ?? "");
 
         if (cancelled) return;
 
@@ -490,13 +485,18 @@ Enrollment No. ${enteredEnrollment}
     return next;
   };
 
-  const refreshDraft = async () => {
-    if (!user) return null;
+const refreshDraft = async () => {
+  if (!user) return null;
 
-    const latestDraft = await getDraftByAuthProviderId(user.id);
-    setDraft(latestDraft);
-    return latestDraft;
-  };
+  const latestDraft = await getDraftForUser(
+    user.id,
+    user.email ?? "",
+  );
+
+  setDraft(latestDraft);
+
+  return latestDraft;
+};
 
   const handlePasswordContinue = async () => {
     console.log("HANDLE PASSWORD CONTINUE FIRED");
@@ -629,7 +629,12 @@ Enrollment No. ${enteredEnrollment}
         policyAccepted,
       });
 
-      await refreshDraft();
+    const latestDraft = await getDraftForUser(
+  user.id,
+  user.email ?? "",
+);
+
+setDraft(latestDraft);
 
       setMessage("Details saved.");
 

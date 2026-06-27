@@ -68,6 +68,43 @@ async function resolvePortalUserId(authProviderId: string, emailAddress?: string
     return data.user_id as string;
   }
 
+  // SECOND CHANCE:
+  // Check if this email already has a portal account but auth_provider_id
+  // was never linked (common after testing / database cleanup).
+
+  if (emailAddress) {
+    console.log("EMAIL RECEIVED", emailAddress);
+    const { data: existingByEmail, error: emailLookupError } = await (supabase as any)
+      .from("user_accounts")
+      .select("user_id")
+      .eq("email_address", emailAddress)
+      .maybeSingle();
+    console.log("EMAIL LOOKUP RESULT", existingByEmail);
+    console.log("EMAIL LOOKUP ERROR", emailLookupError);
+    if (emailLookupError) {
+      throw emailLookupError;
+    }
+    console.log("FOUND EXISTING EMAIL ACCOUNT");
+    if (existingByEmail?.user_id) {
+      const { error: updateError } = await (supabase as any)
+        .from("user_accounts")
+        .update({
+          auth_provider_id: authProviderId,
+        })
+        .eq("user_id", existingByEmail.user_id);
+      console.log("AUTH PROVIDER UPDATE ERROR", updateError);
+      if (updateError) {
+        throw updateError;
+      }
+
+      console.log("LINKED EXISTING USER ACCOUNT", existingByEmail.user_id);
+
+      return existingByEmail.user_id as string;
+    }
+  }
+
+  // No existing account found → create new one.
+
   console.log("CREATING USER ACCOUNT", authProviderId);
 
   const userId = crypto.randomUUID();
@@ -94,7 +131,7 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
 ): Promise<StudentMaster> {
   const userId = await resolvePortalUserId(input.authProviderId, input.emailAddress);
 
-  const existingProfile = await studentService.getProfileByUserId(input.authProviderId);
+  const existingProfile = await studentService.getProfileByPortalUserId(userId);
 
   const registry = (input.registrySnapshot ?? {}) as Record<string, unknown>;
   const edited = (input.editedProfile ?? {}) as Record<string, unknown>;
@@ -111,6 +148,14 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
   if (!firstName || !lastName || !instituteEmail || !contactNumber) {
     throw new Error("Required profile fields are missing.");
   }
+
+  console.log("========== PROVISION START ==========");
+  console.log("AUTH PROVIDER ID", input.authProviderId);
+  console.log("EMAIL", input.emailAddress);
+  console.log("PORTAL USER ID", userId);
+  console.log("EXISTING PROFILE", existingProfile);
+  console.log("REGISTRY", registry);
+  console.log("EDITED PROFILE", edited);
 
   const payload = {
     user_id: userId,
@@ -169,6 +214,9 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
     return data as StudentMaster;
   }
 
+  console.log("INSERTING STUDENT_MASTER");
+  console.log(payload);
+
   const { data, error } = await (supabase as any)
     .from("student_master")
     .insert(payload)
@@ -176,7 +224,9 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
     .single();
 
   if (error) {
-    console.error("PROVISION ERROR", error);
+    console.error("STUDENT_MASTER INSERT FAILED");
+    console.error(error);
+    console.error(payload);
 
     throw error;
   }
@@ -197,31 +247,42 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
     editedProfile: draft.edited_profile,
   });
 
+  // Verify that student profile now exists.
+  // If not, stop provisioning immediately.
+
+  const verifiedProfile = await studentService.getProfileByPortalUserId(profile.user_id);
+  
+  if (!verifiedProfile) {
+    throw new Error(
+      "Student profile provisioning failed. student_master record could not be verified.",
+    );
+  }
+
   const questionnaire = draft.questionnaire_answers ?? {};
 
   const registry = draft.registry_snapshot ?? {};
 
   const edited = draft.edited_profile ?? {};
-
-const { data: academicRows, error: academicLookupError } = await (supabase as any)
+  
+  const { data: academicRows, error: academicLookupError } = await (supabase as any)
   .from("student_academic_details")
   .select("academic_id")
   .eq("student_id", profile.student_id);
 
-console.log("ACADEMIC LOOKUP", academicRows);
-console.log("ACADEMIC LOOKUP ERROR", academicLookupError);
+  console.log("ACADEMIC LOOKUP", academicRows);
+  console.log("ACADEMIC LOOKUP ERROR", academicLookupError);
 
-if (academicLookupError) {
-  throw academicLookupError;
-}
-
- if (!academicRows || academicRows.length === 0) {
+  if (academicLookupError) {
+    throw academicLookupError;
+  }
+  
+  if (!academicRows || academicRows.length === 0) {
     const graduationYear = Number(edited.graduation_year) || null;
     const academicPayload = {
       student_id: profile.student_id,
-
+      
       current_degree_level: registry.current_degree_level ?? registry.current_degree ?? null,
-
+      
       current_branch_name: registry.bachelors_degree_branch ?? registry.current_branch_name ?? null,
 
       current_institute_name: registry.current_institute ?? registry.current_institute_name ?? null,
@@ -236,43 +297,21 @@ if (academicLookupError) {
 
       is_active: true,
     };
-
+    
+    console.log("========== INSERTING ACADEMIC ==========");
+    console.log(academicPayload);
     console.log("ACADEMIC PAYLOAD", academicPayload);
 
     const { error: academicError } = await (supabase as any)
       .from("student_academic_details")
       .insert(academicPayload);
-
-    console.log("ACADEMIC ERROR", academicError);
-
+      
+      console.log("ACADEMIC ERROR", academicError);
+      console.log("ACADEMIC INSERT FINISHED");
+      
     if (academicError) {
       throw academicError;
     }
-  }
-
-  const existingSkill = await (supabase as any)
-    .from("student_skill_profile")
-    .select("skill_profile_id")
-    .eq("student_id", profile.student_id)
-    .maybeSingle();
-
-  if (!existingSkill.data) {
-    await (supabase as any).from("student_skill_profile").insert({
-      student_id: profile.student_id,
-      technical_skills: "",
-      programming_languages: "",
-      tools_and_technologies: "",
-      certification_count: 0,
-      hackathon_count: 0,
-      project_count: 0,
-      strengths: "",
-      profile_score: 0,
-      github_url: null,
-      linkedin_url: null,
-      portfolio_url: null,
-      created_by_type: "Auto Generated",
-      is_active: true,
-    });
   }
 
   const existingOnboarding = await (supabase as any)
@@ -281,7 +320,9 @@ if (academicLookupError) {
     .eq("student_id", profile.student_id)
     .maybeSingle();
 
-  if (!existingOnboarding.data) {
+    console.log("========== ONBOARDING CHECK ==========");
+console.log(existingOnboarding.data);
+  if (!existingOnboarding.data) {console.log("INSERTING STUDENT_ONBOARDING");
     const { error: onboardingError } = await (supabase as any).from("student_onboarding").insert({
       onboarding_id: crypto.randomUUID(),
 
@@ -308,6 +349,44 @@ if (academicLookupError) {
       throw onboardingError;
     }
   }
+
+  // ----------------------------------------------------
+  // FINAL PROVISIONING VERIFICATION
+  // ----------------------------------------------------
+
+  const [verifiedStudent, verifiedAcademic, verifiedOnboarding] = await Promise.all([
+    (supabase as any)
+      .from("student_master")
+      .select("student_id")
+      .eq("student_id", profile.student_id)
+      .maybeSingle(),
+
+    (supabase as any)
+      .from("student_academic_details")
+      .select("academic_id")
+      .eq("student_id", profile.student_id)
+      .maybeSingle(),
+
+    (supabase as any)
+      .from("student_onboarding")
+      .select("onboarding_id")
+      .eq("student_id", profile.student_id)
+      .maybeSingle(),
+  ]);
+
+  if (!verifiedStudent.data) {
+    throw new Error("Provisioning verification failed: student_master.");
+  }
+
+  if (!verifiedAcademic.data) {
+    throw new Error("Provisioning verification failed: student_academic_details.");
+  }
+
+  if (!verifiedOnboarding.data) {
+    throw new Error("Provisioning verification failed: student_onboarding.");
+  }
+
+  console.log("PROVISIONING VERIFIED", profile.student_id);
 
   return profile;
 }
