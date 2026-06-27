@@ -62,8 +62,6 @@ async function resolvePortalUserId(authProviderId: string, emailAddress?: string
     throw error;
   }
 
-  console.log("USER ACCOUNT LOOKUP", authProviderId, data);
-
   if (data?.user_id) {
     return data.user_id as string;
   }
@@ -73,18 +71,15 @@ async function resolvePortalUserId(authProviderId: string, emailAddress?: string
   // was never linked (common after testing / database cleanup).
 
   if (emailAddress) {
-    console.log("EMAIL RECEIVED", emailAddress);
     const { data: existingByEmail, error: emailLookupError } = await (supabase as any)
       .from("user_accounts")
       .select("user_id")
       .eq("email_address", emailAddress)
       .maybeSingle();
-    console.log("EMAIL LOOKUP RESULT", existingByEmail);
-    console.log("EMAIL LOOKUP ERROR", emailLookupError);
     if (emailLookupError) {
       throw emailLookupError;
     }
-    console.log("FOUND EXISTING EMAIL ACCOUNT");
+
     if (existingByEmail?.user_id) {
       const { error: updateError } = await (supabase as any)
         .from("user_accounts")
@@ -92,20 +87,14 @@ async function resolvePortalUserId(authProviderId: string, emailAddress?: string
           auth_provider_id: authProviderId,
         })
         .eq("user_id", existingByEmail.user_id);
-      console.log("AUTH PROVIDER UPDATE ERROR", updateError);
       if (updateError) {
         throw updateError;
       }
-
-      console.log("LINKED EXISTING USER ACCOUNT", existingByEmail.user_id);
-
       return existingByEmail.user_id as string;
     }
   }
 
   // No existing account found → create new one.
-
-  console.log("CREATING USER ACCOUNT", authProviderId);
 
   const userId = crypto.randomUUID();
 
@@ -148,14 +137,6 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
   if (!firstName || !lastName || !instituteEmail || !contactNumber) {
     throw new Error("Required profile fields are missing.");
   }
-
-  console.log("========== PROVISION START ==========");
-  console.log("AUTH PROVIDER ID", input.authProviderId);
-  console.log("EMAIL", input.emailAddress);
-  console.log("PORTAL USER ID", userId);
-  console.log("EXISTING PROFILE", existingProfile);
-  console.log("REGISTRY", registry);
-  console.log("EDITED PROFILE", edited);
 
   const payload = {
     user_id: userId,
@@ -214,9 +195,6 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
     return data as StudentMaster;
   }
 
-  console.log("INSERTING STUDENT_MASTER");
-  console.log(payload);
-
   const { data, error } = await (supabase as any)
     .from("student_master")
     .insert(payload)
@@ -251,7 +229,7 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
   // If not, stop provisioning immediately.
 
   const verifiedProfile = await studentService.getProfileByPortalUserId(profile.user_id);
-  
+
   if (!verifiedProfile) {
     throw new Error(
       "Student profile provisioning failed. student_master record could not be verified.",
@@ -263,26 +241,23 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
   const registry = draft.registry_snapshot ?? {};
 
   const edited = draft.edited_profile ?? {};
-  
-  const { data: academicRows, error: academicLookupError } = await (supabase as any)
-  .from("student_academic_details")
-  .select("academic_id")
-  .eq("student_id", profile.student_id);
 
-  console.log("ACADEMIC LOOKUP", academicRows);
-  console.log("ACADEMIC LOOKUP ERROR", academicLookupError);
+  const { data: academicRows, error: academicLookupError } = await (supabase as any)
+    .from("student_academic_details")
+    .select("academic_id")
+    .eq("student_id", profile.student_id);
 
   if (academicLookupError) {
     throw academicLookupError;
   }
-  
+
   if (!academicRows || academicRows.length === 0) {
     const graduationYear = Number(edited.graduation_year) || null;
     const academicPayload = {
       student_id: profile.student_id,
-      
+
       current_degree_level: registry.current_degree_level ?? registry.current_degree ?? null,
-      
+
       current_branch_name: registry.bachelors_degree_branch ?? registry.current_branch_name ?? null,
 
       current_institute_name: registry.current_institute ?? registry.current_institute_name ?? null,
@@ -297,18 +272,11 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
 
       is_active: true,
     };
-    
-    console.log("========== INSERTING ACADEMIC ==========");
-    console.log(academicPayload);
-    console.log("ACADEMIC PAYLOAD", academicPayload);
 
     const { error: academicError } = await (supabase as any)
       .from("student_academic_details")
       .insert(academicPayload);
-      
-      console.log("ACADEMIC ERROR", academicError);
-      console.log("ACADEMIC INSERT FINISHED");
-      
+
     if (academicError) {
       throw academicError;
     }
@@ -320,9 +288,7 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
     .eq("student_id", profile.student_id)
     .maybeSingle();
 
-    console.log("========== ONBOARDING CHECK ==========");
-console.log(existingOnboarding.data);
-  if (!existingOnboarding.data) {console.log("INSERTING STUDENT_ONBOARDING");
+  if (!existingOnboarding.data) {
     const { error: onboardingError } = await (supabase as any).from("student_onboarding").insert({
       onboarding_id: crypto.randomUUID(),
 
@@ -342,8 +308,6 @@ console.log(existingOnboarding.data);
 
       is_active: true,
     });
-
-    console.log("ONBOARDING ERROR", onboardingError);
 
     if (onboardingError) {
       throw onboardingError;
@@ -385,8 +349,6 @@ console.log(existingOnboarding.data);
   if (!verifiedOnboarding.data) {
     throw new Error("Provisioning verification failed: student_onboarding.");
   }
-
-  console.log("PROVISIONING VERIFIED", profile.student_id);
 
   return profile;
 }

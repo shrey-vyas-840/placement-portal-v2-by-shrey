@@ -336,15 +336,11 @@ async function resolveDraftByIdentifier(identifier: string): Promise<StudentOnbo
 
 export async function approveOnboardingDraft(identifier: string, adminUserId: string) {
   const draft = await resolveDraftByIdentifier(identifier);
-  console.log("APPROVAL IDENTIFIER", identifier);
-  console.log("RESOLVED DRAFT ID", draft.draft_id);
-  console.log("RESOLVED AUTH ID", draft.auth_provider_id);
-  console.log("RESOLVED STATUS", draft.approval_status);
 
   await provisionStudentFromApprovedDraft(draft);
 
   const now = new Date().toISOString();
-  console.log("UPDATING DRAFT", draft.draft_id);
+
   const { data, error } = await (supabase as any)
     .from("student_onboarding_drafts")
     .update({
@@ -360,8 +356,7 @@ export async function approveOnboardingDraft(identifier: string, adminUserId: st
     .eq("draft_id", draft.draft_id)
     .select("draft_id, approval_status, approved_by")
     .maybeSingle();
-  console.log("APPROVAL UPDATE RESULT", data);
-  console.log("APPROVAL UPDATE ERROR", error);
+
   if (error) {
     throw error;
   }

@@ -205,9 +205,7 @@ export function FirstTimeSetupPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<Step>(1);
-  useEffect(() => {
-    console.log("STEP STATE CHANGED", step);
-  }, [step]);
+  useEffect(() => {}, [step]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
@@ -419,20 +417,11 @@ Enrollment No. ${enteredEnrollment}
         }
         setOptOutEmailRequested(Boolean(questionnaire.optOutEmailRequested));
         setPolicyAccepted(Boolean(existingDraft.policy_accepted));
-        console.log("RESTORED DRAFT", existingDraft.onboarding_stage, existingDraft);
         const restoredStep = stageToStep(existingDraft.onboarding_stage);
-
-        console.log("RESTORE DEBUG", {
-          onboardingStage: existingDraft.onboarding_stage,
-          mappedStep: stageToStep(existingDraft.onboarding_stage),
-          finalStep: restoredStep,
-        });
 
         setStep(restoredStep);
 
-        setTimeout(() => {
-          console.log("STEP AFTER SETSTATE", restoredStep);
-        }, 0);
+        setTimeout(() => {}, 0);
 
         setLoading(false);
       } catch (err) {
@@ -485,21 +474,7 @@ Enrollment No. ${enteredEnrollment}
     return next;
   };
 
-const refreshDraft = async () => {
-  if (!user) return null;
-
-  const latestDraft = await getDraftForUser(
-    user.id,
-    user.email ?? "",
-  );
-
-  setDraft(latestDraft);
-
-  return latestDraft;
-};
-
   const handlePasswordContinue = async () => {
-    console.log("HANDLE PASSWORD CONTINUE FIRED");
     setError(null);
     setMessage(null);
 
@@ -529,26 +504,17 @@ const refreshDraft = async () => {
       setSaving(true);
 
       await authService.updatePassword(newPassword);
-      console.log("PASSWORD UPDATED");
-      console.log("USER EMAIL", user?.email);
 
       const normalizedEnrollment = normalizeEnrollment(enteredEnrollment);
 
-      console.log("AUTH EMAIL", user.email);
-
-      console.log("ABOUT TO CALL REGISTRY");
-
       const registry = await getRegistryStudentByEmail(user.email ?? "");
-
-      console.log("REGISTRY RESPONSE", registry);
-      console.log("REGISTRY RESULT", registry);
 
       if (registry && normalizeEnrollment(registry.enrollment_no) !== normalizedEnrollment) {
         setError("Enrollment number does not match registry record.");
         setSaving(false);
         return;
       }
-      console.log("ENTERED ENROLLMENT", enteredEnrollment);
+
       const nextRegistryFound = Boolean(registry);
 
       const nextProfile: EditableProfile = registry
@@ -629,12 +595,9 @@ const refreshDraft = async () => {
         policyAccepted,
       });
 
-    const latestDraft = await getDraftForUser(
-  user.id,
-  user.email ?? "",
-);
+      const latestDraft = await getDraftForUser(user.id, user.email ?? "");
 
-setDraft(latestDraft);
+      setDraft(latestDraft);
 
       setMessage("Details saved.");
 
@@ -1279,7 +1242,6 @@ setDraft(latestDraft);
                           <button
                             type="button"
                             onClick={async () => {
-                              console.log(item.label, "YES CLICKED");
                               item.setValue(true);
 
                               if (item.label === "Letter of Recommendation Required") {
@@ -1313,7 +1275,6 @@ setDraft(latestDraft);
                           <button
                             type="button"
                             onClick={async () => {
-                              console.log(item.label, "NO CLICKED");
                               item.setValue(false);
 
                               if (item.label === "Letter of Recommendation Required") {
