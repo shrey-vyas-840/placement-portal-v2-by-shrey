@@ -405,24 +405,16 @@ export function AdminStudentsPage() {
                   </div>
                 </th>
 
-<th
-  onClick={() =>
-    handleSort(
-      "cgpa",
-      "CGPA",
-      "number",
-    )
-  }
-  className="cursor-pointer select-none border border-border whitespace-nowrap p-3 text-center font-semibold transition-colors hover:bg-primary/5"
->
-  <div className="flex items-center justify-between">
-    <span>CGPA</span>
+                <th
+                  onClick={() => handleSort("cgpa", "CGPA", "number")}
+                  className="cursor-pointer select-none border border-border whitespace-nowrap p-3 text-center font-semibold transition-colors hover:bg-primary/5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span>CGPA</span>
 
-    <span className="text-xs opacity-60">
-      {getArrow("cgpa")}
-    </span>
-  </div>
-</th>
+                    <span className="text-xs opacity-60">{getArrow("cgpa")}</span>
+                  </div>
+                </th>
 
                 <th
                   onClick={() => handleSort("graduation_year", "Graduation Year", "number")}

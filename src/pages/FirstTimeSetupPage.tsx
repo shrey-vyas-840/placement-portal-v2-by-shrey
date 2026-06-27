@@ -105,9 +105,9 @@ function registryToProfile(
     return {
       ...EMPTY_PROFILE,
       institute_email: email,
+      placement_preference: "Not Interested",
     };
   }
-
   return {
     first_name: text(registry.first_name),
     middle_name: "",
@@ -549,48 +549,30 @@ Enrollment No. ${enteredEnrollment}
         return;
       }
       console.log("ENTERED ENROLLMENT", enteredEnrollment);
-      if (registry) {
-        const normalizedInput = normalizeEnrollment(enteredEnrollment);
-        const normalizedRegistry = normalizeEnrollment(registry.enrollment_no);
+      const nextRegistryFound = Boolean(registry);
 
-        if (normalizedInput !== normalizedRegistry) {
-          setError("Enrollment number does not match registry record.");
-          setSaving(false);
-          return;
-        }
-
-        setRegistryFound(true);
-        setRegistrySnapshot(registry);
-        setProfile(registryToProfile(registry, user.email ?? ""));
-      } else {
-        setRegistryFound(false);
-        setRegistrySnapshot(null);
-        setProfile((current) => ({
-          ...current,
-          institute_email: user.email ?? current.institute_email,
-        }));
-      }
+      const nextProfile: EditableProfile = registry
+        ? registryToProfile(registry, user.email ?? "")
+        : {
+            ...EMPTY_PROFILE,
+            institute_email: user.email ?? "",
+            placement_preference: "Not Interested",
+          };
 
       await persistDraft({
         onboardingStage: "PASSWORD_SET",
         enrollmentNo: normalizeEnrollment(enteredEnrollment),
         passwordCreated: true,
-        registryFound: Boolean(registry),
+        registryFound: nextRegistryFound,
         registrySnapshot: registry,
-        editedProfile: registry
-          ? registryToProfile(registry, user.email ?? "")
-          : {
-              ...profile,
-              institute_email: user.email ?? profile.institute_email,
-            },
+        editedProfile: nextProfile,
       });
 
+      setRegistryFound(nextRegistryFound);
       setRegistrySnapshot(registry);
-      setRegistryFound(Boolean(registry));
+      setProfile(nextProfile);
 
       setMessage("Password saved. Continuing to verification.");
-
-      await refreshDraft();
 
       setStep(2);
     } catch (err) {
@@ -623,17 +605,34 @@ Enrollment No. ${enteredEnrollment}
     try {
       setSaving(true);
 
+      const derivedPlacementPreference: EditableProfile["placement_preference"] =
+        higherStudies || abroadPlan
+          ? "Higher Studies"
+          : startupPlan
+            ? "Entrepreneurship"
+            : "Interested";
+
+      const updatedProfile = {
+        ...profile,
+        placement_preference: derivedPlacementPreference,
+      };
+
+      setProfile(updatedProfile);
+
       await persistDraft({
         onboardingStage: "QUESTIONNAIRE_DONE",
         enrollmentNo: normalizeEnrollment(enteredEnrollment),
         registryFound,
         registrySnapshot,
-        editedProfile: profile,
+        editedProfile: updatedProfile,
         questionnaireAnswers: questionnairePayload,
         policyAccepted,
       });
 
+      await refreshDraft();
+
       setMessage("Details saved.");
+
       setStep(4);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save answers");
@@ -651,8 +650,8 @@ Enrollment No. ${enteredEnrollment}
 
     if (!profile.middle_name.trim()) {
       errors.middle_name = "Middle name is required.";
-    } else if (!/^[A-Z]$/.test(profile.middle_name.trim())) {
-      errors.middle_name = "Middle name must contain exactly one capital letter.";
+    } else if (!/^[A-Z][a-zA-Z]*$/.test(profile.middle_name.trim())) {
+      errors.middle_name = "Middle name must start with a capital letter and contain only letters.";
     }
 
     if (!profile.last_name.trim()) {
@@ -765,7 +764,15 @@ Enrollment No. ${enteredEnrollment}
         passwordCreated: true,
         registryFound,
         registrySnapshot,
-        editedProfile: profile,
+        editedProfile: {
+          ...profile,
+          placement_preference:
+            higherStudies || abroadPlan
+              ? "Higher Studies"
+              : startupPlan
+                ? "Entrepreneurship"
+                : "Interested",
+        },
         questionnaireAnswers: questionnairePayload,
         policyAccepted: true,
         finalConfirmation: true,
@@ -1189,42 +1196,6 @@ Enrollment No. ${enteredEnrollment}
                           </div>
                         ) : null}
                       </div>
-
-                      <div className="sm:col-span-2">
-                        <label className="mb-1 block text-sm font-medium">
-                          Placement Preference
-                        </label>
-                        <select
-                          value={profile.placement_preference}
-                          disabled={false}
-                          onChange={(e) => {
-                            console.log("DROPDOWN CHANGED TO", e.target.value);
-
-                            setProfile((current) => ({
-                              ...current,
-                              placement_preference: e.target
-                                .value as EditableProfile["placement_preference"],
-                            }));
-                          }}
-                          className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-muted"
-                        >
-                          {!showPlacementPreferenceWarning && (
-                            <option value="Interested">Interested</option>
-                          )}
-
-                          <option value="Not Interested">Not Interested</option>
-                          <option value="Higher Studies">Higher Studies</option>
-                          <option value="Entrepreneurship">Entrepreneurship</option>
-                        </select>
-                        {showPlacementPreferenceWarning ? (
-                          <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                            Your registry record currently indicates that you are not participating
-                            in placement activities. You may continue with Higher Studies,
-                            Entrepreneurship, or Not Interested. Selecting Interested directly is
-                            not permitted and requires approval from the Training & Placement Cell.
-                          </div>
-                        ) : null}
-                      </div>
                     </div>
                   </div>
 
@@ -1409,8 +1380,6 @@ Enrollment No. ${enteredEnrollment}
                               "Have you successfully sent the email?",
                             );
 
-                            setOptOutEmailRequested(confirmed);
-
                             const updatedQuestionnaire = {
                               careerGoal,
                               competitiveExam,
@@ -1428,6 +1397,8 @@ Enrollment No. ${enteredEnrollment}
                               onboardingStage: "QUESTIONNAIRE_IN_PROGRESS",
                               questionnaireAnswers: updatedQuestionnaire,
                             });
+
+                            setOptOutEmailRequested(confirmed);
                           }}
                         >
                           Open Gmail Draft

@@ -1027,8 +1027,8 @@ function CompleteProfileForm({
       }
     }
 
-    if (middleName && !/^[A-Za-z]$/.test(middleName.trim())) {
-      setError("Middle name must contain exactly one alphabet character.");
+    if (middleName && !/^[A-Z][a-zA-Z]*$/.test(middleName.trim())) {
+      setError("Middle name must start with a capital letter and contain only letters.");
       return;
     }
 
