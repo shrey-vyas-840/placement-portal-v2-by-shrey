@@ -186,13 +186,31 @@ export const studentService = {
         attendancePresent: 0,
         attendanceAbsent: 0,
         attendancePercentage: 0,
+
+        placementStatus: "Unplaced",
+        placementPreference: "Interested",
+        placedCompany: null,
+        placedPackage: null,
+        placementType: null,
+        placedAt: null,
+
+        restrictionActive: false,
+        restrictionType: null,
+        restrictionReason: null,
+
         recentApplications: [],
       };
     }
 
     const { data: profile, error: profileError } = await (supabase as any)
       .from("student_master")
-      .select("student_id")
+      .select(
+        `
+      student_id,
+      placement_status,
+      placement_preference
+  `,
+      )
       .eq("user_id", account.user_id)
       .maybeSingle();
 
@@ -204,9 +222,46 @@ export const studentService = {
         attendancePresent: 0,
         attendanceAbsent: 0,
         attendancePercentage: 0,
+
+        placementStatus: "Unplaced",
+        placementPreference: "Interested",
+        placedCompany: null,
+        placedPackage: null,
+        placementType: null,
+        placedAt: null,
+
+        restrictionActive: false,
+        restrictionType: null,
+        restrictionReason: null,
+
         recentApplications: [],
       };
     }
+
+const { data: placement } = await (supabase as any)
+  .from("student_placement_history")
+  .select(`
+      company_name,
+      package_lpa,
+      placement_type,
+      placed_at
+  `)
+  .eq("student_id", profile.student_id)
+  .eq("is_current", true)
+  .maybeSingle();
+
+    const { data: restriction } = await (supabase as any)
+      .from("student_restrictions")
+      .select(
+        `
+      restriction_type,
+      restriction_reason,
+      is_active
+  `,
+      )
+      .eq("student_id", profile.student_id)
+      .eq("is_active", true)
+      .maybeSingle();
 
     const [applicationsResult, attendanceResult, recentResult] = await Promise.all([
       (supabase as any)
@@ -264,6 +319,24 @@ export const studentService = {
       attendancePresent,
       attendanceAbsent,
       attendancePercentage,
+
+      placementStatus: profile.placement_status,
+
+      placementPreference: profile.placement_preference,
+
+      placedCompany: placement?.company_name ?? null,
+
+      placedPackage: placement?.package_lpa ?? null,
+
+      placementType: placement?.placement_type ?? null,
+
+      placedAt: placement?.placed_at ?? null,
+      restrictionActive: restriction?.is_active ?? false,
+
+      restrictionType: restriction?.restriction_type ?? null,
+
+      restrictionReason: restriction?.restriction_reason ?? null,
+
       recentApplications: recentApplications.map((item: any) => ({
         application_id: item.application_id,
         opportunity_title: item.opportunity_master?.opportunity_title ?? "",

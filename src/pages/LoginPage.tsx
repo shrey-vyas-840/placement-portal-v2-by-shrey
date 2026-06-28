@@ -52,6 +52,9 @@ export function LoginPage() {
           return;
         }
 
+        // Ensure portal account is linked before any routing.
+        await ensureUserProvisioned();
+
         const route = await getPostLoginRoute(user.id, user.email);
 
         if (active) {
