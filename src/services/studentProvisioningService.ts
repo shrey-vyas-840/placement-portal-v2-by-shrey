@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabase";
 import { studentService } from "@/services/studentService";
 import type { StudentMaster } from "@/types/student";
 
+const db = supabase as any;
+
 type EditableProfile = {
   first_name: string;
   middle_name: string;
@@ -49,70 +51,28 @@ function mapPlacementPreference(value?: unknown): StudentMaster["placement_prefe
 
   return "Interested";
 }
-async function resolvePortalUserId(authProviderId: string, emailAddress?: string): Promise<string> {
-  const { data, error } = await (supabase as any)
+
+async function resolvePortalUserId(
+  authProviderId: string,
+  emailAddress?: string,
+): Promise<string> {
+  const { data, error } = await db
     .from("user_accounts")
     .select("user_id")
     .eq("auth_provider_id", authProviderId)
     .maybeSingle();
 
   if (error) {
-    console.error("PROVISION ERROR", error);
-
     throw error;
   }
 
-  if (data?.user_id) {
-    return data.user_id as string;
+  if (!data?.user_id) {
+    throw new Error(
+      `No linked portal account found for ${emailAddress ?? authProviderId}.`,
+    );
   }
 
-  // SECOND CHANCE:
-  // Check if this email already has a portal account but auth_provider_id
-  // was never linked (common after testing / database cleanup).
-
-  if (emailAddress) {
-    const { data: existingByEmail, error: emailLookupError } = await (supabase as any)
-      .from("user_accounts")
-      .select("user_id")
-      .eq("email_address", emailAddress)
-      .maybeSingle();
-    if (emailLookupError) {
-      throw emailLookupError;
-    }
-
-    if (existingByEmail?.user_id) {
-      const { error: updateError } = await (supabase as any)
-        .from("user_accounts")
-        .update({
-          auth_provider_id: authProviderId,
-        })
-        .eq("user_id", existingByEmail.user_id);
-      if (updateError) {
-        throw updateError;
-      }
-      return existingByEmail.user_id as string;
-    }
-  }
-
-  // No existing account found → create new one.
-
-  const userId = crypto.randomUUID();
-
-  const { error: insertError } = await (supabase as any).from("user_accounts").insert({
-    user_id: userId,
-    auth_provider_id: authProviderId,
-    email_address: emailAddress ?? "",
-    account_status: "Active",
-    email_verified: true,
-    created_by_type: "Auto Generated",
-    is_active: true,
-  });
-
-  if (insertError) {
-    throw insertError;
-  }
-
-  return userId;
+  return data.user_id;
 }
 
 export async function createOrUpdateStudentProfileFromOnboardingDraft(
@@ -162,26 +122,17 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
     created_by_type: "Auto Generated",
     is_active: true,
   };
-
   if (existingProfile) {
-    const { data, error } = await (supabase as any)
+    const updatePayload = {
+      ...payload,
+    };
+
+    delete (updatePayload as any).user_id;
+    delete (updatePayload as any).created_by_type;
+
+    const { data, error } = await db
       .from("student_master")
-      .update({
-        enrollment_no: payload.enrollment_no,
-        first_name: payload.first_name,
-        middle_name: payload.middle_name,
-        last_name: payload.last_name,
-        institute_email: payload.institute_email,
-        personal_email: payload.personal_email,
-        contact_number: payload.contact_number,
-        alternate_contact_number: payload.alternate_contact_number,
-        gender: payload.gender,
-        date_of_birth: payload.date_of_birth,
-        profile_photo_document_id: payload.profile_photo_document_id,
-        placement_preference: payload.placement_preference,
-        placement_status: payload.placement_status,
-        is_active: payload.is_active,
-      })
+      .update(updatePayload)
       .eq("student_id", existingProfile.student_id)
       .select("*")
       .single();
@@ -195,11 +146,7 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
     return data as StudentMaster;
   }
 
-  const { data, error } = await (supabase as any)
-    .from("student_master")
-    .insert(payload)
-    .select("*")
-    .single();
+  const { data, error } = await db.from("student_master").insert(payload).select("*").single();
 
   if (error) {
     console.error("STUDENT_MASTER INSERT FAILED");
@@ -213,6 +160,7 @@ export async function createOrUpdateStudentProfileFromOnboardingDraft(
 }
 
 export async function provisionStudentFromApprovedDraft(draft: any) {
+  
   if (!draft) {
     throw new Error("Draft not found.");
   }
@@ -224,9 +172,6 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
     registrySnapshot: draft.registry_snapshot,
     editedProfile: draft.edited_profile,
   });
-
-  // Verify that student profile now exists.
-  // If not, stop provisioning immediately.
 
   const verifiedProfile = await studentService.getProfileByPortalUserId(profile.user_id);
 
@@ -242,7 +187,7 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
 
   const edited = draft.edited_profile ?? {};
 
-  const { data: academicRows, error: academicLookupError } = await (supabase as any)
+  const { data: academicRows, error: academicLookupError } = await db
     .from("student_academic_details")
     .select("academic_id")
     .eq("student_id", profile.student_id);
@@ -273,7 +218,7 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
       is_active: true,
     };
 
-    const { error: academicError } = await (supabase as any)
+    const { error: academicError } = await db
       .from("student_academic_details")
       .insert(academicPayload);
 
@@ -282,14 +227,14 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
     }
   }
 
-  const existingOnboarding = await (supabase as any)
+  const existingOnboarding = await db
     .from("student_onboarding")
     .select("student_id")
     .eq("student_id", profile.student_id)
     .maybeSingle();
 
   if (!existingOnboarding.data) {
-    const { error: onboardingError } = await (supabase as any).from("student_onboarding").insert({
+    const { error: onboardingError } = await db.from("student_onboarding").insert({
       onboarding_id: crypto.randomUUID(),
 
       student_id: profile.student_id,
@@ -314,24 +259,20 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
     }
   }
 
-  // ----------------------------------------------------
-  // FINAL PROVISIONING VERIFICATION
-  // ----------------------------------------------------
-
   const [verifiedStudent, verifiedAcademic, verifiedOnboarding] = await Promise.all([
-    (supabase as any)
+    db
       .from("student_master")
       .select("student_id")
       .eq("student_id", profile.student_id)
       .maybeSingle(),
 
-    (supabase as any)
+    db
       .from("student_academic_details")
       .select("academic_id")
       .eq("student_id", profile.student_id)
       .maybeSingle(),
 
-    (supabase as any)
+    db
       .from("student_onboarding")
       .select("onboarding_id")
       .eq("student_id", profile.student_id)

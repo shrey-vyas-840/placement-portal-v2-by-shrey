@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { ensureUserProvisioned } from "@/services/provisionService";
+
 import { profileCompletionService } from "@/services/profileCompletionService";
 import { studentService } from "@/services/studentService";
 import { rbacService } from "@/services/rbacService";
@@ -64,7 +64,8 @@ function SidebarLink({
 
 export function DashboardPage() {
   const { user } = useAuth();
-
+  
+  console.log("AUTH USER", user);
   const [completionName, setCompletionName] = useState("");
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
@@ -96,9 +97,7 @@ export function DashboardPage() {
   useEffect(() => {
     async function init() {
       try {
-        await ensureUserProvisioned();
-
-        if (!user) return;
+          if (!user) return;
 
         await rbacService.getCurrentUserRole(user.id);
 

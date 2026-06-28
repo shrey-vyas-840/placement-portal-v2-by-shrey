@@ -84,14 +84,12 @@ export async function getDraftForUser(
 ): Promise<StudentOnboardingDraftRow> {
   const normalizedEmail = normalizeDraftEmail(emailAddress);
 
-  // 1. Lookup by auth provider
   const existing = await getDraftByAuthProviderId(authProviderId);
 
   if (existing) {
     return existing;
   }
 
-  // 2. Lookup by email
   const { data: existingByEmail, error: emailLookupError } = await (supabase as any)
     .from("student_onboarding_drafts")
     .select("*")
@@ -102,7 +100,6 @@ export async function getDraftForUser(
     throw emailLookupError;
   }
 
-  // 3. Repair auth_provider_id
   if (existingByEmail) {
     const { data: repairedDraft, error: repairError } = await (supabase as any)
       .from("student_onboarding_drafts")
@@ -120,7 +117,6 @@ export async function getDraftForUser(
     return repairedDraft as StudentOnboardingDraftRow;
   }
 
-  // 4. Create brand new draft
   return ensureDraftForUser(authProviderId, normalizedEmail);
 }
 
@@ -130,14 +126,12 @@ export async function ensureDraftForUser(
 ): Promise<StudentOnboardingDraftRow> {
   const normalizedEmail = normalizeDraftEmail(emailAddress);
 
-  // First: lookup by auth_provider_id
   const existing = await getDraftByAuthProviderId(authProviderId);
 
   if (existing) {
     return existing;
   }
 
-  // Second: lookup by email
   const { data: existingByEmail, error: emailLookupError } = await (supabase as any)
     .from("student_onboarding_drafts")
     .select("*")
@@ -165,7 +159,6 @@ export async function ensureDraftForUser(
     return repairedDraft as StudentOnboardingDraftRow;
   }
 
-  // Third: create brand new draft
   const { data, error } = await (supabase as any)
     .from("student_onboarding_drafts")
     .insert({
@@ -232,7 +225,6 @@ export async function saveDraft(
         ? input.onboardingCompleted
         : (existing?.onboarding_completed ?? false),
 
-    // Preserve admin review metadata unless an explicit admin write happens elsewhere.
     approval_status:
       input.approvalStatus !== undefined
         ? input.approvalStatus
@@ -387,8 +379,6 @@ export async function rejectOnboardingDraft(
     .eq("draft_id", draft.draft_id)
     .select("*")
     .maybeSingle();
-  console.log("REJECTION UPDATE RESULT", data);
-  console.log("REJECTION UPDATE ERROR", error);
   if (error) {
     throw error;
   }

@@ -56,8 +56,6 @@ export function AdminOnboardingApprovalsPage() {
     return !isInterested && !isChanged && !isOptedOut;
   });
 
-  console.log("UNCATEGORIZED STUDENTS", uncategorizedStudents);
-
   const interestedStudents = activeRows.filter((row) => {
     const registry = row.registry_snapshot?.placement_preference_text?.toLowerCase() ?? "";
 

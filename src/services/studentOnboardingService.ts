@@ -30,8 +30,13 @@ export async function getPostLoginRoute(
   _email?: string | null,
 ): Promise<string> {
   const profile = await studentService.getProfileByUserId(authProviderId);
+
   if (profile) {
-    return "/";
+    const onboarding = await getOnboardingByStudentId(profile.student_id);
+
+    if (onboarding?.onboarding_status === "COMPLETED") {
+      return "/";
+    }
   }
 
   const { getDraftByAuthProviderId } = await import("@/services/studentOnboardingDraftService");

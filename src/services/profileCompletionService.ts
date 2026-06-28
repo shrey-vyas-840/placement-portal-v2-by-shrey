@@ -13,6 +13,8 @@ export const profileCompletionService = {
         .eq("auth_provider_id", authUserId)
         .maybeSingle();
 
+        console.log("COMPLETION ACCOUNT", account); 
+
       if (!account) {
         return {
           profile: false,
@@ -28,12 +30,13 @@ export const profileCompletionService = {
         .select("*")
         .eq("user_id", account.user_id)
         .maybeSingle();
-
+console.log("COMPLETION PROFILE", profile);
       const { data: academics } = await (supabase as any)
         .from("student_academic_details")
         .select("*")
         .eq("student_id", profile?.student_id)
         .maybeSingle();
+        console.log("COMPLETION ACADEMICS", academics);
 
       const { data: skills } = await (supabase as any)
         .from("student_skill_profile")
@@ -80,7 +83,11 @@ export const profileCompletionService = {
       ].filter(Boolean).length;
 
       const percentage = Math.round((completedModules / 4) * 100);
-
+console.log("PROFILE COMPLETE", profileComplete);
+console.log("ACADEMICS COMPLETE", academicsComplete);
+console.log("SKILLS COMPLETE", skillsComplete);
+console.log("RESUME COMPLETE", resumeComplete);
+console.log("PERCENTAGE", percentage);
       return {
         profile: profileComplete,
         academics: academicsComplete,
