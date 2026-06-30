@@ -40,26 +40,27 @@ if (
     email: user.email,
     authProviderId: user.id,
   });
-  const { data: updatedAccount, error: updateError } = await (supabase as any)
+const { data: updatedAccounts, error: updateError } = await (supabase as any)
   .from("user_accounts")
   .update({
     auth_provider_id: user.id,
   })
   .eq("user_id", existingAccount.user_id)
-  .select("user_id, auth_provider_id")
-  .single();
-  
-  console.log("UPDATED ACCOUNT", updatedAccount);
-  console.log("UPDATE ERROR", updateError);
-  if (updateError) {
-    throw updateError;
-  }
+  .select("user_id, auth_provider_id");
 
-  if (updatedAccount.auth_provider_id !== user.id) {
-    throw new Error("Failed to verify auth_provider_id linkage.");
-  }
+console.log("UPDATED ACCOUNTS", updatedAccounts);
+console.log("UPDATED COUNT", updatedAccounts?.length);
+console.log("UPDATE ERROR", updateError);
 
-  console.log("AUTH PROVIDER LINKED", updatedAccount);
+if (updateError) {
+  throw updateError;
+}
+
+if (!updatedAccounts || updatedAccounts.length === 0) {
+  throw new Error("UPDATE matched zero rows.");
+}
+
+console.log("AUTH PROVIDER LINKED", updatedAccounts[0]);
 }
 
 return;
