@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { normalizeEmail } from "@/services/identityPolicyService";
+
 
 export type RecruitmentDraftStatus = "DRAFT" | "READY_FOR_PUBLISH" | "PUBLISHED" | "ARCHIVED";
 
@@ -107,24 +107,18 @@ export async function getDraftByAuthProviderId(
   return (data as RecruitmentDraftRow | null) ?? null;
 }
 
-export async function ensureDraftForUser(
-  authProviderId: string,
-  emailAddress: string,
-): Promise<RecruitmentDraftRow> {
+export async function ensureDraftForUser(authProviderId: string): Promise<RecruitmentDraftRow> {
   const existing = await getDraftByAuthProviderId(authProviderId);
 
   if (existing) {
     return existing;
   }
-
-  const normalizedEmail = normalizeEmail(emailAddress);
-
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
     .insert({
       auth_provider_id: authProviderId,
 
-      draft_name: `${normalizedEmail} Recruitment`,
+      draft_name: "Untitled Recruitment",
 
       current_step: 0,
 
@@ -159,7 +153,6 @@ export async function ensureDraftForUser(
 }
 export async function getDraftForUser(
   authProviderId: string,
-  emailAddress: string,
 ): Promise<RecruitmentDraftRow> {
   const existing = await getDraftByAuthProviderId(authProviderId);
 
@@ -167,13 +160,12 @@ export async function getDraftForUser(
     return existing;
   }
 
-  return ensureDraftForUser(authProviderId, emailAddress);
+  return ensureDraftForUser(authProviderId);
 }
 
 export async function saveDraft(input: SaveRecruitmentDraftInput): Promise<RecruitmentDraftRow> {
   const existing = await getDraftForUser(
     input.authProviderId,
-    input.draftName ?? "Recruitment Draft",
   );
 
   const nextRow = {
