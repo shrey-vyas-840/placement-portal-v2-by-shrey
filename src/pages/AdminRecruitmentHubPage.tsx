@@ -31,93 +31,106 @@ export function AdminRecruitmentHubPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Recruitment Management
-          </p>
-          <h1 className="mt-2 text-3xl font-bold">Recruitment Hub</h1>
-          <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
-            This hub is the entry point for opening a campus recruitment. It reuses the existing
-            company, drive, eligibility, question builder, and opportunity layers without changing
-            the current backend structure.
-          </p>
-
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {WORKFLOW_STEPS.map((step, index) => (
-              <div
-                key={step}
-                className="rounded-2xl border border-border bg-background p-4"
-              >
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Step {index + 1}
-                </div>
-                <div className="mt-2 text-sm font-medium">{step}</div>
+        <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                Recruitment Management
               </div>
-            ))}
+
+              <h1 className="mt-2 text-4xl font-bold">Recruitment Hub</h1>
+
+              <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+                Create, manage and monitor complete campus recruitment cycles from one place.
+              </p>
+            </div>
+
+            <Link
+              to="/admin/recruitment-new"
+              className="rounded-2xl bg-primary px-8 py-5 text-center text-primary-foreground shadow transition hover:opacity-90"
+            >
+              <div className="text-lg font-semibold">+ New Recruitment</div>
+
+              <div className="mt-1 text-xs opacity-80">Guided recruitment wizard</div>
+            </Link>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Link
-            to="/admin/companies"
-            className="rounded-2xl border border-primary/20 bg-primary/5 p-5 transition hover:border-primary/40 hover:bg-primary/10 md:col-span-2 xl:col-span-1"
-          >
-            <div className="text-sm font-semibold">Start from Companies</div>
-            <div className="mt-2 text-sm text-muted-foreground">
-              Search, edit, or create the company record first.
-            </div>
-          </Link>
+        <div className="mt-8 grid gap-6 xl:grid-cols-2">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Continue Draft</h2>
 
-          <Link
-            to="/admin/drives"
-            className="rounded-2xl border border-border bg-card p-5 transition hover:border-primary/40 hover:bg-muted/40"
-          >
-            <div className="text-sm font-semibold">Open Drives</div>
-            <div className="mt-2 text-sm text-muted-foreground">
-              Review drive lifecycle, eligibility, and archived drives.
-            </div>
-          </Link>
-
-          <Link
-            to="/admin/opportunities"
-            className="rounded-2xl border border-border bg-card p-5 transition hover:border-primary/40 hover:bg-muted/40"
-          >
-            <div className="text-sm font-semibold">Open Opportunities</div>
-            <div className="mt-2 text-sm text-muted-foreground">
-              Manage roles, questions, applicants, and publishing.
-            </div>
-          </Link>
-        </div>
-
-        <div className="mt-8 grid gap-4 xl:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
-            <h2 className="text-lg font-semibold">Recommended creation flow</h2>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {[
-                "Company search and selection",
-                "Create or update company information",
-                "Create drive and default eligibility",
-                "Reuse existing question builder for defaults",
-                "Create one or more job roles",
-                "Review all records before publish",
-              ].map((item) => (
-                <div key={item} className="rounded-xl border border-border bg-background p-4 text-sm">
-                  {item}
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Resume an unfinished recruitment.
                 </div>
-              ))}
+              </div>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">Coming Soon</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              <div className="text-sm text-muted-foreground">No recruitment draft available.</div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">Quick access</h2>
-            <div className="mt-4 space-y-3">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Active Recruitments</h2>
+
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Running campus recruitments.
+                </div>
+              </div>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">Placeholder</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              <div className="text-sm text-muted-foreground">No active recruitment.</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Draft Recruitments</h2>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">0</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              No drafts available.
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Archived Recruitments</h2>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">0</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              No archived recruitment.
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-semibold">Management</h2>
+
+            <div className="mt-5 space-y-3">
               {HUB_CARDS.map((card) => (
                 <Link
                   key={card.to}
                   to={card.to}
-                  className="block rounded-xl border border-border bg-background p-4 transition hover:border-primary/40 hover:bg-muted/40"
+                  className="block rounded-2xl border border-border bg-background p-4 transition hover:border-primary hover:bg-muted/50"
                 >
-                  <div className="text-sm font-semibold">{card.title}</div>
+                  <div className="font-medium">{card.title}</div>
+
                   <div className="mt-1 text-xs text-muted-foreground">{card.description}</div>
                 </Link>
               ))}
