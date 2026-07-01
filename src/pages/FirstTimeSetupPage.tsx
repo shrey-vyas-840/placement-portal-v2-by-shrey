@@ -25,6 +25,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 type CareerGoal = "Internship" | "Placements" | "Internship + PPO";
 
 type EditableProfile = {
+  enrollment_no: string;
   first_name: string;
   middle_name: string;
   last_name: string;
@@ -41,6 +42,7 @@ type EditableProfile = {
 };
 
 const EMPTY_PROFILE: EditableProfile = {
+  enrollment_no: "",
   first_name: "",
   middle_name: "",
   last_name: "",
@@ -108,6 +110,7 @@ function registryToProfile(
     };
   }
   return {
+    enrollment_no: text(registry.enrollment_no),
     first_name: text(registry.first_name),
     middle_name: "",
     last_name: text(registry.last_name),
@@ -135,6 +138,7 @@ function draftProfileToProfile(
   }
 
   return {
+    enrollment_no: text(draft.enrollment_no) || text(registry?.enrollment_no),
     first_name: text(draft.first_name) || text(registry?.first_name),
     middle_name: text(draft.middle_name),
     last_name: text(draft.last_name) || text(registry?.last_name),
@@ -213,7 +217,6 @@ export function FirstTimeSetupPage() {
   const [registrySnapshot, setRegistrySnapshot] = useState<StudentMasterRegistryRow | null>(null);
   const [registryFound, setRegistryFound] = useState(false);
 
-  const [enteredEnrollment, setEnteredEnrollment] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -254,17 +257,14 @@ export function FirstTimeSetupPage() {
       goals.push("Entrepreneurial Ventures");
     }
 
-    return `
-Respected Sir/Madam,
+    return ` Respected Sir/Madam,
 
 I hope you are doing well.
 
 My name is ${studentName} and I am currently pursuing ${branch} at ${institute}.
 
 I would like to formally request a change in my placement participation status.
-
 Based on my future academic and career plans, I intend to pursue:
-
 ${goals.map((goal) => `• ${goal}`).join("\n")}
 
 Therefore, I kindly request the Training & Placement Cell to review my profile and consider processing my placement opt-out request.
@@ -276,7 +276,6 @@ I may also require a Letter of Recommendation (LOR) from my department as part o
     : ""
 }
 I understand the implications associated with opting out of placement activities and submit this request voluntarily.
-
 I would be grateful if my request could be reviewed and processed at the earliest convenience.
 
 Thank you for your time and consideration.
@@ -284,12 +283,11 @@ Thank you for your time and consideration.
 Sincerely,
 
 ${studentName}
-Enrollment No. ${enteredEnrollment}
+Enrollment No. ${profile.enrollment_no}
 `;
   }, [
     profile,
     registrySnapshot,
-    enteredEnrollment,
     higherStudies,
     abroadPlan,
     startupPlan,
@@ -387,7 +385,6 @@ Enrollment No. ${enteredEnrollment}
         if (cancelled) return;
 
         setDraft(existingDraft);
-        setEnteredEnrollment(existingDraft.enrollment_no ?? "");
         setRegistryFound(Boolean(existingDraft.registry_found));
         setRegistrySnapshot(
           (existingDraft.registry_snapshot as StudentMasterRegistryRow | null) ?? null,
@@ -483,7 +480,7 @@ Enrollment No. ${enteredEnrollment}
       return;
     }
 
-    if (!enteredEnrollment.trim()) {
+    if (!profile.enrollment_no.trim()) {
       setError("Enrollment number is required.");
       return;
     }
@@ -505,7 +502,7 @@ Enrollment No. ${enteredEnrollment}
 
       await authService.updatePassword(newPassword);
 
-      const normalizedEnrollment = normalizeEnrollment(enteredEnrollment);
+      const normalizedEnrollment = normalizeEnrollment(profile.enrollment_no);
 
       const registry = await getRegistryStudentByEmail(user.email ?? "");
 
@@ -521,13 +518,14 @@ Enrollment No. ${enteredEnrollment}
         ? registryToProfile(registry, user.email ?? "")
         : {
             ...EMPTY_PROFILE,
+            enrollment_no: profile.enrollment_no,
             institute_email: user.email ?? "",
             placement_preference: "Not Interested",
           };
 
       await persistDraft({
         onboardingStage: "PASSWORD_SET",
-        enrollmentNo: normalizeEnrollment(enteredEnrollment),
+        enrollmentNo: normalizeEnrollment(profile.enrollment_no),
         passwordCreated: true,
         registryFound: nextRegistryFound,
         registrySnapshot: registry,
@@ -587,7 +585,7 @@ Enrollment No. ${enteredEnrollment}
 
       await persistDraft({
         onboardingStage: "QUESTIONNAIRE_DONE",
-        enrollmentNo: normalizeEnrollment(enteredEnrollment),
+        enrollmentNo: normalizeEnrollment(profile.enrollment_no),
         registryFound,
         registrySnapshot,
         editedProfile: updatedProfile,
@@ -667,7 +665,7 @@ Enrollment No. ${enteredEnrollment}
     }
     await persistDraft({
       onboardingStage: "PROFILE_READY",
-      enrollmentNo: normalizeEnrollment(enteredEnrollment),
+      enrollmentNo: normalizeEnrollment(profile.enrollment_no),
       registryFound,
       registrySnapshot,
       editedProfile: profile,
@@ -728,7 +726,7 @@ Enrollment No. ${enteredEnrollment}
 
         approvalStatus: registryFound ? "PENDING_PROFILE_VERIFICATION" : "PENDING_INITIAL_APPROVAL",
 
-        enrollmentNo: normalizeEnrollment(enteredEnrollment),
+        enrollmentNo: normalizeEnrollment(profile.enrollment_no),
         passwordCreated: true,
         registryFound,
         registrySnapshot,
@@ -759,7 +757,7 @@ Enrollment No. ${enteredEnrollment}
   };
 
   const profileSummaryRows = [
-    ["Enrollment", enteredEnrollment || "-"],
+    ["Enrollment", profile.enrollment_no || "-"],
     ["Institute Email", profile.institute_email || "-"],
     ["First Name", profile.first_name || "-"],
     ["Middle Name", profile.middle_name || "-"],
@@ -898,8 +896,13 @@ Enrollment No. ${enteredEnrollment}
                     <div>
                       <label className="mb-1 block text-sm font-medium">Enrollment Number</label>
                       <input
-                        value={enteredEnrollment}
-                        onChange={(e) => setEnteredEnrollment(e.target.value)}
+                        value={profile.enrollment_no}
+                        onChange={(e) =>
+                          setProfile((current) => ({
+                            ...current,
+                            enrollment_no: e.target.value,
+                          }))
+                        }
                         className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:border-primary"
                         autoComplete="off"
                         required
@@ -986,7 +989,7 @@ Enrollment No. ${enteredEnrollment}
                       <div>
                         <label className="mb-1 block text-sm font-medium">Enrollment Number</label>
                         <input
-                          value={enteredEnrollment}
+                          value={profile.enrollment_no}
                           disabled={isStudentFieldLocked("enrollment_no")}
                           className="w-full rounded-xl border border-border bg-muted px-3 py-2 outline-none disabled:cursor-not-allowed"
                         />
@@ -1334,7 +1337,7 @@ Enrollment No. ${enteredEnrollment}
                             const gmailUrl = buildOptOutGmailUrl({
                               studentName:
                                 `${profile.first_name} ${profile.last_name}`.trim() || "Student",
-                              enrollmentNo: enteredEnrollment,
+                              enrollmentNo: profile.enrollment_no,
                               reason: autoGeneratedOptOutReason,
                             });
 
@@ -1424,7 +1427,7 @@ Enrollment No. ${enteredEnrollment}
                       onClick={async () => {
                         await persistDraft({
                           onboardingStage: "POLICY_ACCEPTED",
-                          enrollmentNo: normalizeEnrollment(enteredEnrollment),
+                          enrollmentNo: normalizeEnrollment(profile.enrollment_no),
                           registryFound,
                           registrySnapshot,
                           editedProfile: profile,
@@ -1490,7 +1493,7 @@ Enrollment No. ${enteredEnrollment}
                     <tr className="border-b border-border">
                       <td className="w-1/2 px-3 py-2 font-medium">Enrollment</td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {enteredEnrollment || "-"}
+                        {profile.enrollment_no || "-"}
                       </td>
                     </tr>
                     <tr className="border-b border-border">
