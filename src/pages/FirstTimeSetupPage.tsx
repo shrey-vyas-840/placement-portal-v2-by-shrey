@@ -166,7 +166,13 @@ function stageToStep(stage?: string | null): Step {
     case "PASSWORD_SET":
       return 2;
 
+    case "PROFILE":
+      return 2;
+
     case "PROFILE_READY":
+      return 3;
+
+    case "QUESTIONNAIRE":
       return 3;
 
     case "QUESTIONNAIRE_IN_PROGRESS":
@@ -285,14 +291,7 @@ Sincerely,
 ${studentName}
 Enrollment No. ${profile.enrollment_no}
 `;
-  }, [
-    profile,
-    registrySnapshot,
-    higherStudies,
-    abroadPlan,
-    startupPlan,
-    lorRequired,
-  ]);
+  }, [profile, registrySnapshot, higherStudies, abroadPlan, startupPlan, lorRequired]);
 
   const requiresOptOut = higherStudies || abroadPlan;
 
@@ -414,12 +413,14 @@ Enrollment No. ${profile.enrollment_no}
         }
         setOptOutEmailRequested(Boolean(questionnaire.optOutEmailRequested));
         setPolicyAccepted(Boolean(existingDraft.policy_accepted));
-        const restoredStep = stageToStep(existingDraft.onboarding_stage);
+        let restoredStep = stageToStep(existingDraft.onboarding_stage);
+
+        if (existingDraft.approval_status === "PROFILE_REJECTED") {
+          restoredStep = existingDraft.rejection_step === "QUESTIONNAIRE" ? 3 : 2;
+        }
 
         setStep(restoredStep);
-
         setTimeout(() => {}, 0);
-
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -839,7 +840,83 @@ Enrollment No. ${profile.enrollment_no}
             {message}
           </div>
         ) : null}
+{draft?.approval_status === "PROFILE_REJECTED" ? (
+  <div className="rounded-2xl border border-red-300 bg-red-50 p-6 shadow-sm">
 
+    <div className="flex items-start gap-4">
+
+      <div className="mt-1 text-2xl">
+        ⚠️
+      </div>
+
+      <div className="flex-1">
+
+        <h2 className="text-lg font-semibold text-red-800">
+          Your onboarding requires changes
+        </h2>
+
+        <p className="mt-2 text-sm text-red-700">
+          Your onboarding has been reviewed by the Training & Placement Cell.
+          Please make the requested corrections below and submit your onboarding
+          again.
+        </p>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+
+          <div className="rounded-xl border border-red-200 bg-white p-4">
+
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+              Review Section
+            </div>
+
+            <div className="mt-1 font-semibold">
+
+              {draft.rejection_step === "QUESTIONNAIRE"
+                ? "Questionnaire"
+                : "Profile Details"}
+
+            </div>
+
+          </div>
+
+          <div className="rounded-xl border border-red-200 bg-white p-4">
+
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+              Reviewed On
+            </div>
+
+            <div className="mt-1 font-semibold">
+
+              {draft.reviewed_at
+                ? new Date(draft.reviewed_at).toLocaleString()
+                : "-"}
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="mt-4 rounded-xl border border-red-200 bg-white p-4">
+
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            Rejection Reason
+          </div>
+
+          <div className="mt-2 whitespace-pre-wrap font-medium text-red-900">
+
+            {draft.rejection_reason}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+) : null}
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-6">
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">

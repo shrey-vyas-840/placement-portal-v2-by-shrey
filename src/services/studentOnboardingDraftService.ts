@@ -11,6 +11,13 @@ export type OnboardingStage =
   | "POLICY_ACCEPTED"
   | "COMPLETED";
 
+export const REVIEW_SECTIONS = {
+  PROFILE: "PROFILE",
+  QUESTIONNAIRE: "QUESTIONNAIRE",
+} as const;
+
+export type ReviewSection = (typeof REVIEW_SECTIONS)[keyof typeof REVIEW_SECTIONS];
+
 export interface StudentOnboardingDraftRow {
   draft_id: string;
   auth_provider_id: string;
@@ -37,6 +44,7 @@ export interface StudentOnboardingDraftRow {
   reviewed_by?: string | null;
   reviewed_at?: string | null;
   rejection_reason?: string | null;
+  rejection_step?: ReviewSection | null;
 }
 
 export interface SaveStudentOnboardingDraftInput {
@@ -240,6 +248,7 @@ export async function saveDraft(
     reviewed_by: existing?.reviewed_by ?? null,
     reviewed_at: existing?.reviewed_at ?? null,
     rejection_reason: existing?.rejection_reason ?? null,
+    rejection_step: existing?.rejection_step ?? null,
     mail_confirmation_received: existing?.mail_confirmation_received ?? false,
     mail_confirmation_at: existing?.mail_confirmation_at ?? null,
     mail_type: existing?.mail_type ?? null,
@@ -360,6 +369,7 @@ export async function rejectOnboardingDraft(
   identifier: string,
   adminUserId: string,
   reason: string,
+  reviewSection: ReviewSection,
 ) {
   const draft = await resolveDraftByIdentifier(identifier);
   const now = new Date().toISOString();
@@ -368,11 +378,17 @@ export async function rejectOnboardingDraft(
     .from("student_onboarding_drafts")
     .update({
       approval_status: "PROFILE_REJECTED",
+
       onboarding_completed: false,
+
       approval_reason: reason,
       rejection_reason: reason,
+
+      rejection_step: reviewSection,
+
       approved_by: null,
       approved_at: null,
+
       reviewed_by: adminUserId,
       reviewed_at: now,
     })

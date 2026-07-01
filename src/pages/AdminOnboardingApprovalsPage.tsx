@@ -5,10 +5,7 @@ import {
   searchOnboardingStudents,
 } from "@/services/adminOnboardingService";
 
-import {
-  approveOnboardingDraft,
-  rejectOnboardingDraft,
-} from "@/services/studentOnboardingDraftService";
+import { approveOnboardingDraft } from "@/services/studentOnboardingDraftService";
 
 import { authService } from "@/services/authService";
 
@@ -231,38 +228,6 @@ export function AdminOnboardingApprovalsPage() {
                         >
                           Approve
                         </button>
-
-                        <button
-                          onClick={async () => {
-                            const reason = window.prompt("Enter rejection reason");
-
-                            if (!reason?.trim()) {
-                              return;
-                            }
-
-                            try {
-                              const session = await authService.getSession();
-
-                              if (!session?.user?.id) {
-                                alert("Admin session not found");
-                                return;
-                              }
-
-                              await rejectOnboardingDraft(
-                                row.draft_id,
-                                session.user.id,
-                                reason.trim(),
-                              );
-
-                              window.location.reload();
-                            } catch (error) {
-                              alert(error instanceof Error ? error.message : "Rejection failed");
-                            }
-                          }}
-                          className="rounded-lg bg-red-600 px-3 py-1 text-white"
-                        >
-                          Reject
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -428,43 +393,6 @@ function SectionTable({
               className="rounded-lg bg-green-600 px-3 py-1 text-sm text-white disabled:opacity-50"
             >
               Approve Selected ({selectedDrafts.length})
-            </button>
-
-            <button
-              disabled={selectedDrafts.length === 0 || processing}
-              onClick={async () => {
-                const reason = window.prompt("Enter rejection reason");
-
-                if (!reason?.trim()) {
-                  return;
-                }
-
-                try {
-                  setProcessing(true);
-
-                  const session = await authService.getSession();
-
-                  if (!session?.user?.id) {
-                    alert("Admin session not found");
-                    return;
-                  }
-
-                  for (const draftId of selectedDrafts) {
-                    await rejectOnboardingDraft(draftId, session.user.id, reason.trim());
-                  }
-
-                  alert(`${selectedDrafts.length} student(s) rejected successfully`);
-
-                  window.location.reload();
-                } catch (error) {
-                  alert(error instanceof Error ? error.message : "Bulk rejection failed");
-                } finally {
-                  setProcessing(false);
-                }
-              }}
-              className="rounded-lg bg-red-600 px-3 py-1 text-sm text-white disabled:opacity-50"
-            >
-              Reject Selected ({selectedDrafts.length})
             </button>
           </div>
         </div>

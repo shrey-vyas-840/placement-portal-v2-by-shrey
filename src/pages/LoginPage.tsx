@@ -10,7 +10,6 @@ import {
   isDeveloperEmail,
   normalizeEmail,
 } from "@/services/identityPolicyService";
-import { getPostLoginRoute } from "@/services/studentOnboardingService";
 
 type Mode = "login" | "firstTime" | "forgot";
 type LoginPhase = "email" | "otp";
@@ -55,10 +54,11 @@ export function LoginPage() {
         // Ensure portal account is linked before any routing.
         await ensureUserProvisioned();
 
-        const route = await getPostLoginRoute(user.id, user.email);
-
         if (active) {
-          navigate({ to: route, replace: true });
+          navigate({
+            to: "/auth/callback",
+            replace: true,
+          });
         }
       } catch (err) {
         if (active) {
@@ -103,11 +103,10 @@ export function LoginPage() {
       const authUserId = data.session?.user?.id;
 
       if (authUserId) {
-        const route = isDeveloperEmail(normalizedEmail)
-          ? getLandingRoute(normalizedEmail)
-          : await getPostLoginRoute(authUserId, normalizedEmail);
-
-        navigate({ to: route, replace: true });
+        navigate({
+          to: "/auth/callback",
+          replace: true,
+        });
       } else {
         setMessage("Signed in successfully.");
       }
@@ -167,9 +166,10 @@ export function LoginPage() {
 
       if (!isDeveloperEmail(normalizedEmail)) {
         await ensureUserProvisioned();
-
-        const route = await getPostLoginRoute(authUserId, normalizedEmail);
-        navigate({ to: route, replace: true });
+        navigate({
+          to: "/auth/callback",
+          replace: true,
+        });
         return;
       }
 

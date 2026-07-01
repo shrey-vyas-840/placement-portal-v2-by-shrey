@@ -43,14 +43,44 @@ export async function getPostLoginRoute(
   const draft = await getDraftByAuthProviderId(authProviderId);
 
   if (!draft) {
-    return "/onboarding";
-  }
+  return "/onboarding";
+}
 
-  if (draft.approval_status === "PROFILE_APPROVED" || draft.approval_status === "ACTIVE") {
-    return "/";
-  }
+/*
+ * Student has already been approved.
+ */
+if (
+  draft.approval_status === "PROFILE_APPROVED" ||
+  draft.approval_status === "ACTIVE"
+) {
+  return "/";
+}
 
+/*
+ * Student is waiting for admin review.
+ */
+if (
+  draft.approval_status === "PENDING_PROFILE_VERIFICATION" ||
+  draft.approval_status === "PENDING_INITIAL_APPROVAL"
+) {
   return "/onboarding-submitted";
+}
+
+/*
+ * Admin rejected the profile.
+ * Student must continue onboarding from Step 2.
+ */
+if (
+  draft.approval_status === "PROFILE_REJECTED" ||
+  draft.approval_status === "REJECTED"
+) {
+  return "/onboarding";
+}
+
+/*
+ * Student is still completing onboarding.
+ */
+return "/onboarding";
 }
 
 export function buildOptOutMailTo(options: {

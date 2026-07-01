@@ -4,6 +4,8 @@ import {
   approveOnboardingDraft,
   rejectOnboardingDraft,
   getDraftById,
+  REVIEW_SECTIONS,
+  type ReviewSection,
 } from "@/services/studentOnboardingDraftService";
 
 import { authService } from "@/services/authService";
@@ -42,6 +44,9 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
   const [draft, setDraft] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showGeneratedMail, setShowGeneratedMail] = useState(false);
+  const [reviewSection, setReviewSection] = useState<ReviewSection>(REVIEW_SECTIONS.PROFILE);
+
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -108,34 +113,54 @@ export function AdminOnboardingReviewPage({ draftId }: { draftId: string }) {
                 Approve
               </button>
 
-              <button
-                className="rounded bg-red-600 px-4 py-2 text-white"
-                onClick={async () => {
-                  const rejectionReason = window.prompt("Please enter rejection reason");
+              <div className="flex items-center gap-3">
+                <select
+                  value={reviewSection}
+                  onChange={(e) => setReviewSection(e.target.value as ReviewSection)}
+                  className="rounded border px-3 py-2"
+                >
+                  <option value={REVIEW_SECTIONS.PROFILE}>Profile Details</option>
 
-                  if (!rejectionReason?.trim()) {
-                    return;
-                  }
+                  <option value={REVIEW_SECTIONS.QUESTIONNAIRE}>Questionnaire</option>
+                </select>
 
-                  const session = await authService.getSession();
+                <input
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Enter rejection reason..."
+                  className="w-80 rounded border px-3 py-2"
+                />
 
-                  if (!session?.user?.id) {
-                    return;
-                  }
+                <button
+                  className="rounded bg-red-600 px-4 py-2 text-white"
+                  onClick={async () => {
+                    if (!rejectionReason.trim()) {
+                      alert("Please enter rejection reason.");
+                      return;
+                    }
 
-                  await rejectOnboardingDraft(
-                    draft.draft_id,
-                    session.user.id,
-                    rejectionReason.trim(),
-                  );
+                    const session = await authService.getSession();
 
-                  alert("Rejected");
+                    if (!session?.user?.id) {
+                      alert("No admin session");
+                      return;
+                    }
 
-                  window.location.reload();
-                }}
-              >
-                Reject
-              </button>
+                    await rejectOnboardingDraft(
+                      draft.draft_id,
+                      session.user.id,
+                      rejectionReason.trim(),
+                      reviewSection,
+                    );
+
+                    alert("Rejected");
+
+                    window.location.reload();
+                  }}
+                >
+                  Reject
+                </button>
+              </div>
             </div>
           )}
         </div>
