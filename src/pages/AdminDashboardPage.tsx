@@ -60,6 +60,12 @@ const NAV_ITEMS: NavItem[] = [
     description: "Drive lifecycle and eligibility.",
     badge: "Dr",
   },
+    {
+    to: "/admin/recruitment",
+    label: "Recruitment",
+    description: "Wizard entry point and workflow hub.",
+    badge: "R",
+  },
   {
     to: "/admin/opportunities",
     label: "Opportunities",
@@ -723,7 +729,7 @@ export function AdminDashboardPage() {
             </div>
           ) : null}
 
-          <section className="grid gap-7 space- x-10 y-20 md:grid-cols-2 xl:grid-cols-4">
+                    <section className="grid gap-7 space- x-10 y-20 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               title="Total Students"
               value={formatNumber(kpis.totalStudents)}
@@ -766,6 +772,53 @@ export function AdminDashboardPage() {
             />
           </section>
 
+          <SectionCard
+            title="Recruitment Management"
+            subtitle="Primary entry point for campus recruitments. Existing company, drive, and opportunity pages remain available as management screens."
+            right={<StatusChip label="Mode" value="Additive hub" />}
+          >
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Link
+                to="/admin/recruitment"
+                className="rounded-2xl border border-primary/20 bg-primary/5 p-4 transition hover:border-primary/40 hover:bg-primary/10"
+              >
+                <div className="text-sm font-semibold">New Recruitment</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Guided workflow entry point.
+                </div>
+              </Link>
+
+              <Link
+                to="/admin/companies"
+                className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:bg-muted/40"
+              >
+                <div className="text-sm font-semibold">Companies</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Manage company records and recruiters.
+                </div>
+              </Link>
+
+              <Link
+                to="/admin/drives"
+                className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:bg-muted/40"
+              >
+                <div className="text-sm font-semibold">Drives</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Manage drive lifecycle and eligibility.
+                </div>
+              </Link>
+
+              <Link
+                to="/admin/opportunities"
+                className="rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:bg-muted/40"
+              >
+                <div className="text-sm font-semibold">Opportunities</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Manage roles, questions, and applicants.
+                </div>
+              </Link>
+            </div>
+          </SectionCard>
           <SectionCard
             title="Campus Drive Registration Trend"
             subtitle="Last 10 drives. Click any bar to update the analytics below."
