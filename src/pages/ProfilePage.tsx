@@ -9,6 +9,9 @@ import { ResumeSection } from "@/components/ResumeSection";
 import { AcademicSection } from "@/components/AcademicSection";
 import { academicService } from "@/services/academicService";
 import SkillsSection from "@/components/SkillsSection";
+import { StudentLayout } from "@/components/layout/StudentLayout";
+import AppLoadingScreen from "@/components/ui/AppLoadingScreen";
+import { usePageLoader } from "@/hooks/usePageLoader";
 
 type Mode = "view";
 
@@ -19,6 +22,7 @@ export function ProfilePage() {
   const [profile, setProfile] = useState<StudentMaster | null>(null);
   const [academicData, setAcademicData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { showLoader } = usePageLoader(loading);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -190,42 +194,46 @@ export function ProfilePage() {
       setSavingProfile(false);
     }
   };
+if (showLoader) {
+  return <AppLoadingScreen page="profile" />;
+}
 
-  return (
+return (
+
     <div className="min-h-screen bg-background">
       <AppHeader />
+      <StudentLayout completionName={profile?.first_name ?? ""} completionPercentage={100}>
+        {!loading && !profile && !isInstitutionalEmail && (
+          <div className="mt-6 rounded border border-red-300 bg-red-50 p-6">
+            <h2 className="text-lg font-semibold text-red-700">Institutional Email Required</h2>
 
-      {loading && <p className="mt-6">Loading...</p>}
+            <p className="mt-2">
+              Please sign in using your official Indus University email address.
+            </p>
 
-      {!loading && !profile && !isInstitutionalEmail && (
-        <div className="mt-6 rounded border border-red-300 bg-red-50 p-6">
-          <h2 className="text-lg font-semibold text-red-700">Institutional Email Required</h2>
+            <p className="mt-2 text-sm">
+              Examples:
+              <br />
+              abc.it@indusuni.ac.in
+              <br />
+              xyz.23.cse@iite.indusuni.ac.in
+            </p>
+          </div>
+        )}
 
-          <p className="mt-2">Please sign in using your official Indus University email address.</p>
+        {!loading && !profile && isInstitutionalEmail && (
+          <CompleteProfileForm
+            authUserId={user?.id ?? ""}
+            email={user?.email ?? ""}
+            onCreated={() => window.location.assign("/onboarding")}
+          />
+        )}
 
-          <p className="mt-2 text-sm">
-            Examples:
-            <br />
-            abc.it@indusuni.ac.in
-            <br />
-            xyz.23.cse@iite.indusuni.ac.in
-          </p>
-        </div>
-      )}
-
-      {!loading && !profile && isInstitutionalEmail && (
-        <CompleteProfileForm
-          authUserId={user?.id ?? ""}
-          email={user?.email ?? ""}
-          onCreated={() => window.location.assign("/onboarding")}
-        />
-      )}
-
-      {profile && (
-        <>
-          <main className="mx-auto max-w-7xl px-6 py-10">
-            <div
-              className="
+        {profile && (
+          <>
+            <main className="mx-auto max-w-7xl px-6 py-10">
+              <div
+                className="
     relative
     overflow-hidden
     rounded-[32px]
@@ -240,12 +248,12 @@ export function ProfilePage() {
     text-white
     shadow-xl
   "
-            >
-              <div className="flex items-center justify-between gap-8">
-                {/* LEFT SIDE */}
-                <div className="flex items-center gap-5">
-                  <div
-                    className="
+              >
+                <div className="flex items-center justify-between gap-8">
+                  {/* LEFT SIDE */}
+                  <div className="flex items-center gap-5">
+                    <div
+                      className="
           flex
           h-20
           w-20
@@ -257,92 +265,92 @@ export function ProfilePage() {
           font-bold
           backdrop-blur-md
         "
-                  >
-                    {profile?.first_name?.charAt(0) ?? "S"}
+                    >
+                      {profile?.first_name?.charAt(0) ?? "S"}
+                    </div>
+
+                    <div>
+                      <div className="text-sm text-white/80">Student Profile</div>
+
+                      <h1 className="mt-1 text-4xl font-bold tracking-tight">
+                        {profile?.first_name} {profile?.last_name}
+                      </h1>
+
+                      <div className="mt-2 text-white/80">{profile?.enrollment_no}</div>
+                    </div>
                   </div>
 
-                  <div>
-                    <div className="text-sm text-white/80">Student Profile</div>
-
-                    <h1 className="mt-1 text-4xl font-bold tracking-tight">
-                      {profile?.first_name} {profile?.last_name}
-                    </h1>
-
-                    <div className="mt-2 text-white/80">{profile?.enrollment_no}</div>
-                  </div>
-                </div>
-
-                {/* RIGHT SIDE KPI GRID */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div
-                    className="
+                  {/* RIGHT SIDE KPI GRID */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div
+                      className="
           min-w-[140px]
           rounded-2xl
           bg-white/15
           p-4
           backdrop-blur-md
         "
-                  >
-                    <div className="text-xs text-white/70">Status</div>
+                    >
+                      <div className="text-xs text-white/70">Status</div>
 
-                    <div className="mt-2 text-lg font-semibold">
-                      {profile?.placement_status ?? "-"}
+                      <div className="mt-2 text-lg font-semibold">
+                        {profile?.placement_status ?? "-"}
+                      </div>
                     </div>
-                  </div>
 
-                  <div
-                    className="
+                    <div
+                      className="
           min-w-[140px]
           rounded-2xl
           bg-white/10
           p-4
           backdrop-blur-md
         "
-                  >
-                    <div className="text-xs text-white/70">Preference</div>
+                    >
+                      <div className="text-xs text-white/70">Preference</div>
 
-                    <div className="mt-2 text-lg font-semibold">
-                      {profile?.placement_preference ?? "-"}
+                      <div className="mt-2 text-lg font-semibold">
+                        {profile?.placement_preference ?? "-"}
+                      </div>
                     </div>
-                  </div>
 
-                  <div
-                    className="
+                    <div
+                      className="
           min-w-[140px]
           rounded-2xl
           bg-white/15
           p-4
           backdrop-blur-md
         "
-                  >
-                    <div className="text-xs text-white/70">Passing Year</div>
+                    >
+                      <div className="text-xs text-white/70">Passing Year</div>
 
-                    <div className="mt-2 text-lg font-semibold">
-                      {academicData?.graduation_year ?? "-"}
+                      <div className="mt-2 text-lg font-semibold">
+                        {academicData?.graduation_year ?? "-"}
+                      </div>
                     </div>
-                  </div>
 
-                  <div
-                    className="
+                    <div
+                      className="
           min-w-[140px]
           rounded-2xl
           bg-white/10
           p-4
           backdrop-blur-md
         "
-                  >
-                    <div className="text-xs text-white/70">CGPA</div>
+                    >
+                      <div className="text-xs text-white/70">CGPA</div>
 
-                    <div className="mt-2 text-lg font-semibold">
-                      {academicData?.current_cgpa ?? "-"}
+                      <div className="mt-2 text-lg font-semibold">
+                        {academicData?.current_cgpa ?? "-"}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Decorative circles */}
-              <div
-                className="
+                {/* Decorative circles */}
+                <div
+                  className="
       absolute
       right-0
       top-0
@@ -352,10 +360,10 @@ export function ProfilePage() {
       bg-white/10
       blur-sm
     "
-              />
+                />
 
-              <div
-                className="
+                <div
+                  className="
       absolute
       bottom-0
       right-12
@@ -365,11 +373,11 @@ export function ProfilePage() {
       bg-white/10
       blur-sm
     "
-              />
-            </div>
+                />
+              </div>
 
-            <div
-              className="
+              <div
+                className="
       mt-7
       rounded-3xl
       border
@@ -378,26 +386,26 @@ export function ProfilePage() {
       p-8
       shadow-sm
     "
-            >
-              <div>
-                <div className="mb-8 flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-semibold">Basic Student Information</h2>
+              >
+                <div>
+                  <div className="mb-8 flex items-start justify-between">
+                    <div>
+                      <h2 className="text-2xl font-semibold">Basic Student Information</h2>
 
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Personal details, contact information and placement preferences maintained by
-                      the student.
-                    </p>
-                  </div>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Personal details, contact information and placement preferences maintained
+                        by the student.
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-3">
-                    {!editing ? (
-                      <button
-                        onClick={() => {
-                          setError(null);
-                          setEditing(true);
-                        }}
-                        className="
+                    <div className="flex items-center gap-3">
+                      {!editing ? (
+                        <button
+                          onClick={() => {
+                            setError(null);
+                            setEditing(true);
+                          }}
+                          className="
           rounded-xl
           bg-primary
           px-7
@@ -407,21 +415,21 @@ export function ProfilePage() {
           transition-all
           hover:shadow-lg
         "
-                      >
-                        Edit Profile
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            if (originalProfile) {
-                              setProfile({ ...originalProfile });
-                            }
+                        >
+                          Edit Profile
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (originalProfile) {
+                                setProfile({ ...originalProfile });
+                              }
 
-                            setError(null);
-                            setEditing(false);
-                          }}
-                          className="
+                              setError(null);
+                              setEditing(false);
+                            }}
+                            className="
             rounded-xl
             border
             border-slate-300
@@ -432,14 +440,14 @@ export function ProfilePage() {
             transition-all
             hover:bg-slate-50
           "
-                        >
-                          Cancel
-                        </button>
+                          >
+                            Cancel
+                          </button>
 
-                        <button
-                          onClick={handleProfileSave}
-                          disabled={savingProfile || !hasChanges}
-                          className="
+                          <button
+                            onClick={handleProfileSave}
+                            disabled={savingProfile || !hasChanges}
+                            className="
             rounded-xl
             bg-primary
             px-6
@@ -450,18 +458,18 @@ export function ProfilePage() {
             hover:shadow-lg
             disabled:opacity-50
           "
-                        >
-                          {savingProfile ? "Saving..." : "Save Changes"}
-                        </button>
-                      </>
-                    )}
+                          >
+                            {savingProfile ? "Saving..." : "Save Changes"}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {error && (
-                <div
-                  className="
+                {error && (
+                  <div
+                    className="
       mb-6
       rounded-2xl
       border
@@ -473,483 +481,484 @@ export function ProfilePage() {
       font-medium
       text-red-600
     "
-                >
-                  {error}
+                  >
+                    {error}
+                  </div>
+                )}
+
+                <div className="grid gap-8 sm:grid-cols-2">
+                  <Field label="Enrollment Number" value={profile.enrollment_no} />
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        First Name
+                      </p>
+
+                      <input
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.first_name}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            first_name: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Field label="First Name" value={profile.first_name} />
+                  )}
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Middle Name
+                      </p>
+
+                      <input
+                        maxLength={1}
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.middle_name ?? ""}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            middle_name: e.target.value.toUpperCase(),
+                          })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Field label="Middle Name" value={profile.middle_name ?? "-"} />
+                  )}
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Last Name
+                      </p>
+
+                      <input
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.last_name}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            last_name: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Field label="Last Name" value={profile.last_name} />
+                  )}
+
+                  <Field label="Institute Email" value={profile.institute_email} />
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Personal Email
+                      </p>
+
+                      <input
+                        type="email"
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.personal_email ?? ""}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            personal_email: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Field label="Personal Email" value={profile.personal_email ?? "-"} />
+                  )}
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Contact Number
+                      </p>
+
+                      <input
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.contact_number}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            contact_number: e.target.value.replace(/\D/g, ""),
+                          })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Field label="Contact Number" value={profile.contact_number} />
+                  )}
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Alternate Contact
+                      </p>
+
+                      <input
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        placeholder="Alternate Contact Number (Optional)"
+                        maxLength={10}
+                        value={profile.alternate_contact_number ?? ""}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            alternate_contact_number: e.target.value.replace(/\D/g, ""),
+                          })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Field
+                      label="Alternate Contact"
+                      value={profile.alternate_contact_number ?? "-"}
+                    />
+                  )}
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Gender
+                      </p>
+
+                      <select
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.gender ?? ""}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            gender: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <Field label="Gender" value={profile.gender ?? "-"} />
+                  )}
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Date Of Birth
+                      </p>
+
+                      <input
+                        type="date"
+                        max={new Date().toISOString().split("T")[0]}
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.date_of_birth ?? ""}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            date_of_birth: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Field label="Date Of Birth" value={profile.date_of_birth ?? "-"} />
+                  )}
+
+                  {editing ? (
+                    <div>
+                      <p
+                        className="
+    mb-2
+    text-xs
+    uppercase
+    tracking-[0.12em]
+    text-muted-foreground
+  "
+                      >
+                        Placement Preference
+                      </p>
+
+                      <select
+                        className="
+    w-full
+    rounded-2xl
+    border
+    border-slate-200
+    bg-slate-50/50
+    px-4
+    py-3
+    outline-none
+    transition-all
+    focus:border-primary
+    focus:bg-white
+    focus:ring-4
+    focus:ring-primary/10
+  "
+                        value={profile.placement_preference}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            placement_preference: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="Interested">Interested</option>
+
+                        <option value="Not Interested">Not Interested</option>
+
+                        <option value="Higher Studies">Higher Studies</option>
+
+                        <option value="Entrepreneurship">Entrepreneurship</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <Field label="Placement Preference" value={profile.placement_preference} />
+                  )}
+
+                  <Field label="Placement Status" value={profile.placement_status ?? "-"} />
                 </div>
-              )}
+              </div>
 
-              <div className="grid gap-8 sm:grid-cols-2">
-                <Field label="Enrollment Number" value={profile.enrollment_no} />
-
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      First Name
-                    </p>
-
-                    <input
-                      className="
-    w-full
-    rounded-2xl
+              <div
+                className="
+    mt-6
+    rounded-3xl
     border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
+    border-border/50
+    bg-white
+    p-6
+    shadow-sm
   "
-                      value={profile.first_name}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          first_name: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <Field label="First Name" value={profile.first_name} />
-                )}
+              >
+                <SkillsSection studentId={profile.student_id} />
+              </div>
 
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Middle Name
-                    </p>
-
-                    <input
-                      maxLength={1}
-                      className="
-    w-full
-    rounded-2xl
+              <div
+                className="
+    mt-6
+    rounded-3xl
     border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
+    border-border/50
+    bg-white
+    p-6
+    shadow-sm
   "
-                      value={profile.middle_name ?? ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          middle_name: e.target.value.toUpperCase(),
-                        })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <Field label="Middle Name" value={profile.middle_name ?? "-"} />
-                )}
+              >
+                <ResumeSection
+                  studentId={profile.student_id}
+                  authUserId={user?.id ?? ""}
+                  existingUrl={resumeUrl}
+                  onSaved={() => loadResume(profile.student_id)}
+                />
+              </div>
 
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Last Name
-                    </p>
-
-                    <input
-                      className="
-    w-full
-    rounded-2xl
+              <div
+                className="
+    mt-6
+    rounded-3xl
     border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
+    border-border/50
+    bg-white
+    p-6
+    shadow-sm
   "
-                      value={profile.last_name}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          last_name: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <Field label="Last Name" value={profile.last_name} />
-                )}
-
-                <Field label="Institute Email" value={profile.institute_email} />
-
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Personal Email
-                    </p>
-
-                    <input
-                      type="email"
-                      className="
-    w-full
-    rounded-2xl
-    border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
-  "
-                      value={profile.personal_email ?? ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          personal_email: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <Field label="Personal Email" value={profile.personal_email ?? "-"} />
-                )}
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Contact Number
-                    </p>
-
-                    <input
-                      className="
-    w-full
-    rounded-2xl
-    border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
-  "
-                      value={profile.contact_number}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          contact_number: e.target.value.replace(/\D/g, ""),
-                        })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <Field label="Contact Number" value={profile.contact_number} />
-                )}
-
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Alternate Contact
-                    </p>
-
-                    <input
-                      className="
-    w-full
-    rounded-2xl
-    border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
-  "
-                      placeholder="Alternate Contact Number (Optional)"
-                      maxLength={10}
-                      value={profile.alternate_contact_number ?? ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          alternate_contact_number: e.target.value.replace(/\D/g, ""),
-                        })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <Field
-                    label="Alternate Contact"
-                    value={profile.alternate_contact_number ?? "-"}
+              >
+                {profile && (
+                  <AcademicSection
+                    studentId={profile.student_id}
+                    existingData={academicData}
+                    onSaved={() => loadAcademicDetails(profile.student_id)}
                   />
                 )}
-
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Gender
-                    </p>
-
-                    <select
-                      className="
-    w-full
-    rounded-2xl
-    border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
-  "
-                      value={profile.gender ?? ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          gender: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                ) : (
-                  <Field label="Gender" value={profile.gender ?? "-"} />
-                )}
-
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Date Of Birth
-                    </p>
-
-                    <input
-                      type="date"
-                      max={new Date().toISOString().split("T")[0]}
-                      className="
-    w-full
-    rounded-2xl
-    border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
-  "
-                      value={profile.date_of_birth ?? ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          date_of_birth: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                ) : (
-                  <Field label="Date Of Birth" value={profile.date_of_birth ?? "-"} />
-                )}
-
-                {editing ? (
-                  <div>
-                    <p
-                      className="
-    mb-2
-    text-xs
-    uppercase
-    tracking-[0.12em]
-    text-muted-foreground
-  "
-                    >
-                      Placement Preference
-                    </p>
-
-                    <select
-                      className="
-    w-full
-    rounded-2xl
-    border
-    border-slate-200
-    bg-slate-50/50
-    px-4
-    py-3
-    outline-none
-    transition-all
-    focus:border-primary
-    focus:bg-white
-    focus:ring-4
-    focus:ring-primary/10
-  "
-                      value={profile.placement_preference}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          placement_preference: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="Interested">Interested</option>
-
-                      <option value="Not Interested">Not Interested</option>
-
-                      <option value="Higher Studies">Higher Studies</option>
-
-                      <option value="Entrepreneurship">Entrepreneurship</option>
-                    </select>
-                  </div>
-                ) : (
-                  <Field label="Placement Preference" value={profile.placement_preference} />
-                )}
-
-                <Field label="Placement Status" value={profile.placement_status ?? "-"} />
               </div>
-            </div>
-
-            <div
-              className="
-    mt-6
-    rounded-3xl
-    border
-    border-border/50
-    bg-white
-    p-6
-    shadow-sm
-  "
-            >
-              <SkillsSection studentId={profile.student_id} />
-            </div>
-
-            <div
-              className="
-    mt-6
-    rounded-3xl
-    border
-    border-border/50
-    bg-white
-    p-6
-    shadow-sm
-  "
-            >
-              <ResumeSection
-                studentId={profile.student_id}
-                authUserId={user?.id ?? ""}
-                existingUrl={resumeUrl}
-                onSaved={() => loadResume(profile.student_id)}
-              />
-            </div>
-
-            <div
-              className="
-    mt-6
-    rounded-3xl
-    border
-    border-border/50
-    bg-white
-    p-6
-    shadow-sm
-  "
-            >
-              {profile && (
-                <AcademicSection
-                  studentId={profile.student_id}
-                  existingData={academicData}
-                  onSaved={() => loadAcademicDetails(profile.student_id)}
-                />
-              )}
-            </div>
-          </main>
-        </>
-      )}
+            </main>
+          </>
+        )}
+      </StudentLayout>
     </div>
   );
 }

@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-
+import AppLoadingScreen from "@/components/ui/AppLoadingScreen";
+import { usePageLoader } from "@/hooks/usePageLoader";
 import { supabase } from "@/lib/supabase";
-
+import { StudentLayout } from "@/components/layout/StudentLayout";
 import { studentApplicationService } from "@/services/studentApplicationService";
 
 export function MyApplicationsPage() {
   const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { showLoader } = usePageLoader(loading);
 
   async function load() {
+  try {
     const { data: authData } = await supabase.auth.getUser();
 
     const authUserId = authData.user?.id;
@@ -38,15 +42,29 @@ export function MyApplicationsPage() {
 
     const data = await studentApplicationService.getMyApplications(student.student_id);
 
-    setApplications(data);
+   setApplications(data);
+
+  } catch (error) {
+
+    console.error("Failed to load applications", error);
+
+  } finally {
+
+    setLoading(false);
+
   }
+}
 
   useEffect(() => {
     load();
   }, []);
 
+if (showLoader) {
+  return <AppLoadingScreen page="applications" />;
+}
+
   return (
-    <div className="min-h-screen bg-background">
+    <StudentLayout completionName="" completionPercentage={100}>
       <div className="mx-auto max-w-7xl px-6 py-8">
         <div
           className="
@@ -265,6 +283,6 @@ hover:border-primary/30
           </div>
         )}
       </div>
-    </div>
+    </StudentLayout>
   );
 }

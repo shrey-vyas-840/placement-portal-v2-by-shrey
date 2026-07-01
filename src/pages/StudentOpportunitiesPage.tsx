@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 
+import AppLoadingScreen from "@/components/ui/AppLoadingScreen";
+import { usePageLoader } from "@/hooks/usePageLoader";
+
 import { adminQuestionService } from "@/services/adminQuestionService";
 
 import { supabase } from "@/lib/supabase";
-
+import { StudentLayout } from "@/components/layout/StudentLayout";
 import { studentOpportunityService } from "@/services/studentOpportunityService";
 
 export function StudentOpportunitiesPage() {
@@ -17,38 +20,48 @@ export function StudentOpportunitiesPage() {
 
   const [pendingApply, setPendingApply] = useState(false);
 
+  const [loading, setLoading] = useState(true);
+
+  const { showLoader } = usePageLoader(loading);
+
   async function load() {
-    const { data: authData } = await supabase.auth.getUser();
+    try {
+      const { data: authData } = await supabase.auth.getUser();
 
-    const authUserId = authData.user?.id;
+      const authUserId = authData.user?.id;
 
-    if (!authUserId) {
-      return;
+      if (!authUserId) {
+        return;
+      }
+
+      const { data: account } = await (supabase as any)
+        .from("user_accounts")
+        .select("user_id")
+        .eq("auth_provider_id", authUserId)
+        .maybeSingle();
+
+      if (!account) {
+        return;
+      }
+
+      const { data: student } = await (supabase as any)
+        .from("student_master")
+        .select("student_id")
+        .eq("user_id", account.user_id)
+        .maybeSingle();
+
+      if (!student) {
+        return;
+      }
+
+      const data = await studentOpportunityService.getPublishedOpportunities(student.student_id);
+
+      setOpportunities(data);
+    } catch (error) {
+      console.error("Failed to load opportunities", error);
+    } finally {
+      setLoading(false);
     }
-
-    const { data: account } = await (supabase as any)
-      .from("user_accounts")
-      .select("user_id")
-      .eq("auth_provider_id", authUserId)
-      .maybeSingle();
-
-    if (!account) {
-      return;
-    }
-
-    const { data: student } = await (supabase as any)
-      .from("student_master")
-      .select("student_id")
-      .eq("user_id", account.user_id)
-      .maybeSingle();
-
-    if (!student) {
-      return;
-    }
-
-    const data = await studentOpportunityService.getPublishedOpportunities(student.student_id);
-
-    setOpportunities(data);
   }
 
   useEffect(() => {
@@ -104,14 +117,19 @@ export function StudentOpportunitiesPage() {
 
       alert("Application submitted");
 
+      setLoading(true);
       await load();
     } catch (error: any) {
       alert(error?.message || "Application failed");
     }
   }
 
+  if (showLoader) {
+    return <AppLoadingScreen page="opportunities" />;
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <StudentLayout completionName="" completionPercentage={100}>
       <div className="mx-auto max-w-7xl px-6 py-8">
         <div
           className="
@@ -747,6 +765,6 @@ hover:border-primary/30
           </div>
         )}
       </div>
-    </div>
+    </StudentLayout>
   );
 }
