@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 export type RecruitmentQuestionType =
@@ -15,23 +15,49 @@ export type RecruitmentQuestionType =
   | "phone";
 
 export type RecruitmentQuestionValidation = {
+  // ---------- Text ----------
   minLength?: number | "";
   maxLength?: number | "";
   alphaOnly?: boolean;
+  alphaNumericOnly?: boolean;
+  regexPattern?: string;
 
+  // ---------- Number ----------
   min?: number | "";
   max?: number | "";
   minDigits?: number | "";
   maxDigits?: number | "";
+  allowDecimal?: boolean;
+  positiveOnly?: boolean;
 
+  // ---------- Date ----------
   minDate?: string;
   maxDate?: string;
 
+  // ---------- Email ----------
+  institutionalOnly?: boolean;
+  allowedDomains?: string;
+  blockPersonalEmail?: boolean;
+
+  // ---------- Phone ----------
+  countryCode?: string;
+  mobileOnly?: boolean;
+
+  // ---------- URL ----------
+  httpsOnly?: boolean;
+  allowedUrlDomains?: string;
+
+  // ---------- Choice ----------
   minSelection?: number | "";
   maxSelection?: number | "";
+  preventDuplicateOptions?: boolean;
+  preventEmptyOptions?: boolean;
 
+  // ---------- File ----------
   allowedExtensions?: string[];
   maxSizeMb?: number | "";
+  maxFiles?: number | "";
+  multipleFiles?: boolean;
 };
 
 export type RecruitmentQuestion = {
@@ -136,6 +162,30 @@ function emptyValidation(): RecruitmentQuestionValidation {
   return {};
 }
 
+function hasActiveValidation(validation?: RecruitmentQuestionValidation) {
+  if (!validation) return false;
+
+  return Object.values(validation).some((value) => {
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+
+    if (typeof value === "string") {
+      return value.trim().length > 0;
+    }
+
+    if (typeof value === "number") {
+      return true;
+    }
+
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    return value != null;
+  });
+}
+
 function PreviewQuestionCard({ question }: { question: RecruitmentQuestion }) {
   return (
     <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
@@ -160,7 +210,6 @@ function PreviewQuestionCard({ question }: { question: RecruitmentQuestion }) {
             question.question_type}
         </div>
       </div>
-
       <div className="mt-5">
         {question.question_type === "paragraph" ? (
           <textarea
@@ -174,19 +223,33 @@ function PreviewQuestionCard({ question }: { question: RecruitmentQuestion }) {
             <div className="font-medium">Choose File</div>
             <div className="mt-1">{previewPlaceholderForType(question.question_type)}</div>
           </div>
+        ) : question.question_type === "dropdown" ? (
+          <select
+            disabled
+            className="w-full rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground"
+          >
+            <option>Select an option</option>
+
+            {(question.options.length ? question.options : ["Option 1", "Option 2"]).map(
+              (option, optionIndex) => (
+                <option key={optionIndex}>{option || `Option ${optionIndex + 1}`}</option>
+              ),
+            )}
+          </select>
         ) : isMultiOptionType(question.question_type) ? (
           <div className="space-y-2">
-            {(question.options?.length ? question.options : ["Option 1", "Option 2"]).map(
+            {(question.options.length ? question.options : ["Option 1", "Option 2"]).map(
               (option, optionIndex) => (
                 <label
-                  key={`${option}-${optionIndex}`}
+                  key={optionIndex}
                   className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm"
                 >
                   {question.question_type === "checkbox" ? (
-                    <input type="checkbox" disabled />
+                    <input disabled type="checkbox" />
                   ) : (
-                    <input type="radio" disabled />
+                    <input disabled type="radio" />
                   )}
+
                   <span>{option || `Option ${optionIndex + 1}`}</span>
                 </label>
               ),
@@ -200,12 +263,11 @@ function PreviewQuestionCard({ question }: { question: RecruitmentQuestion }) {
           />
         )}
       </div>
-
-      {question.validation && Object.keys(question.validation).length > 0 ? (
+      {hasActiveValidation(question.validation) && (
         <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
-          Validation configured
+          ✓ Validation Rules Applied
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -223,6 +285,10 @@ export function RecruitmentQuestionBuilder({
 }: RecruitmentQuestionBuilderProps) {
   const questionCount = useMemo(() => questions.length, [questions]);
 
+  const requiredCount = useMemo(() => questions.filter((q) => q.is_required).length, [questions]);
+
+  const optionalCount = questionCount - requiredCount;
+
   const [expandedQuestions, setExpandedQuestions] = useState<Record<number, boolean>>({});
   const [previewExpanded, setPreviewExpanded] = useState<Record<number, boolean>>({
     0: false,
@@ -231,6 +297,42 @@ export function RecruitmentQuestionBuilder({
   const [validationExpanded, setValidationExpanded] = useState<Record<number, boolean>>({
     0: true,
   });
+
+  const [basicExpanded, setBasicExpanded] = useState<Record<number, boolean>>({
+    0: true,
+  });
+
+  const [optionsExpanded, setOptionsExpanded] = useState<Record<number, boolean>>({
+    0: true,
+  });
+
+  const titleInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    const expandedIndex = Object.entries(expandedQuestions).find(([, expanded]) => expanded)?.[0];
+
+    if (expandedIndex === undefined) return;
+
+    const index = Number(expandedIndex);
+
+    requestAnimationFrame(() => {
+      titleInputRefs.current[index]?.focus();
+    });
+  }, [questions.length, expandedQuestions]);
+
+  function toggleBasic(index: number) {
+    setBasicExpanded((previous) => ({
+      ...previous,
+      [index]: !previous[index],
+    }));
+  }
+
+  function toggleOptions(index: number) {
+    setOptionsExpanded((previous) => ({
+      ...previous,
+      [index]: !previous[index],
+    }));
+  }
 
   function toggleValidation(index: number) {
     setValidationExpanded((previous) => ({
@@ -253,17 +355,41 @@ export function RecruitmentQuestionBuilder({
     }));
   }
 
+  function expandOnly(index: number) {
+    setExpandedQuestions({
+      [index]: true,
+    });
+
+    setBasicExpanded({
+      [index]: true,
+    });
+
+    setValidationExpanded({
+      [index]: true,
+    });
+
+    setOptionsExpanded({
+      [index]: true,
+    });
+  }
+
   function addQuestion() {
     if (readOnly) return;
 
-    onChange((previous) => [...previous, createEmptyQuestion()]);
+    const newIndex = questions.length;
 
-    setTimeout(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 100);
+    onChange((previous) => [...previous, createEmptyQuestion()]);
+    expandOnly(newIndex);
+    requestAnimationFrame(() => {
+      const element = document.getElementById(`question-card-${newIndex}`);
+
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    });
   }
 
   function updateQuestion(index: number, field: keyof RecruitmentQuestion, value: any) {
@@ -271,10 +397,39 @@ export function RecruitmentQuestionBuilder({
 
     onChange((previous) => {
       const copy = [...previous];
-      copy[index] = {
-        ...copy[index],
+
+      const current = copy[index];
+
+      if (!current) return previous;
+
+      const next = {
+        ...current,
         [field]: value,
       };
+
+      if (field === "question_type") {
+        const nextType = value as RecruitmentQuestionType;
+
+        const previousWasChoice = isMultiOptionType(current.question_type);
+        const nextIsChoice = isMultiOptionType(nextType);
+
+        if (!previousWasChoice && nextIsChoice) {
+          next.options = ["Option 1", "Option 2"];
+        }
+
+        if (previousWasChoice && nextIsChoice) {
+          next.options = current.options.length > 0 ? current.options : ["Option 1", "Option 2"];
+        }
+
+        if (previousWasChoice && !nextIsChoice) {
+          next.options = [];
+        }
+
+        next.validation = {};
+      }
+
+      copy[index] = next;
+
       return copy;
     });
   }
@@ -298,6 +453,8 @@ export function RecruitmentQuestionBuilder({
   function duplicateQuestion(index: number) {
     if (readOnly) return;
 
+    const newIndex = index + 1;
+
     onChange((previous) => {
       const current = previous[index];
       if (!current) return previous;
@@ -309,8 +466,61 @@ export function RecruitmentQuestionBuilder({
       };
 
       const copy = [...previous];
-      copy.splice(index + 1, 0, cloned);
+      copy.splice(newIndex, 0, cloned);
       return copy;
+    });
+
+    expandOnly(newIndex);
+
+    requestAnimationFrame(() => {
+      document.getElementById(`question-card-${newIndex}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  }
+
+  function moveQuestionUp(index: number) {
+    if (readOnly || index === 0) return;
+
+    onChange((previous) => {
+      const copy = [...previous];
+      [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
+      return copy;
+    });
+  }
+
+  function moveQuestionDown(index: number) {
+    if (readOnly || index >= questions.length - 1) return;
+
+    onChange((previous) => {
+      const copy = [...previous];
+      [copy[index], copy[index + 1]] = [copy[index + 1], copy[index]];
+      return copy;
+    });
+  }
+
+  function addQuestionBelow(index: number) {
+    if (readOnly) return;
+
+    const newIndex = index + 1;
+
+    onChange((previous) => {
+      const copy = [...previous];
+      copy.splice(newIndex, 0, createEmptyQuestion());
+      return copy;
+    });
+
+    expandOnly(newIndex);
+    requestAnimationFrame(() => {
+      const element = document.getElementById(`question-card-${newIndex}`);
+
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
     });
   }
 
@@ -385,7 +595,7 @@ export function RecruitmentQuestionBuilder({
               disabled={readOnly}
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
               type="number"
-              placeholder="Min Length"
+              placeholder="Minimum Characters"
               value={question.validation?.minLength || ""}
               onChange={(e) =>
                 updateValidation(
@@ -400,7 +610,7 @@ export function RecruitmentQuestionBuilder({
               disabled={readOnly}
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
               type="number"
-              placeholder="Max Length"
+              placeholder="Maximum Characters"
               value={question.validation?.maxLength || ""}
               onChange={(e) =>
                 updateValidation(
@@ -435,7 +645,7 @@ export function RecruitmentQuestionBuilder({
               disabled={readOnly}
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
               type="number"
-              placeholder="Min Length"
+              placeholder="Minimum Characters"
               value={question.validation?.minLength || ""}
               onChange={(e) =>
                 updateValidation(
@@ -450,7 +660,7 @@ export function RecruitmentQuestionBuilder({
               disabled={readOnly}
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
               type="number"
-              placeholder="Max Length"
+              placeholder="Maximum Characters"
               value={question.validation?.maxLength || ""}
               onChange={(e) =>
                 updateValidation(
@@ -527,16 +737,156 @@ export function RecruitmentQuestionBuilder({
       );
     }
 
+    if (question.question_type === "email") {
+      return (
+        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+          <div className="mb-3 text-sm font-semibold text-slate-700">Email Validation</div>
+
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                disabled={readOnly}
+                type="checkbox"
+                checked={question.validation?.institutionalOnly || false}
+                onChange={(e) => updateValidation(index, "institutionalOnly", e.target.checked)}
+              />
+              Allow Institutional Email Only
+            </label>
+
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                disabled={readOnly}
+                type="checkbox"
+                checked={question.validation?.blockPersonalEmail || false}
+                onChange={(e) => updateValidation(index, "blockPersonalEmail", e.target.checked)}
+              />
+              Block Personal Email Providers
+            </label>
+
+            <input
+              disabled={readOnly}
+              className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm"
+              placeholder="Allowed domains (comma separated)"
+              value={question.validation?.allowedDomains || ""}
+              onChange={(e) => updateValidation(index, "allowedDomains", e.target.value)}
+            />
+
+            <div className="rounded-xl bg-blue-50 p-3 text-xs text-blue-700">
+              Example: indusuni.ac.in, company.com
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (question.question_type === "phone") {
+      return (
+        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+          <div className="mb-3 text-sm font-semibold text-slate-700">Phone Validation</div>
+
+          <div className="space-y-4">
+            <input
+              disabled={readOnly}
+              className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm"
+              placeholder="Country Code (Example: +91)"
+              value={question.validation?.countryCode || ""}
+              onChange={(e) => updateValidation(index, "countryCode", e.target.value)}
+            />
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <input
+                disabled={readOnly}
+                type="number"
+                className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
+                placeholder="Minimum Digits"
+                value={question.validation?.minDigits || ""}
+                onChange={(e) =>
+                  updateValidation(
+                    index,
+                    "minDigits",
+                    e.target.value === "" ? "" : Number(e.target.value),
+                  )
+                }
+              />
+
+              <input
+                disabled={readOnly}
+                type="number"
+                className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
+                placeholder="Maximum Digits"
+                value={question.validation?.maxDigits || ""}
+                onChange={(e) =>
+                  updateValidation(
+                    index,
+                    "maxDigits",
+                    e.target.value === "" ? "" : Number(e.target.value),
+                  )
+                }
+              />
+            </div>
+
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                disabled={readOnly}
+                type="checkbox"
+                checked={question.validation?.mobileOnly || false}
+                onChange={(e) => updateValidation(index, "mobileOnly", e.target.checked)}
+              />
+              Accept Mobile Numbers Only
+            </label>
+          </div>
+        </div>
+      );
+    }
+
+    if (question.question_type === "url") {
+      return (
+        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+          <div className="mb-3 text-sm font-semibold text-slate-700">URL Validation</div>
+
+          <div className="space-y-4">
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                disabled={readOnly}
+                type="checkbox"
+                checked={question.validation?.httpsOnly || false}
+                onChange={(e) => updateValidation(index, "httpsOnly", e.target.checked)}
+              />
+              Allow HTTPS URLs Only
+            </label>
+
+            <input
+              disabled={readOnly}
+              className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm"
+              placeholder="Allowed Domains (comma separated)"
+              value={question.validation?.allowedUrlDomains || ""}
+              onChange={(e) => updateValidation(index, "allowedUrlDomains", e.target.value)}
+            />
+
+            <div className="rounded-xl bg-blue-50 p-3 text-xs text-blue-700">
+              Example: github.com, linkedin.com, drive.google.com
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (question.question_type === "date") {
       return (
         <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
-          <div className="mb-3 text-sm font-semibold text-slate-700">Validation</div>
+          <div className="mb-4">
+            <div className="text-sm font-semibold text-slate-700">Date Range</div>
+
+            <div className="mt-1 text-xs text-muted-foreground">
+              Restrict which dates students are allowed to select.
+            </div>
+          </div>
 
           <div className="grid gap-3 md:grid-cols-2">
             <input
               disabled={readOnly}
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
-              type="date"
+              aria-label="Earliest Date"
               value={question.validation?.minDate || ""}
               onChange={(e) => updateValidation(index, "minDate", e.target.value)}
             />
@@ -544,10 +894,24 @@ export function RecruitmentQuestionBuilder({
             <input
               disabled={readOnly}
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
-              type="date"
+              aria-label="Latest Date"
               value={question.validation?.maxDate || ""}
               onChange={(e) => updateValidation(index, "maxDate", e.target.value)}
             />
+          </div>
+        </div>
+      );
+    }
+
+    if (question.question_type === "dropdown" || question.question_type === "mcq") {
+      return (
+        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+          <div className="mb-3 text-sm font-semibold text-slate-700">Choice Validation</div>
+
+          <div className="space-y-4">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
+              Students can select only one option.
+            </div>
           </div>
         </div>
       );
@@ -617,7 +981,7 @@ export function RecruitmentQuestionBuilder({
             ))}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-5 space-y-4">
             <input
               disabled={readOnly}
               className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm"
@@ -632,6 +996,35 @@ export function RecruitmentQuestionBuilder({
                 )
               }
             />
+
+            <input
+              disabled={readOnly}
+              className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm"
+              type="number"
+              placeholder="Maximum Number of Files"
+              value={question.validation?.maxFiles || ""}
+              onChange={(e) =>
+                updateValidation(
+                  index,
+                  "maxFiles",
+                  e.target.value === "" ? "" : Math.max(1, Number(e.target.value)),
+                )
+              }
+            />
+
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                disabled={readOnly}
+                type="checkbox"
+                checked={question.validation?.multipleFiles || false}
+                onChange={(e) => updateValidation(index, "multipleFiles", e.target.checked)}
+              />
+              Allow Multiple Files
+            </label>
+
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
+              Recommended: Resume → PDF only Portfolio → PDF + ZIP Certificates → PDF + Images
+            </div>
           </div>
         </div>
       );
@@ -655,8 +1048,18 @@ export function RecruitmentQuestionBuilder({
           <div>
             <h2 className="text-2xl font-semibold">{title}</h2>
             {subtitle ? <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p> : null}
-            <div className="mt-2 text-sm text-muted-foreground">
-              {questionCount} question(s) configured
+            <div className="mt-3 flex flex-wrap gap-2">
+              <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                {questionCount} Total
+              </div>
+
+              <div className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">
+                {requiredCount} Required
+              </div>
+
+              <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                {optionalCount} Optional
+              </div>
             </div>
           </div>
 
@@ -696,22 +1099,28 @@ export function RecruitmentQuestionBuilder({
       ) : (
         <div className="space-y-5">
           {questions.map((question, index) => {
-            const isExpanded = expandedQuestions[index] ?? index === 0;
+            const isExpanded =
+              expandedQuestions[index] ??
+              (Object.keys(expandedQuestions).length === 0 && index === 0);
             const previewVisible = previewExpanded[index] ?? false;
 
             return (
               <div
+                id={`question-card-${index}`}
                 key={`${question.question_id ?? "new"}-${index}`}
                 className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm"
               >
-                <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
-
-  <div className="flex flex-col p-6">
+                <div
+                  className={`grid gap-0 ${
+                    previewVisible ? "lg:grid-cols-[1.35fr_0.65fr]" : "grid-cols-1"
+                  }`}
+                >
+                  <div className="flex flex-col p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-3">
                           <div className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                            Question {index + 1}
+                            Q{index + 1}
                           </div>
 
                           <div className="font-semibold">
@@ -719,13 +1128,6 @@ export function RecruitmentQuestionBuilder({
                               ? question.question_title
                               : "Untitled Question"}
                           </div>
-
-                          <span className="rounded-full bg-muted px-2 py-1 text-[11px]">
-                            {
-                              QUESTION_TYPE_OPTIONS.find((x) => x.value === question.question_type)
-                                ?.label
-                            }
-                          </span>
 
                           {question.is_required && (
                             <span className="rounded-full bg-red-100 px-2 py-1 text-[11px] text-red-700">
@@ -746,7 +1148,33 @@ export function RecruitmentQuestionBuilder({
                       </div>
 
                       {!readOnly && (
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => moveQuestionUp(index)}
+                            className="rounded-xl border px-3 py-2 text-sm disabled:opacity-40"
+                          >
+                            ↑
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={index === questions.length - 1}
+                            onClick={() => moveQuestionDown(index)}
+                            className="rounded-xl border px-3 py-2 text-sm disabled:opacity-40"
+                          >
+                            ↓
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => addQuestionBelow(index)}
+                            className="rounded-full border border-dashed border-blue-300 bg-blue-50 px-5 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
+                          >
+                            + Add Question Below
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => duplicateQuestion(index)}
@@ -765,161 +1193,257 @@ export function RecruitmentQuestionBuilder({
                         </div>
                       )}
                     </div>
+                    {isExpanded && (
+                      <div className="mt-6 space-y-5 rounded-2xl border border-border bg-muted/10 p-5">
+                        <div className="rounded-2xl border border-border bg-background">
+                          <button
+                            type="button"
+                            onClick={() => toggleBasic(index)}
+                            className="flex w-full items-center justify-between px-5 py-4"
+                          >
+                            <div>
+                              <div className="font-medium">Basic Information</div>
+
+                              <div className="text-xs text-muted-foreground">
+                                Title, description, type and required status
+                              </div>
+                            </div>
+
+                            <div>{(basicExpanded[index] ?? index === 0) ? "▲" : "▼"}</div>
+                          </button>
+
+                          {(basicExpanded[index] ?? index === 0) && (
+                            <div className="border-t border-border p-5">
+                              <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                  Question Title
+                                </label>
+                                <input
+                                  ref={(element) => {
+                                    titleInputRefs.current[index] = element;
+                                  }}
+                                  disabled={readOnly}
+                                  className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                  placeholder="Question title"
+                                  value={question.question_title}
+                                  onChange={(e) =>
+                                    updateQuestion(index, "question_title", e.target.value)
+                                  }
+                                />
+                              </div>
+
+                              <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                  Description{" "}
+                                  <span className="text-muted-foreground">(optional)</span>
+                                </label>
+                                <textarea
+                                  disabled={readOnly}
+                                  rows={3}
+                                  className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                  placeholder="Add supporting instruction or guidance"
+                                  value={question.question_description || ""}
+                                  onChange={(e) =>
+                                    updateQuestion(index, "question_description", e.target.value)
+                                  }
+                                />
+                              </div>
+
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                  <label className="mb-2 block text-sm font-medium">
+                                    Question Type
+                                  </label>
+                                  <select
+                                    disabled={readOnly}
+                                    className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                    value={question.question_type}
+                                    onChange={(e) =>
+                                      updateQuestion(
+                                        index,
+                                        "question_type",
+                                        e.target.value as RecruitmentQuestionType,
+                                      )
+                                    }
+                                  >
+                                    {QUESTION_TYPE_OPTIONS.map((type) => (
+                                      <option key={type.value} value={type.value}>
+                                        {type.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div className="flex items-end">
+                                  <label className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm">
+                                    <input
+                                      disabled={readOnly}
+                                      type="checkbox"
+                                      checked={question.is_required}
+                                      onChange={(e) =>
+                                        updateQuestion(index, "is_required", e.target.checked)
+                                      }
+                                    />
+                                    Required
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {isMultiOptionType(question.question_type) ? (
+                          <>
+                            <div className="rounded-2xl border border-border bg-background">
+                              <button
+                                type="button"
+                                onClick={() => toggleOptions(index)}
+                                className="flex w-full items-center justify-between px-5 py-4"
+                              >
+                                <div>
+                                  <div className="font-medium">Answer Options</div>
+
+                                  <div className="text-xs text-muted-foreground">
+                                    Configure available choices
+                                  </div>
+                                </div>
+
+                                <div>{(optionsExpanded[index] ?? index === 0) ? "▲" : "▼"}</div>
+                              </button>
+
+                              {(optionsExpanded[index] ?? index === 0) && (
+                                <div className="border-t border-border p-5">
+                                  <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+                                    <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
+                                      Options are displayed to students exactly in the order shown
+                                      below. You can add, edit or remove options at any time.
+                                    </div>
+
+                                    <div className="space-y-3">
+                                      {question.options.length < 2 && (
+                                        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                                          At least two options are recommended.
+                                        </div>
+                                      )}
+
+                                      {question.options.some((option) => option.trim() === "") && (
+                                        <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                                          One or more options are empty.
+                                        </div>
+                                      )}
+
+                                      {new Set(
+                                        question.options
+                                          .map((option) => option.trim().toLowerCase())
+                                          .filter(Boolean),
+                                      ).size !==
+                                        question.options.filter((option) => option.trim())
+                                          .length && (
+                                        <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                                          Duplicate options detected.
+                                        </div>
+                                      )}
+                                      {question.options.map((option, optionIndex) => (
+                                        <div
+                                          key={`${question.question_id ?? "new"}-${optionIndex}`}
+                                          className="grid grid-cols-[40px_1fr_auto] items-center gap-3"
+                                        >
+                                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted font-semibold">
+                                            {optionIndex + 1}
+                                          </div>
+                                          <input
+                                            disabled={readOnly}
+                                            className="flex-1 rounded-xl border border-border bg-white px-4 py-3 text-sm"
+                                            value={option}
+                                            placeholder={`Option ${optionIndex + 1}`}
+                                            onChange={(e) =>
+                                              updateOption(index, optionIndex, e.target.value)
+                                            }
+                                          />
+
+                                          {!readOnly ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => removeOption(index, optionIndex)}
+                                              className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                                            >
+                                              Delete
+                                            </button>
+                                          ) : null}
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {!readOnly ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => addOption(index)}
+                                        className="mt-5 rounded-xl border border-dashed border-border bg-background px-5 py-3 text-sm font-medium transition hover:bg-muted"
+                                      >
+                                        + Add Another Option
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="rounded-2xl border border-border bg-muted/10">
+                              <button
+                                type="button"
+                                onClick={() => toggleValidation(index)}
+                                className="flex w-full items-center justify-between px-5 py-4 text-left"
+                              >
+                                <div>
+                                  <div className="font-medium">Validation Rules</div>
+
+                                  <div className="text-xs text-muted-foreground">
+                                    Configure validation for this question
+                                  </div>
+                                </div>
+
+                                <div className="text-sm">
+                                  {(validationExpanded[index] ?? index === 0) ? "▲" : "▼"}
+                                </div>
+                              </button>
+
+                              {(validationExpanded[index] ?? index === 0) && (
+                                <div className="border-t border-border p-5">
+                                  {renderValidationEditor(question, index)}
+                                </div>
+                              )}
+                            </div>
+                            {(question.question_type === "dropdown" ||
+                              question.question_type === "mcq" ||
+                              question.question_type === "checkbox" ||
+                              question.question_type === "file") && (
+                              <button
+                                type="button"
+                                onClick={() => togglePreview(index)}
+                                className="mb-4 flex w-full items-center justify-between rounded-xl border border-border bg-white px-4 py-3 text-left text-sm font-medium transition hover:bg-muted"
+                              >
+                                <>
+                                  <span>
+                                    {previewVisible
+                                      ? "Hide Student Preview"
+                                      : "Show Student Preview"}
+                                  </span>
+
+                                  <span>{previewVisible ? "▲" : "▼"}</span>
+                                </>
+                              </button>
+                            )}
+                          </>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
 
-                  {isExpanded && (
-                    <div className="mt-6 space-y-4">
-                      <div>
-                        <label className="mb-2 block text-sm font-medium">Question Title</label>
-                        <input
-                          disabled={readOnly}
-                          className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                          placeholder="Question title"
-                          value={question.question_title}
-                          onChange={(e) => updateQuestion(index, "question_title", e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block text-sm font-medium">
-                          Description <span className="text-muted-foreground">(optional)</span>
-                        </label>
-                        <textarea
-                          disabled={readOnly}
-                          rows={3}
-                          className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                          placeholder="Add supporting instruction or guidance"
-                          value={question.question_description || ""}
-                          onChange={(e) =>
-                            updateQuestion(index, "question_description", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">Question Type</label>
-                          <select
-                            disabled={readOnly}
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            value={question.question_type}
-                            onChange={(e) =>
-                              updateQuestion(
-                                index,
-                                "question_type",
-                                e.target.value as RecruitmentQuestionType,
-                              )
-                            }
-                          >
-                            {QUESTION_TYPE_OPTIONS.map((type) => (
-                              <option key={type.value} value={type.value}>
-                                {type.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="flex items-end">
-                          <label className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm">
-                            <input
-                              disabled={readOnly}
-                              type="checkbox"
-                              checked={question.is_required}
-                              onChange={(e) =>
-                                updateQuestion(index, "is_required", e.target.checked)
-                              }
-                            />
-                            Required
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl border border-border bg-muted/10">
-                        <button
-                          type="button"
-                          onClick={() => toggleValidation(index)}
-                          className="flex w-full items-center justify-between px-5 py-4 text-left"
-                        >
-                          <div>
-                            <div className="font-medium">Validation Rules</div>
-
-                            <div className="text-xs text-muted-foreground">
-                              Configure validation for this question
-                            </div>
-                          </div>
-
-                          <div className="text-sm">
-                            {(validationExpanded[index] ?? index === 0) ? "▲" : "▼"}
-                          </div>
-                        </button>
-
-                        {(validationExpanded[index] ?? index === 0) && (
-                          <div className="border-t border-border p-5">
-                            {renderValidationEditor(question, index)}
-                          </div>
-                        )}
-                      </div>
-
-                      {isMultiOptionType(question.question_type) ? (
-                        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
-                          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
-                            Options are displayed to students exactly in the order shown below. You
-                            can add, edit or remove options at any time.
-                          </div>
-
-                          <div className="space-y-3">
-                            {question.options.map((option, optionIndex) => (
-                              <div
-                                key={`${question.question_id ?? "new"}-${optionIndex}`}
-                                className="grid grid-cols-[40px_1fr_auto] items-center gap-3"
-                              >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted font-semibold">
-                                  {optionIndex + 1}
-                                </div>
-                                <input
-                                  disabled={readOnly}
-                                  className="flex-1 rounded-xl border border-border bg-white px-4 py-3 text-sm"
-                                  value={option}
-                                  placeholder={`Option ${optionIndex + 1}`}
-                                  onChange={(e) => updateOption(index, optionIndex, e.target.value)}
-                                />
-
-                                {!readOnly ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeOption(index, optionIndex)}
-                                    className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                                  >
-                                    Delete
-                                  </button>
-                                ) : null}
-                              </div>
-                            ))}
-                          </div>
-
-                          {!readOnly ? (
-                            <button
-                              type="button"
-                              onClick={() => addOption(index)}
-                              className="mt-5 rounded-xl border border-dashed border-border bg-background px-5 py-3 text-sm font-medium transition hover:bg-muted"
-                            >
-                              + Add Another Option
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-
-                  <div className="border-t border-border bg-slate-50 p-6 lg:border-l lg:border-t-0">
-                    <button
-                      type="button"
-                      onClick={() => togglePreview(index)}
-                      className="mb-4 w-full rounded-xl border border-border bg-white px-4 py-3 text-left text-sm font-medium hover:bg-muted"
-                    >
-                      {previewVisible ? "▲ Hide Student Preview" : "▼ Show Student Preview"}
-                    </button>
-
+                  <div
+                    className={`bg-slate-50 p-6 ${
+                      previewVisible ? "border-t border-border lg:border-l lg:border-t-0" : "hidden"
+                    }`}
+                  >
                     {previewVisible && <PreviewQuestionCard question={question} />}
                   </div>
                 </div>

@@ -326,6 +326,23 @@ export function LoginPage() {
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? "Signing in..." : "Login Now"}
               </Button>
+                <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={submitting}
+                  onClick={async () => {
+                    try {
+                      await authService.signInWithGoogle();
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Google login failed");
+                    }
+                  }}
+                >
+                  Continue with Google
+                </Button>
+              </div>
             </form>
           ) : null}
 
