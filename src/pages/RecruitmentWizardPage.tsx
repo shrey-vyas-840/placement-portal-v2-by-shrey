@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { adminDriveService } from "@/services/adminDriveService";
-
+import { RecruitmentQuestionBuilder } from "@/components/RecruitmentQuestionBuilder";
 import { getLatestDraft, saveDraft } from "@/services/recruitmentDraftService";
+import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 
 import { supabase } from "@/lib/supabase";
 
-const STEPS = ["Company", "Drive", "Eligibility", "Questions", "Job Roles", "Review"];
+const STEPS = [
+  "Company",
+  "Recruitment Settings",
+  "Default Eligibility",
+  "Default Questions",
+  "Job Roles",
+  "Review & Publish",
+];
 
 interface CompanyFormData {
   company_name: string;
@@ -30,6 +38,38 @@ interface RecruiterFormData {
 
   primary_contact: boolean;
 }
+
+interface DriveFormData {
+  drive_type: "Placement" | "Internship" | "Intern + PPO" | "";
+  drive_mode: "Online" | "Offline" | "Hybrid" | "";
+  registration_end: string;
+}
+
+interface DefaultEligibilityFormData {
+  minimum_cgpa: string;
+
+  maximum_active_backlogs: string;
+
+  willing_to_relocate_required: boolean;
+
+  additional_requirements: string;
+}
+
+const EMPTY_ELIGIBILITY: DefaultEligibilityFormData = {
+  minimum_cgpa: "",
+
+  maximum_active_backlogs: "0",
+
+  willing_to_relocate_required: false,
+
+  additional_requirements: "",
+};
+
+const EMPTY_DRIVE: DriveFormData = {
+  drive_type: "",
+  drive_mode: "",
+  registration_end: "",
+};
 
 const EMPTY_RECRUITER = (): RecruiterFormData => ({
   id: crypto.randomUUID(),
@@ -82,6 +122,12 @@ export function RecruitmentWizardPage() {
       primary_contact: true,
     },
   ]);
+
+  const [drive, setDrive] = useState<DriveFormData>(EMPTY_DRIVE);
+
+  const [eligibility, setEligibility] = useState<DefaultEligibilityFormData>(EMPTY_ELIGIBILITY);
+
+  const [defaultQuestions, setDefaultQuestions] = useState<RecruitmentQuestion[]>([]);
 
   const [draftId, setDraftId] = useState<string | null>(null);
 
@@ -156,6 +202,34 @@ export function RecruitmentWizardPage() {
           if (Array.isArray(draft.recruiters_data) && draft.recruiters_data.length > 0) {
             setRecruiters(draft.recruiters_data as unknown as RecruiterFormData[]);
           }
+          if (draft.drive_data) {
+            const driveData = draft.drive_data as Record<string, unknown>;
+
+            setDrive({
+              drive_type: String(driveData.drive_type ?? "") as DriveFormData["drive_type"],
+
+              drive_mode: String(driveData.drive_mode ?? "") as DriveFormData["drive_mode"],
+
+              registration_end: String(driveData.registration_end ?? ""),
+            });
+          }
+          if (draft.eligibility_data) {
+            const eligibilityData = draft.eligibility_data as Record<string, unknown>;
+
+            setEligibility({
+              minimum_cgpa: String(eligibilityData.minimum_cgpa ?? ""),
+
+              maximum_active_backlogs: String(eligibilityData.maximum_active_backlogs ?? "0"),
+
+              willing_to_relocate_required: Boolean(eligibilityData.willing_to_relocate_required),
+
+              additional_requirements: String(eligibilityData.additional_requirements ?? ""),
+            });
+          }
+
+          if (Array.isArray(draft.default_questions_data)) {
+            setDefaultQuestions(draft.default_questions_data);
+          }
         }
 
         setDraftLoaded(true);
@@ -178,13 +252,18 @@ export function RecruitmentWizardPage() {
 
         await saveDraft({
           authProviderId,
+
           draftName:
             company.company_name.trim() === ""
               ? "Untitled Recruitment"
-              : `${company.company_name} Campus Recruitment`,
+              : `${company.company_name} Recruitment`,
+
           currentStep,
           companyData: company,
           recruitersData: recruiters,
+          driveData: drive,
+          eligibilityData: eligibility,
+          defaultQuestionsData: defaultQuestions,
         });
       } catch (error) {
         console.error(error);
@@ -194,7 +273,16 @@ export function RecruitmentWizardPage() {
     }, 600);
 
     return () => clearTimeout(timeout);
-  }, [company, recruiters, currentStep, authProviderId, draftLoaded]);
+  }, [
+    company,
+    recruiters,
+    drive,
+    eligibility,
+    defaultQuestions,
+    currentStep,
+    authProviderId,
+    draftLoaded,
+  ]);
 
   async function handleCreateCompany() {
     if (!company.company_name.trim()) {
@@ -854,15 +942,204 @@ export function RecruitmentWizardPage() {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="mt-8 flex min-h-[420px] items-center justify-center rounded-2xl border border-dashed border-border">
-                <div className="text-center">
-                  <div className="text-2xl font-semibold">{STEPS[currentStep]}</div>
+            ) : currentStep === 1 ? (
+              <div className="mt-8 space-y-8">
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
+                  <div className="font-semibold">Recruitment Settings</div>
 
+                  <p className="mt-2 text-sm text-muted-foreground leading-6">
+                    These settings apply to this recruitment. Eligibility, Questions and Role
+                    configuration can be customized later.
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-border bg-card p-8">
+                  <div className="grid gap-6 md:grid-cols-3">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium">Recruitment Type</label>
+
+                      <select
+                        value={drive.drive_type}
+                        onChange={(e) =>
+                          setDrive((prev) => ({
+                            ...prev,
+                            drive_type: e.target.value as DriveFormData["drive_type"],
+                          }))
+                        }
+                        className="w-full rounded-xl border border-border px-4 py-3"
+                      >
+                        <option value="">Select</option>
+
+                        <option value="Placement">Placement</option>
+
+                        <option value="Internship">Internship</option>
+
+                        <option value="Intern + PPO">Intern + PPO</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium">Recruitment Mode</label>
+
+                      <select
+                        value={drive.drive_mode}
+                        onChange={(e) =>
+                          setDrive((prev) => ({
+                            ...prev,
+                            drive_mode: e.target.value as DriveFormData["drive_mode"],
+                          }))
+                        }
+                        className="w-full rounded-xl border border-border px-4 py-3"
+                      >
+                        <option value="">Select</option>
+
+                        <option>Online</option>
+
+                        <option>Offline</option>
+
+                        <option>Hybrid</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium">Registration Ends</label>
+
+                      <input
+                        type="datetime-local"
+                        value={drive.registration_end}
+                        onChange={(e) =>
+                          setDrive((prev) => ({
+                            ...prev,
+                            registration_end: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-border px-4 py-3"
+                      />
+                    </div>
+                  </div>
                   <div className="mt-2 text-sm text-muted-foreground">
-                    UI for this step will be implemented in upcoming phases.
+                    Registration starts automatically when the recruitment is published.
                   </div>
                 </div>
+              </div>
+            ) : currentStep === 2 ? (
+              <div className="rounded-3xl border border-border bg-card p-8">
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold">Default Eligibility</h3>
+
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    These values become the initial eligibility for every job role. Each role can
+                    override them later.
+                  </p>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">Minimum CGPA</label>
+
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={eligibility.minimum_cgpa}
+                      onChange={(e) =>
+                        setEligibility((prev) => ({
+                          ...prev,
+                          minimum_cgpa: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border px-4 py-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Maximum Active Backlogs
+                    </label>
+
+                    <input
+                      type="number"
+                      value={eligibility.maximum_active_backlogs}
+                      onChange={(e) =>
+                        setEligibility((prev) => ({
+                          ...prev,
+                          maximum_active_backlogs: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border px-4 py-3"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={eligibility.willing_to_relocate_required}
+                        onChange={(e) =>
+                          setEligibility((prev) => ({
+                            ...prev,
+                            willing_to_relocate_required: e.target.checked,
+                          }))
+                        }
+                      />
+
+                      <span>Candidates must be willing to relocate</span>
+                    </label>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-sm font-medium">
+                      Additional Requirements
+                    </label>
+
+                    <textarea
+                      rows={4}
+                      value={eligibility.additional_requirements}
+                      onChange={(e) =>
+                        setEligibility((prev) => ({
+                          ...prev,
+                          additional_requirements: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-border px-4 py-3"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : currentStep === 3 ? (
+              <div className="space-y-8">
+                <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6">
+                  <div className="text-xl font-semibold">Default Questions (Optional)</div>
+
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                    Add questions that should appear for every role in this recruitment. Later, each
+                    role may add, remove or modify its own questions independently. If this
+                    recruitment doesn't require additional questions, simply leave this empty and
+                    continue.
+                  </p>
+                </div>
+
+                <RecruitmentQuestionBuilder
+                  questions={defaultQuestions}
+                  onChange={setDefaultQuestions}
+                  title="Recruitment Default Questions"
+                  subtitle="These questions will be inherited by newly created job roles."
+                />
+              </div>
+            ) : currentStep === 4 ? (
+              <div className="rounded-3xl border border-dashed border-border p-12 text-center">
+                <h3 className="text-2xl font-semibold">Job Roles</h3>
+
+                <p className="mt-3 text-muted-foreground">
+                  Multi-role builder will be implemented here.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-border p-12 text-center">
+                <h3 className="text-2xl font-semibold">Review & Publish</h3>
+
+                <p className="mt-3 text-muted-foreground">
+                  Review all recruitment details before publishing.
+                </p>
               </div>
             )}
 
@@ -911,7 +1188,33 @@ export function RecruitmentWizardPage() {
                       return;
                     }
                   }
+                  if (currentStep === 1) {
+                    if (!drive.drive_type) {
+                      alert("Please select Recruitment Type.");
 
+                      return;
+                    }
+
+                    if (!drive.drive_mode) {
+                      alert("Please select Recruitment Mode.");
+
+                      return;
+                    }
+
+                    if (!drive.registration_end) {
+                      alert("Please select Registration End.");
+
+                      return;
+                    }
+
+                    const registrationEnd = new Date(drive.registration_end);
+
+                    if (registrationEnd.getTime() <= Date.now()) {
+                      alert("Registration End must be a future date and time.");
+
+                      return;
+                    }
+                  }
                   setCurrentStep((s) => Math.min(STEPS.length - 1, s + 1));
                 }}
                 disabled={currentStep === STEPS.length - 1}

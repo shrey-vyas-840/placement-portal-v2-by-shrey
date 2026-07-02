@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminQuestionService } from "@/services/adminQuestionService";
 
 type Question = {
@@ -15,16 +15,12 @@ export function AdminQuestionBuilderPage({ opportunityId }: { opportunityId: str
   const [original, setOriginal] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    load();
-  }, [opportunityId]);
-
-  async function load() {
+  
+  const load = useCallback(async () => {
     setLoading(true);
-
+    
     const data = await adminQuestionService.getQuestions(opportunityId);
-
+    
     const formatted = (data || []).map((q: any) => ({
       question_id: q.question_id,
       question_title: q.question_title ?? "",
@@ -37,7 +33,11 @@ export function AdminQuestionBuilderPage({ opportunityId }: { opportunityId: str
     setQuestions(formatted);
     setOriginal(JSON.parse(JSON.stringify(formatted)));
     setLoading(false);
-  }
+}, [opportunityId]);
+      
+      useEffect(() => {
+        void load();
+      }, [load]);
 
   const hasChanges = useMemo(
     () => JSON.stringify(questions) !== JSON.stringify(original),
