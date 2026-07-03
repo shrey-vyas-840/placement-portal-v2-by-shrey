@@ -188,18 +188,18 @@ function hasActiveValidation(validation?: RecruitmentQuestionValidation) {
 
 function PreviewQuestionCard({ question }: { question: RecruitmentQuestion }) {
   return (
-    <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Student View
           </div>
-          <h4 className="mt-2 text-base font-semibold leading-6">
+          <h4 className="mt-2 text-base font-semibold leading-5">
             {question.question_title.trim() !== "" ? question.question_title : "Untitled Question"}
             {question.is_required ? <span className="ml-1 text-red-500">*</span> : null}
           </h4>
           {question.question_description ? (
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
               {question.question_description}
             </p>
           ) : null}
@@ -307,6 +307,8 @@ export function RecruitmentQuestionBuilder({
   });
 
   const titleInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const expandedIndex = Object.entries(expandedQuestions).find(([, expanded]) => expanded)?.[0];
@@ -527,9 +529,14 @@ export function RecruitmentQuestionBuilder({
   function deleteQuestion(index: number) {
     if (readOnly) return;
 
-    if (!window.confirm("Delete this question?")) return;
+    setDeleteIndex(index);
+  }
+  function confirmDeleteQuestion() {
+    if (deleteIndex === null) return;
 
-    onChange((previous) => previous.filter((_, i) => i !== index));
+    onChange((previous) => previous.filter((_, index) => index !== deleteIndex));
+
+    setDeleteIndex(null);
   }
 
   function addOption(index: number) {
@@ -587,7 +594,7 @@ export function RecruitmentQuestionBuilder({
   function renderValidationEditor(question: RecruitmentQuestion, index: number) {
     if (question.question_type === "text") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Validation</div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -637,7 +644,7 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "paragraph") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Validation</div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -677,7 +684,7 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "number") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Validation</div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -739,7 +746,7 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "email") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Email Validation</div>
 
           <div className="space-y-3">
@@ -781,7 +788,7 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "phone") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Phone Validation</div>
 
           <div className="space-y-4">
@@ -841,7 +848,7 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "url") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">URL Validation</div>
 
           <div className="space-y-4">
@@ -873,7 +880,7 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "date") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-4">
             <div className="text-sm font-semibold text-slate-700">Date Range</div>
 
@@ -905,11 +912,11 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "dropdown" || question.question_type === "mcq") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Choice Validation</div>
 
           <div className="space-y-4">
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
               Students can select only one option.
             </div>
           </div>
@@ -919,7 +926,7 @@ export function RecruitmentQuestionBuilder({
 
     if (question.question_type === "checkbox") {
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Validation</div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -961,7 +968,7 @@ export function RecruitmentQuestionBuilder({
       const allowedExtensions: string[] = question.validation?.allowedExtensions || [];
 
       return (
-        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
           <div className="mb-3 text-sm font-semibold text-slate-700">Validation</div>
 
           <div className="grid gap-2 md:grid-cols-2">
@@ -1022,7 +1029,7 @@ export function RecruitmentQuestionBuilder({
               Allow Multiple Files
             </label>
 
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
               Recommended: Resume → PDF only Portfolio → PDF + ZIP Certificates → PDF + Images
             </div>
           </div>
@@ -1035,7 +1042,7 @@ export function RecruitmentQuestionBuilder({
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
         <div className="text-sm text-muted-foreground">Loading questions...</div>
       </div>
     );
@@ -1043,7 +1050,7 @@ export function RecruitmentQuestionBuilder({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-2xl font-semibold">{title}</h2>
@@ -1089,7 +1096,7 @@ export function RecruitmentQuestionBuilder({
       </div>
 
       {!questions.length ? (
-        <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center shadow-sm">
+        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-sm">
           <div className="text-5xl">📝</div>
           <h3 className="mt-4 text-xl font-semibold">No questions added yet</h3>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -1097,7 +1104,7 @@ export function RecruitmentQuestionBuilder({
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {questions.map((question, index) => {
             const isExpanded =
               expandedQuestions[index] ??
@@ -1108,7 +1115,7 @@ export function RecruitmentQuestionBuilder({
               <div
                 id={`question-card-${index}`}
                 key={`${question.question_id ?? "new"}-${index}`}
-                className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm"
+                className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
               >
                 <div
                   className={`grid gap-0 ${
@@ -1118,12 +1125,12 @@ export function RecruitmentQuestionBuilder({
                   <div className="flex flex-col p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <div className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
                             Q{index + 1}
                           </div>
 
-                          <div className="font-semibold">
+                          <div className="text-base font-semibold">
                             {question.question_title.trim() !== ""
                               ? question.question_title
                               : "Untitled Question"}
@@ -1153,7 +1160,7 @@ export function RecruitmentQuestionBuilder({
                             type="button"
                             disabled={index === 0}
                             onClick={() => moveQuestionUp(index)}
-                            className="rounded-xl border px-3 py-2 text-sm disabled:opacity-40"
+                            className="rounded-xl border px-3 py-2 text-m disabled:opacity-40 transition hover:bg-gray-200"
                           >
                             ↑
                           </button>
@@ -1162,7 +1169,7 @@ export function RecruitmentQuestionBuilder({
                             type="button"
                             disabled={index === questions.length - 1}
                             onClick={() => moveQuestionDown(index)}
-                            className="rounded-xl border px-3 py-2 text-sm disabled:opacity-40"
+                            className="rounded-xl border px-3 py-2 text-m disabled:opacity-40 transition hover:bg-gray-200"
                           >
                             ↓
                           </button>
@@ -1178,7 +1185,7 @@ export function RecruitmentQuestionBuilder({
                           <button
                             type="button"
                             onClick={() => duplicateQuestion(index)}
-                            className="rounded-xl border px-3 py-2 text-sm"
+                            className="rounded-xl border h-10 px-4 text-sm text-sm transition hover:bg-gray-100"
                           >
                             Duplicate
                           </button>
@@ -1186,16 +1193,51 @@ export function RecruitmentQuestionBuilder({
                           <button
                             type="button"
                             onClick={() => deleteQuestion(index)}
-                            className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-600"
+                            className="rounded-full border border-red-200 h-10 px-4 text-sm text-red-600 transition hover:bg-red-100"
                           >
                             Delete
                           </button>
                         </div>
                       )}
+                      {deleteIndex !== null && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+                            <h3 className="text-lg font-semibold">Delete Question?</h3>
+
+                            <p className="mt-2 text-sm text-muted-foreground">
+                              This action cannot be undone.
+                            </p>
+
+                            <div className="mt-4 rounded-xl border bg-muted/20 p-3">
+                              <div className="text-xs text-muted-foreground">Question</div>
+
+                              <div className="font-medium">
+                                {questions[deleteIndex]?.question_title || "Untitled Question"}
+                              </div>
+                            </div>
+
+                            <div className="mt-6 flex justify-end gap-2">
+                              <button
+                                onClick={() => setDeleteIndex(null)}
+                                className="rounded-xl font-semibold text-m border px-5 py-2"
+                              >
+                                Cancel
+                              </button>
+
+                              <button
+                                onClick={confirmDeleteQuestion}
+                                className="rounded-xl bg-red-600 font-bold text-m px-5 py-2 text-white"
+                              >
+                                Delete Question
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     {isExpanded && (
-                      <div className="mt-6 space-y-5 rounded-2xl border border-border bg-muted/10 p-5">
-                        <div className="rounded-2xl border border-border bg-background">
+                      <div className="mt-6 space-y-4 rounded-xl border border-border bg-muted/10 p-5">
+                        <div className="rounded-xl border border-border bg-background">
                           <button
                             type="button"
                             onClick={() => toggleBasic(index)}
@@ -1275,7 +1317,7 @@ export function RecruitmentQuestionBuilder({
                                 </div>
 
                                 <div className="flex items-end">
-                                  <label className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm">
+                                  <label className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm">
                                     <input
                                       disabled={readOnly}
                                       type="checkbox"
@@ -1294,7 +1336,7 @@ export function RecruitmentQuestionBuilder({
 
                         {isMultiOptionType(question.question_type) ? (
                           <>
-                            <div className="rounded-2xl border border-border bg-background">
+                            <div className="rounded-xl border border-border bg-background">
                               <button
                                 type="button"
                                 onClick={() => toggleOptions(index)}
@@ -1313,8 +1355,8 @@ export function RecruitmentQuestionBuilder({
 
                               {(optionsExpanded[index] ?? index === 0) && (
                                 <div className="border-t border-border p-5">
-                                  <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/20 p-4">
-                                    <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
+                                  <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
+                                    <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
                                       Options are displayed to students exactly in the order shown
                                       below. You can add, edit or remove options at any time.
                                     </div>
@@ -1388,7 +1430,7 @@ export function RecruitmentQuestionBuilder({
                               )}
                             </div>
 
-                            <div className="rounded-2xl border border-border bg-muted/10">
+                            <div className="rounded-xl border border-border bg-muted/10">
                               <button
                                 type="button"
                                 onClick={() => toggleValidation(index)}

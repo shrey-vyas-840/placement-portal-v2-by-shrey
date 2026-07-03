@@ -419,8 +419,8 @@ export function RecruitmentWizardPage() {
             <h2 className="mt-2 text-3xl font-bold">{STEPS[currentStep]}</h2>
 
             {isDraftCompany && (
-              <div className="mt-4 inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
-                Draft Company • Not yet created in Company Master
+              <div className="mt-2 mb-3 inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
+                Draft Company
               </div>
             )}
 
@@ -1110,7 +1110,7 @@ export function RecruitmentWizardPage() {
                 <div className="rounded-3xl border border-blue-200 bg-blue-50 p-6">
                   <div className="text-xl font-semibold">Default Questions (Optional)</div>
 
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                  <p className="mt-3 text-sm leading-5 text-muted-foreground">
                     Add questions that should appear for every role in this recruitment. Later, each
                     role may add, remove or modify its own questions independently. If this
                     recruitment doesn't require additional questions, simply leave this empty and
@@ -1147,7 +1147,7 @@ export function RecruitmentWizardPage() {
               <button
                 onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
                 disabled={currentStep === 0}
-                className="rounded-xl border border-border px-5 py-2 disabled:opacity-40"
+                className="rounded-xl border border-border px-5 py-2 disabled:opacity-40 transition hover:bg-gray-200"
               >
                 Back
               </button>
@@ -1218,7 +1218,7 @@ export function RecruitmentWizardPage() {
                   setCurrentStep((s) => Math.min(STEPS.length - 1, s + 1));
                 }}
                 disabled={currentStep === STEPS.length - 1}
-                className="rounded-xl bg-primary px-5 py-2 text-primary-foreground disabled:opacity-40"
+                className="rounded-xl bg-primary px-5 py-2 text-primary-foreground disabled:opacity-40 text-m font-semibold transition hover:bg-blue-600"
               >
                 Next
               </button>
