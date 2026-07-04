@@ -166,15 +166,10 @@ export function RecruitmentRoleBuilder({
   saving = false,
   onSave,
 }: RecruitmentRoleBuilderProps) {
-  const [expandedRoles, setExpandedRoles] = useState<Record<number, boolean>>({
-    0: true,
-  });
+  const [expandedRole, setExpandedRole] = useState(0);
 
   function toggleRole(index: number) {
-    setExpandedRoles((previous) => ({
-      ...previous,
-      [index]: !previous[index],
-    }));
+    setExpandedRole((current) => (current === index ? -1 : index));
   }
 
   function updateRole(index: number, field: keyof RecruitmentRole, value: any) {
@@ -368,17 +363,16 @@ export function RecruitmentRoleBuilder({
         })),
       };
 
+      queueMicrotask(() => {
+        setExpandedRole(index + 1);
+      });
+
       const copy = [...previous];
 
       copy.splice(index + 1, 0, duplicate);
 
       return copy;
     });
-
-    setExpandedRoles((previous) => ({
-      ...previous,
-      [index + 1]: true,
-    }));
   }
 
   function deleteRole(index: number) {
@@ -397,24 +391,18 @@ export function RecruitmentRoleBuilder({
 
     onChange((previous) => previous.filter((_, roleIndex) => roleIndex !== index));
 
-    setExpandedRoles((previous) => {
-      const next: Record<number, boolean> = {};
-
-      Object.entries(previous).forEach(([key, value]) => {
-        const current = Number(key);
-
-        if (current < index) {
-          next[current] = value;
-        } else if (current > index) {
-          next[current - 1] = value;
+    queueMicrotask(() => {
+      setExpandedRole((current) => {
+        if (current > index) {
+          return current - 1;
         }
+
+        if (current === index) {
+          return Math.max(0, index - 1);
+        }
+
+        return current;
       });
-
-      if (Object.keys(next).length === 0) {
-        next[0] = true;
-      }
-
-      return next;
     });
   }
 
@@ -442,7 +430,17 @@ export function RecruitmentRoleBuilder({
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => onChange((previous) => [...previous, createEmptyRole()])}
+                onClick={() => {
+                  onChange((previous) => {
+                    const next = [...previous, createEmptyRole()];
+
+                    queueMicrotask(() => {
+                      setExpandedRole(next.length - 1);
+                    });
+
+                    return next;
+                  });
+                }}
                 className="rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
               >
                 + Add Job Role
@@ -489,8 +487,7 @@ export function RecruitmentRoleBuilder({
 
             const derivedStatus: RecruitmentRole["status"] = validation.valid ? "Ready" : "Draft";
 
-            const isExpanded =
-              expandedRoles[index] ?? (Object.keys(expandedRoles).length === 0 && index === 0);
+            const isExpanded = expandedRole === index;
 
             return (
               <div
@@ -551,7 +548,7 @@ export function RecruitmentRoleBuilder({
                         onClick={() => toggleRole(index)}
                         className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
                       >
-                        {isExpanded ? "▲ Collapse Role" : "▼ Edit Role"}
+                        {isExpanded ? "Collapse" : "Edit"}
                       </button>
 
                       <button
@@ -1077,11 +1074,58 @@ export function RecruitmentRoleBuilder({
                     />
 
                     <div className="mt-5">
+                      <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
+                        <div>
+                          <div className="font-medium">Questions</div>
+
+                          <div className="text-sm text-muted-foreground">
+                            {role.inheritDefaultQuestions
+                              ? "Currently inheriting Recruitment Default Questions."
+                              : "This role has its own overridden questions."}
+                          </div>
+                        </div>
+
+                        {!readOnly && (
+                          <div className="flex gap-2">
+                            {role.inheritDefaultQuestions ? (
+                              <button
+                                type="button"
+                                onClick={() => setQuestionInheritance(index, false)}
+                                className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                              >
+                                Override
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setQuestionInheritance(index, true)}
+                                className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                              >
+                                Revert to Default
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                       <RecruitmentQuestionBuilder
-                        title="Role Specific Questions"
-                        subtitle="These questions apply only to this job role. Recruitment-level default questions remain unchanged."
-                        questions={role.questions}
-                        onChange={(updater) => updateQuestions(index, updater)}
+                        title="Role Questions"
+                        subtitle={
+                          role.inheritDefaultQuestions
+                            ? "Inherited from Recruitment Defaults."
+                            : "Role-specific overridden questions."
+                        }
+
+                        questions={role.inheritDefaultQuestions ? defaultQuestions : role.questions}
+
+                        onChange={(updater) => {
+                          if (role.inheritDefaultQuestions) {
+                            setQuestionInheritance(index, false);
+                          }
+
+                          updateQuestions(index, updater);
+                        }}
+
                         readOnly={readOnly}
                       />
                     </div>
