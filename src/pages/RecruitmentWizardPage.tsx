@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { adminDriveService } from "@/services/adminDriveService";
 import { RecruitmentQuestionBuilder } from "@/components/RecruitmentQuestionBuilder";
+import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/RecruitmentRoleBuilder";
 import { getLatestDraft, saveDraft } from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 
@@ -129,6 +130,8 @@ export function RecruitmentWizardPage() {
 
   const [defaultQuestions, setDefaultQuestions] = useState<RecruitmentQuestion[]>([]);
 
+  const [roles, setRoles] = useState<RecruitmentRole[]>([]);
+
   const [draftId, setDraftId] = useState<string | null>(null);
 
   const [authProviderId, setAuthProviderId] = useState<string | null>(null);
@@ -230,6 +233,10 @@ export function RecruitmentWizardPage() {
           if (Array.isArray(draft.default_questions_data)) {
             setDefaultQuestions(draft.default_questions_data);
           }
+
+          if (Array.isArray(draft.roles_data)) {
+            setRoles(draft.roles_data as RecruitmentRole[]);
+          }
         }
 
         setDraftLoaded(true);
@@ -264,6 +271,7 @@ export function RecruitmentWizardPage() {
           driveData: drive,
           eligibilityData: eligibility,
           defaultQuestionsData: defaultQuestions,
+          rolesData: roles,
         });
       } catch (error) {
         console.error(error);
@@ -279,6 +287,7 @@ export function RecruitmentWizardPage() {
     drive,
     eligibility,
     defaultQuestions,
+    roles,
     currentStep,
     authProviderId,
     draftLoaded,
@@ -1126,20 +1135,143 @@ export function RecruitmentWizardPage() {
                 />
               </div>
             ) : currentStep === 4 ? (
-              <div className="rounded-3xl border border-dashed border-border p-12 text-center">
-                <h3 className="text-2xl font-semibold">Job Roles</h3>
-
-                <p className="mt-3 text-muted-foreground">
-                  Multi-role builder will be implemented here.
-                </p>
-              </div>
+              <RecruitmentRoleBuilder roles={roles} onChange={setRoles} />
             ) : (
-              <div className="rounded-3xl border border-dashed border-border p-12 text-center">
-                <h3 className="text-2xl font-semibold">Review & Publish</h3>
+              <div className="space-y-8">
+                <div className="rounded-3xl border border-border bg-card p-8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-semibold">Recruitment Review</h3>
 
-                <p className="mt-3 text-muted-foreground">
-                  Review all recruitment details before publishing.
-                </p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Verify every configuration before publishing.
+                      </p>
+                    </div>
+
+                    <div className="rounded-full bg-primary/10 px-4 py-2 text-sm font-medium">
+                      {roles.length} Job Role{roles.length !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="text-lg font-semibold">Recruitment</div>
+
+                    <div className="mt-5 space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Company</span>
+
+                        <span className="font-medium">{company.company_name || "—"}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Recruitment Type</span>
+
+                        <span className="font-medium">{drive.drive_type || "—"}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Mode</span>
+
+                        <span className="font-medium">{drive.drive_mode || "—"}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Registration Ends</span>
+
+                        <span className="font-medium">{drive.registration_end || "—"}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Recruiters</span>
+
+                        <span className="font-medium">{recruiters.length}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-card p-6">
+                    <div className="text-lg font-semibold">Configuration Summary</div>
+
+                    <div className="mt-5 space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Default Questions</span>
+
+                        <span className="font-medium">{defaultQuestions.length}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Job Roles</span>
+
+                        <span className="font-medium">{roles.length}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Draft Status</span>
+
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                          Draft
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {roles.map((role, index) => (
+                    <div
+                      key={role.role_id}
+                      className="rounded-2xl border border-border bg-card p-6"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-lg font-semibold">Role {index + 1}</div>
+
+                          <div className="mt-1 text-sm text-muted-foreground">
+                            {role.role_name || "Untitled Role"}
+                          </div>
+                        </div>
+
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${
+                            role.status === "Ready"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {role.status}
+                        </span>
+                      </div>
+
+                      <div className="mt-5 grid gap-4 md:grid-cols-4">
+                        <div className="rounded-xl border p-4">
+                          <div className="text-xs text-muted-foreground">Questions</div>
+
+                          <div className="mt-2 text-xl font-semibold">{role.questions.length}</div>
+                        </div>
+
+                        <div className="rounded-xl border p-4">
+                          <div className="text-xs text-muted-foreground">Documents</div>
+
+                          <div className="mt-2 text-xl font-semibold">{role.documents.length}</div>
+                        </div>
+
+                        <div className="rounded-xl border p-4">
+                          <div className="text-xs text-muted-foreground">Timeline</div>
+
+                          <div className="mt-2 text-xl font-semibold">{role.timeline.length}</div>
+                        </div>
+
+                        <div className="rounded-xl border p-4">
+                          <div className="text-xs text-muted-foreground">Openings</div>
+
+                          <div className="mt-2 text-xl font-semibold">{role.openings || 0}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

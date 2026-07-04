@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { RecruitmentQuestion } from "./RecruitmentQuestionBuilder";
+import { RecruitmentQuestionBuilder, type RecruitmentQuestion } from "./RecruitmentQuestionBuilder";
+import { RecruitmentEligibilityBuilder } from "./RecruitmentEligibilityBuilder";
+import { RecruitmentDocumentsBuilder } from "./RecruitmentDocumentsBuilder";
+import { RecruitmentTimelineBuilder } from "./RecruitmentTimelineBuilder";
+import { RecruitmentRolePreview } from "./RecruitmentRolePreview";
+import { createEmptyRecruitmentRoleEligibility } from "./recruitmentEligibilityDefaults";
+import type { RecruitmentRoleEligibility } from "./RecruitmentEligibilityBuilder";
 import type { Dispatch, SetStateAction } from "react";
+import { validateRecruitmentRole } from "./recruitmentRoleValidation";
 
 export type RecruitmentRole = {
   role_id: string;
@@ -58,16 +65,12 @@ export type RecruitmentRoleHiring = {
   shift_details: string;
 };
 
-export type RecruitmentRoleEligibility = {
-  useRecruitmentDefaults: boolean;
-};
-
 export type RecruitmentRoleDocument = {
   id: string;
 
-  title: string;
+  document_name: string;
 
-  url: string;
+  description: string;
 
   required: boolean;
 };
@@ -78,6 +81,8 @@ export type RecruitmentRoleTimeline = {
   stage: string;
 
   date: string;
+
+  description: string;
 };
 
 interface RecruitmentRoleBuilderProps {
@@ -130,9 +135,7 @@ function createEmptyRole(): RecruitmentRole {
       shift_details: "",
     },
 
-    eligibility: {
-      useRecruitmentDefaults: true,
-    },
+    eligibility: createEmptyRecruitmentRoleEligibility(),
 
     questions: [],
 
@@ -213,21 +216,153 @@ export function RecruitmentRoleBuilder({
     });
   }
 
-  function updateEligibility(index: number, field: keyof RecruitmentRoleEligibility, value: any) {
+  function updateQuestions(index: number, updater: React.SetStateAction<RecruitmentQuestion[]>) {
     if (readOnly) return;
 
     onChange((previous) => {
       const copy = [...previous];
 
+      const currentQuestions = copy[index].questions;
+
       copy[index] = {
         ...copy[index],
-        eligibility: {
-          ...copy[index].eligibility,
-          [field]: value,
-        },
+        questions:
+          typeof updater === "function"
+            ? (updater as (previous: RecruitmentQuestion[]) => RecruitmentQuestion[])(
+                currentQuestions,
+              )
+            : updater,
       };
 
       return copy;
+    });
+  }
+
+  function updateDocuments(
+    index: number,
+    updater: React.SetStateAction<RecruitmentRoleDocument[]>,
+  ) {
+    if (readOnly) return;
+
+    onChange((previous) => {
+      const copy = [...previous];
+
+      const currentDocuments = copy[index].documents;
+
+      copy[index] = {
+        ...copy[index],
+        documents:
+          typeof updater === "function"
+            ? (updater as (previous: RecruitmentRoleDocument[]) => RecruitmentRoleDocument[])(
+                currentDocuments,
+              )
+            : updater,
+      };
+
+      return copy;
+    });
+  }
+
+  function updateTimeline(index: number, updater: React.SetStateAction<RecruitmentRoleTimeline[]>) {
+    if (readOnly) return;
+
+    onChange((previous) => {
+      const copy = [...previous];
+
+      const currentTimeline = copy[index].timeline;
+
+      copy[index] = {
+        ...copy[index],
+        timeline:
+          typeof updater === "function"
+            ? (updater as (previous: RecruitmentRoleTimeline[]) => RecruitmentRoleTimeline[])(
+                currentTimeline,
+              )
+            : updater,
+      };
+
+      return copy;
+    });
+  }
+
+  function duplicateRole(index: number) {
+    if (readOnly) return;
+
+    onChange((previous) => {
+      const source = previous[index];
+
+      const duplicate: RecruitmentRole = {
+        ...structuredClone(source),
+
+        role_id: crypto.randomUUID(),
+
+        role_name: source.role_name.trim() === "" ? "" : `${source.role_name} Copy`,
+
+        status: "Draft",
+
+        questions: source.questions.map((question) => ({
+          ...structuredClone(question),
+          question_id: crypto.randomUUID(),
+        })),
+
+        documents: source.documents.map((document) => ({
+          ...structuredClone(document),
+          id: crypto.randomUUID(),
+        })),
+
+        timeline: source.timeline.map((stage) => ({
+          ...structuredClone(stage),
+          id: crypto.randomUUID(),
+        })),
+      };
+
+      const copy = [...previous];
+
+      copy.splice(index + 1, 0, duplicate);
+
+      return copy;
+    });
+
+    setExpandedRoles((previous) => ({
+      ...previous,
+      [index + 1]: true,
+    }));
+  }
+
+  function deleteRole(index: number) {
+    if (readOnly) return;
+
+    if (roles.length <= 1) {
+      window.alert("At least one job role is required.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${roles[index].role_name || `Role ${index + 1}`}"?\n\nThis action cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    onChange((previous) => previous.filter((_, roleIndex) => roleIndex !== index));
+
+    setExpandedRoles((previous) => {
+      const next: Record<number, boolean> = {};
+
+      Object.entries(previous).forEach(([key, value]) => {
+        const current = Number(key);
+
+        if (current < index) {
+          next[current] = value;
+        } else if (current > index) {
+          next[current - 1] = value;
+        }
+      });
+
+      if (Object.keys(next).length === 0) {
+        next[0] = true;
+      }
+
+      return next;
     });
   }
 
@@ -298,6 +433,10 @@ export function RecruitmentRoleBuilder({
       ) : (
         <div className="space-y-4">
           {roles.map((role, index) => {
+            const validation = validateRecruitmentRole(role);
+
+            const derivedStatus: RecruitmentRole["status"] = validation.valid ? "Ready" : "Draft";
+
             const isExpanded =
               expandedRoles[index] ?? (Object.keys(expandedRoles).length === 0 && index === 0);
 
@@ -319,18 +458,38 @@ export function RecruitmentRoleBuilder({
 
                       <span
                         className={`rounded-full px-2 py-1 text-[11px] ${
-                          role.status === "Ready"
+                          derivedStatus === "Ready"
                             ? "bg-green-100 text-green-700"
                             : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {role.status}
+                        {derivedStatus}
                       </span>
                     </div>
 
                     <div className="mt-2 text-sm text-muted-foreground">
                       {role.employment_type} • {role.work_mode}
                     </div>
+
+                    {validation.issues.length > 0 && (
+                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                          Validation
+                        </div>
+
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-800">
+                          {validation.issues.slice(0, 5).map((issue, issueIndex) => (
+                            <li key={`${issue.section}-${issueIndex}`}>{issue.message}</li>
+                          ))}
+                        </ul>
+
+                        {validation.issues.length > 5 && (
+                          <div className="mt-2 text-xs text-amber-700">
+                            + {validation.issues.length - 5} more issue(s)
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {!readOnly && (
@@ -345,6 +504,7 @@ export function RecruitmentRoleBuilder({
 
                       <button
                         type="button"
+                        onClick={() => duplicateRole(index)}
                         className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
                       >
                         Duplicate
@@ -352,6 +512,7 @@ export function RecruitmentRoleBuilder({
 
                       <button
                         type="button"
+                        onClick={() => deleteRole(index)}
                         className="rounded-xl border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
                         Delete
@@ -800,55 +961,42 @@ export function RecruitmentRoleBuilder({
                         </label>
                       </div>
                     </div>
+                    <RecruitmentEligibilityBuilder
+                      value={role.eligibility}
+                      onChange={(nextEligibility) =>
+                        updateRole(index, "eligibility", nextEligibility)
+                      }
+                      readOnly={readOnly}
+                    />
 
-                    <div className="mt-5 rounded-xl border border-border bg-background">
-                      <div className="border-b border-border px-5 py-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">Eligibility</div>
+                    <div className="mt-5">
+                      <RecruitmentQuestionBuilder
+                        title="Role Specific Questions"
+                        subtitle="These questions apply only to this job role. Recruitment-level default questions remain unchanged."
+                        questions={role.questions}
+                        onChange={(updater) => updateQuestions(index, updater)}
+                        readOnly={readOnly}
+                      />
+                    </div>
 
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              Configure who is eligible to apply for this role.
-                            </div>
-                          </div>
+                    <div className="mt-5">
+                      <RecruitmentDocumentsBuilder
+                        documents={role.documents}
+                        onChange={(updater) => updateDocuments(index, updater)}
+                        readOnly={readOnly}
+                      />
+                    </div>
 
-                          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                            Role Level
-                          </span>
-                        </div>
-                      </div>
+                    <div className="mt-5">
+                      <RecruitmentTimelineBuilder
+                        timeline={role.timeline}
+                        onChange={(updater) => updateTimeline(index, updater)}
+                        readOnly={readOnly}
+                      />
+                    </div>
 
-                      <div className="space-y-5 p-5">
-                        <label className="flex items-start gap-3 rounded-xl border border-border p-4">
-                          <input
-                            type="checkbox"
-                            disabled={readOnly}
-                            checked={role.eligibility.useRecruitmentDefaults}
-                            onChange={(e) =>
-                              updateEligibility(index, "useRecruitmentDefaults", e.target.checked)
-                            }
-                          />
-
-                          <div>
-                            <div className="font-medium">Use Recruitment Default Eligibility</div>
-
-                            <div className="mt-1 text-sm text-muted-foreground">
-                              This role will inherit the default eligibility configured for the
-                              recruitment.
-                            </div>
-                          </div>
-                        </label>
-
-                        {!role.eligibility.useRecruitmentDefaults && (
-                          <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
-                            <div className="text-sm font-medium">Custom Role Eligibility</div>
-
-                            <div className="mt-2 text-sm text-muted-foreground">
-                              Existing Eligibility Builder will be mounted here in the next step.
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                    <div className="mt-5">
+                      <RecruitmentRolePreview role={role} />
                     </div>
                   </div>
                 )}
