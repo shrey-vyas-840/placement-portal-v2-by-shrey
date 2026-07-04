@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import Select from "react-select";
+import { toast } from "sonner";
 import { ELIGIBILITY_MAPPING } from "@/constants/eligibilityMapping";
 
 export type RecruitmentRoleEligibility = {
@@ -24,7 +26,20 @@ type EligibilityMapping = Record<string, Record<string, string[]>>;
 
 const eligibilityMapping = ELIGIBILITY_MAPPING as EligibilityMapping;
 
-type InstituteEntry = [string, Record<string, string[]>];
+const selectStyles = {
+  control: (base: any) => ({
+    ...base,
+    minHeight: 50,
+    borderRadius: 14,
+    borderColor: "#e2e8f0",
+    boxShadow: "none",
+  }),
+
+  multiValue: (base: any) => ({
+    ...base,
+    borderRadius: 999,
+  }),
+};
 
 function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
@@ -40,17 +55,25 @@ export function RecruitmentEligibilityBuilder({
   readOnly = false,
   loading = false,
 }: RecruitmentEligibilityBuilderProps) {
-  const [batchInput, setBatchInput] = useState("");
-
-  const instituteEntries = useMemo<InstituteEntry[]>(
-    () => Object.entries(ELIGIBILITY_MAPPING) as InstituteEntry[],
-    [],
-  );
 
   const selectedInstitutes = value.allowed_institutes;
   const selectedDegrees = value.allowed_degrees;
   const selectedBranches = value.allowed_branches;
   const selectedBatches = value.passing_out_batches;
+
+  const availableInstitutes = Object.keys(ELIGIBILITY_MAPPING);
+
+  const availableDegrees = unique(
+    selectedInstitutes.flatMap((institute) => Object.keys(eligibilityMapping[institute] ?? {})),
+  );
+
+  const availableBranches = unique(
+    selectedInstitutes.flatMap((institute) =>
+      selectedDegrees.flatMap((degree) => eligibilityMapping[institute]?.[degree] ?? []),
+    ),
+  );
+
+  const availableGraduationYears = ["2024", "2025", "2026", "2027", "2028", "2029", "2030"];
 
   function pushValue(next: RecruitmentRoleEligibility) {
     const sanitizedInstitutes = unique(next.allowed_institutes.filter(isValidInstitute));
@@ -66,8 +89,8 @@ export function RecruitmentEligibilityBuilder({
     const sanitizedBranches = unique(
       next.allowed_branches.filter((branch) =>
         sanitizedInstitutes.some((institute) =>
-          sanitizedDegrees.some(
-            (degree) => (eligibilityMapping[institute] ?? {})[degree]?.includes(branch),
+          sanitizedDegrees.some((degree) =>
+            (eligibilityMapping[institute] ?? {})[degree]?.includes(branch),
           ),
         ),
       ),
@@ -90,97 +113,6 @@ export function RecruitmentEligibilityBuilder({
       ...value,
       [field]: nextValue,
     });
-  }
-
-  function toggleInstitute(institute: string, checked: boolean) {
-    const nextInstitutes = checked
-      ? unique([...selectedInstitutes, institute])
-      : selectedInstitutes.filter((item) => item !== institute);
-
-    const nextDegrees = selectedDegrees.filter((degree) =>
-      nextInstitutes.some((nextInstitute) =>
-        Object.prototype.hasOwnProperty.call(eligibilityMapping[nextInstitute] ?? {}, degree),
-      ),
-    );
-
-    const nextBranches = selectedBranches.filter((branch) =>
-      nextInstitutes.some((nextInstitute) =>
-        nextDegrees.some(
-          (degree) => (eligibilityMapping[nextInstitute] ?? {})[degree]?.includes(branch),
-        ),
-      ),
-    );
-
-    pushValue({
-      ...value,
-      allowed_institutes: nextInstitutes,
-      allowed_degrees: nextDegrees,
-      allowed_branches: nextBranches,
-    });
-  }
-
-  function toggleDegree(institute: string, degree: string, checked: boolean) {
-    const nextInstitutes = checked
-      ? unique([...selectedInstitutes, institute])
-      : selectedInstitutes;
-
-    const nextDegrees = checked
-      ? unique([...selectedDegrees, degree])
-      : selectedDegrees.filter((item) => item !== degree);
-
-    const nextBranches = selectedBranches.filter((branch) =>
-      nextInstitutes.some((nextInstitute) =>
-        nextDegrees.some(
-          (nextDegree) => (eligibilityMapping[nextInstitute] ?? {})[nextDegree]?.includes(branch),
-        ),
-      ),
-    );
-
-    pushValue({
-      ...value,
-      allowed_institutes: nextInstitutes,
-      allowed_degrees: nextDegrees,
-      allowed_branches: nextBranches,
-    });
-  }
-
-  function toggleBranch(branch: string, checked: boolean) {
-    const nextBranches = checked
-      ? unique([...selectedBranches, branch])
-      : selectedBranches.filter((item) => item !== branch);
-
-    pushValue({
-      ...value,
-      allowed_branches: nextBranches,
-    });
-  }
-
-  function addBatch() {
-    const batch = batchInput.trim();
-
-    if (!batch) return;
-
-    pushValue({
-      ...value,
-      passing_out_batches: unique([...selectedBatches, batch]),
-    });
-
-    setBatchInput("");
-  }
-
-  function removeBatch(batch: string) {
-    pushValue({
-      ...value,
-      passing_out_batches: selectedBatches.filter((item) => item !== batch),
-    });
-  }
-
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <div className="text-sm text-muted-foreground">Loading eligibility editor...</div>
-      </div>
-    );
   }
 
   return (
@@ -237,168 +169,415 @@ export function RecruitmentEligibilityBuilder({
         ) : (
           <div className="space-y-5">
             <div className="grid gap-5 xl:grid-cols-[1.35fr_0.9fr]">
-              <div className="rounded-2xl border border-border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">Institute / Degree / Branch</div>
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-6">
+                {/* Institutes */}
 
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      Built directly from the shared institute hierarchy.
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">Institutes</div>
+
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Select one or more institutes.
+                      </div>
                     </div>
                   </div>
 
-                  <div className="text-xs text-muted-foreground">
-                    {selectedInstitutes.length} institute(s)
+                  <div className="mt-4 flex gap-3">
+                    <Select
+                      isDisabled={readOnly}
+                      styles={selectStyles}
+                      placeholder="Search institute..."
+
+                      isClearable
+
+                      value={null}
+
+                      options={availableInstitutes
+                        .filter((item) => !selectedInstitutes.includes(item))
+                        .map((item) => ({
+                          value: item,
+                          label: item,
+                        }))}
+
+                      onChange={(option) => {
+                        if (!option) return;
+
+                        pushValue({
+                          ...value,
+                          allowed_institutes: unique([...selectedInstitutes, option.value]),
+                        });
+                      }}
+
+                      noOptionsMessage={() =>
+                        selectedInstitutes.length === availableInstitutes.length
+                          ? "All institutes already selected."
+                          : "No institute found."
+                      }
+                    />{" "}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {selectedInstitutes.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">No institute selected.</span>
+                    ) : (
+                      selectedInstitutes.map((institute) => (
+                        <span
+                          key={institute}
+                          className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-sm"
+                        >
+                          {institute}
+
+                          {!readOnly && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                pushValue({
+                                  ...value,
+                                  allowed_institutes: selectedInstitutes.filter(
+                                    (item) => item !== institute,
+                                  ),
+                                  allowed_degrees: selectedDegrees.filter((degree) => {
+                                    const degreeStillAvailable = selectedInstitutes
+                                      .filter((item) => item !== institute)
+                                      .some((remainingInstitute) =>
+                                        Object.keys(
+                                          eligibilityMapping[remainingInstitute] ?? {},
+                                        ).includes(degree),
+                                      );
+
+                                    return degreeStillAvailable;
+                                  }),
+                                  allowed_branches: selectedBranches.filter((branch) => {
+                                    const remainingInstitutes = selectedInstitutes.filter(
+                                      (item) => item !== institute,
+                                    );
+
+                                    return remainingInstitutes.some((remainingInstitute) =>
+                                      selectedDegrees.some((degree) =>
+                                        (eligibilityMapping[remainingInstitute] ?? {})[
+                                          degree
+                                        ]?.includes(branch),
+                                      ),
+                                    );
+                                  }),
+                                })
+                              }
+                              className="rounded-full p-0.5 text-xs font-semibold transition-colors hover:bg-muted"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">Degrees</div>
+
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Select one or more degrees from the selected institutes.
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 max-h-[520px] space-y-4 overflow-y-auto pr-1">
-                  {instituteEntries.map(([institute, degrees]) => {
-                    const instituteChecked = selectedInstitutes.includes(institute);
+                <div className="mt-4">
 
-                    return (
-                      <div key={institute} className="rounded-xl border border-border p-4">
-                        <label className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            disabled={readOnly}
-                            checked={instituteChecked}
-                            onChange={(e) => toggleInstitute(institute, e.target.checked)}
-                          />
+  <Select
+    isDisabled={readOnly || !selectedInstitutes.length}
+    styles={selectStyles}
+    placeholder="Search degree..."
 
-                          <div>
-                            <div className="font-medium">{institute}</div>
+    isClearable
 
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              Toggle the institute first, then narrow by degree and branch.
-                            </div>
-                          </div>
-                        </label>
+    value={null}
 
-                        {instituteChecked ? (
-                          <div className="mt-4 space-y-3">
-                            {Object.entries(degrees).map(([degree, branches]) => {
-                              const degreeChecked = selectedDegrees.includes(degree);
+    options={availableDegrees
+      .filter(
+        (degree) => !selectedDegrees.includes(degree),
+      )
+      .map((degree) => ({
+        value: degree,
+        label: degree,
+      }))}
 
-                              return (
-                                <div
-                                  key={degree}
-                                  className="rounded-xl border border-dashed border-border p-4"
-                                >
-                                  <label className="flex items-start gap-3">
-                                    <input
-                                      type="checkbox"
-                                      disabled={readOnly}
-                                      checked={degreeChecked}
-                                      onChange={(e) =>
-                                        toggleDegree(institute, degree, e.target.checked)
-                                      }
-                                    />
+    onChange={(option) => {
+      if (!option) return;
 
-                                    <div>
-                                      <div className="font-medium">{degree}</div>
+      if (!selectedInstitutes.length) {
+        toast.warning(
+          "Select at least one institute first.",
+        );
+        return;
+      }
 
-                                      <div className="mt-1 text-xs text-muted-foreground">
-                                        Select the degree to reveal its branch list.
-                                      </div>
-                                    </div>
-                                  </label>
+      pushValue({
+        ...value,
+        allowed_degrees: unique([
+          ...selectedDegrees,
+          option.value,
+        ]),
+      });
+    }}
 
-                                  {degreeChecked ? (
-                                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                                      {branches.map((branch) => {
-                                        const branchChecked = selectedBranches.includes(branch);
+    noOptionsMessage={() =>
+      !selectedInstitutes.length
+        ? "Select institute first."
+        : availableDegrees.length ===
+            selectedDegrees.length
+          ? "All degrees already selected."
+          : "No degree found."
+    }
+  />
 
-                                        return (
-                                          <label
-                                            key={branch}
-                                            className="flex items-start gap-3 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              disabled={readOnly}
-                                              checked={branchChecked}
-                                              onChange={(e) =>
-                                                toggleBranch(branch, e.target.checked)
-                                              }
-                                            />
+</div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {selectedDegrees.length === 0 ? (
+                    <span className="text-sm text-muted-foreground">No degree selected.</span>
+                  ) : (
+                    selectedDegrees.map((degree) => (
+                      <span
+                        key={degree}
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-sm"
+                      >
+                        {degree}
 
-                                            <span>{branch}</span>
-                                          </label>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              pushValue({
+                                ...value,
+                                allowed_degrees: selectedDegrees.filter((item) => item !== degree),
+                               allowed_branches: selectedBranches.filter(
+  (branch) =>
+    selectedInstitutes.some((institute) =>
+      selectedDegrees
+        .filter((item) => item !== degree)
+        .some((remainingDegree) =>
+          (
+            eligibilityMapping[institute] ?? {}
+          )[remainingDegree]?.includes(branch),
+        ),
+    ),
+),
+                              })
+                            }
+                            className="rounded-full p-0.5 text-xs font-semibold transition-colors hover:bg-muted"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">Branches</div>
+
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Select one or more branches from the selected degree(s).
+                    </div>
+                  </div>
+                </div>
+
+               <div className="mt-4">
+
+  <Select
+    isDisabled={
+      readOnly ||
+      !selectedInstitutes.length ||
+      !selectedDegrees.length
+    }
+
+    styles={selectStyles}
+
+    placeholder="Search branch..."
+
+    isClearable
+
+    value={null}
+
+    options={availableBranches
+      .filter(
+        (branch) =>
+          !selectedBranches.includes(branch),
+      )
+      .map((branch) => ({
+        value: branch,
+        label: branch,
+      }))}
+
+    onChange={(option) => {
+      if (!option) return;
+
+      if (!selectedInstitutes.length) {
+        toast.warning(
+          "Select at least one institute first.",
+        );
+        return;
+      }
+
+      if (!selectedDegrees.length) {
+        toast.warning(
+          "Select at least one degree first.",
+        );
+        return;
+      }
+
+      pushValue({
+        ...value,
+        allowed_branches: unique([
+          ...selectedBranches,
+          option.value,
+        ]),
+      });
+    }}
+
+    noOptionsMessage={() => {
+      if (!selectedInstitutes.length) {
+        return "Select institute first.";
+      }
+
+      if (!selectedDegrees.length) {
+        return "Select degree first.";
+      }
+
+      if (
+        availableBranches.length ===
+        selectedBranches.length
+      ) {
+        return "All branches already selected.";
+      }
+
+      return "No branch found.";
+    }}
+  />
+
+</div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {selectedBranches.length === 0 ? (
+                    <span className="text-sm text-muted-foreground">No branch selected.</span>
+                  ) : (
+                    selectedBranches.map((branch) => (
+                      <span
+                        key={branch}
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-sm"
+                      >
+                        {branch}
+
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              pushValue({
+                                ...value,
+                                allowed_branches: selectedBranches.filter(
+                                  (item) => item !== branch,
+                                ),
+                              })
+                            }
+                            className="rounded-full p-0.5 text-xs font-semibold transition-colors hover:bg-muted"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))
+                  )}
                 </div>
               </div>
 
               <div className="space-y-5">
                 <div className="rounded-2xl border border-border bg-card p-4">
-                  <div className="font-medium">Passing Out Batches</div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">Passing Out Batches</div>
 
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Add the batch years that remain eligible for this role.
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Select one or more graduation years.
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {selectedBatches.length ? (
-                      selectedBatches.map((batch) => (
+                  <div className="mt-4">
+  <Select
+    isDisabled={readOnly}
+    styles={selectStyles}
+    placeholder="Search graduation year..."
+
+    isClearable
+
+    value={null}
+
+    options={availableGraduationYears
+      .filter((year) => !selectedBatches.includes(year))
+      .map((year) => ({
+        value: year,
+        label: year,
+      }))}
+
+    onChange={(option) => {
+      if (!option) return;
+
+      pushValue({
+        ...value,
+        passing_out_batches: unique([
+          ...selectedBatches,
+          option.value,
+        ]),
+      });
+    }}
+
+    noOptionsMessage={() =>
+      availableGraduationYears.length ===
+      selectedBatches.length
+        ? "All graduation years selected."
+        : "No graduation year found."
+    }
+  />
+</div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {selectedBatches.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">
+                        No graduation year selected.
+                      </span>
+                    ) : (
+                      selectedBatches.map((year) => (
                         <span
-                          key={batch}
+                          key={year}
                           className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-sm"
                         >
-                          {batch}
+                          {year}
 
-                          {!readOnly ? (
+                          {!readOnly && (
                             <button
                               type="button"
-                              onClick={() => removeBatch(batch)}
+                              onClick={() =>
+                                pushValue({
+                                  ...value,
+                                  passing_out_batches: selectedBatches.filter(
+                                    (item) => item !== year,
+                                  ),
+                                })
+                              }
                               className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-                              aria-label={`Remove batch ${batch}`}
                             >
                               ×
                             </button>
-                          ) : null}
+                          )}
                         </span>
                       ))
-                    ) : (
-                      <div className="text-sm text-muted-foreground">No batches added yet.</div>
                     )}
-                  </div>
-
-                  <div className="mt-4 flex gap-3">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="2026"
-                      value={batchInput}
-                      disabled={readOnly}
-                      onChange={(e) => setBatchInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addBatch();
-                        }
-                      }}
-                      className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                    />
-
-                    <button
-                      type="button"
-                      disabled={readOnly}
-                      onClick={addBatch}
-                      className="rounded-xl border border-border px-4 py-3 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Add
-                    </button>
                   </div>
                 </div>
 
@@ -499,9 +678,7 @@ export function RecruitmentEligibilityBuilder({
                 ))}
 
                 {!selectedInstitutes.length ? (
-                  <span className="text-sm text-muted-foreground">
-                    No institute selected yet.
-                  </span>
+                  <span className="text-sm text-muted-foreground">No institute selected yet.</span>
                 ) : null}
               </div>
             </div>
