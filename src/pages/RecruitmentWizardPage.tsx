@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { adminDriveService } from "@/services/adminDriveService";
 import { RecruitmentQuestionBuilder } from "@/components/RecruitmentQuestionBuilder";
+import {
+  RecruitmentEligibilityBuilder,
+  type RecruitmentRoleEligibility,
+} from "@/components/RecruitmentEligibilityBuilder";
 import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/RecruitmentRoleBuilder";
 import { getLatestDraft, saveDraft } from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
@@ -126,7 +130,25 @@ export function RecruitmentWizardPage() {
 
   const [drive, setDrive] = useState<DriveFormData>(EMPTY_DRIVE);
 
-  const [eligibility, setEligibility] = useState<DefaultEligibilityFormData>(EMPTY_ELIGIBILITY);
+  const [eligibility, setEligibility] = useState<RecruitmentRoleEligibility>({
+    useRecruitmentDefaults: false,
+
+    allowed_institutes: [],
+
+    allowed_degrees: [],
+
+    allowed_branches: [],
+
+    passing_out_batches: [],
+
+    minimum_cgpa: "",
+
+    maximum_active_backlogs: "",
+
+    willing_to_relocate_required: false,
+
+    additional_requirements: "",
+  });
 
   const [defaultQuestions, setDefaultQuestions] = useState<RecruitmentQuestion[]>([]);
 
@@ -220,9 +242,32 @@ export function RecruitmentWizardPage() {
             const eligibilityData = draft.eligibility_data as Record<string, unknown>;
 
             setEligibility({
-              minimum_cgpa: String(eligibilityData.minimum_cgpa ?? ""),
+              useRecruitmentDefaults: false,
 
-              maximum_active_backlogs: String(eligibilityData.maximum_active_backlogs ?? "0"),
+              allowed_institutes: Array.isArray(eligibilityData.allowed_institutes)
+                ? eligibilityData.allowed_institutes
+                : [],
+
+              allowed_degrees: Array.isArray(eligibilityData.allowed_degrees)
+                ? eligibilityData.allowed_degrees
+                : [],
+
+              allowed_branches: Array.isArray(eligibilityData.allowed_branches)
+                ? eligibilityData.allowed_branches
+                : [],
+
+              passing_out_batches: Array.isArray(eligibilityData.passing_out_batches)
+                ? eligibilityData.passing_out_batches
+                : [],
+              minimum_cgpa:
+                typeof eligibilityData.minimum_cgpa === "number"
+                  ? eligibilityData.minimum_cgpa
+                  : "",
+
+              maximum_active_backlogs:
+                typeof eligibilityData.maximum_active_backlogs === "number"
+                  ? eligibilityData.maximum_active_backlogs
+                  : "",
 
               willing_to_relocate_required: Boolean(eligibilityData.willing_to_relocate_required),
 
@@ -1032,87 +1077,17 @@ export function RecruitmentWizardPage() {
                 </div>
               </div>
             ) : currentStep === 2 ? (
-              <div className="rounded-3xl border border-border bg-card p-8">
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold">Default Eligibility</h3>
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <h3 className="text-xl font-semibold">Recruitment Default Eligibility</h3>
 
                   <p className="mt-2 text-sm text-muted-foreground">
-                    These values become the initial eligibility for every job role. Each role can
-                    override them later.
+                    Configure the default eligibility criteria for this recruitment. Every new job
+                    role can inherit these settings or override them individually.
                   </p>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">Minimum CGPA</label>
-
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={eligibility.minimum_cgpa}
-                      onChange={(e) =>
-                        setEligibility((prev) => ({
-                          ...prev,
-                          minimum_cgpa: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-border px-4 py-3"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      Maximum Active Backlogs
-                    </label>
-
-                    <input
-                      type="number"
-                      value={eligibility.maximum_active_backlogs}
-                      onChange={(e) =>
-                        setEligibility((prev) => ({
-                          ...prev,
-                          maximum_active_backlogs: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-border px-4 py-3"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={eligibility.willing_to_relocate_required}
-                        onChange={(e) =>
-                          setEligibility((prev) => ({
-                            ...prev,
-                            willing_to_relocate_required: e.target.checked,
-                          }))
-                        }
-                      />
-
-                      <span>Candidates must be willing to relocate</span>
-                    </label>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="mb-2 block text-sm font-medium">
-                      Additional Requirements
-                    </label>
-
-                    <textarea
-                      rows={4}
-                      value={eligibility.additional_requirements}
-                      onChange={(e) =>
-                        setEligibility((prev) => ({
-                          ...prev,
-                          additional_requirements: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-border px-4 py-3"
-                    />
-                  </div>
-                </div>
+                <RecruitmentEligibilityBuilder value={eligibility} onChange={setEligibility} />
               </div>
             ) : currentStep === 3 ? (
               <div className="space-y-8">
@@ -1135,7 +1110,12 @@ export function RecruitmentWizardPage() {
                 />
               </div>
             ) : currentStep === 4 ? (
-              <RecruitmentRoleBuilder roles={roles} onChange={setRoles} />
+              <RecruitmentRoleBuilder
+                roles={roles}
+                onChange={setRoles}
+                defaultEligibility={eligibility}
+                defaultQuestions={defaultQuestions}
+              />
             ) : (
               <div className="space-y-8">
                 <div className="rounded-3xl border border-border bg-card p-8">

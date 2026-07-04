@@ -28,7 +28,11 @@ export type RecruitmentRole = {
 
   hiring: RecruitmentRoleHiring;
 
+  inheritDefaultEligibility: boolean;
+
   eligibility: RecruitmentRoleEligibility;
+
+  inheritDefaultQuestions: boolean;
 
   questions: RecruitmentQuestion[];
 
@@ -89,7 +93,9 @@ interface RecruitmentRoleBuilderProps {
   roles: RecruitmentRole[];
 
   onChange: Dispatch<SetStateAction<RecruitmentRole[]>>;
+  defaultEligibility: RecruitmentRoleEligibility;
 
+  defaultQuestions: RecruitmentQuestion[];
   readOnly?: boolean;
 
   loading?: boolean;
@@ -135,7 +141,11 @@ function createEmptyRole(): RecruitmentRole {
       shift_details: "",
     },
 
+    inheritDefaultEligibility: true,
+
     eligibility: createEmptyRecruitmentRoleEligibility(),
+
+    inheritDefaultQuestions: true,
 
     questions: [],
 
@@ -148,6 +158,8 @@ function createEmptyRole(): RecruitmentRole {
 export function RecruitmentRoleBuilder({
   roles,
   onChange,
+  defaultEligibility,
+  defaultQuestions,
   readOnly = false,
   loading = false,
   allowSave = false,
@@ -279,6 +291,46 @@ export function RecruitmentRoleBuilder({
                 currentTimeline,
               )
             : updater,
+      };
+
+      return copy;
+    });
+  }
+
+  function setEligibilityInheritance(index: number, inherit: boolean) {
+    if (readOnly) return;
+
+    onChange((previous) => {
+      const copy = [...previous];
+
+      const role = copy[index];
+
+      copy[index] = {
+        ...role,
+
+        inheritDefaultEligibility: inherit,
+
+        eligibility: inherit ? role.eligibility : structuredClone(defaultEligibility),
+      };
+
+      return copy;
+    });
+  }
+
+  function setQuestionInheritance(index: number, inherit: boolean) {
+    if (readOnly) return;
+
+    onChange((previous) => {
+      const copy = [...previous];
+
+      const role = copy[index];
+
+      copy[index] = {
+        ...role,
+
+        inheritDefaultQuestions: inherit,
+
+        questions: inherit ? role.questions : structuredClone(defaultQuestions),
       };
 
       return copy;
@@ -961,11 +1013,66 @@ export function RecruitmentRoleBuilder({
                         </label>
                       </div>
                     </div>
+
+                    <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
+                      <div>
+                        <div className="font-medium">Eligibility</div>
+
+                        <div className="text-sm text-muted-foreground">
+                          Use recruitment default eligibility or override it for this role.
+                        </div>
+                      </div>
+
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setEligibilityInheritance(index, true)}
+                          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                        >
+                          Use Recruitment Default
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
+                      <div>
+                        <div className="font-medium">Questions</div>
+
+                        <div className="text-sm text-muted-foreground">
+                          Start from the recruitment default questions or customise this role.
+                        </div>
+                      </div>
+
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setQuestionInheritance(index, true)}
+                          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                        >
+                          Use Recruitment Defaults
+                        </button>
+                      )}
+
+                      {!role.inheritDefaultEligibility && !readOnly && (
+                        <button
+                          type="button"
+                          onClick={() => setEligibilityInheritance(index, true)}
+                          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                        >
+                          Revert to Default
+                        </button>
+                      )}
+                    </div>
+
                     <RecruitmentEligibilityBuilder
-                      value={role.eligibility}
-                      onChange={(nextEligibility) =>
-                        updateRole(index, "eligibility", nextEligibility)
-                      }
+                      value={role.inheritDefaultEligibility ? defaultEligibility : role.eligibility}
+                      onChange={(nextEligibility) => {
+                        if (role.inheritDefaultEligibility) {
+                          setEligibilityInheritance(index, false);
+                        }
+
+                        updateRole(index, "eligibility", nextEligibility);
+                      }}
                       readOnly={readOnly}
                     />
 
