@@ -88,6 +88,39 @@ export type RecruitmentRoleTimeline = {
   description: string;
 };
 
+const ROLE_SECTIONS = [
+  {
+    id: "basic",
+    label: "Basic Info",
+  },
+  {
+    id: "compensation",
+    label: "Compensation",
+  },
+  {
+    id: "hiring",
+    label: "Hiring",
+  },
+  {
+    id: "eligibility",
+    label: "Eligibility",
+  },
+  {
+    id: "questions",
+    label: "Questions",
+  },
+  {
+    id: "documents",
+    label: "Documents",
+  },
+  {
+    id: "timeline",
+    label: "Timeline",
+  },
+] as const;
+
+type RoleSection = (typeof ROLE_SECTIONS)[number]["id"];
+
 interface RecruitmentRoleBuilderProps {
   roles: RecruitmentRole[];
 
@@ -167,8 +200,21 @@ export function RecruitmentRoleBuilder({
 }: RecruitmentRoleBuilderProps) {
   const [expandedRole, setExpandedRole] = useState(0);
 
+  const [activeSections, setActiveSections] = useState<Record<string, RoleSection>>({});
+
   function toggleRole(index: number) {
     setExpandedRole((current) => (current === index ? -1 : index));
+  }
+
+  function getActiveSection(roleId: string) {
+    return activeSections[roleId] ?? "basic";
+  }
+
+  function setActiveSection(roleId: string, section: RoleSection) {
+    setActiveSections((previous) => ({
+      ...previous,
+      [roleId]: section,
+    }));
   }
 
   function updateRole(index: number, field: keyof RecruitmentRole, value: any) {
@@ -488,6 +534,8 @@ export function RecruitmentRoleBuilder({
 
             const isExpanded = expandedRole === index;
 
+            const activeSection = getActiveSection(role.role_id);
+
             return (
               <div
                 key={role.role_id}
@@ -570,246 +618,157 @@ export function RecruitmentRoleBuilder({
                 </div>
 
                 {isExpanded && (
-                  <div className="border-t border-border bg-muted/10 px-6 py-5">
-                    <div className="rounded-xl border border-border bg-background">
-                      <div className="border-b border-border px-5 py-4">
-                        <div className="font-medium">Basic Information</div>
-
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Configure the primary details of this job role.
-                        </div>
-                      </div>
-
-                      <div className="space-y-5 p-5">
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">Role Name</label>
-
-                          <input
-                            disabled={readOnly}
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            placeholder="Software Engineer"
-                            value={role.role_name}
-                            onChange={(e) => updateRole(index, "role_name", e.target.value)}
-                          />
-                        </div>
-
-                        <div className="grid gap-5 md:grid-cols-2">
-                          <div>
-                            <label className="mb-2 block text-sm font-medium">
-                              Employment Type
-                            </label>
-
-                            <select
-                              disabled={readOnly}
-                              className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                              value={role.employment_type}
-                              onChange={(e) =>
-                                updateRole(
-                                  index,
-                                  "employment_type",
-                                  e.target.value as RecruitmentRole["employment_type"],
-                                )
-                              }
-                            >
-                              <option>Full Time</option>
-                              <option>Internship</option>
-                              <option>Intern + PPO</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="mb-2 block text-sm font-medium">Work Mode</label>
-
-                            <select
-                              disabled={readOnly}
-                              className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                              value={role.work_mode}
-                              onChange={(e) =>
-                                updateRole(
-                                  index,
-                                  "work_mode",
-                                  e.target.value as RecruitmentRole["work_mode"],
-                                )
-                              }
-                            >
-                              <option>Onsite</option>
-                              <option>Hybrid</option>
-                              <option>Remote</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">Role Description</label>
-
-                          <textarea
-                            disabled={readOnly}
-                            rows={5}
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            placeholder="Describe responsibilities, expectations and technologies."
-                            value={role.role_description}
-                            onChange={(e) => updateRole(index, "role_description", e.target.value)}
-                          />
-                        </div>
-
-                        <div className="max-w-sm">
-                          <label className="mb-2 block text-sm font-medium">
-                            Expected Openings
-                          </label>
-
-                          <input
-                            disabled={readOnly}
-                            type="number"
-                            min={1}
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            placeholder="10"
-                            value={role.openings}
-                            onChange={(e) =>
-                              updateRole(
-                                index,
-                                "openings",
-                                e.target.value === "" ? "" : Number(e.target.value),
-                              )
-                            }
-                          />
-                        </div>
+                  <div className="border-t border-border bg-muted/10 p-6">
+                    <div className="mb-6 rounded-xl border border-border bg-background p-2">
+                      <div className="grid grid-cols-7 gap-2">
+                        {ROLE_SECTIONS.map((section) => (
+                          <button
+                            key={section.id}
+                            type="button"
+                            onClick={() => setActiveSection(role.role_id, section.id)}
+                            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                              activeSection === section.id
+                                ? "bg-primary text-primary-foreground"
+                                : "hover:bg-muted"
+                            }`}
+                          >
+                            {section.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
+                    {activeSection === "basic" && (
+                      <div className="rounded-xl border border-border bg-background">
+                        <div className="border-b border-border px-5 py-4">
+                          <div className="font-medium">Basic Information</div>
 
-                    <div className="mt-5 rounded-xl border border-border bg-background">
-                      <div className="border-b border-border px-5 py-4">
-                        <div className="font-medium">Compensation</div>
-
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Configure the exact package offered for this role.
-                        </div>
-                      </div>
-
-                      <div className="grid gap-5 p-5 md:grid-cols-2">
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">Fixed CTC (LPA)</label>
-
-                          <input
-                            disabled={readOnly}
-                            type="number"
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            value={role.compensation.fixed_ctc}
-                            onChange={(e) =>
-                              onChange((previous) => {
-                                const copy = [...previous];
-
-                                copy[index] = {
-                                  ...copy[index],
-                                  compensation: {
-                                    ...copy[index].compensation,
-                                    fixed_ctc: e.target.value === "" ? "" : Number(e.target.value),
-                                  },
-                                };
-
-                                return copy;
-                              })
-                            }
-                          />
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Configure the primary details of this job role.
+                          </div>
                         </div>
 
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">
-                            Variable CTC (LPA)
-                          </label>
+                        <div className="space-y-5 p-5">
+                          <div>
+                            <label className="mb-2 block text-sm font-medium">Role Name</label>
 
-                          <input
-                            disabled={readOnly}
-                            type="number"
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            value={role.compensation.variable_ctc}
-                            onChange={(e) =>
-                              onChange((previous) => {
-                                const copy = [...previous];
+                            <input
+                              disabled={readOnly}
+                              className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                              placeholder="Software Engineer"
+                              value={role.role_name}
+                              onChange={(e) => updateRole(index, "role_name", e.target.value)}
+                            />
+                          </div>
 
-                                copy[index] = {
-                                  ...copy[index],
-                                  compensation: {
-                                    ...copy[index].compensation,
-                                    variable_ctc:
-                                      e.target.value === "" ? "" : Number(e.target.value),
-                                  },
-                                };
+                          <div className="grid gap-5 md:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-sm font-medium">
+                                Employment Type
+                              </label>
 
-                                return copy;
-                              })
-                            }
-                          />
-                        </div>
+                              <select
+                                disabled={readOnly}
+                                className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                value={role.employment_type}
+                                onChange={(e) =>
+                                  updateRole(
+                                    index,
+                                    "employment_type",
+                                    e.target.value as RecruitmentRole["employment_type"],
+                                  )
+                                }
+                              >
+                                <option>Full Time</option>
+                                <option>Internship</option>
+                                <option>Intern + PPO</option>
+                              </select>
+                            </div>
 
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">
-                            Joining Bonus (₹)
-                          </label>
+                            <div>
+                              <label className="mb-2 block text-sm font-medium">Work Mode</label>
 
-                          <input
-                            disabled={readOnly}
-                            type="number"
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            value={role.compensation.joining_bonus}
-                            onChange={(e) =>
-                              onChange((previous) => {
-                                const copy = [...previous];
+                              <select
+                                disabled={readOnly}
+                                className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                value={role.work_mode}
+                                onChange={(e) =>
+                                  updateRole(
+                                    index,
+                                    "work_mode",
+                                    e.target.value as RecruitmentRole["work_mode"],
+                                  )
+                                }
+                              >
+                                <option>Onsite</option>
+                                <option>Hybrid</option>
+                                <option>Remote</option>
+                              </select>
+                            </div>
+                          </div>
 
-                                copy[index] = {
-                                  ...copy[index],
-                                  compensation: {
-                                    ...copy[index].compensation,
-                                    joining_bonus:
-                                      e.target.value === "" ? "" : Number(e.target.value),
-                                  },
-                                };
-
-                                return copy;
-                              })
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">
-                            Retention Bonus (₹)
-                          </label>
-
-                          <input
-                            disabled={readOnly}
-                            type="number"
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            value={role.compensation.retention_bonus}
-                            onChange={(e) =>
-                              onChange((previous) => {
-                                const copy = [...previous];
-
-                                copy[index] = {
-                                  ...copy[index],
-                                  compensation: {
-                                    ...copy[index].compensation,
-                                    retention_bonus:
-                                      e.target.value === "" ? "" : Number(e.target.value),
-                                  },
-                                };
-
-                                return copy;
-                              })
-                            }
-                          />
-                        </div>
-
-                        {role.employment_type !== "Full Time" && (
                           <div>
                             <label className="mb-2 block text-sm font-medium">
-                              Internship Stipend (₹ / Month)
+                              Role Description
+                            </label>
+
+                            <textarea
+                              disabled={readOnly}
+                              rows={5}
+                              className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                              placeholder="Describe responsibilities, expectations and technologies."
+                              value={role.role_description}
+                              onChange={(e) =>
+                                updateRole(index, "role_description", e.target.value)
+                              }
+                            />
+                          </div>
+
+                          <div className="max-w-sm">
+                            <label className="mb-2 block text-sm font-medium">
+                              Expected Openings
+                            </label>
+
+                            <input
+                              disabled={readOnly}
+                              type="number"
+                              min={1}
+                              className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                              placeholder="10"
+                              value={role.openings}
+                              onChange={(e) =>
+                                updateRole(
+                                  index,
+                                  "openings",
+                                  e.target.value === "" ? "" : Number(e.target.value),
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeSection === "compensation" && (
+                      <div className="mt-5 rounded-xl border border-border bg-background">
+                        <div className="border-b border-border px-5 py-4">
+                          <div className="font-medium">Compensation</div>
+
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Configure the exact package offered for this role.
+                          </div>
+                        </div>
+
+                        <div className="grid gap-5 p-5 md:grid-cols-2">
+                          <div>
+                            <label className="mb-2 block text-sm font-medium">
+                              Fixed CTC (LPA)
                             </label>
 
                             <input
                               disabled={readOnly}
                               type="number"
                               className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                              value={role.compensation.internship_stipend}
+                              value={role.compensation.fixed_ctc}
                               onChange={(e) =>
                                 onChange((previous) => {
                                   const copy = [...previous];
@@ -818,7 +777,7 @@ export function RecruitmentRoleBuilder({
                                     ...copy[index],
                                     compensation: {
                                       ...copy[index].compensation,
-                                      internship_stipend:
+                                      fixed_ctc:
                                         e.target.value === "" ? "" : Number(e.target.value),
                                     },
                                   };
@@ -828,19 +787,17 @@ export function RecruitmentRoleBuilder({
                               }
                             />
                           </div>
-                        )}
 
-                        {role.employment_type === "Intern + PPO" && (
                           <div>
                             <label className="mb-2 block text-sm font-medium">
-                              PPO Package (LPA)
+                              Variable CTC (LPA)
                             </label>
 
                             <input
                               disabled={readOnly}
                               type="number"
                               className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                              value={role.compensation.ppo_package}
+                              value={role.compensation.variable_ctc}
                               onChange={(e) =>
                                 onChange((previous) => {
                                   const copy = [...previous];
@@ -849,7 +806,7 @@ export function RecruitmentRoleBuilder({
                                     ...copy[index],
                                     compensation: {
                                       ...copy[index].compensation,
-                                      ppo_package:
+                                      variable_ctc:
                                         e.target.value === "" ? "" : Number(e.target.value),
                                     },
                                   };
@@ -859,69 +816,27 @@ export function RecruitmentRoleBuilder({
                               }
                             />
                           </div>
-                        )}
-                      </div>
-                    </div>
 
-                    <div className="mt-5 rounded-xl border border-border bg-background">
-                      <div className="border-b border-border px-5 py-4">
-                        <div className="font-medium">Hiring Details</div>
-
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Configure hiring logistics for this role.
-                        </div>
-                      </div>
-
-                      <div className="space-y-5 p-5">
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">Hiring Locations</label>
-
-                          <input
-                            disabled={readOnly}
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            placeholder="Ahmedabad, Bangalore, Pune"
-                            value={role.hiring.locations.join(", ")}
-                            onChange={(e) =>
-                              onChange((previous) => {
-                                const copy = [...previous];
-
-                                copy[index] = {
-                                  ...copy[index],
-                                  hiring: {
-                                    ...copy[index].hiring,
-                                    locations: e.target.value
-                                      .split(",")
-                                      .map((location) => location.trim())
-                                      .filter(Boolean),
-                                  },
-                                };
-
-                                return copy;
-                              })
-                            }
-                          />
-                        </div>
-
-                        <div className="grid gap-5 md:grid-cols-2">
                           <div>
                             <label className="mb-2 block text-sm font-medium">
-                              Expected Joining Date
+                              Joining Bonus (₹)
                             </label>
 
                             <input
                               disabled={readOnly}
-                              type="date"
+                              type="number"
                               className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                              value={role.hiring.expected_joining_date}
+                              value={role.compensation.joining_bonus}
                               onChange={(e) =>
                                 onChange((previous) => {
                                   const copy = [...previous];
 
                                   copy[index] = {
                                     ...copy[index],
-                                    hiring: {
-                                      ...copy[index].hiring,
-                                      expected_joining_date: e.target.value,
+                                    compensation: {
+                                      ...copy[index].compensation,
+                                      joining_bonus:
+                                        e.target.value === "" ? "" : Number(e.target.value),
                                     },
                                   };
 
@@ -932,22 +847,25 @@ export function RecruitmentRoleBuilder({
                           </div>
 
                           <div>
-                            <label className="mb-2 block text-sm font-medium">Department</label>
+                            <label className="mb-2 block text-sm font-medium">
+                              Retention Bonus (₹)
+                            </label>
 
                             <input
                               disabled={readOnly}
+                              type="number"
                               className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                              placeholder="Engineering"
-                              value={role.hiring.department}
+                              value={role.compensation.retention_bonus}
                               onChange={(e) =>
                                 onChange((previous) => {
                                   const copy = [...previous];
 
                                   copy[index] = {
                                     ...copy[index],
-                                    hiring: {
-                                      ...copy[index].hiring,
-                                      department: e.target.value,
+                                    compensation: {
+                                      ...copy[index].compensation,
+                                      retention_bonus:
+                                        e.target.value === "" ? "" : Number(e.target.value),
                                     },
                                   };
 
@@ -956,189 +874,366 @@ export function RecruitmentRoleBuilder({
                               }
                             />
                           </div>
-                        </div>
 
-                        <div>
-                          <label className="mb-2 block text-sm font-medium">Shift Details</label>
+                          {role.employment_type !== "Full Time" && (
+                            <div>
+                              <label className="mb-2 block text-sm font-medium">
+                                Internship Stipend (₹ / Month)
+                              </label>
 
-                          <input
-                            disabled={readOnly}
-                            className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                            placeholder="General Shift / Rotational Shift"
-                            value={role.hiring.shift_details}
-                            onChange={(e) =>
-                              onChange((previous) => {
-                                const copy = [...previous];
+                              <input
+                                disabled={readOnly}
+                                type="number"
+                                className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                value={role.compensation.internship_stipend}
+                                onChange={(e) =>
+                                  onChange((previous) => {
+                                    const copy = [...previous];
 
-                                copy[index] = {
-                                  ...copy[index],
-                                  hiring: {
-                                    ...copy[index].hiring,
-                                    shift_details: e.target.value,
-                                  },
-                                };
+                                    copy[index] = {
+                                      ...copy[index],
+                                      compensation: {
+                                        ...copy[index].compensation,
+                                        internship_stipend:
+                                          e.target.value === "" ? "" : Number(e.target.value),
+                                      },
+                                    };
 
-                                return copy;
-                              })
-                            }
-                          />
-                        </div>
+                                    return copy;
+                                  })
+                                }
+                              />
+                            </div>
+                          )}
 
-                        <label className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm">
-                          <input
-                            disabled={readOnly}
-                            type="checkbox"
-                            checked={role.hiring.travel_required}
-                            onChange={(e) =>
-                              onChange((previous) => {
-                                const copy = [...previous];
+                          {role.employment_type === "Intern + PPO" && (
+                            <div>
+                              <label className="mb-2 block text-sm font-medium">
+                                PPO Package (LPA)
+                              </label>
 
-                                copy[index] = {
-                                  ...copy[index],
-                                  hiring: {
-                                    ...copy[index].hiring,
-                                    travel_required: e.target.checked,
-                                  },
-                                };
+                              <input
+                                disabled={readOnly}
+                                type="number"
+                                className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                value={role.compensation.ppo_package}
+                                onChange={(e) =>
+                                  onChange((previous) => {
+                                    const copy = [...previous];
 
-                                return copy;
-                              })
-                            }
-                          />
-                          Travel Required
-                        </label>
-                      </div>
-                    </div>
+                                    copy[index] = {
+                                      ...copy[index],
+                                      compensation: {
+                                        ...copy[index].compensation,
+                                        ppo_package:
+                                          e.target.value === "" ? "" : Number(e.target.value),
+                                      },
+                                    };
 
-                    <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
-                      <div>
-                        <div className="font-medium">Eligibility</div>
-
-                        <div className="text-sm text-muted-foreground">
-                          Use recruitment default eligibility or override it for this role.
-                        </div>
-                      </div>
-
-                      {!readOnly && (
-                        <div className="flex gap-2">
-                          {role.inheritDefaultEligibility ? (
-                            <button
-                              type="button"
-                              onClick={() => setEligibilityInheritance(index, false)}
-                              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                            >
-                              Override
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setEligibilityInheritance(index, true)}
-                              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                            >
-                              Revert to Default
-                            </button>
+                                    return copy;
+                                  })
+                                }
+                              />
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
-                    <RecruitmentEligibilityBuilder
-                      value={role.inheritDefaultEligibility ? defaultEligibility : role.eligibility}
-                      inheritFromRecruitmentDefaults={role.inheritDefaultEligibility}
-                      onInheritanceChange={(inherit) => setEligibilityInheritance(index, inherit)}
-                      onChange={(nextEligibility) => {
-                        if (role.inheritDefaultEligibility) {
-                          setEligibilityInheritance(index, false);
+                    {activeSection === "hiring" && (
+                      <div className="mt-5 rounded-xl border border-border bg-background">
+                        <div className="border-b border-border px-5 py-4">
+                          <div className="font-medium">Hiring Details</div>
 
-                          queueMicrotask(() => {
-                            updateRole(index, "eligibility", nextEligibility);
-                          });
-
-                          return;
-                        }
-
-                        updateRole(index, "eligibility", nextEligibility);
-                      }}
-                      readOnly={readOnly}
-                    />
-
-                    <div className="mt-5">
-                      <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
-                        <div>
-                          <div className="font-medium">Questions</div>
-
-                          <div className="text-sm text-muted-foreground">
-                            {role.inheritDefaultQuestions
-                              ? "Currently inheriting Recruitment Default Questions."
-                              : "This role has its own overridden questions."}
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Configure hiring logistics for this role.
                           </div>
                         </div>
 
-                        {!readOnly && (
-                          <div className="flex gap-2">
-                            {role.inheritDefaultQuestions ? (
-                              <button
-                                type="button"
-                                onClick={() => setQuestionInheritance(index, false)}
-                                className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                              >
-                                Override
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setQuestionInheritance(index, true)}
-                                className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                              >
-                                Revert to Default
-                              </button>
-                            )}
+                        <div className="space-y-5 p-5">
+                          <div>
+                            <label className="mb-2 block text-sm font-medium">
+                              Hiring Locations
+                            </label>
+
+                            <input
+                              disabled={readOnly}
+                              className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                              placeholder="Ahmedabad, Bangalore, Pune"
+                              value={role.hiring.locations.join(", ")}
+                              onChange={(e) =>
+                                onChange((previous) => {
+                                  const copy = [...previous];
+
+                                  copy[index] = {
+                                    ...copy[index],
+                                    hiring: {
+                                      ...copy[index].hiring,
+                                      locations: e.target.value
+                                        .split(",")
+                                        .map((location) => location.trim())
+                                        .filter(Boolean),
+                                    },
+                                  };
+
+                                  return copy;
+                                })
+                              }
+                            />
                           </div>
-                        )}
+
+                          <div className="grid gap-5 md:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-sm font-medium">
+                                Expected Joining Date
+                              </label>
+
+                              <input
+                                disabled={readOnly}
+                                type="date"
+                                className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                value={role.hiring.expected_joining_date}
+                                onChange={(e) =>
+                                  onChange((previous) => {
+                                    const copy = [...previous];
+
+                                    copy[index] = {
+                                      ...copy[index],
+                                      hiring: {
+                                        ...copy[index].hiring,
+                                        expected_joining_date: e.target.value,
+                                      },
+                                    };
+
+                                    return copy;
+                                  })
+                                }
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm font-medium">Department</label>
+
+                              <input
+                                disabled={readOnly}
+                                className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                                placeholder="Engineering"
+                                value={role.hiring.department}
+                                onChange={(e) =>
+                                  onChange((previous) => {
+                                    const copy = [...previous];
+
+                                    copy[index] = {
+                                      ...copy[index],
+                                      hiring: {
+                                        ...copy[index].hiring,
+                                        department: e.target.value,
+                                      },
+                                    };
+
+                                    return copy;
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-sm font-medium">Shift Details</label>
+
+                            <input
+                              disabled={readOnly}
+                              className="w-full rounded-xl border border-border px-4 py-3 text-sm"
+                              placeholder="General Shift / Rotational Shift"
+                              value={role.hiring.shift_details}
+                              onChange={(e) =>
+                                onChange((previous) => {
+                                  const copy = [...previous];
+
+                                  copy[index] = {
+                                    ...copy[index],
+                                    hiring: {
+                                      ...copy[index].hiring,
+                                      shift_details: e.target.value,
+                                    },
+                                  };
+
+                                  return copy;
+                                })
+                              }
+                            />
+                          </div>
+
+                          <label className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm">
+                            <input
+                              disabled={readOnly}
+                              type="checkbox"
+                              checked={role.hiring.travel_required}
+                              onChange={(e) =>
+                                onChange((previous) => {
+                                  const copy = [...previous];
+
+                                  copy[index] = {
+                                    ...copy[index],
+                                    hiring: {
+                                      ...copy[index].hiring,
+                                      travel_required: e.target.checked,
+                                    },
+                                  };
+
+                                  return copy;
+                                })
+                              }
+                            />
+                            Travel Required
+                          </label>
+                        </div>
                       </div>
+                    )}
+                    {activeSection === "eligibility" && (
+                      <>
+                        <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
+                          <div>
+                            <div className="font-medium">Eligibility</div>
 
-                      <RecruitmentQuestionBuilder
-                        title="Role Questions"
-                        subtitle={
-                          role.inheritDefaultQuestions
-                            ? "Inherited from Recruitment Defaults."
-                            : "Role-specific overridden questions."
-                        }
+                            <div className="text-sm text-muted-foreground">
+                              Use recruitment default eligibility or override it for this role.
+                            </div>
+                          </div>
 
-                        questions={role.inheritDefaultQuestions ? defaultQuestions : role.questions}
+                          {!readOnly && (
+                            <div className="flex gap-2">
+                              {role.inheritDefaultEligibility ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setEligibilityInheritance(index, false)}
+                                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                                >
+                                  Override
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setEligibilityInheritance(index, true)}
+                                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                                >
+                                  Revert to Default
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <RecruitmentEligibilityBuilder
+                          value={
+                            role.inheritDefaultEligibility ? defaultEligibility : role.eligibility
+                          }
+                          inheritFromRecruitmentDefaults={role.inheritDefaultEligibility}
+                          onInheritanceChange={(inherit) =>
+                            setEligibilityInheritance(index, inherit)
+                          }
+                          onChange={(nextEligibility) => {
+                            if (role.inheritDefaultEligibility) {
+                              setEligibilityInheritance(index, false);
 
-                        onChange={(updater) => {
-                          if (role.inheritDefaultQuestions) {
-                            setQuestionInheritance(index, false);
+                              queueMicrotask(() => {
+                                updateRole(index, "eligibility", nextEligibility);
+                              });
 
-                            queueMicrotask(() => {
-                              updateQuestions(index, updater);
-                            });
+                              return;
+                            }
 
-                            return;
+                            updateRole(index, "eligibility", nextEligibility);
+                          }}
+                          readOnly={readOnly}
+                        />
+                      </>
+                    )}
+
+                    {activeSection === "questions" && (
+                      <div className="mt-5">
+                        <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
+                          <div>
+                            <div className="font-medium">Questions</div>
+
+                            <div className="text-sm text-muted-foreground">
+                              {role.inheritDefaultQuestions
+                                ? "Currently inheriting Recruitment Default Questions."
+                                : "This role has its own overridden questions."}
+                            </div>
+                          </div>
+
+                          {!readOnly && (
+                            <div className="flex gap-2">
+                              {role.inheritDefaultQuestions ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setQuestionInheritance(index, false)}
+                                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                                >
+                                  Override
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setQuestionInheritance(index, true)}
+                                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                                >
+                                  Revert to Default
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <RecruitmentQuestionBuilder
+                          title="Role Questions"
+                          subtitle={
+                            role.inheritDefaultQuestions
+                              ? "Inherited from Recruitment Defaults."
+                              : "Role-specific overridden questions."
                           }
 
-                          updateQuestions(index, updater);
-                        }}
-                        readOnly={readOnly}
-                      />
-                    </div>
+                          questions={
+                            role.inheritDefaultQuestions ? defaultQuestions : role.questions
+                          }
 
-                    <div className="mt-5">
-                      <RecruitmentDocumentsBuilder
-                        documents={role.documents}
-                        onChange={(updater) => updateDocuments(index, updater)}
-                        readOnly={readOnly}
-                      />
-                    </div>
+                          onChange={(updater) => {
+                            if (role.inheritDefaultQuestions) {
+                              setQuestionInheritance(index, false);
 
-                    <div className="mt-5">
-                      <RecruitmentTimelineBuilder
-                        timeline={role.timeline}
-                        onChange={(updater) => updateTimeline(index, updater)}
-                        readOnly={readOnly}
-                      />
-                    </div>
+                              queueMicrotask(() => {
+                                updateQuestions(index, updater);
+                              });
+
+                              return;
+                            }
+
+                            updateQuestions(index, updater);
+                          }}
+                          readOnly={readOnly}
+                        />
+                      </div>
+                    )}
+
+                    {activeSection === "documents" && (
+                      <div className="mt-5">
+                        <RecruitmentDocumentsBuilder
+                          documents={role.documents}
+                          onChange={(updater) => updateDocuments(index, updater)}
+                          readOnly={readOnly}
+                        />
+                      </div>
+                    )}
+
+                    {activeSection === "timeline" && (
+                      <div className="mt-5">
+                        <RecruitmentTimelineBuilder
+                          timeline={role.timeline}
+                          onChange={(updater) => updateTimeline(index, updater)}
+                          readOnly={readOnly}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

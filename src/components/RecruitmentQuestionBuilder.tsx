@@ -266,6 +266,7 @@ export function RecruitmentQuestionBuilder({
   saving = false,
   onSave,
 }: RecruitmentQuestionBuilderProps) {
+  
   const questionCount = useMemo(() => questions.length, [questions]);
 
   const requiredCount = useMemo(() => questions.filter((q) => q.is_required).length, [questions]);
