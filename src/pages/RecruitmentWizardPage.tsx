@@ -274,11 +274,30 @@ export function RecruitmentWizardPage() {
           }
 
           if (Array.isArray(draft.default_questions_data)) {
-            setDefaultQuestions(draft.default_questions_data);
+            setDefaultQuestions(
+              draft.default_questions_data.map((question) => ({
+                ...question,
+                question_id:
+                  question.question_id && question.question_id.trim() !== ""
+                    ? question.question_id
+                    : crypto.randomUUID(),
+              })),
+            );
           }
 
           if (Array.isArray(draft.roles_data)) {
-            setRoles(draft.roles_data as RecruitmentRole[]);
+            setRoles(
+              draft.roles_data.map((role) => ({
+                ...role,
+                questions: (role.questions ?? []).map((question: RecruitmentQuestion) => ({
+                  ...question,
+                  question_id:
+                    question.question_id && question.question_id.trim() !== ""
+                      ? question.question_id
+                      : crypto.randomUUID(),
+                })),
+              })),
+            );
           }
         }
 
