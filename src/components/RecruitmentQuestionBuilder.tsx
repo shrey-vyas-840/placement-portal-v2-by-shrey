@@ -9,7 +9,6 @@ export type RecruitmentQuestionType =
   | "dropdown"
   | "mcq"
   | "checkbox"
-  | "file"
   | "url"
   | "email"
   | "phone";
@@ -52,12 +51,6 @@ export type RecruitmentQuestionValidation = {
   maxSelection?: number | "";
   preventDuplicateOptions?: boolean;
   preventEmptyOptions?: boolean;
-
-  // ---------- File ----------
-  allowedExtensions?: string[];
-  maxSizeMb?: number | "";
-  maxFiles?: number | "";
-  multipleFiles?: boolean;
 };
 
 export type RecruitmentQuestion = {
@@ -90,13 +83,10 @@ const QUESTION_TYPE_OPTIONS: Array<{ label: string; value: RecruitmentQuestionTy
   { label: "Dropdown", value: "dropdown" },
   { label: "Multiple Choice", value: "mcq" },
   { label: "Checkbox", value: "checkbox" },
-  { label: "File Upload", value: "file" },
   { label: "URL", value: "url" },
   { label: "Email", value: "email" },
   { label: "Phone", value: "phone" },
 ];
-
-const FILE_EXTENSIONS = ["pdf", "doc", "docx", "jpg", "jpeg", "png", "xls", "xlsx", "zip", "rar"];
 
 function createId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -106,7 +96,7 @@ function createId() {
 
 function createEmptyQuestion(): RecruitmentQuestion {
   return {
-    question_id: null,
+    question_id: createId(),
     question_title: "",
     question_description: "",
     question_type: "text",
@@ -130,8 +120,6 @@ function previewPlaceholderForType(type: RecruitmentQuestionType) {
       return "Choose one option";
     case "checkbox":
       return "Choose one or more options";
-    case "file":
-      return "Upload a file";
     case "url":
       return "https://example.com";
     case "email":
@@ -218,11 +206,6 @@ function PreviewQuestionCard({ question }: { question: RecruitmentQuestion }) {
             placeholder={previewPlaceholderForType(question.question_type)}
             className="w-full rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground"
           />
-        ) : question.question_type === "file" ? (
-          <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
-            <div className="font-medium">Choose File</div>
-            <div className="mt-1">{previewPlaceholderForType(question.question_type)}</div>
-          </div>
         ) : question.question_type === "dropdown" ? (
           <select
             disabled
@@ -408,7 +391,6 @@ export function RecruitmentQuestionBuilder({
         ...current,
         [field]: value,
       };
-
       if (field === "question_type") {
         const nextType = value as RecruitmentQuestionType;
 
@@ -416,15 +398,16 @@ export function RecruitmentQuestionBuilder({
         const nextIsChoice = isMultiOptionType(nextType);
 
         if (!previousWasChoice && nextIsChoice) {
-          next.options = ["Option 1", "Option 2"];
+          next.options =
+            current.options.length > 0 ? [...current.options] : ["Option 1", "Option 2"];
         }
 
         if (previousWasChoice && nextIsChoice) {
-          next.options = current.options.length > 0 ? current.options : ["Option 1", "Option 2"];
+          next.options = [...current.options];
         }
 
         if (previousWasChoice && !nextIsChoice) {
-          next.options = [];
+          next.options = [...current.options];
         }
 
         next.validation = {};
@@ -463,7 +446,7 @@ export function RecruitmentQuestionBuilder({
 
       const cloned: RecruitmentQuestion = {
         ...JSON.parse(JSON.stringify(current)),
-        question_id: null,
+        question_id: createId(),
         question_title: current.question_title ? `${current.question_title} Copy` : "Copy",
       };
 
@@ -578,17 +561,6 @@ export function RecruitmentQuestionBuilder({
       };
       return copy;
     });
-  }
-
-  function toggleAllowedExtension(index: number, ext: string, checked: boolean) {
-    if (readOnly) return;
-
-    const existing = questions[index]?.validation?.allowedExtensions || [];
-    const next = checked
-      ? Array.from(new Set([...existing, ext]))
-      : existing.filter((item: string) => item !== ext);
-
-    updateValidation(index, "allowedExtensions", next);
   }
 
   function renderValidationEditor(question: RecruitmentQuestion, index: number) {
@@ -963,80 +935,6 @@ export function RecruitmentQuestionBuilder({
         </div>
       );
     }
-
-    if (question.question_type === "file") {
-      const allowedExtensions: string[] = question.validation?.allowedExtensions || [];
-
-      return (
-        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
-          <div className="mb-3 text-sm font-semibold text-slate-700">Validation</div>
-
-          <div className="grid gap-2 md:grid-cols-2">
-            {FILE_EXTENSIONS.map((ext) => (
-              <label
-                key={ext}
-                className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm"
-              >
-                <input
-                  disabled={readOnly}
-                  type="checkbox"
-                  checked={allowedExtensions.includes(ext)}
-                  onChange={(e) => toggleAllowedExtension(index, ext, e.target.checked)}
-                />
-                .{ext}
-              </label>
-            ))}
-          </div>
-
-          <div className="mt-5 space-y-4">
-            <input
-              disabled={readOnly}
-              className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm"
-              type="number"
-              placeholder="Maximum File Size (MB)"
-              value={question.validation?.maxSizeMb || ""}
-              onChange={(e) =>
-                updateValidation(
-                  index,
-                  "maxSizeMb",
-                  e.target.value === "" ? "" : Math.max(0, Number(e.target.value)),
-                )
-              }
-            />
-
-            <input
-              disabled={readOnly}
-              className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm"
-              type="number"
-              placeholder="Maximum Number of Files"
-              value={question.validation?.maxFiles || ""}
-              onChange={(e) =>
-                updateValidation(
-                  index,
-                  "maxFiles",
-                  e.target.value === "" ? "" : Math.max(1, Number(e.target.value)),
-                )
-              }
-            />
-
-            <label className="flex items-center gap-3 text-sm">
-              <input
-                disabled={readOnly}
-                type="checkbox"
-                checked={question.validation?.multipleFiles || false}
-                onChange={(e) => updateValidation(index, "multipleFiles", e.target.checked)}
-              />
-              Allow Multiple Files
-            </label>
-
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
-              Recommended: Resume → PDF only Portfolio → PDF + ZIP Certificates → PDF + Images
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return null;
   }
 
@@ -1114,7 +1012,7 @@ export function RecruitmentQuestionBuilder({
             return (
               <div
                 id={`question-card-${index}`}
-                key={`${question.question_id ?? "new"}-${index}`}
+                key={question.question_id}
                 className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
               >
                 <div
@@ -1334,149 +1232,146 @@ export function RecruitmentQuestionBuilder({
                           )}
                         </div>
 
-                        {isMultiOptionType(question.question_type) ? (
+                        <>
                           <>
-                            <div className="rounded-xl border border-border bg-background">
-                              <button
-                                type="button"
-                                onClick={() => toggleOptions(index)}
-                                className="flex w-full items-center justify-between px-5 py-4"
-                              >
-                                <div>
-                                  <div className="font-medium">Answer Options</div>
+                            {isMultiOptionType(question.question_type) && (
+                              <div className="rounded-xl border border-border bg-background">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleOptions(index)}
+                                  className="flex w-full items-center justify-between px-5 py-4"
+                                >
+                                  <div>
+                                    <div className="font-medium">Answer Options</div>
 
-                                  <div className="text-xs text-muted-foreground">
-                                    Configure available choices
-                                  </div>
-                                </div>
-
-                                <div>{(optionsExpanded[index] ?? index === 0) ? "▲" : "▼"}</div>
-                              </button>
-
-                              {(optionsExpanded[index] ?? index === 0) && (
-                                <div className="border-t border-border p-5">
-                                  <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
-                                    <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
-                                      Options are displayed to students exactly in the order shown
-                                      below. You can add, edit or remove options at any time.
+                                    <div className="text-xs text-muted-foreground">
+                                      Configure available choices
                                     </div>
+                                  </div>
 
-                                    <div className="space-y-3">
-                                      {question.options.length < 2 && (
-                                        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
-                                          At least two options are recommended.
-                                        </div>
-                                      )}
+                                  <div>{(optionsExpanded[index] ?? index === 0) ? "▲" : "▼"}</div>
+                                </button>
 
-                                      {question.options.some((option) => option.trim() === "") && (
-                                        <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
-                                          One or more options are empty.
-                                        </div>
-                                      )}
+                                {(optionsExpanded[index] ?? index === 0) && (
+                                  <div className="border-t border-border p-5">
+                                    <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
+                                      <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700">
+                                        Options are displayed to students exactly in the order shown
+                                        below. You can add, edit or remove options at any time.
+                                      </div>
 
-                                      {new Set(
-                                        question.options
-                                          .map((option) => option.trim().toLowerCase())
-                                          .filter(Boolean),
-                                      ).size !==
-                                        question.options.filter((option) => option.trim())
-                                          .length && (
-                                        <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
-                                          Duplicate options detected.
-                                        </div>
-                                      )}
-                                      {question.options.map((option, optionIndex) => (
-                                        <div
-                                          key={`${question.question_id ?? "new"}-${optionIndex}`}
-                                          className="grid grid-cols-[40px_1fr_auto] items-center gap-3"
-                                        >
-                                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted font-semibold">
-                                            {optionIndex + 1}
+                                      <div className="space-y-3">
+                                        {question.options.length < 2 && (
+                                          <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                                            At least two options are recommended.
                                           </div>
-                                          <input
-                                            disabled={readOnly}
-                                            className="flex-1 rounded-xl border border-border bg-white px-4 py-3 text-sm"
-                                            value={option}
-                                            placeholder={`Option ${optionIndex + 1}`}
-                                            onChange={(e) =>
-                                              updateOption(index, optionIndex, e.target.value)
-                                            }
-                                          />
+                                        )}
 
-                                          {!readOnly ? (
-                                            <button
-                                              type="button"
-                                              onClick={() => removeOption(index, optionIndex)}
-                                              className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                                            >
-                                              Delete
-                                            </button>
-                                          ) : null}
-                                        </div>
-                                      ))}
+                                        {question.options.some(
+                                          (option) => option.trim() === "",
+                                        ) && (
+                                          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                                            One or more options are empty.
+                                          </div>
+                                        )}
+
+                                        {new Set(
+                                          question.options
+                                            .map((option) => option.trim().toLowerCase())
+                                            .filter(Boolean),
+                                        ).size !==
+                                          question.options.filter((option) => option.trim())
+                                            .length && (
+                                          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                                            Duplicate options detected.
+                                          </div>
+                                        )}
+                                        {question.options.map((option, optionIndex) => (
+                                          <div
+                                            key={`${question.question_id ?? "new"}-${optionIndex}`}
+                                            className="grid grid-cols-[40px_1fr_auto] items-center gap-3"
+                                          >
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted font-semibold">
+                                              {optionIndex + 1}
+                                            </div>
+                                            <input
+                                              disabled={readOnly}
+                                              className="flex-1 rounded-xl border border-border bg-white px-4 py-3 text-sm"
+                                              value={option}
+                                              placeholder={`Option ${optionIndex + 1}`}
+                                              onChange={(e) =>
+                                                updateOption(index, optionIndex, e.target.value)
+                                              }
+                                            />
+
+                                            {!readOnly ? (
+                                              <button
+                                                type="button"
+                                                onClick={() => removeOption(index, optionIndex)}
+                                                className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                                              >
+                                                Delete
+                                              </button>
+                                            ) : null}
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      {!readOnly ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => addOption(index)}
+                                          className="mt-5 rounded-xl border border-dashed border-border bg-background px-5 py-3 text-sm font-medium transition hover:bg-muted"
+                                        >
+                                          + Add Another Option
+                                        </button>
+                                      ) : null}
                                     </div>
-
-                                    {!readOnly ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => addOption(index)}
-                                        className="mt-5 rounded-xl border border-dashed border-border bg-background px-5 py-3 text-sm font-medium transition hover:bg-muted"
-                                      >
-                                        + Add Another Option
-                                      </button>
-                                    ) : null}
                                   </div>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="rounded-xl border border-border bg-muted/10">
-                              <button
-                                type="button"
-                                onClick={() => toggleValidation(index)}
-                                className="flex w-full items-center justify-between px-5 py-4 text-left"
-                              >
-                                <div>
-                                  <div className="font-medium">Validation Rules</div>
-
-                                  <div className="text-xs text-muted-foreground">
-                                    Configure validation for this question
-                                  </div>
-                                </div>
-
-                                <div className="text-sm">
-                                  {(validationExpanded[index] ?? index === 0) ? "▲" : "▼"}
-                                </div>
-                              </button>
-
-                              {(validationExpanded[index] ?? index === 0) && (
-                                <div className="border-t border-border p-5">
-                                  {renderValidationEditor(question, index)}
-                                </div>
-                              )}
-                            </div>
-                            {(question.question_type === "dropdown" ||
-                              question.question_type === "mcq" ||
-                              question.question_type === "checkbox" ||
-                              question.question_type === "file") && (
-                              <button
-                                type="button"
-                                onClick={() => togglePreview(index)}
-                                className="mb-4 flex w-full items-center justify-between rounded-xl border border-border bg-white px-4 py-3 text-left text-sm font-medium transition hover:bg-muted"
-                              >
-                                <>
-                                  <span>
-                                    {previewVisible
-                                      ? "Hide Student Preview"
-                                      : "Show Student Preview"}
-                                  </span>
-
-                                  <span>{previewVisible ? "▲" : "▼"}</span>
-                                </>
-                              </button>
+                                )}
+                              </div>
                             )}
+
+                            {renderValidationEditor(question, index) && (
+                              <div className="rounded-xl border border-border bg-muted/10">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleValidation(index)}
+                                  className="flex w-full items-center justify-between px-5 py-4 text-left"
+                                >
+                                  <div>
+                                    <div className="font-medium">Validation Rules</div>
+
+                                    <div className="text-xs text-muted-foreground">
+                                      Configure validation for this question
+                                    </div>
+                                  </div>
+
+                                  <div className="text-sm">
+                                    {(validationExpanded[index] ?? index === 0) ? "▲" : "▼"}
+                                  </div>
+                                </button>
+
+                                {(validationExpanded[index] ?? index === 0) && (
+                                  <div className="border-t border-border p-5">
+                                    {renderValidationEditor(question, index)}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => togglePreview(index)}
+                              className="mb-4 flex w-full items-center justify-between rounded-xl border border-border bg-white px-4 py-3 text-left text-sm font-medium transition hover:bg-muted"
+                            >
+                              <span>
+                                {previewVisible ? "Hide Student Preview" : "Show Student Preview"}
+                              </span>
+
+                              <span>{previewVisible ? "▲" : "▼"}</span>
+                            </button>
                           </>
-                        ) : null}
+                        </>
                       </div>
                     )}
                   </div>

@@ -2,7 +2,6 @@ import type { RecruitmentRoleEligibility } from "./RecruitmentEligibilityBuilder
 
 export function createEmptyRecruitmentRoleEligibility(): RecruitmentRoleEligibility {
   return {
-    useRecruitmentDefaults: true,
     allowed_institutes: [],
     allowed_degrees: [],
     allowed_branches: [],

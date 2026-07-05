@@ -3,7 +3,6 @@ import { RecruitmentQuestionBuilder, type RecruitmentQuestion } from "./Recruitm
 import { RecruitmentEligibilityBuilder } from "./RecruitmentEligibilityBuilder";
 import { RecruitmentDocumentsBuilder } from "./RecruitmentDocumentsBuilder";
 import { RecruitmentTimelineBuilder } from "./RecruitmentTimelineBuilder";
-import { RecruitmentRolePreview } from "./RecruitmentRolePreview";
 import { createEmptyRecruitmentRoleEligibility } from "./recruitmentEligibilityDefaults";
 import type { RecruitmentRoleEligibility } from "./RecruitmentEligibilityBuilder";
 import type { Dispatch, SetStateAction } from "react";
@@ -1021,51 +1020,41 @@ export function RecruitmentRoleBuilder({
                       </div>
 
                       {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={() => setEligibilityInheritance(index, true)}
-                          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                        >
-                          Use Recruitment Default
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="mb-5 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 p-4">
-                      <div>
-                        <div className="font-medium">Questions</div>
-
-                        <div className="text-sm text-muted-foreground">
-                          Start from the recruitment default questions or customise this role.
+                        <div className="flex gap-2">
+                          {role.inheritDefaultEligibility ? (
+                            <button
+                              type="button"
+                              onClick={() => setEligibilityInheritance(index, false)}
+                              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                            >
+                              Override
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setEligibilityInheritance(index, true)}
+                              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                            >
+                              Revert to Default
+                            </button>
+                          )}
                         </div>
-                      </div>
-
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={() => setQuestionInheritance(index, true)}
-                          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                        >
-                          Use Recruitment Defaults
-                        </button>
-                      )}
-
-                      {!role.inheritDefaultEligibility && !readOnly && (
-                        <button
-                          type="button"
-                          onClick={() => setEligibilityInheritance(index, true)}
-                          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                        >
-                          Revert to Default
-                        </button>
                       )}
                     </div>
 
                     <RecruitmentEligibilityBuilder
                       value={role.inheritDefaultEligibility ? defaultEligibility : role.eligibility}
+                      inheritFromRecruitmentDefaults={role.inheritDefaultEligibility}
+                      onInheritanceChange={(inherit) => setEligibilityInheritance(index, inherit)}
                       onChange={(nextEligibility) => {
                         if (role.inheritDefaultEligibility) {
                           setEligibilityInheritance(index, false);
+
+                          queueMicrotask(() => {
+                            updateRole(index, "eligibility", nextEligibility);
+                          });
+
+                          return;
                         }
 
                         updateRole(index, "eligibility", nextEligibility);
@@ -1121,11 +1110,16 @@ export function RecruitmentRoleBuilder({
                         onChange={(updater) => {
                           if (role.inheritDefaultQuestions) {
                             setQuestionInheritance(index, false);
+
+                            queueMicrotask(() => {
+                              updateQuestions(index, updater);
+                            });
+
+                            return;
                           }
 
                           updateQuestions(index, updater);
                         }}
-
                         readOnly={readOnly}
                       />
                     </div>
@@ -1144,10 +1138,6 @@ export function RecruitmentRoleBuilder({
                         onChange={(updater) => updateTimeline(index, updater)}
                         readOnly={readOnly}
                       />
-                    </div>
-
-                    <div className="mt-5">
-                      <RecruitmentRolePreview role={role} />
                     </div>
                   </div>
                 )}

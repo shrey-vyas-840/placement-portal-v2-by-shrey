@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { ELIGIBILITY_MAPPING } from "@/constants/eligibilityMapping";
 
 export type RecruitmentRoleEligibility = {
-  useRecruitmentDefaults: boolean;
   allowed_institutes: string[];
   allowed_degrees: string[];
   allowed_branches: string[];
@@ -17,9 +16,13 @@ export type RecruitmentRoleEligibility = {
 
 interface RecruitmentEligibilityBuilderProps {
   value: RecruitmentRoleEligibility;
-  onChange: (next: RecruitmentRoleEligibility) => void;
+  onChange: React.Dispatch<React.SetStateAction<RecruitmentRoleEligibility>>;
+
+  inheritFromRecruitmentDefaults?: boolean;
+
+  onInheritanceChange?: (inherit: boolean) => void;
+
   readOnly?: boolean;
-  loading?: boolean;
 }
 
 type EligibilityMapping = Record<string, Record<string, string[]>>;
@@ -52,10 +55,10 @@ function isValidInstitute(institute: string) {
 export function RecruitmentEligibilityBuilder({
   value,
   onChange,
+  inheritFromRecruitmentDefaults = false,
+  onInheritanceChange,
   readOnly = false,
-  loading = false,
 }: RecruitmentEligibilityBuilderProps) {
-
   const selectedInstitutes = value.allowed_institutes;
   const selectedDegrees = value.allowed_degrees;
   const selectedBranches = value.allowed_branches;
@@ -138,13 +141,8 @@ export function RecruitmentEligibilityBuilder({
           <input
             type="checkbox"
             disabled={readOnly}
-            checked={value.useRecruitmentDefaults}
-            onChange={(e) =>
-              pushValue({
-                ...value,
-                useRecruitmentDefaults: e.target.checked,
-              })
-            }
+            checked={inheritFromRecruitmentDefaults}
+            onChange={(e) => onInheritanceChange?.(e.target.checked)}
           />
 
           <div>
@@ -157,7 +155,7 @@ export function RecruitmentEligibilityBuilder({
           </div>
         </label>
 
-        {value.useRecruitmentDefaults ? (
+        {inheritFromRecruitmentDefaults ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/20 p-5">
             <div className="text-sm font-medium">Inherited from recruitment defaults</div>
 
@@ -287,55 +285,45 @@ export function RecruitmentEligibilityBuilder({
                 </div>
 
                 <div className="mt-4">
+                  <Select
+                    isDisabled={readOnly || !selectedInstitutes.length}
+                    styles={selectStyles}
+                    placeholder="Search degree..."
 
-  <Select
-    isDisabled={readOnly || !selectedInstitutes.length}
-    styles={selectStyles}
-    placeholder="Search degree..."
+                    isClearable
 
-    isClearable
+                    value={null}
 
-    value={null}
+                    options={availableDegrees
+                      .filter((degree) => !selectedDegrees.includes(degree))
+                      .map((degree) => ({
+                        value: degree,
+                        label: degree,
+                      }))}
 
-    options={availableDegrees
-      .filter(
-        (degree) => !selectedDegrees.includes(degree),
-      )
-      .map((degree) => ({
-        value: degree,
-        label: degree,
-      }))}
+                    onChange={(option) => {
+                      if (!option) return;
 
-    onChange={(option) => {
-      if (!option) return;
+                      if (!selectedInstitutes.length) {
+                        toast.warning("Select at least one institute first.");
+                        return;
+                      }
 
-      if (!selectedInstitutes.length) {
-        toast.warning(
-          "Select at least one institute first.",
-        );
-        return;
-      }
+                      pushValue({
+                        ...value,
+                        allowed_degrees: unique([...selectedDegrees, option.value]),
+                      });
+                    }}
 
-      pushValue({
-        ...value,
-        allowed_degrees: unique([
-          ...selectedDegrees,
-          option.value,
-        ]),
-      });
-    }}
-
-    noOptionsMessage={() =>
-      !selectedInstitutes.length
-        ? "Select institute first."
-        : availableDegrees.length ===
-            selectedDegrees.length
-          ? "All degrees already selected."
-          : "No degree found."
-    }
-  />
-
-</div>
+                    noOptionsMessage={() =>
+                      !selectedInstitutes.length
+                        ? "Select institute first."
+                        : availableDegrees.length === selectedDegrees.length
+                          ? "All degrees already selected."
+                          : "No degree found."
+                    }
+                  />
+                </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {selectedDegrees.length === 0 ? (
                     <span className="text-sm text-muted-foreground">No degree selected.</span>
@@ -354,18 +342,17 @@ export function RecruitmentEligibilityBuilder({
                               pushValue({
                                 ...value,
                                 allowed_degrees: selectedDegrees.filter((item) => item !== degree),
-                               allowed_branches: selectedBranches.filter(
-  (branch) =>
-    selectedInstitutes.some((institute) =>
-      selectedDegrees
-        .filter((item) => item !== degree)
-        .some((remainingDegree) =>
-          (
-            eligibilityMapping[institute] ?? {}
-          )[remainingDegree]?.includes(branch),
-        ),
-    ),
-),
+                                allowed_branches: selectedBranches.filter((branch) =>
+                                  selectedInstitutes.some((institute) =>
+                                    selectedDegrees
+                                      .filter((item) => item !== degree)
+                                      .some((remainingDegree) =>
+                                        (eligibilityMapping[institute] ?? {})[
+                                          remainingDegree
+                                        ]?.includes(branch),
+                                      ),
+                                  ),
+                                ),
                               })
                             }
                             className="rounded-full p-0.5 text-xs font-semibold transition-colors hover:bg-muted"
@@ -390,80 +377,61 @@ export function RecruitmentEligibilityBuilder({
                   </div>
                 </div>
 
-               <div className="mt-4">
+                <div className="mt-4">
+                  <Select
+                    isDisabled={readOnly || !selectedInstitutes.length || !selectedDegrees.length}
 
-  <Select
-    isDisabled={
-      readOnly ||
-      !selectedInstitutes.length ||
-      !selectedDegrees.length
-    }
+                    styles={selectStyles}
 
-    styles={selectStyles}
+                    placeholder="Search branch..."
 
-    placeholder="Search branch..."
+                    isClearable
 
-    isClearable
+                    value={null}
 
-    value={null}
+                    options={availableBranches
+                      .filter((branch) => !selectedBranches.includes(branch))
+                      .map((branch) => ({
+                        value: branch,
+                        label: branch,
+                      }))}
 
-    options={availableBranches
-      .filter(
-        (branch) =>
-          !selectedBranches.includes(branch),
-      )
-      .map((branch) => ({
-        value: branch,
-        label: branch,
-      }))}
+                    onChange={(option) => {
+                      if (!option) return;
 
-    onChange={(option) => {
-      if (!option) return;
+                      if (!selectedInstitutes.length) {
+                        toast.warning("Select at least one institute first.");
+                        return;
+                      }
 
-      if (!selectedInstitutes.length) {
-        toast.warning(
-          "Select at least one institute first.",
-        );
-        return;
-      }
+                      if (!selectedDegrees.length) {
+                        toast.warning("Select at least one degree first.");
+                        return;
+                      }
 
-      if (!selectedDegrees.length) {
-        toast.warning(
-          "Select at least one degree first.",
-        );
-        return;
-      }
+                      pushValue({
+                        ...value,
+                        allowed_branches: unique([...selectedBranches, option.value]),
+                      });
+                    }}
 
-      pushValue({
-        ...value,
-        allowed_branches: unique([
-          ...selectedBranches,
-          option.value,
-        ]),
-      });
-    }}
+                    noOptionsMessage={() => {
+                      if (!selectedInstitutes.length) {
+                        return "Select institute first.";
+                      }
 
-    noOptionsMessage={() => {
-      if (!selectedInstitutes.length) {
-        return "Select institute first.";
-      }
+                      if (!selectedDegrees.length) {
+                        return "Select degree first.";
+                      }
 
-      if (!selectedDegrees.length) {
-        return "Select degree first.";
-      }
+                      if (availableBranches.length === selectedBranches.length) {
+                        return "All branches already selected.";
+                      }
 
-      if (
-        availableBranches.length ===
-        selectedBranches.length
-      ) {
-        return "All branches already selected.";
-      }
-
-      return "No branch found.";
-    }}
-  />
-
-</div>
+                      return "No branch found.";
+                    }}
+                  />
+                </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {selectedBranches.length === 0 ? (
                     <span className="text-sm text-muted-foreground">No branch selected.</span>
@@ -510,42 +478,38 @@ export function RecruitmentEligibilityBuilder({
                   </div>
 
                   <div className="mt-4">
-  <Select
-    isDisabled={readOnly}
-    styles={selectStyles}
-    placeholder="Search graduation year..."
+                    <Select
+                      isDisabled={readOnly}
+                      styles={selectStyles}
+                      placeholder="Search graduation year..."
 
-    isClearable
+                      isClearable
 
-    value={null}
+                      value={null}
 
-    options={availableGraduationYears
-      .filter((year) => !selectedBatches.includes(year))
-      .map((year) => ({
-        value: year,
-        label: year,
-      }))}
+                      options={availableGraduationYears
+                        .filter((year) => !selectedBatches.includes(year))
+                        .map((year) => ({
+                          value: year,
+                          label: year,
+                        }))}
 
-    onChange={(option) => {
-      if (!option) return;
+                      onChange={(option) => {
+                        if (!option) return;
 
-      pushValue({
-        ...value,
-        passing_out_batches: unique([
-          ...selectedBatches,
-          option.value,
-        ]),
-      });
-    }}
+                        pushValue({
+                          ...value,
+                          passing_out_batches: unique([...selectedBatches, option.value]),
+                        });
+                      }}
 
-    noOptionsMessage={() =>
-      availableGraduationYears.length ===
-      selectedBatches.length
-        ? "All graduation years selected."
-        : "No graduation year found."
-    }
-  />
-</div>
+                      noOptionsMessage={() =>
+                        availableGraduationYears.length === selectedBatches.length
+                          ? "All graduation years selected."
+                          : "No graduation year found."
+                      }
+                    />
+                  </div>
                   <div className="mt-5 flex flex-wrap gap-2">
                     {selectedBatches.length === 0 ? (
                       <span className="text-sm text-muted-foreground">

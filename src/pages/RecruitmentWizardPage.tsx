@@ -131,8 +131,6 @@ export function RecruitmentWizardPage() {
   const [drive, setDrive] = useState<DriveFormData>(EMPTY_DRIVE);
 
   const [eligibility, setEligibility] = useState<RecruitmentRoleEligibility>({
-    useRecruitmentDefaults: false,
-
     allowed_institutes: [],
 
     allowed_degrees: [],
@@ -242,8 +240,6 @@ export function RecruitmentWizardPage() {
             const eligibilityData = draft.eligibility_data as Record<string, unknown>;
 
             setEligibility({
-              useRecruitmentDefaults: false,
-
               allowed_institutes: Array.isArray(eligibilityData.allowed_institutes)
                 ? eligibilityData.allowed_institutes
                 : [],
@@ -1228,7 +1224,31 @@ export function RecruitmentWizardPage() {
                         <div className="rounded-xl border p-4">
                           <div className="text-xs text-muted-foreground">Questions</div>
 
-                          <div className="mt-2 text-xl font-semibold">{role.questions.length}</div>
+                          <div className="mt-2 text-xl font-semibold">
+                            {role.inheritDefaultQuestions
+                              ? defaultQuestions.length
+                              : role.questions.length}
+                          </div>
+
+                          <div className="rounded-xl border p-4">
+                            <div className="text-xs text-muted-foreground">Eligibility</div>
+
+                            <div className="mt-2 text-sm font-semibold">
+                              {role.inheritDefaultEligibility
+                                ? "Recruitment Default"
+                                : "Role Override"}
+                            </div>
+                          </div>
+
+                          <div className="rounded-xl border p-4">
+                            <div className="text-xs text-muted-foreground">Questions</div>
+
+                            <div className="mt-2 text-sm font-semibold">
+                              {role.inheritDefaultQuestions
+                                ? "Recruitment Default"
+                                : "Role Override"}
+                            </div>
+                          </div>
                         </div>
 
                         <div className="rounded-xl border p-4">
