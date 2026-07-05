@@ -8,6 +8,7 @@ import {
 } from "@/components/RecruitmentEligibilityBuilder";
 import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/RecruitmentRoleBuilder";
 import { RecruitmentRolePreview } from "@/components/RecruitmentRolePreview";
+import { validateRecruitmentRole } from "@/components/recruitmentRoleValidation";
 import { getLatestDraft, saveDraft } from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 
@@ -1195,15 +1196,20 @@ export function RecruitmentWizardPage() {
                   </div>
                 </div>
                 <div className="space-y-6">
-                  {roles.map((role) => (
-                    <RecruitmentRolePreview
-                      key={role.role_id}
-                      role={role}
-                      defaultEligibility={eligibility}
-                      defaultQuestions={defaultQuestions}
-                      variant="summary"
-                    />
-                  ))}
+                  {roles.map((role) => {
+                    const validation = validateRecruitmentRole(role);
+
+                    return (
+                      <RecruitmentRolePreview
+                        key={role.role_id}
+                        role={role}
+                        defaultEligibility={eligibility}
+                        defaultQuestions={defaultQuestions}
+                        variant="summary"
+                        status={validation.valid ? "Ready" : "Draft"}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -10,6 +10,7 @@ interface RecruitmentRolePreviewProps {
   defaultEligibility?: RecruitmentRole["eligibility"];
   defaultQuestions?: RecruitmentQuestion[];
   variant?: "summary" | "full";
+  status?: RecruitmentRole["status"];
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -69,6 +70,7 @@ export function RecruitmentRolePreview({
   defaultEligibility,
   defaultQuestions = [],
   variant = "full",
+  status,
 }: RecruitmentRolePreviewProps) {
   const requiredDocuments = role.documents.filter((document) => document.required);
 
@@ -80,6 +82,8 @@ export function RecruitmentRolePreview({
   const effectiveQuestions = role.inheritDefaultQuestions ? defaultQuestions : role.questions;
 
   const requiredQuestions = effectiveQuestions.filter((question) => question.is_required);
+
+  const displayStatus = status ?? role.status;
 
   if (variant === "summary") {
     return (
@@ -99,12 +103,12 @@ export function RecruitmentRolePreview({
 
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              role.status === "Ready"
+              displayStatus === "Ready"
                 ? "bg-green-100 text-green-700"
                 : "bg-amber-100 text-amber-700"
             }`}
           >
-            {role.status}
+            {displayStatus}
           </span>
         </div>
 
@@ -183,12 +187,12 @@ export function RecruitmentRolePreview({
 
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  role.status === "Ready"
+                  displayStatus === "Ready"
                     ? "bg-green-100 text-green-700"
                     : "bg-amber-100 text-amber-700"
                 }`}
               >
-                {role.status}
+                {displayStatus}
               </span>
             </div>
           </div>
