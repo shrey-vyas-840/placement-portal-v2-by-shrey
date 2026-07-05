@@ -7,10 +7,9 @@ import type { RecruitmentQuestion } from "./RecruitmentQuestionBuilder";
 
 interface RecruitmentRolePreviewProps {
   role: RecruitmentRole;
-
   defaultEligibility?: RecruitmentRole["eligibility"];
-
   defaultQuestions?: RecruitmentQuestion[];
+  variant?: "summary" | "full";
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -69,6 +68,7 @@ export function RecruitmentRolePreview({
   role,
   defaultEligibility,
   defaultQuestions = [],
+  variant = "full",
 }: RecruitmentRolePreviewProps) {
   const requiredDocuments = role.documents.filter((document) => document.required);
 
@@ -80,6 +80,90 @@ export function RecruitmentRolePreview({
   const effectiveQuestions = role.inheritDefaultQuestions ? defaultQuestions : role.questions;
 
   const requiredQuestions = effectiveQuestions.filter((question) => question.is_required);
+
+  if (variant === "summary") {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-lg font-semibold">{role.role_name || "Untitled Role"}</div>
+
+            <div className="mt-1 flex flex-wrap gap-2">
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">
+                {role.employment_type}
+              </span>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">{role.work_mode}</span>
+            </div>
+          </div>
+
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              role.status === "Ready"
+                ? "bg-green-100 text-green-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {role.status}
+          </span>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Questions</div>
+
+            <div className="mt-2 text-xl font-semibold">{effectiveQuestions.length}</div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Documents</div>
+
+            <div className="mt-2 text-xl font-semibold">{role.documents.length}</div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Timeline</div>
+
+            <div className="mt-2 text-xl font-semibold">{role.timeline.length}</div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Openings</div>
+
+            <div className="mt-2 text-xl font-semibold">{role.openings || 0}</div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Eligibility</div>
+
+            <div className="mt-2 text-sm font-semibold">
+              {role.inheritDefaultEligibility ? "Recruitment Default" : "Role Override"}
+            </div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Questions Source</div>
+
+            <div className="mt-2 text-sm font-semibold">
+              {role.inheritDefaultQuestions ? "Recruitment Default" : "Role Override"}
+            </div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Required Questions</div>
+
+            <div className="mt-2 text-xl font-semibold">{requiredQuestions.length}</div>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <div className="text-xs text-muted-foreground">Required Documents</div>
+
+            <div className="mt-2 text-xl font-semibold">{requiredDocuments.length}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

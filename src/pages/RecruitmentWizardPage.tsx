@@ -7,6 +7,7 @@ import {
   type RecruitmentRoleEligibility,
 } from "@/components/RecruitmentEligibilityBuilder";
 import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/RecruitmentRoleBuilder";
+import { RecruitmentRolePreview } from "@/components/RecruitmentRolePreview";
 import { getLatestDraft, saveDraft } from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 
@@ -1193,83 +1194,15 @@ export function RecruitmentWizardPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-6">
-                  {roles.map((role, index) => (
-                    <div
+                  {roles.map((role) => (
+                    <RecruitmentRolePreview
                       key={role.role_id}
-                      className="rounded-2xl border border-border bg-card p-6"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-lg font-semibold">Role {index + 1}</div>
-
-                          <div className="mt-1 text-sm text-muted-foreground">
-                            {role.role_name || "Untitled Role"}
-                          </div>
-                        </div>
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${
-                            role.status === "Ready"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-amber-100 text-amber-700"
-                          }`}
-                        >
-                          {role.status}
-                        </span>
-                      </div>
-
-                      <div className="mt-5 grid gap-4 md:grid-cols-4">
-                        <div className="rounded-xl border p-4">
-                          <div className="text-xs text-muted-foreground">Questions</div>
-
-                          <div className="mt-2 text-xl font-semibold">
-                            {role.inheritDefaultQuestions
-                              ? defaultQuestions.length
-                              : role.questions.length}
-                          </div>
-
-                          <div className="rounded-xl border p-4">
-                            <div className="text-xs text-muted-foreground">Eligibility</div>
-
-                            <div className="mt-2 text-sm font-semibold">
-                              {role.inheritDefaultEligibility
-                                ? "Recruitment Default"
-                                : "Role Override"}
-                            </div>
-                          </div>
-
-                          <div className="rounded-xl border p-4">
-                            <div className="text-xs text-muted-foreground">Questions</div>
-
-                            <div className="mt-2 text-sm font-semibold">
-                              {role.inheritDefaultQuestions
-                                ? "Recruitment Default"
-                                : "Role Override"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="rounded-xl border p-4">
-                          <div className="text-xs text-muted-foreground">Documents</div>
-
-                          <div className="mt-2 text-xl font-semibold">{role.documents.length}</div>
-                        </div>
-
-                        <div className="rounded-xl border p-4">
-                          <div className="text-xs text-muted-foreground">Timeline</div>
-
-                          <div className="mt-2 text-xl font-semibold">{role.timeline.length}</div>
-                        </div>
-
-                        <div className="rounded-xl border p-4">
-                          <div className="text-xs text-muted-foreground">Openings</div>
-
-                          <div className="mt-2 text-xl font-semibold">{role.openings || 0}</div>
-                        </div>
-                      </div>
-                    </div>
+                      role={role}
+                      defaultEligibility={eligibility}
+                      defaultQuestions={defaultQuestions}
+                      variant="summary"
+                    />
                   ))}
                 </div>
               </div>
