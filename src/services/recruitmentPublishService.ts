@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { adminDriveService } from "@/services/adminDriveService";
 import { adminOpportunityService } from "@/services/adminOpportunityService";
 import { adminQuestionService } from "@/services/adminQuestionService";
-
+import { generateUuid } from "@/lib/generateUuid";
 export interface PublishRecruitmentResult {
   driveId: string;
   companyId: string;
@@ -12,6 +12,11 @@ interface PublishRollbackContext {
   companyCreated: boolean;
   driveCreated: boolean;
   createdOpportunityIds: string[];
+  createdDriveRoleIds: string[];
+  createdDriveRoleDetailIds: string[];
+  createdDriveRoleEligibilityIds: string[];
+  createdDriveRoleDocumentIds: string[];
+  createdDriveRoleTimelineIds: string[];
 }
 
 interface PublishValidationResult {
@@ -91,9 +96,9 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
   }
   const validation = validateDraftForPublish(draft);
 
-  const companyId = draft.created_company_id ?? crypto.randomUUID();
+  const companyId = draft.created_company_id ?? generateUuid();
 
-  const driveId = draft.created_drive_id ?? crypto.randomUUID();
+  const driveId = draft.created_drive_id ?? generateUuid();
 
   const companyAlreadyPublished =
     typeof draft.created_company_id === "string" && draft.created_company_id.trim() !== "";
@@ -107,6 +112,11 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     companyCreated: false,
     driveCreated: false,
     createdOpportunityIds: [],
+    createdDriveRoleIds: [],
+    createdDriveRoleDetailIds: [],
+    createdDriveRoleEligibilityIds: [],
+    createdDriveRoleDocumentIds: [],
+    createdDriveRoleTimelineIds: [],
   };
   /**
    * During publishing we generate deterministic production IDs.
@@ -131,10 +141,84 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
   >();
 
   for (const role of draft.roles_data as any[]) {
-    publishRoleMap.set(role.role_id, {
-      driveRoleId: crypto.randomUUID(),
-      opportunityId: crypto.randomUUID(),
-    });
+    const publishedRole = {
+      driveRoleId: generateUuid(),
+      opportunityId: generateUuid(),
+    };
+
+    publishRoleMap.set(role.role_id, publishedRole);
+
+    rollbackContext.createdDriveRoleIds.push(publishedRole.driveRoleId);
+    if (!role.inheritDefaultEligibility) {
+      await (supabase as any).from("drive_role_eligibility").insert({
+        drive_role_id: publishedRole.driveRoleId,
+
+        allowed_institutes: role.eligibility.allowed_institutes?.join(",") ?? "",
+
+        allowed_branches: role.eligibility.allowed_branches?.join(",") ?? "",
+
+        allowed_degrees: role.eligibility.allowed_degrees?.join(",") ?? "",
+
+        passing_out_batches: role.eligibility.passing_out_batches?.join(",") ?? "",
+
+        minimum_cgpa:
+          role.eligibility.minimum_cgpa === "" ? null : Number(role.eligibility.minimum_cgpa),
+
+        maximum_active_backlogs:
+          role.eligibility.maximum_active_backlogs === ""
+            ? null
+            : Number(role.eligibility.maximum_active_backlogs),
+
+        willing_to_relocate_required: Boolean(role.eligibility.willing_to_relocate_required),
+
+        additional_requirements: role.eligibility.additional_requirements ?? null,
+      });
+
+      rollbackContext.createdDriveRoleEligibilityIds.push(publishedRole.driveRoleId);
+    }
+          for (const document of role.documents ?? []) {
+        await (supabase as any)
+          .from("drive_role_documents")
+          .insert({
+            drive_role_id: publishedRole.driveRoleId,
+
+            document_name: document.document_name,
+
+            description: document.description ?? null,
+
+            required: Boolean(document.required),
+
+            display_order:
+              document.display_order ??
+              (role.documents.indexOf(document) + 1),
+          });
+
+        rollbackContext.createdDriveRoleDocumentIds.push(
+          publishedRole.driveRoleId,
+        );
+      }
+
+            for (const stage of role.timeline ?? []) {
+        await (supabase as any)
+          .from("drive_role_timeline")
+          .insert({
+            drive_role_id: publishedRole.driveRoleId,
+
+            stage_name: stage.stage,
+
+            stage_date: stage.date || null,
+
+            description: stage.description ?? null,
+
+            display_order:
+              stage.display_order ??
+              (role.timeline.indexOf(stage) + 1),
+          });
+
+        rollbackContext.createdDriveRoleTimelineIds.push(
+          publishedRole.driveRoleId,
+        );
+      }
   }
 
   // Phase 1 publish pipeline will be implemented here
@@ -214,7 +298,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       }),
     );
 
-    const recruitmentOpportunityId = crypto.randomUUID();
+    const recruitmentOpportunityId = generateUuid();
 
     await adminOpportunityService.createPublishedOpportunity({
       opportunity_id: recruitmentOpportunityId,
@@ -278,6 +362,49 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
           ? role.required_skills.join(", ")
           : (role.required_skills ?? null),
       });
+
+      await (supabase as any).from("drive_role_details").insert({
+        drive_role_id: publishedRole.driveRoleId,
+
+        employment_type: role.employment_type,
+
+        work_mode: role.work_mode,
+
+        openings: role.openings === "" ? null : Number(role.openings),
+
+        fixed_ctc: role.compensation.fixed_ctc === "" ? null : Number(role.compensation.fixed_ctc),
+
+        variable_ctc:
+          role.compensation.variable_ctc === "" ? null : Number(role.compensation.variable_ctc),
+
+        joining_bonus:
+          role.compensation.joining_bonus === "" ? null : Number(role.compensation.joining_bonus),
+
+        retention_bonus:
+          role.compensation.retention_bonus === ""
+            ? null
+            : Number(role.compensation.retention_bonus),
+
+        internship_stipend:
+          role.compensation.internship_stipend === ""
+            ? null
+            : Number(role.compensation.internship_stipend),
+
+        ppo_package:
+          role.compensation.ppo_package === "" ? null : Number(role.compensation.ppo_package),
+
+        department: role.hiring.department,
+
+        expected_joining_date: role.hiring.expected_joining_date || null,
+
+        hiring_locations: role.hiring.locations.join(","),
+
+        travel_required: Boolean(role.hiring.travel_required),
+
+        shift_details: role.hiring.shift_details || null,
+      });
+
+      rollbackContext.createdDriveRoleDetailIds.push(publishedRole.driveRoleId);
     }
 
     await adminDriveService.saveEligibilityForPublish({
