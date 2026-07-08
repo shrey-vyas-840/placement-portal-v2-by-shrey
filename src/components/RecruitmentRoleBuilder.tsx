@@ -509,7 +509,7 @@ export function RecruitmentRoleBuilder({
       ) : (
         <div className="space-y-4">
           {roles.map((role, index) => {
-            const validation = validateRecruitmentRole(role);
+            const validation = validateRecruitmentRole(role, defaultQuestions);
 
             const derivedStatus: RecruitmentRole["status"] = validation.valid ? "Ready" : "Draft";
 
@@ -1199,6 +1199,41 @@ export function RecruitmentRoleBuilder({
                             </div>
                           </div>
                         )}
+
+                        {!role.inheritDefaultQuestions && (
+                          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <div className="font-medium text-amber-900">
+                              Recruitment Default Questions Disabled
+                            </div>
+
+                            <div className="mt-1 text-sm text-amber-700">
+                              Students applying for this role will answer <strong>only</strong> the
+                              questions configured below. Recruitment default questions will not be
+                              included.
+                            </div>
+                          </div>
+                        )}
+
+                        {role.inheritDefaultQuestions &&
+                          role.questions.some((roleQuestion) =>
+                            defaultQuestions.some(
+                              (defaultQuestion) =>
+                                defaultQuestion.question_title.trim().toLowerCase() ===
+                                roleQuestion.question_title.trim().toLowerCase(),
+                            ),
+                          ) && (
+                            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                              <div className="font-medium text-amber-800">
+                                Duplicate Question Detected
+                              </div>
+
+                              <div className="mt-1 text-sm text-amber-700">
+                                One or more additional role questions already exist in the
+                                Recruitment Default Questions. Students will answer duplicate
+                                questions unless you remove or rename them.
+                              </div>
+                            </div>
+                          )}
 
                         <RecruitmentQuestionBuilder
                           title="Additional Role Questions"

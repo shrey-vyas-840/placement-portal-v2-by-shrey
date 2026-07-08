@@ -1,4 +1,5 @@
 import type { RecruitmentRole } from "./RecruitmentRoleBuilder";
+import type { RecruitmentQuestion } from "./RecruitmentQuestionBuilder";
 
 export type RecruitmentRoleValidationSection =
   "basic" | "compensation" | "hiring" | "eligibility" | "questions" | "documents" | "timeline";
@@ -24,7 +25,10 @@ function addIssue(
   });
 }
 
-export function validateRecruitmentRole(role: RecruitmentRole): RecruitmentRoleValidationResult {
+export function validateRecruitmentRole(
+  role: RecruitmentRole,
+  defaultQuestions: RecruitmentQuestion[] = [],
+): RecruitmentRoleValidationResult {
   const issues: RecruitmentRoleValidationIssue[] = [];
 
   if (!role.role_name.trim()) {
@@ -65,8 +69,12 @@ export function validateRecruitmentRole(role: RecruitmentRole): RecruitmentRoleV
     addIssue(issues, "eligibility", "Maximum active backlogs cannot be negative.");
   }
 
-  if (role.questions.length === 0) {
-    addIssue(issues, "questions", "Add at least one application question.");
+  if (!role.inheritDefaultQuestions && role.questions.length === 0) {
+    addIssue(
+      issues,
+      "questions",
+      "Add at least one role-specific question or enable 'Inherit Recruitment Default Questions'.",
+    );
   } else {
     role.questions.forEach((question, index) => {
       if (!question.question_title.trim()) {
@@ -84,6 +92,32 @@ export function validateRecruitmentRole(role: RecruitmentRole): RecruitmentRoleV
         question.options.length === 0
       ) {
         addIssue(issues, "questions", `Question ${index + 1} requires at least one option.`);
+      }
+
+      const normalizedTitle = question.question_title.trim().toLowerCase();
+
+      const duplicateQuestionCount = role.questions.filter(
+        (q) => q.question_title.trim().toLowerCase() === normalizedTitle,
+      ).length;
+
+      if (duplicateQuestionCount > 1) {
+        addIssue(
+          issues,
+          "questions",
+          `Duplicate role question "${question.question_title}" detected.`,
+        );
+      }
+      const duplicateDefaultQuestion = defaultQuestions.some(
+        (defaultQuestion) =>
+          defaultQuestion.question_title.trim().toLowerCase() === normalizedTitle,
+      );
+
+      if (role.inheritDefaultQuestions && duplicateDefaultQuestion) {
+        addIssue(
+          issues,
+          "questions",
+          `Question "${question.question_title}" already exists in Recruitment Default Questions.`,
+        );
       }
     });
   }
