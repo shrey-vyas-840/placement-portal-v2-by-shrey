@@ -11,7 +11,7 @@ import { RecruitmentRolePreview } from "@/components/RecruitmentRolePreview";
 import { validateRecruitmentRole } from "@/components/recruitmentRoleValidation";
 import { getLatestDraft, saveDraft } from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
-
+import { generateUuid } from "@/lib/generateUuid";
 import { supabase } from "@/lib/supabase";
 
 const STEPS = [
@@ -79,7 +79,7 @@ const EMPTY_DRIVE: DriveFormData = {
 };
 
 const EMPTY_RECRUITER = (): RecruiterFormData => ({
-  id: crypto.randomUUID(),
+  id: generateUuid(),
 
   contact_name: "",
 
@@ -280,7 +280,7 @@ export function RecruitmentWizardPage() {
                 question_id:
                   question.question_id && question.question_id.trim() !== ""
                     ? question.question_id
-                    : crypto.randomUUID(),
+                    : generateUuid(),
               })),
             );
           }
@@ -294,7 +294,7 @@ export function RecruitmentWizardPage() {
                   question_id:
                     question.question_id && question.question_id.trim() !== ""
                       ? question.question_id
-                      : crypto.randomUUID(),
+                      : generateUuid(),
                 })),
               })),
             );

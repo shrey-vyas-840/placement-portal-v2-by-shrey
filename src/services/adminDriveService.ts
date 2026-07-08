@@ -1,20 +1,35 @@
 import { supabase } from "@/lib/supabase";
 
 export const adminDriveService = {
-
-    async createDriveForPublish(payload: {
+  async createDriveForPublish(payload: {
     drive_id: string;
     company_id: string;
+
     drive_name: string;
+
     drive_type: string;
+
     drive_mode: string;
+
     registration_deadline?: string | null;
+
     lowest_package_lpa?: number;
+
     highest_package_lpa?: number;
+
     bond_years?: number;
+
     total_hiring_requirement?: number;
+
     remarks?: string;
+
     drive_status: string;
+
+    role_selection_enabled: boolean;
+
+    minimum_role_selection: number;
+
+    maximum_role_selection: number;
   }) {
     const { data, error } = await (supabase as any)
       .from("drive_master")
@@ -31,6 +46,9 @@ export const adminDriveService = {
         total_hiring_requirement: payload.total_hiring_requirement ?? null,
         remarks: payload.remarks ?? null,
         drive_status: payload.drive_status,
+        role_selection_enabled: payload.role_selection_enabled,
+        minimum_role_selection: payload.minimum_role_selection,
+        maximum_role_selection: payload.maximum_role_selection,
       })
       .select()
       .single();
@@ -40,7 +58,7 @@ export const adminDriveService = {
     return data;
   },
 
-    async saveEligibilityForPublish(payload: {
+  async saveEligibilityForPublish(payload: {
     drive_id: string;
     allowed_institutes: string;
     allowed_branches: string;
@@ -51,23 +69,21 @@ export const adminDriveService = {
     maximum_active_backlogs: number;
     willing_to_relocate_required: boolean;
   }) {
-    const { error } = await (supabase as any)
-      .from("drive_eligibility")
-      .insert({
-        drive_id: payload.drive_id,
-        allowed_institutes: payload.allowed_institutes,
-        allowed_branches: payload.allowed_branches,
-        allowed_degrees: payload.allowed_degrees,
-        additional_requirements: payload.additional_requirements ?? null,
-        passing_out_batches: payload.passing_out_batches,
-        minimum_cgpa: payload.minimum_cgpa,
-        maximum_active_backlogs: payload.maximum_active_backlogs,
-        willing_to_relocate_required: payload.willing_to_relocate_required,
-      });
+    const { error } = await (supabase as any).from("drive_eligibility").insert({
+      drive_id: payload.drive_id,
+      allowed_institutes: payload.allowed_institutes,
+      allowed_branches: payload.allowed_branches,
+      allowed_degrees: payload.allowed_degrees,
+      additional_requirements: payload.additional_requirements ?? null,
+      passing_out_batches: payload.passing_out_batches,
+      minimum_cgpa: payload.minimum_cgpa,
+      maximum_active_backlogs: payload.maximum_active_backlogs,
+      willing_to_relocate_required: payload.willing_to_relocate_required,
+    });
 
     if (error) throw error;
   },
-  
+
   async getCompanies() {
     const { data, error } = await (supabase as any)
       .from("company_master")
@@ -311,6 +327,36 @@ export const adminDriveService = {
     if (error) throw error;
 
     return data;
+  },
+
+  async publishRoles(
+    driveId: string,
+    roles: Array<{
+      drive_role_id: string;
+      drive_role_name: string;
+      role_description?: string;
+      role_type?: string;
+      required_skills?: string;
+    }>,
+  ) {
+    if (roles.length === 0) {
+      return;
+    }
+
+    const { error } = await (supabase as any).from("drive_roles").insert(
+      roles.map((role) => ({
+        drive_role_id: role.drive_role_id,
+        drive_id: driveId,
+        drive_role_name: role.drive_role_name,
+        role_description: role.role_description ?? null,
+        role_type: role.role_type ?? null,
+        required_skills: role.required_skills ?? null,
+      })),
+    );
+
+    if (error) {
+      throw error;
+    }
   },
 
   async saveEligibility(payload: {

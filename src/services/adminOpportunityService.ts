@@ -61,15 +61,18 @@ function resolveCompanyLogoUrl(path?: string | null) {
 }
 
 export const adminOpportunityService = {
-  async createOpportunityForPublish(payload: {
+  async createPublishedOpportunity(payload: {
     opportunity_id: string;
     drive_id: string;
     opportunity_title: string;
     opportunity_description?: string;
+
     application_start_date?: string | null;
     application_end_date?: string | null;
+
     application_status: string;
     visible_to_students: boolean;
+
     created_by?: string | null;
   }) {
     const { data, error } = await (supabase as any)
