@@ -337,6 +337,7 @@ export const adminDriveService = {
       role_description?: string;
       role_type?: string;
       required_skills?: string;
+      inherit_default_questions: boolean;
     }>,
   ) {
     if (roles.length === 0) {
@@ -351,6 +352,7 @@ export const adminDriveService = {
         role_description: role.role_description ?? null,
         role_type: role.role_type ?? null,
         required_skills: role.required_skills ?? null,
+        inherit_default_questions: role.inherit_default_questions,
       })),
     );
 

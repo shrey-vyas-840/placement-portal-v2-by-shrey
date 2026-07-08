@@ -17,6 +17,7 @@ interface PublishRollbackContext {
   createdDriveRoleEligibilityIds: string[];
   createdDriveRoleDocumentIds: string[];
   createdDriveRoleTimelineIds: string[];
+  createdDriveRoleQuestionIds: string[];
 }
 
 interface PublishValidationResult {
@@ -36,7 +37,51 @@ async function rollbackPublish(
       .in("opportunity_id", context.createdOpportunityIds);
   }
 
+  if (context.createdDriveRoleQuestionIds.length > 0) {
+    await (supabase as any)
+      .from("drive_role_questions")
+      .delete()
+      .in("drive_role_id", context.createdDriveRoleQuestionIds);
+  }
+
+  if (context.createdDriveRoleTimelineIds.length > 0) {
+    await (supabase as any)
+      .from("drive_role_timeline")
+      .delete()
+      .in("drive_role_id", context.createdDriveRoleTimelineIds);
+  }
+
+  if (context.createdDriveRoleDocumentIds.length > 0) {
+    await (supabase as any)
+      .from("drive_role_documents")
+      .delete()
+      .in("drive_role_id", context.createdDriveRoleDocumentIds);
+  }
+
+  if (context.createdDriveRoleEligibilityIds.length > 0) {
+    await (supabase as any)
+      .from("drive_role_eligibility")
+      .delete()
+      .in("drive_role_id", context.createdDriveRoleEligibilityIds);
+  }
+
+  if (context.createdDriveRoleDetailIds.length > 0) {
+    await (supabase as any)
+      .from("drive_role_details")
+      .delete()
+      .in("drive_role_id", context.createdDriveRoleDetailIds);
+  }
+
+  if (context.createdDriveRoleIds.length > 0) {
+    await (supabase as any)
+      .from("drive_roles")
+      .delete()
+      .in("drive_role_id", context.createdDriveRoleIds);
+  }
+
   if (context.driveCreated) {
+    await (supabase as any).from("drive_eligibility").delete().eq("drive_id", driveId);
+
     await (supabase as any).from("drive_master").delete().eq("drive_id", driveId);
   }
 
@@ -119,6 +164,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     createdDriveRoleEligibilityIds: [],
     createdDriveRoleDocumentIds: [],
     createdDriveRoleTimelineIds: [],
+    createdDriveRoleQuestionIds: [],
   };
   /**
    * During publishing we generate deterministic production IDs.
@@ -151,78 +197,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     publishRoleMap.set(role.role_id, publishedRole);
 
     rollbackContext.createdDriveRoleIds.push(publishedRole.driveRoleId);
-    if (!role.inheritDefaultEligibility) {
-      await (supabase as any).from("drive_role_eligibility").insert({
-        drive_role_id: publishedRole.driveRoleId,
-
-        allowed_institutes: role.eligibility.allowed_institutes?.join(",") ?? "",
-
-        allowed_branches: role.eligibility.allowed_branches?.join(",") ?? "",
-
-        allowed_degrees: role.eligibility.allowed_degrees?.join(",") ?? "",
-
-        passing_out_batches: role.eligibility.passing_out_batches?.join(",") ?? "",
-
-        minimum_cgpa:
-          role.eligibility.minimum_cgpa === "" ? null : Number(role.eligibility.minimum_cgpa),
-
-        maximum_active_backlogs:
-          role.eligibility.maximum_active_backlogs === ""
-            ? null
-            : Number(role.eligibility.maximum_active_backlogs),
-
-        willing_to_relocate_required: Boolean(role.eligibility.willing_to_relocate_required),
-
-        additional_requirements: role.eligibility.additional_requirements ?? null,
-      });
-
-      rollbackContext.createdDriveRoleEligibilityIds.push(publishedRole.driveRoleId);
-    }
-          for (const document of role.documents ?? []) {
-        await (supabase as any)
-          .from("drive_role_documents")
-          .insert({
-            drive_role_id: publishedRole.driveRoleId,
-
-            document_name: document.document_name,
-
-            description: document.description ?? null,
-
-            required: Boolean(document.required),
-
-            display_order:
-              document.display_order ??
-              (role.documents.indexOf(document) + 1),
-          });
-
-        rollbackContext.createdDriveRoleDocumentIds.push(
-          publishedRole.driveRoleId,
-        );
-      }
-
-            for (const stage of role.timeline ?? []) {
-        await (supabase as any)
-          .from("drive_role_timeline")
-          .insert({
-            drive_role_id: publishedRole.driveRoleId,
-
-            stage_name: stage.stage,
-
-            stage_date: stage.date || null,
-
-            description: stage.description ?? null,
-
-            display_order:
-              stage.display_order ??
-              (role.timeline.indexOf(stage) + 1),
-          });
-
-        rollbackContext.createdDriveRoleTimelineIds.push(
-          publishedRole.driveRoleId,
-        );
-      }
   }
-
   // Phase 1 publish pipeline will be implemented here
   // using the existing admin services only.
   if (isRepublish) {
@@ -283,6 +258,8 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       drive_status: draft.drive_data.drive_status ?? "Created",
     });
 
+    rollbackContext.driveCreated = true;
+
     await adminDriveService.publishRoles(
       driveId,
       (draft.roles_data as any[]).map((role) => {
@@ -296,6 +273,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
           required_skills: Array.isArray(role.required_skills)
             ? role.required_skills.join(", ")
             : role.required_skills,
+          inherit_default_questions: Boolean(role.inheritDefaultQuestions),
         };
       }),
     );
@@ -315,19 +293,12 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     });
 
     rollbackContext.createdOpportunityIds.push(recruitmentOpportunityId);
-    rollbackContext.driveCreated = true;
 
     if (Array.isArray(draft.recruiters_data) && draft.recruiters_data.length > 0) {
       for (const recruiter of draft.recruiters_data) {
-        const contactName = String(
-          recruiter.contact_name ?? recruiter.name ?? "",
-        ).trim();
-        const contactEmail = String(
-          recruiter.contact_email ?? recruiter.email ?? "",
-        ).trim();
-        const contactNumber = String(
-          recruiter.contact_number ?? recruiter.phone ?? "",
-        ).trim();
+        const contactName = String(recruiter.contact_name ?? recruiter.name ?? "").trim();
+        const contactEmail = String(recruiter.contact_email ?? recruiter.email ?? "").trim();
+        const contactNumber = String(recruiter.contact_number ?? recruiter.phone ?? "").trim();
         const contactPosition = String(
           recruiter.contact_position ?? recruiter.designation ?? "",
         ).trim();
@@ -356,6 +327,61 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       draft.default_questions_data ?? [],
     );
 
+    const publishedQuestionMap = new Map<string, string>();
+
+    const { data: publishedQuestions, error: publishedQuestionsError } = await (supabase as any)
+      .from("opportunity_questions")
+      .select("*")
+      .eq("opportunity_id", recruitmentOpportunityId)
+      .order("position");
+
+    if (publishedQuestionsError) {
+      throw publishedQuestionsError;
+    }
+
+    for (const question of publishedQuestions ?? []) {
+      publishedQuestionMap.set(question.question_title.trim().toLowerCase(), question.question_id);
+    }
+
+    for (const role of draft.roles_data ?? []) {
+      for (const question of role.questions ?? []) {
+        const key = String(question.question_title).trim().toLowerCase();
+
+        if (publishedQuestionMap.has(key)) {
+          continue;
+        }
+
+        const { data, error } = await (supabase as any)
+          .from("opportunity_questions")
+          .insert({
+            opportunity_id: recruitmentOpportunityId,
+            question_title: question.question_title,
+            question_type: question.question_type,
+            is_required: question.is_required,
+            validation: question.validation || {},
+            position: null,
+          })
+          .select("question_id")
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        publishedQuestionMap.set(key, data.question_id);
+
+        if (question.options?.length) {
+          await (supabase as any).from("opportunity_question_options").insert(
+            question.options.map((option: string, index: number) => ({
+              question_id: data.question_id,
+              option_text: option,
+              position: index,
+            })),
+          );
+        }
+      }
+    }
+
     for (const role of draft.roles_data ?? []) {
       const publishedRole = publishRoleMap.get(role.role_id);
 
@@ -363,21 +389,26 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
         throw new Error(`Missing published role mapping for ${role.role_name}`);
       }
 
-      await (supabase as any).from("drive_roles").insert({
-        drive_role_id: publishedRole.driveRoleId,
+      const roleQuestionsToMap = role.inheritDefaultQuestions
+        ? (role.questions ?? [])
+        : (role.questions ?? []);
 
-        drive_id: driveId,
+      for (const question of roleQuestionsToMap) {
+        const questionId = publishedQuestionMap.get(
+          String(question.question_title).trim().toLowerCase(),
+        );
 
-        drive_role_name: role.role_name,
+        if (!questionId) {
+          throw new Error(`Published question not found: ${question.question_title}`);
+        }
 
-        role_description: role.role_description ?? null,
+        await (supabase as any).from("drive_role_questions").insert({
+          drive_role_id: publishedRole.driveRoleId,
+          question_id: questionId,
+        });
 
-        role_type: role.role_type ?? null,
-
-        required_skills: Array.isArray(role.required_skills)
-          ? role.required_skills.join(", ")
-          : (role.required_skills ?? null),
-      });
+        rollbackContext.createdDriveRoleQuestionIds.push(publishedRole.driveRoleId);
+      }
 
       await (supabase as any).from("drive_role_details").insert({
         drive_role_id: publishedRole.driveRoleId,
@@ -421,6 +452,66 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       });
 
       rollbackContext.createdDriveRoleDetailIds.push(publishedRole.driveRoleId);
+
+      if (!role.inheritDefaultEligibility) {
+        await (supabase as any).from("drive_role_eligibility").insert({
+          drive_role_id: publishedRole.driveRoleId,
+
+          allowed_institutes: role.eligibility.allowed_institutes?.join(",") ?? "",
+
+          allowed_branches: role.eligibility.allowed_branches?.join(",") ?? "",
+
+          allowed_degrees: role.eligibility.allowed_degrees?.join(",") ?? "",
+
+          passing_out_batches: role.eligibility.passing_out_batches?.join(",") ?? "",
+
+          minimum_cgpa:
+            role.eligibility.minimum_cgpa === "" ? null : Number(role.eligibility.minimum_cgpa),
+
+          maximum_active_backlogs:
+            role.eligibility.maximum_active_backlogs === ""
+              ? null
+              : Number(role.eligibility.maximum_active_backlogs),
+
+          willing_to_relocate_required: Boolean(role.eligibility.willing_to_relocate_required),
+
+          additional_requirements: role.eligibility.additional_requirements ?? null,
+        });
+
+        rollbackContext.createdDriveRoleEligibilityIds.push(publishedRole.driveRoleId);
+      }
+
+      for (const document of role.documents ?? []) {
+        await (supabase as any).from("drive_role_documents").insert({
+          drive_role_id: publishedRole.driveRoleId,
+
+          document_name: document.document_name,
+
+          description: document.description ?? null,
+
+          required: Boolean(document.required),
+
+          display_order: document.display_order ?? role.documents.indexOf(document) + 1,
+        });
+
+        rollbackContext.createdDriveRoleDocumentIds.push(publishedRole.driveRoleId);
+      }
+
+      for (const stage of role.timeline ?? []) {
+        await (supabase as any).from("drive_role_timeline").insert({
+          drive_role_id: publishedRole.driveRoleId,
+
+          stage_name: stage.stage,
+
+          stage_date: stage.date || null,
+
+          description: stage.description ?? null,
+
+          display_order: stage.display_order ?? role.timeline.indexOf(stage) + 1,
+        });
+
+        rollbackContext.createdDriveRoleTimelineIds.push(publishedRole.driveRoleId);
+      }
     }
 
     await adminDriveService.saveEligibilityForPublish({
@@ -432,9 +523,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
       allowed_degrees: (draft.eligibility_data?.allowed_degrees ?? []).join(","),
 
-      passing_out_batches: (
-        draft.eligibility_data?.passing_out_batches ?? []
-      ).join(","),
+      passing_out_batches: (draft.eligibility_data?.passing_out_batches ?? []).join(","),
 
       minimum_cgpa:
         draft.eligibility_data?.minimum_cgpa === ""
@@ -446,14 +535,10 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
           ? 0
           : Number(draft.eligibility_data?.maximum_active_backlogs ?? 0),
 
-      willing_to_relocate_required: Boolean(
-        draft.eligibility_data?.willing_to_relocate_required,
-      ),
+      willing_to_relocate_required: Boolean(draft.eligibility_data?.willing_to_relocate_required),
 
-      additional_requirements:
-        draft.eligibility_data?.additional_requirements ?? "",
+      additional_requirements: draft.eligibility_data?.additional_requirements ?? "",
     });
-
 
     await (supabase as any)
       .from("recruitment_drafts")
