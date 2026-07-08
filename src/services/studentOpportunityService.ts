@@ -180,7 +180,82 @@ export const studentOpportunityService = {
     return processedOpportunities;
   },
 
-  async apply(opportunityId: string, studentId: string, answers: AnswerInput[] = []) {
+  async getApplicationQuestions(
+  opportunityId: string,
+  selectedRoleIds: string[],
+  driveId: string,
+) {
+const { data: defaultQuestions, error: defaultQuestionsError } =
+  await (supabase as any)
+    .from("opportunity_questions")
+    .select("*")
+    .eq("opportunity_id", opportunityId)
+    .order("position", { ascending: true });
+
+if (defaultQuestionsError) {
+  throw defaultQuestionsError;
+}
+
+const { data: selectedRoles, error: selectedRolesError } =
+  await (supabase as any)
+    .from("drive_roles")
+    .select("drive_role_id, inherit_default_questions")
+    .eq("drive_id", driveId)
+    .in("drive_role_id", selectedRoleIds);
+
+if (selectedRolesError) {
+  throw selectedRolesError;
+}
+
+const includeDefaultQuestions = (selectedRoles ?? []).some(
+  (role: any) => role.inherit_default_questions,
+);
+
+const questionMap = new Map<string, any>();
+
+if (includeDefaultQuestions) {
+  for (const question of defaultQuestions ?? []) {
+    questionMap.set(question.question_id, question);
+  }
+}
+
+const { data: roleQuestionMappings, error: roleQuestionMappingsError } =
+  await (supabase as any)
+    .from("drive_role_questions")
+    .select(
+      `
+      question_id,
+      drive_role_id,
+      opportunity_questions(*)
+      `,
+    )
+    .in("drive_role_id", selectedRoleIds);
+
+if (roleQuestionMappingsError) {
+  throw roleQuestionMappingsError;
+}
+
+for (const mapping of roleQuestionMappings ?? []) {
+  if (mapping.opportunity_questions) {
+    questionMap.set(
+      mapping.opportunity_questions.question_id,
+      mapping.opportunity_questions,
+    );
+  }
+}
+
+return Array.from(questionMap.values()).sort(
+  (a: any, b: any) => (a.position ?? 999999) - (b.position ?? 999999),
+);
+
+},
+
+  async apply(
+  opportunityId: string,
+  studentId: string,
+  selectedRoleIds: string[] = [],
+  answers: AnswerInput[] = [],
+) {
     const { data: opportunity, error: opportunityError } = await (supabase as any)
       .from("opportunity_master")
       .select(
@@ -275,6 +350,39 @@ placement_status
       throw new Error("Opportunity not found.");
     }
 
+    const { data: drive } = await (supabase as any)
+  .from("drive_master")
+  .select(
+    `
+    role_selection_enabled,
+    minimum_role_selection,
+    maximum_role_selection
+    `,
+  )
+  .eq("drive_id", opportunityRecord.drive_id)
+  .maybeSingle();
+
+if (!drive) {
+  throw new Error("Drive not found.");
+}
+
+if (drive.role_selection_enabled) {
+  if (selectedRoleIds.length < Number(drive.minimum_role_selection || 0)) {
+    throw new Error(
+      `Please select at least ${drive.minimum_role_selection} role(s).`,
+    );
+  }
+
+  if (
+    selectedRoleIds.length >
+    Number(drive.maximum_role_selection || Number.MAX_SAFE_INTEGER)
+  ) {
+    throw new Error(
+      `You can select a maximum of ${drive.maximum_role_selection} role(s).`,
+    );
+  }
+}
+
     const { data: eligibility } = await (supabase as any)
       .from("drive_eligibility")
       .select("*")
@@ -321,9 +429,29 @@ placement_status
       .select("application_id")
       .single();
 
-    if (error) throw error;
+if (error) throw error;
 
-    const normalizedAnswers = Array.isArray(answers)
+if (selectedRoleIds.length > 0) {
+  const { error: selectedRolesError } = await (supabase as any)
+    .from("student_application_selected_roles")
+    .insert(
+      selectedRoleIds.map((driveRoleId) => ({
+        application_id: application.application_id,
+        drive_role_id: driveRoleId,
+      })),
+    );
+
+  if (selectedRolesError) {
+    await (supabase as any)
+      .from("student_opportunity_applications")
+      .delete()
+      .eq("application_id", application.application_id);
+
+    throw selectedRolesError;
+  }
+}
+
+const normalizedAnswers = Array.isArray(answers)
       ? answers.filter((answer) => answer && answer.question_id)
       : [];
 
