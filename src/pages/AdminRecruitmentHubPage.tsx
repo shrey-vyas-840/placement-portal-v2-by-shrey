@@ -1,0 +1,143 @@
+import { Link } from "@tanstack/react-router";
+
+const HUB_CARDS = [
+  {
+    to: "/admin/companies",
+    title: "Companies",
+    description: "Create, edit, archive, and review company master records.",
+  },
+  {
+    to: "/admin/drives",
+    title: "Drives",
+    description: "Manage drive records, eligibility, and archive history.",
+  },
+  {
+    to: "/admin/opportunities",
+    title: "Opportunities",
+    description: "Manage roles, questions, applicants, publish state, and mail workspace.",
+  },
+];
+
+const WORKFLOW_STEPS = [
+  "Select or create company",
+  "Create drive",
+  "Add default eligibility",
+  "Add default questions",
+  "Create roles",
+  "Review and publish",
+];
+
+export function AdminRecruitmentHubPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                Recruitment Management
+              </div>
+
+              <h1 className="mt-2 text-4xl font-bold">Recruitment Hub</h1>
+
+              <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+                Create, manage and monitor complete campus recruitment cycles from one place.
+              </p>
+            </div>
+
+            <Link
+              to="/admin/recruitment-new"
+              className="rounded-2xl bg-primary px-8 py-5 text-center text-primary-foreground shadow transition hover:opacity-90"
+            >
+              <div className="text-lg font-semibold">+ New Recruitment</div>
+
+              <div className="mt-1 text-xs opacity-80">Guided recruitment wizard</div>
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-6 xl:grid-cols-2">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Continue Draft</h2>
+
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Resume an unfinished recruitment.
+                </div>
+              </div>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">Coming Soon</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              <div className="text-sm text-muted-foreground">No recruitment draft available.</div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Active Recruitments</h2>
+
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Running campus recruitments.
+                </div>
+              </div>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">Placeholder</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              <div className="text-sm text-muted-foreground">No active recruitment.</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Draft Recruitments</h2>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">0</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              No drafts available.
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Archived Recruitments</h2>
+
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">0</span>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
+              No archived recruitment.
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-semibold">Management</h2>
+
+            <div className="mt-5 space-y-3">
+              {HUB_CARDS.map((card) => (
+                <Link
+                  key={card.to}
+                  to={card.to}
+                  className="block rounded-2xl border border-border bg-background p-4 transition hover:border-primary hover:bg-muted/50"
+                >
+                  <div className="font-medium">{card.title}</div>
+
+                  <div className="mt-1 text-xs text-muted-foreground">{card.description}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
