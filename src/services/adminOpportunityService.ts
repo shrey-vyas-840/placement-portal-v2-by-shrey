@@ -61,6 +61,40 @@ function resolveCompanyLogoUrl(path?: string | null) {
 }
 
 export const adminOpportunityService = {
+  async createOpportunityForPublish(payload: {
+    opportunity_id: string;
+    drive_id: string;
+    opportunity_title: string;
+    opportunity_description?: string;
+    application_start_date?: string | null;
+    application_end_date?: string | null;
+    application_status: string;
+    visible_to_students: boolean;
+    created_by?: string | null;
+  }) {
+    const { data, error } = await (supabase as any)
+      .from("opportunity_master")
+      .insert({
+        opportunity_id: payload.opportunity_id,
+        drive_id: payload.drive_id,
+        opportunity_title: payload.opportunity_title,
+        opportunity_description: payload.opportunity_description ?? null,
+        application_start_date: payload.application_start_date ?? null,
+        application_end_date: payload.application_end_date ?? null,
+        application_status: payload.application_status,
+        visible_to_students: payload.visible_to_students,
+        created_by: payload.created_by ?? null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  },
+
   async getDrives() {
     const { data, error } = await (supabase as any)
       .from("drive_master")

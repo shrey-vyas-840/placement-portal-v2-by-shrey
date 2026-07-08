@@ -23,9 +23,7 @@ const DEFAULT_DOCUMENT_SUGGESTIONS = [
   "Passport Size Photograph",
 ] as const;
 
-function createDocument(
-  overrides?: Partial<RecruitmentRoleDocument>,
-): RecruitmentRoleDocument {
+function createDocument(overrides?: Partial<RecruitmentRoleDocument>): RecruitmentRoleDocument {
   return {
     id: crypto.randomUUID(),
     document_name: "",
@@ -44,9 +42,7 @@ export function RecruitmentDocumentsBuilder({
   const usedNames = useMemo(
     () =>
       new Set(
-        documents
-          .map((document) => document.document_name.trim().toLowerCase())
-          .filter(Boolean),
+        documents.map((document) => document.document_name.trim().toLowerCase()).filter(Boolean),
       ),
     [documents],
   );
@@ -86,11 +82,7 @@ export function RecruitmentDocumentsBuilder({
 
       const index = previous.findIndex((item) => item.id === id);
 
-      return [
-        ...previous.slice(0, index + 1),
-        duplicate,
-        ...previous.slice(index + 1),
-      ];
+      return [...previous.slice(0, index + 1), duplicate, ...previous.slice(index + 1)];
     });
   }
 
@@ -101,13 +93,11 @@ export function RecruitmentDocumentsBuilder({
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <div className="text-sm text-muted-foreground">
-          Loading document requirements...
-        </div>
+        <div className="text-sm text-muted-foreground">Loading document requirements...</div>
       </div>
     );
   }
-    return (
+  return (
     <div className="rounded-xl border border-border bg-background">
       <div className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between gap-4">
@@ -115,8 +105,7 @@ export function RecruitmentDocumentsBuilder({
             <div className="font-medium">Required Documents</div>
 
             <div className="mt-1 text-xs text-muted-foreground">
-              Configure the documents students must provide while applying for
-              this role.
+              Configure the documents students must provide while applying for this role.
             </div>
           </div>
 
@@ -137,9 +126,7 @@ export function RecruitmentDocumentsBuilder({
           <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
             <div className="text-4xl">📄</div>
 
-            <div className="mt-3 text-base font-medium">
-              No document requirements added
-            </div>
+            <div className="mt-3 text-base font-medium">No document requirements added</div>
 
             <div className="mt-2 text-sm text-muted-foreground">
               Add the documents students must upload for this job role.
@@ -158,22 +145,16 @@ export function RecruitmentDocumentsBuilder({
         ) : (
           <div className="space-y-4">
             {documents.map((document) => {
-              const normalizedName = document.document_name
-                .trim()
-                .toLowerCase();
+              const normalizedName = document.document_name.trim().toLowerCase();
 
               const duplicateName =
                 normalizedName !== "" &&
                 documents.filter(
-                  (item) =>
-                    item.document_name.trim().toLowerCase() === normalizedName,
+                  (item) => item.document_name.trim().toLowerCase() === normalizedName,
                 ).length > 1;
 
               return (
-                <div
-                  key={document.id}
-                  className="rounded-xl border border-border bg-card"
-                >
+                <div key={document.id} className="rounded-xl border border-border bg-card">
                   <div className="border-b border-border px-5 py-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -182,8 +163,7 @@ export function RecruitmentDocumentsBuilder({
                         </div>
 
                         <div className="mt-1 text-xs text-muted-foreground">
-                          Students will upload this document during the
-                          application process.
+                          Students will upload this document during the application process.
                         </div>
                       </div>
 
@@ -211,20 +191,14 @@ export function RecruitmentDocumentsBuilder({
 
                   <div className="space-y-5 p-5">
                     <div>
-                      <label className="mb-2 block text-sm font-medium">
-                        Document Name
-                      </label>
+                      <label className="mb-2 block text-sm font-medium">Document Name</label>
 
                       <input
                         disabled={readOnly}
                         list="recruitment-document-suggestions"
                         value={document.document_name}
                         onChange={(e) =>
-                          updateDocument(
-                            document.id,
-                            "document_name",
-                            e.target.value,
-                          )
+                          updateDocument(document.id, "document_name", e.target.value)
                         }
                         className="w-full rounded-xl border border-border px-4 py-3 text-sm"
                         placeholder="Resume"
@@ -238,21 +212,13 @@ export function RecruitmentDocumentsBuilder({
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium">
-                        Description
-                      </label>
+                      <label className="mb-2 block text-sm font-medium">Description</label>
 
                       <textarea
                         rows={3}
                         disabled={readOnly}
                         value={document.description}
-                        onChange={(e) =>
-                          updateDocument(
-                            document.id,
-                            "description",
-                            e.target.value,
-                          )
-                        }
+                        onChange={(e) => updateDocument(document.id, "description", e.target.value)}
                         className="w-full rounded-xl border border-border px-4 py-3 text-sm"
                         placeholder="Explain what students should upload."
                       />
@@ -263,15 +229,8 @@ export function RecruitmentDocumentsBuilder({
                         type="checkbox"
                         disabled={readOnly}
                         checked={document.required}
-                        onChange={(e) =>
-                          updateDocument(
-                            document.id,
-                            "required",
-                            e.target.checked,
-                          )
-                        }
+                        onChange={(e) => updateDocument(document.id, "required", e.target.checked)}
                       />
-
                       Required document
                     </label>
                   </div>
@@ -280,7 +239,7 @@ export function RecruitmentDocumentsBuilder({
             })}
           </div>
         )}
-                <datalist id="recruitment-document-suggestions">
+        <datalist id="recruitment-document-suggestions">
           {DEFAULT_DOCUMENT_SUGGESTIONS.map((item) => (
             <option key={item} value={item} />
           ))}
@@ -292,9 +251,8 @@ export function RecruitmentDocumentsBuilder({
               <div className="font-medium">Document Summary</div>
 
               <div className="mt-1 text-xs text-muted-foreground">
-                These requirements are stored only in the recruitment draft.
-                Students will upload the actual files only after this
-                recruitment is published.
+                These requirements are stored only in the recruitment draft. Students will upload
+                the actual files only after this recruitment is published.
               </div>
             </div>
 
@@ -310,9 +268,7 @@ export function RecruitmentDocumentsBuilder({
                 <span
                   key={document.id}
                   className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    document.required
-                      ? "bg-red-100 text-red-700"
-                      : "bg-slate-100 text-slate-700"
+                    document.required ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"
                   }`}
                 >
                   {document.document_name.trim() || "Untitled"}
