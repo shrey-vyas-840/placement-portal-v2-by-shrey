@@ -79,9 +79,25 @@ export function RecruitmentRolePreview({
   const effectiveEligibility =
     role.inheritDefaultEligibility && defaultEligibility ? defaultEligibility : role.eligibility;
 
-  const effectiveQuestions = role.inheritDefaultQuestions ? defaultQuestions : role.questions;
+  const effectiveQuestions = role.inheritDefaultQuestions
+    ? [
+        ...defaultQuestions,
+        ...role.questions.filter(
+          (roleQuestion) =>
+            !defaultQuestions.some(
+              (defaultQuestion) =>
+                defaultQuestion.question_title.trim().toLowerCase() ===
+                roleQuestion.question_title.trim().toLowerCase(),
+            ),
+        ),
+      ]
+    : role.questions;
 
   const requiredQuestions = effectiveQuestions.filter((question) => question.is_required);
+
+  const inheritedQuestionCount = role.inheritDefaultQuestions ? defaultQuestions.length : 0;
+
+  const additionalQuestionCount = role.questions.length;
 
   const displayStatus = status ?? role.status;
 
@@ -146,10 +162,12 @@ export function RecruitmentRolePreview({
           </div>
 
           <div className="rounded-xl border p-4">
-            <div className="text-xs text-muted-foreground">Questions Source</div>
+            <div className="text-xs text-muted-foreground">Question Composition</div>
 
             <div className="mt-2 text-sm font-semibold">
-              {role.inheritDefaultQuestions ? "Recruitment Default" : "Role Override"}
+              {role.inheritDefaultQuestions
+                ? "Recruitment Default + Additional Role Questions"
+                : "Role Questions Only"}
             </div>
           </div>
 
@@ -355,7 +373,7 @@ export function RecruitmentRolePreview({
       </Section>
 
       <Section title="Questions">
-        <div className="mb-4 flex gap-6 text-sm">
+        <div className="mb-4 flex flex-wrap gap-6 text-sm">
           <span>
             <strong>{effectiveQuestions.length}</strong> Total
           </span>
@@ -363,6 +381,18 @@ export function RecruitmentRolePreview({
           <span>
             <strong>{requiredQuestions.length}</strong> Required
           </span>
+
+          {role.inheritDefaultQuestions && (
+            <>
+              <span>
+                <strong>{inheritedQuestionCount}</strong> Recruitment Default
+              </span>
+
+              <span>
+                <strong>{additionalQuestionCount}</strong> Additional Role
+              </span>
+            </>
+          )}
         </div>
 
         {effectiveQuestions.length === 0 ? (

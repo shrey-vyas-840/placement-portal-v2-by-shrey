@@ -280,17 +280,29 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
     const recruitmentOpportunityId = generateUuid();
 
-    await adminOpportunityService.createPublishedOpportunity({
-      opportunity_id: recruitmentOpportunityId,
-      drive_id: driveId,
-      opportunity_title: draft.drive_data.drive_name,
-      opportunity_description: draft.drive_data.remarks ?? null,
-      application_start_date: draft.publish_data?.application_start_date ?? null,
-      application_end_date: draft.publish_data?.application_end_date ?? null,
-      application_status: draft.publish_data?.publish_immediately ? "Open" : "Draft",
-      visible_to_students: Boolean(draft.publish_data?.publish_immediately),
-      created_by: draft.created_by ?? null,
-    });
+   const publishedAt = new Date();
+
+const applicationStartDate =
+  draft.publish_data?.application_start_date ??
+  publishedAt.toISOString();
+
+const applicationEndDate =
+  draft.publish_data?.application_end_date ??
+  new Date(publishedAt.getTime() + 48 * 60 * 60 * 1000).toISOString();
+
+await adminOpportunityService.createPublishedOpportunity({
+  opportunity_id: recruitmentOpportunityId,
+  drive_id: driveId,
+  opportunity_title: draft.drive_data.drive_name,
+  opportunity_description: draft.drive_data.remarks ?? null,
+  application_start_date: applicationStartDate,
+  application_end_date: applicationEndDate,
+application_status: draft.publish_data?.publish_immediately
+  ? (new Date(applicationStartDate) <= publishedAt ? "Open" : "Upcoming")
+  : "Draft",
+  visible_to_students: Boolean(draft.publish_data?.publish_immediately),
+  created_by: draft.created_by ?? null,
+});
 
     rollbackContext.createdOpportunityIds.push(recruitmentOpportunityId);
 
