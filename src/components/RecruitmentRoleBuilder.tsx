@@ -358,25 +358,6 @@ export function RecruitmentRoleBuilder({
     });
   }
 
-  function setQuestionInheritance(index: number, inherit: boolean) {
-    if (readOnly) return;
-
-    onChange((previous) => {
-      const copy = [...previous];
-
-      const role = copy[index];
-
-      copy[index] = {
-        ...role,
-
-        inheritDefaultQuestions: inherit,
-
-        questions: role.questions,
-      };
-      return copy;
-    });
-  }
-
   function duplicateRole(index: number) {
     if (readOnly) return;
 
@@ -1164,35 +1145,67 @@ export function RecruitmentRoleBuilder({
 
                           {!readOnly && (
                             <div className="flex gap-2">
-                              {role.inheritDefaultQuestions ? (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    updateRole(index, "inheritDefaultQuestions", false)
+                              <label className="flex items-center gap-3 rounded-lg border border-border px-4 py-2">
+                                <input
+                                  type="checkbox"
+                                  disabled={readOnly}
+                                  checked={role.inheritDefaultQuestions}
+                                  onChange={(e) =>
+                                    updateRole(index, "inheritDefaultQuestions", e.target.checked)
                                   }
-                                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                                >
-                                  Override
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => updateRole(index, "inheritDefaultQuestions", true)}
-                                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-                                >
-                                  Revert to Default
-                                </button>
-                              )}
+                                />
+
+                                <div>
+                                  <div className="text-sm font-medium">
+                                    Inherit Recruitment Default Questions
+                                  </div>
+
+                                  <div className="text-xs text-muted-foreground">
+                                    When enabled, students will answer the recruitment default
+                                    questions plus the additional role-specific questions below.
+                                  </div>
+                                </div>
+                              </label>
                             </div>
                           )}
                         </div>
 
+                        {role.inheritDefaultQuestions && (
+                          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                            <div className="font-medium text-blue-900">
+                              Recruitment Default Questions
+                            </div>
+
+                            <div className="mt-1 text-sm text-blue-700">
+                              These questions are inherited automatically. Add only the additional
+                              questions required specifically for this role below.
+                            </div>
+
+                            <div className="mt-4 space-y-2">
+                              {defaultQuestions.map((question) => (
+                                <div
+                                  key={question.question_id}
+                                  className="rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm"
+                                >
+                                  {question.question_title}
+                                </div>
+                              ))}
+
+                              {defaultQuestions.length === 0 && (
+                                <div className="text-sm italic text-blue-700">
+                                  No recruitment default questions have been configured.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         <RecruitmentQuestionBuilder
-                          title="Role Questions"
+                          title="Additional Role Questions"
                           subtitle={
                             role.inheritDefaultQuestions
-                              ? "Inherited from Recruitment Defaults. Additional questions added here will be shown only for this role."
-                              : "Role-specific questions for this role."
+                              ? "Configure only additional questions for this role. Recruitment default questions are inherited automatically."
+                              : "Configure all questions required for this role. Recruitment defaults will not be included."
                           }
 
                           questions={role.questions}
