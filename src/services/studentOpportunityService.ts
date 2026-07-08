@@ -226,7 +226,10 @@ const { data: roleQuestionMappings, error: roleQuestionMappingsError } =
       `
       question_id,
       drive_role_id,
-      opportunity_questions(*)
+      opportunity_questions(
+        *,
+        opportunity_question_options(*)
+      )
       `,
     )
     .in("drive_role_id", selectedRoleIds);

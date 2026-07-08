@@ -16,6 +16,10 @@ export function StudentOpportunitiesPage() {
 
   const [questions, setQuestions] = useState<any[]>([]);
 
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+
   const [answers, setAnswers] = useState<any>({});
 
   const [pendingApply, setPendingApply] = useState(false);
@@ -56,7 +60,27 @@ export function StudentOpportunitiesPage() {
 
       const data = await studentOpportunityService.getPublishedOpportunities(student.student_id);
 
-      setOpportunities(data);
+      const enriched = await Promise.all(
+        data.map(async (opportunity: any) => {
+          const { data: roles } = await (supabase as any)
+            .from("drive_roles")
+            .select(
+              `
+        drive_role_id,
+        drive_role_name
+        `,
+            )
+            .eq("drive_id", opportunity.drive_id)
+            .order("drive_role_name");
+
+          return {
+            ...opportunity,
+            availableRoles: roles ?? [],
+          };
+        }),
+      );
+
+      setOpportunities(enriched);
     } catch (error) {
       console.error("Failed to load opportunities", error);
     } finally {
@@ -68,7 +92,7 @@ export function StudentOpportunitiesPage() {
     load();
   }, []);
 
-  async function apply(opportunityId: string, formAnswers: any[] = []) {
+  async function apply(opportunityId: string, selectedRoles: string[] = []) {
     const { data: authData } = await supabase.auth.getUser();
 
     const authUserId = authData.user?.id;
@@ -107,10 +131,9 @@ export function StudentOpportunitiesPage() {
       await studentOpportunityService.apply(
         opportunityId,
         student.student_id,
-
+        selectedRoles,
         Object.entries(answers).map(([key, value]) => ({
           question_id: key,
-
           answer_value: Array.isArray(value) ? value.join(",") : value,
         })),
       );
@@ -345,13 +368,23 @@ hover:border-primary/30
                   opportunity.alreadyApplied || opportunity.application_status !== "ELIGIBLE"
                 }
                 onClick={async () => {
-                  const qs = await adminQuestionService.getQuestions(opportunity.opportunity_id);
+                  if ((opportunity.availableRoles?.length ?? 0) > 0) {
+                    setSelectedOpportunity(opportunity);
+                    setAvailableRoles(opportunity.availableRoles);
+                    setSelectedRoleIds([]);
+                    setQuestions([]);
+                    return;
+                  }
+
+                  const qs = await studentOpportunityService.getApplicationQuestions(
+                    opportunity.opportunity_id,
+                    [],
+                    opportunity.drive_id,
+                  );
 
                   if (qs.length > 0) {
                     setSelectedOpportunity(opportunity);
-
                     setQuestions(qs);
-
                     return;
                   }
 
@@ -421,6 +454,43 @@ hover:border-primary/30
                 <p className="mt-1 text-sm text-muted-foreground">
                   Complete the required information before submitting your application.
                 </p>
+
+                {availableRoles.length > 0 && (
+                  <div className="mt-6 rounded-2xl border bg-slate-50 p-5">
+                    <p className="mb-3 font-medium">Select Role(s)</p>
+
+                    <div className="space-y-2">
+                      {availableRoles.map((role: any) => (
+                        <label
+                          key={role.drive_role_id}
+                          className="flex items-center gap-3 rounded-xl border bg-white p-3"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedRoleIds.includes(role.drive_role_id)}
+                            onChange={async (e) => {
+                              const updated = e.target.checked
+                                ? [...selectedRoleIds, role.drive_role_id]
+                                : selectedRoleIds.filter((id) => id !== role.drive_role_id);
+
+                              setSelectedRoleIds(updated);
+
+                              const qs = await studentOpportunityService.getApplicationQuestions(
+                                selectedOpportunity.opportunity_id,
+                                updated,
+                                selectedOpportunity.drive_id,
+                              );
+
+                              setQuestions(qs);
+                            }}
+                          />
+
+                          <span>{role.drive_role_name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {questions.map((q: any) => (
@@ -731,9 +801,32 @@ hover:border-primary/30
                       }
                     }
 
+                    if (
+                      selectedOpportunity.drive_master?.role_selection_enabled &&
+                      selectedRoleIds.length <
+                        (selectedOpportunity.drive_master.minimum_role_selection ?? 0)
+                    ) {
+                      alert(
+                        `Please select at least ${selectedOpportunity.drive_master.minimum_role_selection} role(s).`,
+                      );
+                      return;
+                    }
+
+                    if (
+                      selectedOpportunity.drive_master?.role_selection_enabled &&
+                      selectedRoleIds.length >
+                        (selectedOpportunity.drive_master.maximum_role_selection ??
+                          Number.MAX_SAFE_INTEGER)
+                    ) {
+                      alert(
+                        `You can select a maximum of ${selectedOpportunity.drive_master.maximum_role_selection} role(s).`,
+                      );
+                      return;
+                    }
+
                     setPendingApply(true);
 
-                    await apply(selectedOpportunity.opportunity_id);
+                    await apply(selectedOpportunity.opportunity_id, selectedRoleIds);
 
                     setSelectedOpportunity(null);
                     setQuestions([]);
