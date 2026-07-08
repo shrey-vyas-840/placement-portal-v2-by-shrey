@@ -7,6 +7,7 @@ import { createEmptyRecruitmentRoleEligibility } from "./recruitmentEligibilityD
 import type { RecruitmentRoleEligibility } from "./RecruitmentEligibilityBuilder";
 import type { Dispatch, SetStateAction } from "react";
 import { validateRecruitmentRole } from "./recruitmentRoleValidation";
+import { generateUuid } from "@/lib/generateUuid";
 
 export type RecruitmentRole = {
   role_id: string;
@@ -141,7 +142,7 @@ interface RecruitmentRoleBuilderProps {
 
 function createEmptyRole(): RecruitmentRole {
   return {
-    role_id: crypto.randomUUID(),
+    role_id: generateUuid(),
 
     role_name: "",
 
@@ -370,9 +371,8 @@ export function RecruitmentRoleBuilder({
 
         inheritDefaultQuestions: inherit,
 
-        questions: inherit ? role.questions : structuredClone(defaultQuestions),
+        questions: role.questions,
       };
-
       return copy;
     });
   }
@@ -386,7 +386,7 @@ export function RecruitmentRoleBuilder({
       const duplicate: RecruitmentRole = {
         ...structuredClone(source),
 
-        role_id: crypto.randomUUID(),
+        role_id: generateUuid(),
 
         role_name: source.role_name.trim() === "" ? "" : `${source.role_name} Copy`,
 
@@ -394,17 +394,17 @@ export function RecruitmentRoleBuilder({
 
         questions: source.questions.map((question) => ({
           ...structuredClone(question),
-          question_id: crypto.randomUUID(),
+          question_id: generateUuid(),
         })),
 
         documents: source.documents.map((document) => ({
           ...structuredClone(document),
-          id: crypto.randomUUID(),
+          id: generateUuid(),
         })),
 
         timeline: source.timeline.map((stage) => ({
           ...structuredClone(stage),
-          id: crypto.randomUUID(),
+          id: generateUuid(),
         })),
       };
 
@@ -1157,8 +1157,8 @@ export function RecruitmentRoleBuilder({
 
                             <div className="text-sm text-muted-foreground">
                               {role.inheritDefaultQuestions
-                                ? "Currently inheriting Recruitment Default Questions."
-                                : "This role has its own overridden questions."}
+                                ? "This role will use Recruitment Default Questions and any additional questions configured below."
+                                : "This role will use only the role-specific questions configured below."}
                             </div>
                           </div>
 
@@ -1167,7 +1167,9 @@ export function RecruitmentRoleBuilder({
                               {role.inheritDefaultQuestions ? (
                                 <button
                                   type="button"
-                                  onClick={() => setQuestionInheritance(index, false)}
+                                  onClick={() =>
+                                    updateRole(index, "inheritDefaultQuestions", false)
+                                  }
                                   className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
                                 >
                                   Override
@@ -1175,7 +1177,7 @@ export function RecruitmentRoleBuilder({
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() => setQuestionInheritance(index, true)}
+                                  onClick={() => updateRole(index, "inheritDefaultQuestions", true)}
                                   className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
                                 >
                                   Revert to Default
@@ -1189,25 +1191,13 @@ export function RecruitmentRoleBuilder({
                           title="Role Questions"
                           subtitle={
                             role.inheritDefaultQuestions
-                              ? "Inherited from Recruitment Defaults."
-                              : "Role-specific overridden questions."
+                              ? "Inherited from Recruitment Defaults. Additional questions added here will be shown only for this role."
+                              : "Role-specific questions for this role."
                           }
 
-                          questions={
-                            role.inheritDefaultQuestions ? defaultQuestions : role.questions
-                          }
+                          questions={role.questions}
 
                           onChange={(updater) => {
-                            if (role.inheritDefaultQuestions) {
-                              setQuestionInheritance(index, false);
-
-                              queueMicrotask(() => {
-                                updateQuestions(index, updater);
-                              });
-
-                              return;
-                            }
-
                             updateQuestions(index, updater);
                           }}
                           readOnly={readOnly}
