@@ -41,6 +41,8 @@ async function rollbackPublish(
   }
 
   if (context.companyCreated) {
+    await (supabase as any).from("company_contacts").delete().eq("company_id", companyId);
+
     await (supabase as any).from("company_master").delete().eq("company_id", companyId);
   }
 }
@@ -317,20 +319,34 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
     if (Array.isArray(draft.recruiters_data) && draft.recruiters_data.length > 0) {
       for (const recruiter of draft.recruiters_data) {
+        const contactName = String(
+          recruiter.contact_name ?? recruiter.name ?? "",
+        ).trim();
+        const contactEmail = String(
+          recruiter.contact_email ?? recruiter.email ?? "",
+        ).trim();
+        const contactNumber = String(
+          recruiter.contact_number ?? recruiter.phone ?? "",
+        ).trim();
+        const contactPosition = String(
+          recruiter.contact_position ?? recruiter.designation ?? "",
+        ).trim();
+
+        if (!contactName) {
+          throw new Error("Recruiter contact name is missing.");
+        }
+
+        if (!contactEmail) {
+          throw new Error("Recruiter contact email is missing.");
+        }
+
         await (supabase as any).from("company_contacts").insert({
           company_id: companyId,
-
-          contact_name: recruiter.name,
-
-          designation: recruiter.designation ?? null,
-
-          email: recruiter.email,
-
-          phone_number: recruiter.phone ?? null,
-
-          is_primary: Boolean(recruiter.isPrimary),
-
-          created_by: draft.created_by ?? null,
+          contact_name: contactName,
+          contact_email: contactEmail,
+          contact_number: contactNumber || null,
+          contact_position: contactPosition || null,
+          primary_contact: Boolean(recruiter.primary_contact ?? recruiter.isPrimary),
         });
       }
     }
@@ -410,26 +426,34 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     await adminDriveService.saveEligibilityForPublish({
       drive_id: driveId,
 
-      allowed_institutes: (draft.eligibility_data?.allowedInstitutes ?? []).join(","),
+      allowed_institutes: (draft.eligibility_data?.allowed_institutes ?? []).join(","),
 
-      allowed_branches: (draft.eligibility_data?.allowedBranches ?? []).join(","),
+      allowed_branches: (draft.eligibility_data?.allowed_branches ?? []).join(","),
 
-      allowed_degrees: (draft.eligibility_data?.allowedDegrees ?? []).join(","),
+      allowed_degrees: (draft.eligibility_data?.allowed_degrees ?? []).join(","),
 
       passing_out_batches: (
-        draft.eligibility_data?.passingOutBatches ??
-        draft.eligibility_data?.graduationYears ??
-        []
+        draft.eligibility_data?.passing_out_batches ?? []
       ).join(","),
 
-      minimum_cgpa: Number(draft.eligibility_data?.minimumCgpa ?? 0),
+      minimum_cgpa:
+        draft.eligibility_data?.minimum_cgpa === ""
+          ? 0
+          : Number(draft.eligibility_data?.minimum_cgpa ?? 0),
 
-      maximum_active_backlogs: Number(draft.eligibility_data?.maximumActiveBacklogs ?? 0),
+      maximum_active_backlogs:
+        draft.eligibility_data?.maximum_active_backlogs === ""
+          ? 0
+          : Number(draft.eligibility_data?.maximum_active_backlogs ?? 0),
 
-      willing_to_relocate_required: Boolean(draft.eligibility_data?.willingToRelocateRequired),
+      willing_to_relocate_required: Boolean(
+        draft.eligibility_data?.willing_to_relocate_required,
+      ),
 
-      additional_requirements: draft.eligibility_data?.additionalRequirements ?? "",
+      additional_requirements:
+        draft.eligibility_data?.additional_requirements ?? "",
     });
+
 
     await (supabase as any)
       .from("recruitment_drafts")
