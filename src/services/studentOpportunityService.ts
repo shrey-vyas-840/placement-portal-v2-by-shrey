@@ -19,6 +19,69 @@ function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]+/g, "_");
 }
 
+async function uploadQuestionDocument(
+  file: File,
+  studentId: string,
+  opportunityId: string,
+  questionId: string,
+  applicationId: string,
+): Promise<string> {
+  const fileExt = file.name.split(".").pop() || "bin";
+
+  const objectPath = `${studentId}/${opportunityId}/${questionId}/${crypto.randomUUID()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("student-question-files")
+    .upload(objectPath, file, {
+      upsert: false,
+      contentType: file.type || "application/octet-stream",
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data: metadata, error: metadataError } = await (supabase as any)
+    .from("document_metadata")
+    .insert({
+      document_name: file.name,
+      document_type: "OTHER",
+      entity_name: "opportunity_question_answer",
+      entity_id: applicationId,
+      storage_url: objectPath,
+      version_number: 1,
+      upload_timestamp: new Date().toISOString(),
+      uploaded_by: null,
+      created_by_type: "User",
+      is_active: true,
+    })
+    .select("document_metadata_id")
+    .single();
+
+  if (metadataError) {
+    await supabase.storage.from("student-question-files").remove([objectPath]);
+    throw metadataError;
+  }
+
+  const { error: studentDocumentError } = await (supabase as any).from("student_documents").insert({
+    student_id: studentId,
+    document_metadata_id: metadata.document_metadata_id,
+    verification_status: "Pending",
+    created_by_type: "User",
+    is_active: true,
+  });
+
+  if (studentDocumentError) {
+    await (supabase as any)
+      .from("document_metadata")
+      .delete()
+      .eq("document_metadata_id", metadata.document_metadata_id);
+
+    await supabase.storage.from("student-question-files").remove([objectPath]);
+
+    throw studentDocumentError;
+  }
+
+  return metadata.document_metadata_id;
+}
 export const studentOpportunityService = {
   async getPublishedOpportunities(studentId: string) {
     const { data: academic } = await (supabase as any)
@@ -180,50 +243,43 @@ export const studentOpportunityService = {
     return processedOpportunities;
   },
 
-  async getApplicationQuestions(
-  opportunityId: string,
-  selectedRoleIds: string[],
-  driveId: string,
-) {
-const { data: defaultQuestions, error: defaultQuestionsError } =
-  await (supabase as any)
-    .from("opportunity_questions")
-    .select("*")
-    .eq("opportunity_id", opportunityId)
-    .order("position", { ascending: true });
+  async getApplicationQuestions(opportunityId: string, selectedRoleIds: string[], driveId: string) {
+    const { data: defaultQuestions, error: defaultQuestionsError } = await (supabase as any)
+      .from("opportunity_questions")
+      .select("*")
+      .eq("opportunity_id", opportunityId)
+      .order("position", { ascending: true });
 
-if (defaultQuestionsError) {
-  throw defaultQuestionsError;
-}
+    if (defaultQuestionsError) {
+      throw defaultQuestionsError;
+    }
 
-const { data: selectedRoles, error: selectedRolesError } =
-  await (supabase as any)
-    .from("drive_roles")
-    .select("drive_role_id, inherit_default_questions")
-    .eq("drive_id", driveId)
-    .in("drive_role_id", selectedRoleIds);
+    const { data: selectedRoles, error: selectedRolesError } = await (supabase as any)
+      .from("drive_roles")
+      .select("drive_role_id, inherit_default_questions")
+      .eq("drive_id", driveId)
+      .in("drive_role_id", selectedRoleIds);
 
-if (selectedRolesError) {
-  throw selectedRolesError;
-}
+    if (selectedRolesError) {
+      throw selectedRolesError;
+    }
 
-const includeDefaultQuestions = (selectedRoles ?? []).some(
-  (role: any) => role.inherit_default_questions,
-);
+    const includeDefaultQuestions = (selectedRoles ?? []).some(
+      (role: any) => role.inherit_default_questions,
+    );
 
-const questionMap = new Map<string, any>();
+    const questionMap = new Map<string, any>();
 
-if (includeDefaultQuestions) {
-  for (const question of defaultQuestions ?? []) {
-    questionMap.set(question.question_id, question);
-  }
-}
+    if (includeDefaultQuestions) {
+      for (const question of defaultQuestions ?? []) {
+        questionMap.set(question.question_id, question);
+      }
+    }
 
-const { data: roleQuestionMappings, error: roleQuestionMappingsError } =
-  await (supabase as any)
-    .from("drive_role_questions")
-    .select(
-      `
+    const { data: roleQuestionMappings, error: roleQuestionMappingsError } = await (supabase as any)
+      .from("drive_role_questions")
+      .select(
+        `
       question_id,
       drive_role_id,
       opportunity_questions(
@@ -231,34 +287,30 @@ const { data: roleQuestionMappings, error: roleQuestionMappingsError } =
         opportunity_question_options(*)
       )
       `,
-    )
-    .in("drive_role_id", selectedRoleIds);
+      )
+      .in("drive_role_id", selectedRoleIds);
 
-if (roleQuestionMappingsError) {
-  throw roleQuestionMappingsError;
-}
+    if (roleQuestionMappingsError) {
+      throw roleQuestionMappingsError;
+    }
 
-for (const mapping of roleQuestionMappings ?? []) {
-  if (mapping.opportunity_questions) {
-    questionMap.set(
-      mapping.opportunity_questions.question_id,
-      mapping.opportunity_questions,
+    for (const mapping of roleQuestionMappings ?? []) {
+      if (mapping.opportunity_questions) {
+        questionMap.set(mapping.opportunity_questions.question_id, mapping.opportunity_questions);
+      }
+    }
+
+    return Array.from(questionMap.values()).sort(
+      (a: any, b: any) => (a.position ?? 999999) - (b.position ?? 999999),
     );
-  }
-}
-
-return Array.from(questionMap.values()).sort(
-  (a: any, b: any) => (a.position ?? 999999) - (b.position ?? 999999),
-);
-
-},
+  },
 
   async apply(
-  opportunityId: string,
-  studentId: string,
-  selectedRoleIds: string[] = [],
-  answers: AnswerInput[] = [],
-) {
+    opportunityId: string,
+    studentId: string,
+    selectedRoleIds: string[] = [],
+    answers: AnswerInput[] = [],
+  ) {
     const { data: opportunity, error: opportunityError } = await (supabase as any)
       .from("opportunity_master")
       .select(
@@ -354,37 +406,32 @@ placement_status
     }
 
     const { data: drive } = await (supabase as any)
-  .from("drive_master")
-  .select(
-    `
+      .from("drive_master")
+      .select(
+        `
     role_selection_enabled,
     minimum_role_selection,
     maximum_role_selection
     `,
-  )
-  .eq("drive_id", opportunityRecord.drive_id)
-  .maybeSingle();
+      )
+      .eq("drive_id", opportunityRecord.drive_id)
+      .maybeSingle();
 
-if (!drive) {
-  throw new Error("Drive not found.");
-}
+    if (!drive) {
+      throw new Error("Drive not found.");
+    }
 
-if (drive.role_selection_enabled) {
-  if (selectedRoleIds.length < Number(drive.minimum_role_selection || 0)) {
-    throw new Error(
-      `Please select at least ${drive.minimum_role_selection} role(s).`,
-    );
-  }
+    if (drive.role_selection_enabled) {
+      if (selectedRoleIds.length < Number(drive.minimum_role_selection || 0)) {
+        throw new Error(`Please select at least ${drive.minimum_role_selection} role(s).`);
+      }
 
-  if (
-    selectedRoleIds.length >
-    Number(drive.maximum_role_selection || Number.MAX_SAFE_INTEGER)
-  ) {
-    throw new Error(
-      `You can select a maximum of ${drive.maximum_role_selection} role(s).`,
-    );
-  }
-}
+      if (
+        selectedRoleIds.length > Number(drive.maximum_role_selection || Number.MAX_SAFE_INTEGER)
+      ) {
+        throw new Error(`You can select a maximum of ${drive.maximum_role_selection} role(s).`);
+      }
+    }
 
     const { data: eligibility } = await (supabase as any)
       .from("drive_eligibility")
@@ -432,34 +479,34 @@ if (drive.role_selection_enabled) {
       .select("application_id")
       .single();
 
-if (error) throw error;
+    if (error) throw error;
 
-if (selectedRoleIds.length > 0) {
-  const { error: selectedRolesError } = await (supabase as any)
-    .from("student_application_selected_roles")
-    .insert(
-      selectedRoleIds.map((driveRoleId) => ({
-        application_id: application.application_id,
-        drive_role_id: driveRoleId,
-      })),
-    );
+    if (selectedRoleIds.length > 0) {
+      const { error: selectedRolesError } = await (supabase as any)
+        .from("student_application_selected_roles")
+        .insert(
+          selectedRoleIds.map((driveRoleId) => ({
+            application_id: application.application_id,
+            drive_role_id: driveRoleId,
+          })),
+        );
 
-  if (selectedRolesError) {
-    await (supabase as any)
-      .from("student_opportunity_applications")
-      .delete()
-      .eq("application_id", application.application_id);
+      if (selectedRolesError) {
+        await (supabase as any)
+          .from("student_opportunity_applications")
+          .delete()
+          .eq("application_id", application.application_id);
 
-    throw selectedRolesError;
-  }
-}
+        throw selectedRolesError;
+      }
+    }
 
-const normalizedAnswers = Array.isArray(answers)
+    const normalizedAnswers = Array.isArray(answers)
       ? answers.filter((answer) => answer && answer.question_id)
       : [];
 
     if (normalizedAnswers.length > 0) {
-      const uploadedFilePaths: string[] = [];
+      const uploadedDocumentMetadataIds: string[] = [];
 
       try {
         const answerRows: Array<{
@@ -474,37 +521,17 @@ const normalizedAnswers = Array.isArray(answers)
           let answerValue: StoredAnswerValue = answer.answer_value;
 
           if (answer.answer_value instanceof File) {
-            const file: File = answer.answer_value;
-
-            const safeFileName = sanitizeFileName(file.name);
-            const filePath = `${studentId}/${opportunityId}/${answer.question_id}/${Date.now()}_${safeFileName}`;
-
-            const { error: uploadError } = await supabase.storage
-              .from("student-question-files")
-              .upload(filePath, file, {
-                upsert: false,
-                cacheControl: "3600",
-              });
-
-            if (uploadError) {
-              throw uploadError;
-            }
-
-            uploadedFilePaths.push(filePath);
-
-            const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-              .from("student-question-files")
-              .createSignedUrl(filePath, 60 * 60 * 24 * 365);
-
-            if (signedUrlError) {
-              throw signedUrlError;
-            }
-
+            const documentMetadataId = await uploadQuestionDocument(
+              answer.answer_value,
+              studentId,
+              opportunityId,
+              answer.question_id,
+              application.application_id,
+            );
+            uploadedDocumentMetadataIds.push(documentMetadataId);
             answerValue = {
-              fileName: file.name,
-              fileUrl: signedUrlData?.signedUrl || "",
-              mimeType: file.type || null,
-              size: file.size,
+              type: "document",
+              document_metadata_id: documentMetadataId,
             };
           }
 
@@ -525,8 +552,31 @@ const normalizedAnswers = Array.isArray(answers)
           throw answerError;
         }
       } catch (submissionError) {
-        if (uploadedFilePaths.length > 0) {
-          await supabase.storage.from("student-question-files").remove(uploadedFilePaths);
+        if (uploadedDocumentMetadataIds.length > 0) {
+          const { data: uploadedDocuments } = await (supabase as any)
+            .from("document_metadata")
+            .select("document_metadata_id, storage_url")
+            .in("document_metadata_id", uploadedDocumentMetadataIds);
+
+          if (uploadedDocuments?.length) {
+            const storagePaths = uploadedDocuments
+              .map((document: any) => document.storage_url)
+              .filter(Boolean);
+
+            if (storagePaths.length > 0) {
+              await supabase.storage.from("student-question-files").remove(storagePaths);
+            }
+          }
+
+          await (supabase as any)
+            .from("student_documents")
+            .delete()
+            .in("document_metadata_id", uploadedDocumentMetadataIds);
+
+          await (supabase as any)
+            .from("document_metadata")
+            .delete()
+            .in("document_metadata_id", uploadedDocumentMetadataIds);
         }
 
         await (supabase as any)

@@ -1,5 +1,33 @@
 import { supabase } from "@/lib/supabase";
 
+export async function getSignedDocumentUrl(
+  documentMetadataId: string,
+): Promise<string> {
+  const { data: metadata, error: metadataError } = await (supabase as any)
+    .from("document_metadata")
+    .select("storage_url")
+    .eq("document_metadata_id", documentMetadataId)
+    .single();
+
+  if (metadataError) {
+    throw metadataError;
+  }
+
+  if (!metadata?.storage_url) {
+    return "";
+  }
+
+  const { data, error } = await supabase.storage
+    .from("student-question-files")
+    .createSignedUrl(metadata.storage_url, 60 * 60);
+
+  if (error) {
+    throw error;
+  }
+
+  return data.signedUrl;
+}
+
 export const documentService = {
   async getResume(studentId: string) {
     const { data, error } = await (supabase as any)
