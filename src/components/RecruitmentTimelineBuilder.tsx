@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-
+import { generateUuid } from "@/lib/generateUuid";
 export type RecruitmentRoleTimeline = {
   id: string;
   stage: string;
@@ -15,14 +15,16 @@ interface RecruitmentTimelineBuilderProps {
 }
 
 const DEFAULT_STAGES = [
-  "Application Opens",
-  "Application Deadline",
-  "Shortlisting",
+  "Resume Shortlisting",
   "Online Assessment",
   "Technical Interview",
+  "Managerial Interview",
   "HR Interview",
+  "Group Discussion",
+  "Final Interview",
   "Final Result",
   "Offer Release",
+  "Document Verification",
   "Joining",
 ] as const;
 
@@ -30,7 +32,7 @@ function createTimelineStage(
   overrides?: Partial<RecruitmentRoleTimeline>,
 ): RecruitmentRoleTimeline {
   return {
-    id: crypto.randomUUID(),
+    id: generateUuid(),
     stage: "",
     date: "",
     description: "",
@@ -118,10 +120,10 @@ export function RecruitmentTimelineBuilder({
           <div>
             <div className="font-medium">Recruitment Timeline</div>
 
-            <div className="mt-1 text-xs text-muted-foreground">
-              Configure the recruitment stages that students will see after this
-              recruitment is published.
-            </div>
+           <div className="mt-1 text-xs text-muted-foreground">
+  Configure interview rounds and post-application stages. Application opening
+  and closing are controlled from Recruitment Settings.
+</div>
           </div>
 
           {!readOnly && (
@@ -145,10 +147,9 @@ export function RecruitmentTimelineBuilder({
               No recruitment stages added
             </div>
 
-            <div className="mt-2 text-sm text-muted-foreground">
-              Build the complete recruitment process that applicants will
-              follow.
-            </div>
+           <div className="mt-2 text-sm text-muted-foreground">
+  Add interview rounds and hiring milestones after applications close.
+</div>
 
             {!readOnly && (
               <button
@@ -215,7 +216,7 @@ export function RecruitmentTimelineBuilder({
                         updateStage(item.id, "stage", e.target.value)
                       }
                       className="w-full rounded-xl border border-border px-4 py-3 text-sm"
-                      placeholder="Technical Interview"
+                      placeholder="HR Interview"
                     />
                   </div>
 
@@ -267,12 +268,10 @@ export function RecruitmentTimelineBuilder({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="font-medium">Timeline Summary</div>
-
-              <div className="mt-1 text-xs text-muted-foreground">
-                This timeline is stored only in the recruitment draft. During
-                Publish it will become the opportunity timeline shown to
-                students.
-              </div>
+<div className="mt-1 text-xs text-muted-foreground">
+  This timeline represents interview rounds after applications have closed.
+  Application opening and closing are managed centrally in Recruitment Settings.
+</div>
             </div>
 
             <div className="text-xs text-muted-foreground">

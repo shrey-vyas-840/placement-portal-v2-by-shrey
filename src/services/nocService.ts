@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-
+import { generateUuid } from "@/lib/generateUuid";
 export const NOC_TYPES = [
   "On Campus Internship + PPO",
 
@@ -143,7 +143,7 @@ export const nocService = {
 
     if (error) throw error;
 
-    const approvalToken = crypto.randomUUID();
+    const approvalToken = generateUuid();
 
     const { error: tokenError } = await (supabase as any).from("noc_approval_tokens").upsert(
       {
@@ -223,7 +223,7 @@ export const nocService = {
   async uploadCompletionCertificate(file: File) {
     const fileExt = file.name.split(".").pop() || "pdf";
 
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const fileName = `${generateUuid()}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from("noc-completion-documents")
@@ -298,7 +298,7 @@ export const nocService = {
   },
 
   async regenerateHodToken(nocRequestId: string) {
-    const token = crypto.randomUUID();
+    const token = generateUuid();
 
     const { data: request, error: requestError } = await (supabase as any)
 

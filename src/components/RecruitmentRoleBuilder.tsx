@@ -1078,7 +1078,7 @@ export function RecruitmentRoleBuilder({
                             <div className="font-medium">Eligibility</div>
 
                             <div className="text-sm text-muted-foreground">
-                              Use recruitment default eligibility or override it for this role.
+                             Inherit Recruitment Eligibility or override it for this role.
                             </div>
                           </div>
 

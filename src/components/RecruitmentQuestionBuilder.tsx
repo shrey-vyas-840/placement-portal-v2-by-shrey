@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { generateUuid } from "@/lib/generateUuid";
 
 export type RecruitmentQuestionType =
   | "text"
@@ -90,7 +91,7 @@ const QUESTION_TYPE_OPTIONS: Array<{ label: string; value: RecruitmentQuestionTy
 
 function createId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
+    ? generateUuid()
     : Math.random().toString(36).slice(2);
 }
 

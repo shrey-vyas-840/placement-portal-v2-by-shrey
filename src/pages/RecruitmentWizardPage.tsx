@@ -49,7 +49,9 @@ interface RecruiterFormData {
 interface DriveFormData {
   drive_type: "Placement" | "Internship" | "Intern + PPO" | "";
   drive_mode: "Online" | "Offline" | "Hybrid" | "";
-  registration_end: string;
+
+  application_open: string;
+  application_close: string;
 }
 
 interface DefaultEligibilityFormData {
@@ -72,10 +74,16 @@ const EMPTY_ELIGIBILITY: DefaultEligibilityFormData = {
   additional_requirements: "",
 };
 
+const now = new Date();
+
+const close = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
 const EMPTY_DRIVE: DriveFormData = {
   drive_type: "",
   drive_mode: "",
-  registration_end: "",
+
+  application_open: now.toISOString().slice(0, 16),
+  application_close: close.toISOString().slice(0, 16),
 };
 
 const EMPTY_RECRUITER = (): RecruiterFormData => ({
@@ -248,7 +256,13 @@ export function RecruitmentWizardPage() {
 
               drive_mode: String(driveData.drive_mode ?? "") as DriveFormData["drive_mode"],
 
-              registration_end: String(driveData.registration_end ?? ""),
+              application_open: String(
+                driveData.application_open ?? now.toISOString().slice(0, 16),
+              ),
+
+              application_close: String(
+                driveData.application_close ?? close.toISOString().slice(0, 16),
+              ),
             });
           }
           if (draft.eligibility_data) {
@@ -887,15 +901,15 @@ export function RecruitmentWizardPage() {
 
                           <option value="Large">Large</option>
                         </select>
-                        <div className="md:col-span-2 flex justify-end pt-5">
-                          <button
-                            type="button"
-                            onClick={handleCreateCompany}
-                            className="rounded-xl bg-primary px-8 py-3 text-primary-foreground transition hover:opacity-90"
-                          >
-                            Save Company
-                          </button>
-                        </div>
+                      </div>
+                      <div className="md:col-span-2 flex justify-end pt-5">
+                        <button
+                          type="button"
+                          onClick={handleCreateCompany}
+                          className="rounded-xl bg-primary px-8 py-3 text-primary-foreground transition hover:opacity-90"
+                        >
+                          Save Company
+                        </button>
                       </div>
                     </div>
                     <div className="mt-10 border-t border-border pt-8">
@@ -1035,7 +1049,7 @@ export function RecruitmentWizardPage() {
                 </div>
 
                 <div className="rounded-3xl border border-border bg-card p-8">
-                  <div className="grid gap-6 md:grid-cols-3">
+                  <div className="grid gap-6 md:grid-cols-4">
                     <div>
                       <label className="mb-2 block text-sm font-medium">Recruitment Type</label>
 
@@ -1083,23 +1097,41 @@ export function RecruitmentWizardPage() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium">Registration Ends</label>
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">Application Opens</label>
 
-                      <input
-                        type="datetime-local"
-                        value={drive.registration_end}
-                        onChange={(e) =>
-                          setDrive((prev) => ({
-                            ...prev,
-                            registration_end: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-xl border border-border px-4 py-3"
-                      />
+                        <input
+                          type="datetime-local"
+                          value={drive.application_open}
+                          onChange={(e) =>
+                            setDrive((prev) => ({
+                              ...prev,
+                              application_open: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-border px-4 py-3"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium">Application Closes</label>
+
+                        <input
+                          type="datetime-local"
+                          value={drive.application_close}
+                          onChange={(e) =>
+                            setDrive((prev) => ({
+                              ...prev,
+                              application_close: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-xl border border-border px-4 py-3"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="mt-2 text-sm text-muted-foreground">
-                    Registration starts automatically when the recruitment is published.
+                    Applications automatically open and close according to these dates.
                   </div>
                 </div>
               </div>
@@ -1108,9 +1140,10 @@ export function RecruitmentWizardPage() {
                 <div className="rounded-2xl border border-border bg-card p-6">
                   <h3 className="text-xl font-semibold">Recruitment Default Eligibility</h3>
 
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Configure the default eligibility criteria for this recruitment. Every new job
-                    role can inherit these settings or override them individually.
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    Configure the default eligibility criteria for this recruitment. These rules
+                    become the default eligibility for every new job role. Individual job roles may
+                    later override any of these settings if required.
                   </p>
                 </div>
 
@@ -1185,9 +1218,11 @@ export function RecruitmentWizardPage() {
                       </div>
 
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Registration Ends</span>
+                        <span className="text-muted-foreground">Application Window</span>
 
-                        <span className="font-medium">{drive.registration_end || "—"}</span>
+                        <span className="font-medium">
+                          {drive.application_open || "—"} → {drive.application_close || "—"}
+                        </span>
                       </div>
 
                       <div className="flex justify-between">
@@ -1290,13 +1325,13 @@ export function RecruitmentWizardPage() {
 
                     if (!draftId) {
                       const newDraft = await createDraft(
-  authProviderId!,
-  company.company_name.trim() === ""
-    ? "Untitled Recruitment"
-    : `${company.company_name} Recruitment`,
-  company,
-  recruiters,
-);
+                        authProviderId!,
+                        company.company_name.trim() === ""
+                          ? "Untitled Recruitment"
+                          : `${company.company_name} Recruitment`,
+                        company,
+                        recruiters,
+                      );
 
                       setDraftId(newDraft.draft_id);
 
@@ -1322,17 +1357,22 @@ export function RecruitmentWizardPage() {
                       return;
                     }
 
-                    if (!drive.registration_end) {
-                      alert("Please select Registration End.");
-
+                    if (!drive.application_open) {
+                      alert("Please select Application Open Date.");
                       return;
                     }
 
-                    const registrationEnd = new Date(drive.registration_end);
+                    if (!drive.application_close) {
+                      alert("Please select Application Close Date.");
+                      return;
+                    }
 
-                    if (registrationEnd.getTime() <= Date.now()) {
-                      alert("Registration End must be a future date and time.");
+                    const openDate = new Date(drive.application_open);
 
+                    const closeDate = new Date(drive.application_close);
+
+                    if (closeDate <= openDate) {
+                      alert("Application Close must be after Application Open.");
                       return;
                     }
                   }

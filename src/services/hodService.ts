@@ -1,3 +1,4 @@
+import { generateUuid } from "@/lib/generateUuid";
 import { supabase } from "@/lib/supabase";
 
 type AuthContext = {
@@ -211,7 +212,7 @@ export const hodService = {
   },
 
   async createOrRefreshApprovalToken(nocRequestId: string, expiresAt: string) {
-    const token = crypto.randomUUID();
+    const token = generateUuid();
     const now = new Date().toISOString();
 
     const { data, error } = await (supabase as any)

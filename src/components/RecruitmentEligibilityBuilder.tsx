@@ -146,7 +146,7 @@ export function RecruitmentEligibilityBuilder({
           />
 
           <div>
-            <div className="font-medium">Use Recruitment Default Eligibility</div>
+            <div className="font-medium">Inherit Recruitment Eligibility</div>
 
             <div className="mt-1 text-sm text-muted-foreground">
               When enabled, this role inherits the recruitment-level eligibility and no custom

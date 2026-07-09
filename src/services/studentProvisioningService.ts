@@ -1,3 +1,4 @@
+import { generateUuid } from "@/lib/generateUuid";
 import { supabase } from "@/lib/supabase";
 import { studentService } from "@/services/studentService";
 import type { StudentMaster } from "@/types/student";
@@ -235,7 +236,7 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
 
   if (!existingOnboarding.data) {
     const { error: onboardingError } = await db.from("student_onboarding").insert({
-      onboarding_id: crypto.randomUUID(),
+      onboarding_id: generateUuid(),
 
       student_id: profile.student_id,
 

@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-
+import { generateUuid } from "@/lib/generateUuid";
 type AnswerInput = {
   question_id: string;
   answer_value: any;
@@ -28,7 +28,7 @@ async function uploadQuestionDocument(
 ): Promise<string> {
   const fileExt = file.name.split(".").pop() || "bin";
 
-  const objectPath = `${studentId}/${opportunityId}/${questionId}/${crypto.randomUUID()}.${fileExt}`;
+  const objectPath = `${studentId}/${opportunityId}/${questionId}/${generateUuid()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("student-question-files")
