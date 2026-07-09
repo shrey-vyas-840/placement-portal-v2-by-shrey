@@ -9,7 +9,7 @@ import {
 import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/RecruitmentRoleBuilder";
 import { RecruitmentRolePreview } from "@/components/RecruitmentRolePreview";
 import { validateRecruitmentRole } from "@/components/recruitmentRoleValidation";
-import { getLatestDraft, saveDraft } from "@/services/recruitmentDraftService";
+import { createDraft, saveDraft } from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 import { generateUuid } from "@/lib/generateUuid";
 import { supabase } from "@/lib/supabase";
@@ -201,7 +201,7 @@ export function RecruitmentWizardPage() {
 
         setAuthProviderId(user.id);
 
-        const draft = await getLatestDraft();
+        const draft = await createDraft(user.id);
 
         if (draft && draft.auth_provider_id === user.id) {
           setDraftId(draft.draft_id);
@@ -215,6 +215,7 @@ export function RecruitmentWizardPage() {
               hiring_location: String(companyData.hiring_location ?? ""),
               industry_type: String(companyData.industry_type ?? ""),
               company_description: String(companyData.company_description ?? ""),
+
               company_size: String(companyData.company_size ?? ""),
             });
             setShowCreateCompany(false);
@@ -311,7 +312,7 @@ export function RecruitmentWizardPage() {
   }, []);
 
   useEffect(() => {
-    if (!draftLoaded || !authProviderId) {
+    if (!draftLoaded || !authProviderId || !draftId) {
       return;
     }
 
@@ -320,8 +321,8 @@ export function RecruitmentWizardPage() {
         setIsSavingDraft(true);
 
         await saveDraft({
+          draftId: draftId!,
           authProviderId,
-
           draftName:
             company.company_name.trim() === ""
               ? "Untitled Recruitment"
@@ -352,6 +353,7 @@ export function RecruitmentWizardPage() {
     roles,
     currentStep,
     authProviderId,
+    draftId,
     draftLoaded,
   ]);
 
@@ -528,19 +530,15 @@ export function RecruitmentWizardPage() {
                   </button>
                 </div>
                 <div className="overflow-hidden rounded-2xl border border-border">
-                  <div className="max-h-[420px] overflow-y-auto">
+                  <div className="max-h-[450px] overflow-y-auto">
                     <table className="w-full">
                       <thead className="sticky top-0 bg-card z-10">
                         <tr className="border-b">
-                          <th className="w-20 px-4 py-3 text-left text-xs uppercase">Select</th>
-
-                          <th className="px-4 py-3 text-left text-xs uppercase">Company</th>
-
-                          <th className="px-4 py-3 text-left text-xs uppercase">Industry</th>
-
-                          <th className="px-4 py-3 text-left text-xs uppercase">Location</th>
-
-                          <th className="px-4 py-3 text-left text-xs uppercase">Website</th>
+                          <th className="w-20 px-4 py-4 text-left text-m uppercase">Select</th>
+                          <th className="px-4 py-4 text-left text-m uppercase">Company</th>
+                          <th className="px-4 py-4 text-left text-m uppercase">Industry</th>
+                          <th className="px-4 py-4 text-left text-m uppercase">Location</th>
+                          <th className="px-4 py-4 text-left text-m uppercase">Website</th>
                         </tr>
                       </thead>
 
@@ -877,7 +875,7 @@ export function RecruitmentWizardPage() {
 
                           <option value="Large">Large</option>
                         </select>
-                        <div className="md:col-span-2 flex justify-end pt-4">
+                        <div className="md:col-span-2 flex justify-end pt-5">
                           <button
                             type="button"
                             onClick={handleCreateCompany}

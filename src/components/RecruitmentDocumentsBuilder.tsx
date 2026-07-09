@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { generateUuid } from "@/lib/generateUuid";
 
 export type RecruitmentRoleDocument = {
   id: string;
@@ -25,7 +26,7 @@ const DEFAULT_DOCUMENT_SUGGESTIONS = [
 
 function createDocument(overrides?: Partial<RecruitmentRoleDocument>): RecruitmentRoleDocument {
   return {
-    id: crypto.randomUUID(),
+    id: generateUuid(),
     document_name: "",
     description: "",
     required: true,

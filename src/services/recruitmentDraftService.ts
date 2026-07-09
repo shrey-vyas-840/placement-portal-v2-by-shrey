@@ -50,6 +50,7 @@ export interface RecruitmentDraftRow {
 }
 
 export interface SaveRecruitmentDraftInput {
+  draftId: string;
   authProviderId: string;
 
   createdBy?: string | null;
@@ -151,6 +152,37 @@ export async function ensureDraftForUser(authProviderId: string): Promise<Recrui
 
   return data as RecruitmentDraftRow;
 }
+
+export async function createDraft(
+  authProviderId: string,
+): Promise<RecruitmentDraftRow> {
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .insert({
+      auth_provider_id: authProviderId,
+      draft_name: "Untitled Recruitment",
+      current_step: 0,
+      status: "DRAFT",
+      company_data: null,
+      recruiters_data: null,
+      drive_data: null,
+      eligibility_data: null,
+      default_questions_data: null,
+      roles_data: null,
+      publish_data: null,
+      wizard_state: null,
+      is_completed: false,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as RecruitmentDraftRow;
+}
+
 export async function getDraftForUser(
   authProviderId: string,
 ): Promise<RecruitmentDraftRow> {
@@ -163,67 +195,42 @@ export async function getDraftForUser(
   return ensureDraftForUser(authProviderId);
 }
 
-export async function saveDraft(input: SaveRecruitmentDraftInput): Promise<RecruitmentDraftRow> {
-  const existing = await getDraftForUser(
-    input.authProviderId,
-  );
+export async function saveDraft(
+  input: SaveRecruitmentDraftInput,
+): Promise<RecruitmentDraftRow> {
 
-  const nextRow = {
-    auth_provider_id: input.authProviderId,
-
-    created_by: input.createdBy !== undefined ? input.createdBy : (existing.created_by ?? null),
-
+  const updates = {
+    created_by: input.createdBy,
     draft_name:
       input.draftName !== undefined
         ? normalizeDraftName(input.draftName)
-        : (existing.draft_name ?? null),
-
-    current_step: input.currentStep !== undefined ? input.currentStep : existing.current_step,
-
-    status: input.status !== undefined ? input.status : existing.status,
-
-    company_data: input.companyData !== undefined ? input.companyData : existing.company_data,
-
-    recruiters_data:
-      input.recruitersData !== undefined ? input.recruitersData : existing.recruiters_data,
-
-    drive_data: input.driveData !== undefined ? input.driveData : existing.drive_data,
-
-    eligibility_data:
-      input.eligibilityData !== undefined ? input.eligibilityData : existing.eligibility_data,
-
-    default_questions_data:
-      input.defaultQuestionsData !== undefined
-        ? input.defaultQuestionsData
-        : existing.default_questions_data,
-
-    roles_data: input.rolesData !== undefined ? input.rolesData : existing.roles_data,
-
-    publish_data: input.publishData !== undefined ? input.publishData : existing.publish_data,
-
-    wizard_state: input.wizardState !== undefined ? input.wizardState : existing.wizard_state,
-
-    is_completed: input.isCompleted !== undefined ? input.isCompleted : existing.is_completed,
-
-    created_company_id:
-      input.createdCompanyId !== undefined ? input.createdCompanyId : existing.created_company_id,
-
-    created_drive_id:
-      input.createdDriveId !== undefined ? input.createdDriveId : existing.created_drive_id,
-
-    published_drive_id:
-      input.publishedDriveId !== undefined ? input.publishedDriveId : existing.published_drive_id,
-
-    published_at: input.publishedAt !== undefined ? input.publishedAt : existing.published_at,
-
+        : undefined,
+    current_step: input.currentStep,
+    status: input.status,
+    company_data: input.companyData,
+    recruiters_data: input.recruitersData,
+    drive_data: input.driveData,
+    eligibility_data: input.eligibilityData,
+    default_questions_data: input.defaultQuestionsData,
+    roles_data: input.rolesData,
+    publish_data: input.publishData,
+    wizard_state: input.wizardState,
+    is_completed: input.isCompleted,
+    created_company_id: input.createdCompanyId,
+    created_drive_id: input.createdDriveId,
+    published_drive_id: input.publishedDriveId,
+    published_at: input.publishedAt,
     last_saved_at: new Date().toISOString(),
   };
 
+  const cleanedUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([, value]) => value !== undefined),
+  );
+
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
-    .upsert(nextRow, {
-      onConflict: "auth_provider_id",
-    })
+    .update(cleanedUpdates)
+    .eq("draft_id", input.draftId)
     .select("*")
     .single();
 
@@ -233,6 +240,7 @@ export async function saveDraft(input: SaveRecruitmentDraftInput): Promise<Recru
 
   return data as RecruitmentDraftRow;
 }
+
 export async function completeDraft(
   input: SaveRecruitmentDraftInput,
 ): Promise<RecruitmentDraftRow> {
@@ -298,74 +306,122 @@ export async function getArchivedDrafts(): Promise<RecruitmentDraftRow[]> {
   return (data ?? []) as RecruitmentDraftRow[];
 }
 
-export async function updateCurrentStep(authProviderId: string, currentStep: number) {
+export async function updateCurrentStep(
+  draftId: string,
+  authProviderId: string,
+  currentStep: number,
+) {
   return saveDraft({
-    authProviderId,
+      draftId,
+  authProviderId,
     currentStep,
   });
 }
 
-export async function updateWizardState(authProviderId: string, wizardState: unknown) {
+export async function updateWizardState(
+  draftId: string,
+  authProviderId: string,
+  wizardState: unknown,
+) {
   return saveDraft({
-    authProviderId,
+      draftId,
+  authProviderId,
     wizardState,
   });
 }
 
-export async function updateCompanyData(authProviderId: string, companyData: unknown) {
+export async function updateCompanyData(
+  draftId: string,
+  authProviderId: string,
+  companyData: unknown,
+) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     companyData,
   });
 }
 
-export async function updateRecruitersData(authProviderId: string, recruitersData: unknown) {
+export async function updateRecruitersData(
+  draftId: string,
+  authProviderId: string,
+  recruitersData: unknown,
+) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     recruitersData,
   });
 }
 
-export async function updateDriveData(authProviderId: string, driveData: unknown) {
+export async function updateDriveData(
+  draftId: string,
+  authProviderId: string,
+  driveData: unknown,
+) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     driveData,
   });
 }
 
-export async function updateEligibilityData(authProviderId: string, eligibilityData: unknown) {
+export async function updateEligibilityData(
+  draftId: string,
+  authProviderId: string,
+  eligibilityData: unknown,
+) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     eligibilityData,
   });
 }
 export async function updateDefaultQuestionsData(
+  draftId: string,
   authProviderId: string,
   defaultQuestionsData: unknown,
 ) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     defaultQuestionsData,
   });
 }
 
-export async function updateRolesData(authProviderId: string, rolesData: unknown) {
+export async function updateRolesData(
+  draftId: string,
+  authProviderId: string,
+  rolesData: unknown,
+) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     rolesData,
   });
 }
 
-export async function updatePublishData(authProviderId: string, publishData: unknown) {
-  return saveDraft({
-    authProviderId,
+export async function updatePublishData(
+  draftId: string,
+  authProviderId: string,
+  publishData: unknown,
+) {
+    return saveDraft({
+      draftId,
+      authProviderId,
     publishData,
   });
 }
 
-export async function markPublished(authProviderId: string, driveId: string, companyId?: string) {
+export async function markPublished(
+  draftId: string,
+  authProviderId: string,
+  driveId: string,
+  companyId?: string,
+) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     status: "PUBLISHED",
     isCompleted: true,
     publishedAt: new Date().toISOString(),
@@ -375,9 +431,13 @@ export async function markPublished(authProviderId: string, driveId: string, com
   });
 }
 
-export async function archiveDraft(authProviderId: string) {
+export async function archiveDraft(
+  draftId: string,
+  authProviderId: string,
+) {
   return saveDraft({
-    authProviderId,
+  draftId,
+  authProviderId,
     status: "ARCHIVED",
   });
 }
@@ -396,19 +456,4 @@ export async function deleteDraft(draftId: string): Promise<void> {
 export async function draftExists(authProviderId: string): Promise<boolean> {
   const draft = await getDraftByAuthProviderId(authProviderId);
   return !!draft;
-}
-
-export async function getLatestDraft(): Promise<RecruitmentDraftRow | null> {
-  const { data, error } = await (supabase as any)
-    .from("recruitment_drafts")
-    .select("*")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return (data as RecruitmentDraftRow | null) ?? null;
 }
