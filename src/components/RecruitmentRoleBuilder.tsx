@@ -218,6 +218,26 @@ export function RecruitmentRoleBuilder({
     }));
   }
 
+  function goToPreviousSection(roleId: string) {
+    const current = getActiveSection(roleId);
+
+    const index = ROLE_SECTIONS.findIndex((s) => s.id === current);
+
+    if (index > 0) {
+      setActiveSection(roleId, ROLE_SECTIONS[index - 1].id);
+    }
+  }
+
+  function goToNextSection(roleId: string) {
+    const current = getActiveSection(roleId);
+
+    const index = ROLE_SECTIONS.findIndex((s) => s.id === current);
+
+    if (index < ROLE_SECTIONS.length - 1) {
+      setActiveSection(roleId, ROLE_SECTIONS[index + 1].id);
+    }
+  }
+
   function updateRole(index: number, field: keyof RecruitmentRole, value: any) {
     if (readOnly) return;
 
@@ -618,6 +638,7 @@ export function RecruitmentRoleBuilder({
                         ))}
                       </div>
                     </div>
+
                     {activeSection === "basic" && (
                       <div className="rounded-xl border border-border bg-background">
                         <div className="border-b border-border px-5 py-4">
@@ -1078,7 +1099,7 @@ export function RecruitmentRoleBuilder({
                             <div className="font-medium">Eligibility</div>
 
                             <div className="text-sm text-muted-foreground">
-                             Inherit Recruitment Eligibility or override it for this role.
+                              Inherit Recruitment Eligibility or override it for this role.
                             </div>
                           </div>
 
@@ -1274,6 +1295,31 @@ export function RecruitmentRoleBuilder({
                     )}
                   </div>
                 )}
+                <div className="mt-3 mb-3 p-5 flex items-center justify-between border-t border-border pt-5">
+                  <button
+                    type="button"
+                    disabled={activeSection === ROLE_SECTIONS[0].id}
+                    onClick={() => goToPreviousSection(role.role_id)}
+                    className="rounded-xl border border-border px-5 py-2 transition hover:bg-gray-200"
+                  >
+                    ← Previous Section
+                  </button>
+
+                  <div className="text-sm text-muted-foreground">
+                    {ROLE_SECTIONS.findIndex((s) => s.id === activeSection) + 1}
+                    {" / "}
+                    {ROLE_SECTIONS.length}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={activeSection === ROLE_SECTIONS[ROLE_SECTIONS.length - 1].id}
+                    onClick={() => goToNextSection(role.role_id)}
+                    className="rounded-xl border border-border px-5 py-2 disabled:opacity-40 transition hover:bg-green-200"
+                  >
+                    Next Section →
+                  </button>
+                </div>
               </div>
             );
           })}

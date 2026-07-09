@@ -439,6 +439,79 @@ export function RecruitmentWizardPage() {
     );
   }
 
+  function addRoleFromWizard() {
+    setRoles((previous) => [
+      ...previous,
+      {
+        role_id: generateUuid(),
+
+        role_name: "",
+
+        employment_type: "Full Time",
+
+        work_mode: "Onsite",
+
+        role_description: "",
+
+        openings: "",
+
+        status: "Draft",
+
+        compensation: {
+          currency: "INR",
+          fixed_ctc: "",
+          variable_ctc: "",
+          joining_bonus: "",
+          retention_bonus: "",
+          internship_stipend: "",
+          ppo_package: "",
+        },
+
+        hiring: {
+          locations: [],
+          expected_joining_date: "",
+          department: "",
+          travel_required: false,
+          shift_details: "",
+        },
+
+        inheritDefaultEligibility: true,
+
+        eligibility: structuredClone(eligibility),
+
+        inheritDefaultQuestions: true,
+
+        questions: [],
+
+        documents: [],
+
+        timeline: [],
+      },
+    ]);
+  }
+
+  async function saveRolesOnly() {
+    if (!draftId || !authProviderId) return;
+
+    await saveDraft({
+      draftId,
+      authProviderId,
+      draftName:
+        company.company_name.trim() === ""
+          ? "Untitled Recruitment"
+          : `${company.company_name} Recruitment`,
+      currentStep,
+      companyData: company,
+      recruitersData: recruiters,
+      driveData: drive,
+      eligibilityData: eligibility,
+      defaultQuestionsData: defaultQuestions,
+      rolesData: roles,
+    });
+
+    alert("Roles saved.");
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -1378,10 +1451,14 @@ export function RecruitmentWizardPage() {
                   }
                   setCurrentStep((s) => Math.min(STEPS.length - 1, s + 1));
                 }}
-                disabled={currentStep === STEPS.length - 1}
+                disabled={false}
                 className="rounded-xl bg-primary px-5 py-2 text-primary-foreground disabled:opacity-40 text-m font-semibold transition hover:bg-blue-600"
               >
-                Next
+                {currentStep === 4
+                  ? "Review Recruitment"
+                  : currentStep === 5
+                    ? "Publish Recruitment"
+                    : "Next"}
               </button>
             </div>
           </div>
