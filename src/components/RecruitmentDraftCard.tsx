@@ -6,6 +6,8 @@ interface RecruitmentDraftCardProps {
   onDuplicate?: (draftId: string) => Promise<void>;
   onArchive?: (draftId: string) => Promise<void>;
   onDelete?: (draftId: string) => Promise<void>;
+  archived?: boolean;
+  onRestore?: (draftId: string) => Promise<void>;
 }
 export function RecruitmentDraftCard({
   draft,
@@ -13,6 +15,8 @@ export function RecruitmentDraftCard({
   onDuplicate,
   onArchive,
   onDelete,
+  onRestore,
+  archived = false,
 }: RecruitmentDraftCardProps) {
   const company =
     draft.company_data?.companyName ?? draft.company_data?.name ?? "No company selected";
@@ -54,6 +58,22 @@ export function RecruitmentDraftCard({
           >
             Continue Editing
           </Link>
+        </div>
+      ) : archived ? (
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            onClick={() => onRestore?.(draft.draft_id)}
+            className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
+          >
+            Restore
+          </button>
+
+          <button
+            onClick={() => onDelete?.(draft.draft_id)}
+            className="rounded-lg border border-destructive px-3 py-2 text-xs text-destructive"
+          >
+            Delete Permanently
+          </button>
         </div>
       ) : (
         <div className="mt-5 flex flex-wrap gap-2">

@@ -7,6 +7,7 @@ import {
   duplicateDraft,
   archiveDraftById,
   deleteDraftById,
+  restoreDraftById,
 } from "@/services/recruitmentDraftService";
 import { RecruitmentDraftCard } from "@/components/RecruitmentDraftCard";
 import { toast } from "sonner";
@@ -107,8 +108,21 @@ export function AdminRecruitmentHubPage() {
       toast.error("Failed to archive draft.");
     }
   }
+  async function handleRestore(draftId: string) {
+  try {
+    await restoreDraftById(draftId);
 
-  async function handleDelete(draftId: string) {
+    await refreshDrafts();
+
+    toast.success("Draft restored successfully.");
+  } catch (error) {
+    console.error(error);
+
+    toast.error("Failed to restore draft.");
+  }
+}
+
+  async function handlePermanentDelete(draftId: string) {
     if (!window.confirm("Delete this draft?")) {
       return;
     }
@@ -232,7 +246,7 @@ export function AdminRecruitmentHubPage() {
                     draft={draft}
                     onDuplicate={handleDuplicate}
                     onArchive={handleArchive}
-                    onDelete={handleDelete}
+                    onDelete={handlePermanentDelete}
                   />
                 ))
               )}
@@ -248,13 +262,25 @@ export function AdminRecruitmentHubPage() {
               </span>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
-              {loading
-                ? "Loading archived recruitments..."
-                : archivedDrafts.length === 0
-                  ? "No archived recruitment."
-                  : `${archivedDrafts.length} archived recruitment${archivedDrafts.length === 1 ? "" : "s"}.`}
-            </div>
+       <div className="mt-6 max-h-[520px] overflow-y-auto space-y-4 pr-2">
+  {archivedDrafts.length === 0 ? (
+    <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+      <div className="text-sm text-muted-foreground">
+        No archived recruitments.
+      </div>
+    </div>
+  ) : (
+    archivedDrafts.map((draft) => (
+      <RecruitmentDraftCard
+        key={draft.draft_id}
+        draft={draft}
+        archived
+        onRestore={handleRestore}
+        onDelete={handlePermanentDelete}
+      />
+    ))
+  )}
+</div>
           </div>
 
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">

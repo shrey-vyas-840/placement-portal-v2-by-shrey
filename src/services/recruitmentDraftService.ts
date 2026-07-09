@@ -561,3 +561,17 @@ export async function archiveDraftById(
     throw error;
   }
 }
+
+export async function restoreDraftById(
+    draftId: string,
+): Promise<void> {
+
+    const { error } = await (supabase as any)
+        .from("recruitment_drafts")
+        .update({
+            status: "DRAFT",
+        })
+        .eq("draft_id", draftId);
+
+    if (error) throw error;
+}
