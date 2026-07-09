@@ -9,11 +9,7 @@ import {
 import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/RecruitmentRoleBuilder";
 import { RecruitmentRolePreview } from "@/components/RecruitmentRolePreview";
 import { validateRecruitmentRole } from "@/components/recruitmentRoleValidation";
-import {
-    createDraft,
-    getDraftById,
-    saveDraft,
-} from "@/services/recruitmentDraftService";
+import { createDraft, getDraftById, saveDraft } from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 import { generateUuid } from "@/lib/generateUuid";
 import { supabase } from "@/lib/supabase";
@@ -208,20 +204,16 @@ export function RecruitmentWizardPage() {
 
         const url = new URL(window.location.href);
 
-const draftIdFromUrl = url.searchParams.get("draft");
+        const draftIdFromUrl = url.searchParams.get("draft");
 
-let draft;
+        let draft;
 
-if (draftIdFromUrl) {
-  draft = await getDraftById(draftIdFromUrl);
-} else {
-  draft = await createDraft(user.id);
-
-  window.history.replaceState(
-  {},
-  "",
-  `${window.location.pathname}?draft=${draft.draft_id}`,
-);}
+        if (draftIdFromUrl) {
+          draft = await getDraftById(draftIdFromUrl);
+        } else {
+          setDraftLoaded(true);
+          return;
+        }
 
         if (draft && draft.auth_provider_id === user.id) {
           setDraftId(draft.draft_id);
@@ -1265,7 +1257,7 @@ if (draftIdFromUrl) {
               </div>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (currentStep === 0) {
                     if (!selectedCompanyId) {
                       alert("Please select or create a company.");
@@ -1294,6 +1286,27 @@ if (draftIdFromUrl) {
                       alert("Primary recruiter email is invalid.");
 
                       return;
+                    }
+
+                    if (!draftId) {
+                      const newDraft = await createDraft(
+  authProviderId!,
+  company.company_name.trim() === ""
+    ? "Untitled Recruitment"
+    : `${company.company_name} Recruitment`,
+  company,
+  recruiters,
+);
+
+                      setDraftId(newDraft.draft_id);
+
+                      navigate({
+                        to: "/admin/recruitment-new",
+                        search: {
+                          draft: newDraft.draft_id,
+                        },
+                        replace: true,
+                      });
                     }
                   }
                   if (currentStep === 1) {

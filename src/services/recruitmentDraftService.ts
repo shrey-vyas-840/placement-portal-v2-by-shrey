@@ -155,16 +155,19 @@ export async function ensureDraftForUser(authProviderId: string): Promise<Recrui
 
 export async function createDraft(
   authProviderId: string,
+  draftName?: string,
+  companyData?: unknown,
+  recruitersData?: unknown,
 ): Promise<RecruitmentDraftRow> {
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
     .insert({
       auth_provider_id: authProviderId,
-      draft_name: "Untitled Recruitment",
+      draft_name: draftName?.trim() || "Untitled Recruitment",
       current_step: 0,
       status: "DRAFT",
-      company_data: null,
-      recruiters_data: null,
+      company_data: companyData ?? null,
+      recruiters_data: recruitersData ?? null,
       drive_data: null,
       eligibility_data: null,
       default_questions_data: null,

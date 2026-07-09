@@ -1,8 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getDraftsForUser, getArchivedDraftsForUser } from "@/services/recruitmentDraftService";
+import {
+  getDraftsForUser,
+  getArchivedDraftsForUser,
+  duplicateDraft,
+  archiveDraftById,
+  deleteDraftById,
+} from "@/services/recruitmentDraftService";
 import { RecruitmentDraftCard } from "@/components/RecruitmentDraftCard";
+import { toast } from "sonner";
 
 const HUB_CARDS = [
   {
@@ -36,31 +43,93 @@ export function AdminRecruitmentHubPage() {
   const [archivedDrafts, setArchivedDrafts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadDrafts() {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+  async function loadDrafts() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-        if (!user) return;
+      if (!user) return;
 
-        const [draftData, archivedData] = await Promise.all([
-          getDraftsForUser(user.id),
-          getArchivedDraftsForUser(user.id),
-        ]);
+      const [draftData, archivedData] = await Promise.all([
+        getDraftsForUser(user.id),
+        getArchivedDraftsForUser(user.id),
+      ]);
 
-        setDrafts(draftData);
-        setArchivedDrafts(archivedData);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+      setDrafts(draftData);
+      setArchivedDrafts(archivedData);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function refreshDrafts() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const [draftData, archivedData] = await Promise.all([
+      getDraftsForUser(user.id),
+      getArchivedDraftsForUser(user.id),
+    ]);
+
+    setDrafts(draftData);
+    setArchivedDrafts(archivedData);
+  }
+
+  async function handleDuplicate(draftId: string) {
+    try {
+      await duplicateDraft(draftId);
+
+      await refreshDrafts();
+
+      toast.success("Draft duplicated successfully.");
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Failed to duplicate draft.");
+    }
+  }
+  async function handleArchive(draftId: string) {
+    try {
+      await archiveDraftById(draftId);
+
+      await refreshDrafts();
+
+      toast.success("Draft archived successfully.");
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Failed to archive draft.");
+    }
+  }
+
+  async function handleDelete(draftId: string) {
+    if (!window.confirm("Delete this draft?")) {
+      return;
     }
 
+    try {
+      await deleteDraftById(draftId);
+
+      await refreshDrafts();
+
+      toast.success("Draft deleted successfully.");
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Failed to delete draft.");
+    }
+  }
+
+  useEffect(() => {
     loadDrafts();
   }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -157,7 +226,15 @@ export function AdminRecruitmentHubPage() {
                   No drafts available.
                 </div>
               ) : (
-                drafts.map((draft) => <RecruitmentDraftCard key={draft.draft_id} draft={draft} />)
+                drafts.map((draft) => (
+                  <RecruitmentDraftCard
+                    key={draft.draft_id}
+                    draft={draft}
+                    onDuplicate={handleDuplicate}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
+                  />
+                ))
               )}
             </div>
           </div>

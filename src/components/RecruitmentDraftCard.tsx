@@ -3,9 +3,17 @@ import { Link } from "@tanstack/react-router";
 interface RecruitmentDraftCardProps {
   draft: any;
   compact?: boolean;
+  onDuplicate?: (draftId: string) => Promise<void>;
+  onArchive?: (draftId: string) => Promise<void>;
+  onDelete?: (draftId: string) => Promise<void>;
 }
-
-export function RecruitmentDraftCard({ draft, compact = false }: RecruitmentDraftCardProps) {
+export function RecruitmentDraftCard({
+  draft,
+  compact = false,
+  onDuplicate,
+  onArchive,
+  onDelete,
+}: RecruitmentDraftCardProps) {
   const company =
     draft.company_data?.companyName ?? draft.company_data?.name ?? "No company selected";
 
@@ -59,22 +67,31 @@ export function RecruitmentDraftCard({ draft, compact = false }: RecruitmentDraf
             Continue
           </Link>
 
-          <button type="button" className="rounded-lg border px-3 py-2 text-xs">
+          <button
+            type="button"
+            onClick={() => onDuplicate?.(draft.draft_id)}
+            className="rounded-lg border px-3 py-2 text-xs"
+          >
             Duplicate
           </button>
 
-          <button type="button" className="rounded-lg border px-3 py-2 text-xs">
+          <button
+            type="button"
+            onClick={() => onArchive?.(draft.draft_id)}
+            className="rounded-lg border px-3 py-2 text-xs"
+          >
             Archive
           </button>
 
           <button
             type="button"
+            onClick={() => onDelete?.(draft.draft_id)}
             className="rounded-lg border border-destructive px-3 py-2 text-xs text-destructive"
           >
             Delete
           </button>
         </div>
-      )}    
+      )}
     </div>
   );
 }
