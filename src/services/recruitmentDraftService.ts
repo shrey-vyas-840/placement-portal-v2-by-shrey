@@ -457,3 +457,104 @@ export async function draftExists(authProviderId: string): Promise<boolean> {
   const draft = await getDraftByAuthProviderId(authProviderId);
   return !!draft;
 }
+
+export async function getDraftsForUser(
+  authProviderId: string,
+): Promise<RecruitmentDraftRow[]> {
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .select("*")
+    .eq("auth_provider_id", authProviderId)
+    .eq("status", "DRAFT")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as RecruitmentDraftRow[]) ?? [];
+}
+
+export async function getArchivedDraftsForUser(
+  authProviderId: string,
+): Promise<RecruitmentDraftRow[]> {
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .select("*")
+    .eq("auth_provider_id", authProviderId)
+    .eq("status", "ARCHIVED")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as RecruitmentDraftRow[]) ?? [];
+}
+
+export async function deleteDraftById(
+  draftId: string,
+): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .delete()
+    .eq("draft_id", draftId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function duplicateDraft(
+  draftId: string,
+): Promise<RecruitmentDraftRow> {
+  const source = await getDraftById(draftId);
+
+  if (!source) {
+    throw new Error("Draft not found.");
+  }
+
+  const {
+    draft_id,
+    created_at,
+    updated_at,
+    last_saved_at,
+    published_at,
+    published_drive_id,
+    ...copy
+  } = source;
+
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .insert({
+      ...copy,
+      draft_name: `${source.draft_name ?? "Untitled Recruitment"} (Copy)`,
+      status: "DRAFT",
+      is_completed: false,
+      published_at: null,
+      published_drive_id: null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as RecruitmentDraftRow;
+}
+
+export async function archiveDraftById(
+  draftId: string,
+): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .update({
+      status: "ARCHIVED",
+    })
+    .eq("draft_id", draftId);
+
+  if (error) {
+    throw error;
+  }
+}

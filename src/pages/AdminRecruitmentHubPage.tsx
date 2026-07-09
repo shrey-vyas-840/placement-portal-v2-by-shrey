@@ -1,4 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { getDraftsForUser, getArchivedDraftsForUser } from "@/services/recruitmentDraftService";
+import { RecruitmentDraftCard } from "@/components/RecruitmentDraftCard";
 
 const HUB_CARDS = [
   {
@@ -28,6 +32,35 @@ const WORKFLOW_STEPS = [
 ];
 
 export function AdminRecruitmentHubPage() {
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [archivedDrafts, setArchivedDrafts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadDrafts() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const [draftData, archivedData] = await Promise.all([
+          getDraftsForUser(user.id),
+          getArchivedDraftsForUser(user.id),
+        ]);
+
+        setDrafts(draftData);
+        setArchivedDrafts(archivedData);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDrafts();
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -70,8 +103,20 @@ export function AdminRecruitmentHubPage() {
               <span className="rounded-full bg-muted px-3 py-1 text-xs">Coming Soon</span>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
-              <div className="text-sm text-muted-foreground">No recruitment draft available.</div>
+            <div className="mt-6">
+              {loading ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  Loading...
+                </div>
+              ) : drafts.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  <div className="text-sm text-muted-foreground">
+                    No recruitment draft available.
+                  </div>
+                </div>
+              ) : (
+                <RecruitmentDraftCard draft={drafts[0]} compact />
+              )}
             </div>
           </div>
 
@@ -99,11 +144,21 @@ export function AdminRecruitmentHubPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Draft Recruitments</h2>
 
-              <span className="rounded-full bg-muted px-3 py-1 text-xs">0</span>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">{drafts.length}</span>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
-              No drafts available.
+            <div className="mt-6 space-y-4">
+              {loading ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  Loading drafts...
+                </div>
+              ) : drafts.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  No drafts available.
+                </div>
+              ) : (
+                drafts.map((draft) => <RecruitmentDraftCard key={draft.draft_id} draft={draft} />)
+              )}
             </div>
           </div>
 
@@ -111,11 +166,17 @@ export function AdminRecruitmentHubPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Archived Recruitments</h2>
 
-              <span className="rounded-full bg-muted px-3 py-1 text-xs">0</span>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">
+                {archivedDrafts.length}
+              </span>
             </div>
 
             <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
-              No archived recruitment.
+              {loading
+                ? "Loading archived recruitments..."
+                : archivedDrafts.length === 0
+                  ? "No archived recruitment."
+                  : `${archivedDrafts.length} archived recruitment${archivedDrafts.length === 1 ? "" : "s"}.`}
             </div>
           </div>
 
