@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { adminDriveService } from "@/services/adminDriveService";
 import { RecruitmentQuestionBuilder } from "@/components/RecruitmentQuestionBuilder";
 import {
@@ -9,7 +9,11 @@ import {
 import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/RecruitmentRoleBuilder";
 import { RecruitmentRolePreview } from "@/components/RecruitmentRolePreview";
 import { validateRecruitmentRole } from "@/components/recruitmentRoleValidation";
-import { createDraft, saveDraft } from "@/services/recruitmentDraftService";
+import {
+    createDraft,
+    getDraftById,
+    saveDraft,
+} from "@/services/recruitmentDraftService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 import { generateUuid } from "@/lib/generateUuid";
 import { supabase } from "@/lib/supabase";
@@ -103,6 +107,7 @@ const EMPTY_COMPANY: CompanyFormData = {
 
 export function RecruitmentWizardPage() {
   const [currentStep, setCurrentStep] = useState(0);
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<any[]>([]);
 
   const [searchText, setSearchText] = useState("");
@@ -201,7 +206,22 @@ export function RecruitmentWizardPage() {
 
         setAuthProviderId(user.id);
 
-        const draft = await createDraft(user.id);
+        const url = new URL(window.location.href);
+
+const draftIdFromUrl = url.searchParams.get("draft");
+
+let draft;
+
+if (draftIdFromUrl) {
+  draft = await getDraftById(draftIdFromUrl);
+} else {
+  draft = await createDraft(user.id);
+
+  window.history.replaceState(
+  {},
+  "",
+  `${window.location.pathname}?draft=${draft.draft_id}`,
+);}
 
         if (draft && draft.auth_provider_id === user.id) {
           setDraftId(draft.draft_id);
