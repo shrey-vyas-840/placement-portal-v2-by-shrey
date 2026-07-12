@@ -238,8 +238,16 @@ export function RecruitmentWizardPage() {
 
               company_size: String(companyData.company_size ?? ""),
             });
-            setShowCreateCompany(false);
-            setSelectedCompanyId("DRAFT_COMPANY");
+       const wizardState = (draft.wizard_state ?? {}) as Record<string, unknown>;
+
+setShowCreateCompany(false);
+
+const restoredSelectedCompanyId =
+  typeof wizardState.selectedCompanyId === "string"
+    ? wizardState.selectedCompanyId
+    : "DRAFT_COMPANY";
+
+setSelectedCompanyId(restoredSelectedCompanyId);
           }
 
           if (draft.current_step !== undefined) {
@@ -507,6 +515,15 @@ export function RecruitmentWizardPage() {
       eligibilityData: eligibility,
       defaultQuestionsData: defaultQuestions,
       rolesData: roles,
+      wizardState: {
+  selectedCompanyId,
+  companySelectionMode:
+    selectedCompanyId === "DRAFT_COMPANY"
+      ? "new"
+      : selectedCompanyId
+        ? "existing"
+        : null,
+},
     });
 
     alert("Roles saved.");
