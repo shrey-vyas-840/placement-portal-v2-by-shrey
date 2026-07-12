@@ -432,11 +432,22 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     const publishedAt = new Date();
 
     const applicationStartDate =
-      draft.publish_data?.application_start_date ?? publishedAt.toISOString();
+      draft.drive_data?.application_open ??
+      draft.publish_data?.application_start_date ??
+      publishedAt.toISOString();
 
     const applicationEndDate =
+      draft.drive_data?.application_close ??
       draft.publish_data?.application_end_date ??
       new Date(publishedAt.getTime() + 48 * 60 * 60 * 1000).toISOString();
+
+    const applicationStartsAt = new Date(applicationStartDate);
+
+    const shouldBeOpen = applicationStartsAt.getTime() <= publishedAt.getTime();
+
+    const initialApplicationStatus = shouldBeOpen ? "Open" : "Upcoming";
+
+    const visibleToStudents = true;
 
     await adminOpportunityService.createPublishedOpportunity({
       opportunity_id: recruitmentOpportunityId,
@@ -445,12 +456,8 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       opportunity_description: draft.drive_data.remarks ?? null,
       application_start_date: applicationStartDate,
       application_end_date: applicationEndDate,
-      application_status: draft.publish_data?.publish_immediately
-        ? new Date(applicationStartDate) <= publishedAt
-          ? "Open"
-          : "Upcoming"
-        : "Draft",
-      visible_to_students: Boolean(draft.publish_data?.publish_immediately),
+      application_status: initialApplicationStatus,
+      visible_to_students: visibleToStudents,
       created_by: draft.created_by ?? null,
     });
 
