@@ -382,7 +382,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
       company_id: companyId,
 
-     drive_name: generatedDriveName,
+      drive_name: generatedDriveName,
 
       drive_type: draft.drive_data.drive_type,
 
@@ -511,7 +511,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     }
 
     let nextQuestionPosition = (publishedQuestions?.length ?? 0) + 1;
-    
+
     for (const question of publishedQuestions ?? []) {
       publishedQuestionMap.set(question.question_title.trim().toLowerCase(), question.question_id);
     }
@@ -720,7 +720,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
         is_completed: true,
 
-        published_at: new Date().toISOString(),
+        published_at: publishedAt.toISOString(),
 
         published_drive_id: driveId,
 
@@ -730,15 +730,39 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
         current_step: 6,
 
-        last_saved_at: new Date().toISOString(),
+        last_saved_at: publishedAt.toISOString(),
 
-        updated_at: new Date().toISOString(),
+        updated_at: publishedAt.toISOString(),
+
+        publish_data: {
+          ...(draft.publish_data ?? {}),
+
+          application_start_date: applicationStartDate,
+
+          application_end_date: applicationEndDate,
+
+          published_at: publishedAt.toISOString(),
+
+          application_status: initialApplicationStatus,
+
+          publish_immediately: true,
+
+          role_selection_enabled: draft.publish_data?.role_selection_enabled ?? true,
+
+          minimum_role_selection: draft.publish_data?.minimum_role_selection ?? 1,
+
+          maximum_role_selection: draft.publish_data?.maximum_role_selection ?? 1,
+        },
 
         wizard_state: {
           ...(draft.wizard_state ?? {}),
+
           publishCompleted: true,
+
           publishedOpportunityId: recruitmentOpportunityId,
+
           publishedDriveId: driveId,
+
           publishedCompanyId: companyId,
         },
       })
