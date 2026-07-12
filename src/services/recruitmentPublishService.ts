@@ -95,29 +95,174 @@ async function rollbackPublish(
 function validateDraftForPublish(draft: any): PublishValidationResult {
   const errors: string[] = [];
 
-  if (!draft.company_data) {
-    errors.push("Company information is missing.");
+  const company = draft.company_data ?? {};
+  const recruiters = Array.isArray(draft.recruiters_data) ? draft.recruiters_data : [];
+  const drive = draft.drive_data ?? {};
+  const eligibility = draft.eligibility_data ?? {};
+  const publish = draft.publish_data ?? {};
+  const roles = Array.isArray(draft.roles_data) ? draft.roles_data : [];
+  const defaultQuestions = Array.isArray(draft.default_questions_data)
+    ? draft.default_questions_data
+    : [];
+
+  // Company
+
+  if (!company.company_name?.trim()) {
+    errors.push("Company name is required.");
   }
 
-  if (!draft.drive_data) {
-    errors.push("Drive information is missing.");
+  if (!company.hiring_location?.trim()) {
+    errors.push("Hiring location is required.");
   }
+
+  // Recruiters
+
+  if (recruiters.length === 0) {
+    errors.push("At least one recruiter is required.");
+  } else {
+    const primaryRecruiters = recruiters.filter((r: any) => Boolean(r.primary_contact));
+
+    if (primaryRecruiters.length !== 1) {
+      errors.push("Exactly one primary recruiter is required.");
+    }
+
+    for (const recruiter of recruiters) {
+      if (!String(recruiter.contact_name ?? "").trim()) {
+        errors.push("Recruiter name is required.");
+        break;
+      }
+
+      if (!String(recruiter.contact_email ?? "").trim()) {
+        errors.push("Recruiter email is required.");
+        break;
+      }
+    }
+  }
+
+  // Recruitment
+
+  if (!drive.drive_type) {
+    errors.push("Recruitment type is required.");
+  }
+
+  if (!drive.drive_mode) {
+    errors.push("Recruitment mode is required.");
+  }
+
+  // Application window
+
+  const applicationStart = publish.application_start_date ?? drive.application_open;
+
+  const applicationEnd = publish.application_end_date ?? drive.application_close;
+
+  if (applicationStart && applicationEnd) {
+    const start = new Date(applicationStart);
+    const end = new Date(applicationEnd);
+
+    if (end <= start) {
+      errors.push("Application closing date must be after opening date.");
+    }
+  }
+
+  // Eligibility
 
   if (!draft.eligibility_data) {
     errors.push("Eligibility configuration is missing.");
   }
 
-  if (!Array.isArray(draft.roles_data) || draft.roles_data.length === 0) {
+  // Roles
+
+  if (roles.length === 0) {
     errors.push("At least one recruitment role is required.");
+  } else {
+    for (const role of roles) {
+      const roleName = String(role.role_name ?? "").trim() || "Untitled Role";
+
+      if (!role.role_name?.trim()) {
+        errors.push("Every role must have a role name.");
+        continue;
+      }
+
+      if (
+        role.openings !== "" &&
+        role.openings !== null &&
+        role.openings !== undefined &&
+        Number(role.openings) < 1
+      ) {
+        errors.push(`${roleName}: openings must be at least 1.`);
+      }
+
+      const compensation = role.compensation ?? {};
+
+      const numericFields = [
+        {
+          label: "Fixed CTC",
+          value: compensation.fixed_ctc,
+        },
+        {
+          label: "Variable CTC",
+          value: compensation.variable_ctc,
+        },
+        {
+          label: "Joining Bonus",
+          value: compensation.joining_bonus,
+        },
+        {
+          label: "Retention Bonus",
+          value: compensation.retention_bonus,
+        },
+        {
+          label: "Internship Stipend",
+          value: compensation.internship_stipend,
+        },
+        {
+          label: "PPO Package",
+          value: compensation.ppo_package,
+        },
+      ];
+
+      for (const field of numericFields) {
+        if (
+          field.value !== "" &&
+          field.value !== null &&
+          field.value !== undefined &&
+          Number(field.value) < 0
+        ) {
+          errors.push(`${roleName}: ${field.label} cannot be negative.`);
+        }
+      }
+    }
   }
 
+  // Role selection settings
+
   if (
-    !Array.isArray(draft.default_questions_data) &&
-    (!Array.isArray(draft.roles_data) ||
-      draft.roles_data.every(
-        (role: any) => !Array.isArray(role.questions) || role.questions.length === 0,
-      ))
+    publish.minimum_role_selection !== undefined &&
+    publish.maximum_role_selection !== undefined
   ) {
+    const min = Number(publish.minimum_role_selection);
+    const max = Number(publish.maximum_role_selection);
+
+    if (min < 1) {
+      errors.push("Minimum role selection must be at least 1.");
+    }
+
+    if (max < min) {
+      errors.push("Maximum role selection cannot be less than minimum.");
+    }
+
+    if (max > roles.length) {
+      errors.push("Maximum role selection exceeds available roles.");
+    }
+  }
+
+  // Questions
+
+  const hasRoleQuestions = roles.some(
+    (role: any) => Array.isArray(role.questions) && role.questions.length > 0,
+  );
+
+  if (defaultQuestions.length === 0 && !hasRoleQuestions) {
     errors.push("No application questions were configured.");
   }
 
@@ -142,6 +287,10 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     throw new Error("Recruitment draft not found.");
   }
   const validation = validateDraftForPublish(draft);
+
+  if (!validation.valid) {
+    throw new Error(validation.errors.join("\n"));
+  }
 
   const companyId = draft.created_company_id ?? generateUuid();
 
@@ -280,29 +429,30 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
     const recruitmentOpportunityId = generateUuid();
 
-   const publishedAt = new Date();
+    const publishedAt = new Date();
 
-const applicationStartDate =
-  draft.publish_data?.application_start_date ??
-  publishedAt.toISOString();
+    const applicationStartDate =
+      draft.publish_data?.application_start_date ?? publishedAt.toISOString();
 
-const applicationEndDate =
-  draft.publish_data?.application_end_date ??
-  new Date(publishedAt.getTime() + 48 * 60 * 60 * 1000).toISOString();
+    const applicationEndDate =
+      draft.publish_data?.application_end_date ??
+      new Date(publishedAt.getTime() + 48 * 60 * 60 * 1000).toISOString();
 
-await adminOpportunityService.createPublishedOpportunity({
-  opportunity_id: recruitmentOpportunityId,
-  drive_id: driveId,
-  opportunity_title: draft.drive_data.drive_name,
-  opportunity_description: draft.drive_data.remarks ?? null,
-  application_start_date: applicationStartDate,
-  application_end_date: applicationEndDate,
-application_status: draft.publish_data?.publish_immediately
-  ? (new Date(applicationStartDate) <= publishedAt ? "Open" : "Upcoming")
-  : "Draft",
-  visible_to_students: Boolean(draft.publish_data?.publish_immediately),
-  created_by: draft.created_by ?? null,
-});
+    await adminOpportunityService.createPublishedOpportunity({
+      opportunity_id: recruitmentOpportunityId,
+      drive_id: driveId,
+      opportunity_title: draft.drive_data.drive_name,
+      opportunity_description: draft.drive_data.remarks ?? null,
+      application_start_date: applicationStartDate,
+      application_end_date: applicationEndDate,
+      application_status: draft.publish_data?.publish_immediately
+        ? new Date(applicationStartDate) <= publishedAt
+          ? "Open"
+          : "Upcoming"
+        : "Draft",
+      visible_to_students: Boolean(draft.publish_data?.publish_immediately),
+      created_by: draft.created_by ?? null,
+    });
 
     rollbackContext.createdOpportunityIds.push(recruitmentOpportunityId);
 

@@ -512,6 +512,38 @@ export function RecruitmentWizardPage() {
     alert("Roles saved.");
   }
 
+  async function handlePublishRecruitment() {
+    if (!draftId) {
+      alert("Recruitment draft not found.");
+      return;
+    }
+
+    const invalidRole = roles.find((role) => !validateRecruitmentRole(role).valid);
+
+    if (invalidRole) {
+      alert(`Role "${invalidRole.role_name || "Untitled Role"}" is incomplete.`);
+
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Publish this recruitment?\n\nAfter publishing, opportunities will be generated from all configured roles.",
+    );
+
+    if (!confirmed) return;
+
+    console.log("Publishing recruitment...", {
+      draftId,
+      company,
+      drive,
+      eligibility,
+      defaultQuestions,
+      roles,
+    });
+
+    alert("Publish pipeline will be connected in the next step.");
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -1366,6 +1398,10 @@ export function RecruitmentWizardPage() {
 
               <button
                 onClick={async () => {
+                  if (currentStep === 5) {
+                    await handlePublishRecruitment();
+                    return;
+                  }
                   if (currentStep === 0) {
                     if (!selectedCompanyId) {
                       alert("Please select or create a company.");
