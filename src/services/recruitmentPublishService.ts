@@ -296,6 +296,8 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
   const driveId = draft.created_drive_id ?? generateUuid();
 
+  const generatedDriveName = `${String(draft.company_data.company_name).trim()} Recruitment`;
+
   const companyAlreadyPublished =
     typeof draft.created_company_id === "string" && draft.created_company_id.trim() !== "";
 
@@ -380,7 +382,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
       company_id: companyId,
 
-      drive_name: draft.drive_data.drive_name,
+     drive_name: generatedDriveName,
 
       drive_type: draft.drive_data.drive_type,
 
@@ -452,7 +454,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
     await adminOpportunityService.createPublishedOpportunity({
       opportunity_id: recruitmentOpportunityId,
       drive_id: driveId,
-      opportunity_title: draft.drive_data.drive_name,
+      opportunity_title: generatedDriveName,
       opportunity_description: draft.drive_data.remarks ?? null,
       application_start_date: applicationStartDate,
       application_end_date: applicationEndDate,
@@ -508,6 +510,8 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       throw publishedQuestionsError;
     }
 
+    let nextQuestionPosition = (publishedQuestions?.length ?? 0) + 1;
+    
     for (const question of publishedQuestions ?? []) {
       publishedQuestionMap.set(question.question_title.trim().toLowerCase(), question.question_id);
     }
@@ -528,7 +532,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
             question_type: question.question_type,
             is_required: question.is_required,
             validation: question.validation || {},
-            position: null,
+            position: nextQuestionPosition++,
           })
           .select("question_id")
           .single();
@@ -559,7 +563,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       }
 
       const roleQuestionsToMap = role.inheritDefaultQuestions
-        ? (role.questions ?? [])
+        ? [...(draft.default_questions_data ?? []), ...(role.questions ?? [])]
         : (role.questions ?? []);
 
       for (const question of roleQuestionsToMap) {
