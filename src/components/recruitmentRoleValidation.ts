@@ -122,39 +122,34 @@ export function validateRecruitmentRole(
     });
   }
 
-  if (role.documents.length === 0) {
-    addIssue(issues, "documents", "Add at least one required document.");
-  } else {
-    role.documents.forEach((document, index) => {
-      if (!document.document_name.trim()) {
-        addIssue(issues, "documents", `Document ${index + 1} requires a document name.`);
-      }
+ if (role.documents.length > 0) {
+  role.documents.forEach((document, index) => {
+    if (!document.document_name.trim()) {
+      addIssue(issues, "documents", `Document ${index + 1} requires a document name.`);
+    }
 
-      const duplicateCount = role.documents.filter(
-        (d) =>
-          d.document_name.trim().toLowerCase() === document.document_name.trim().toLowerCase() &&
-          document.document_name.trim() !== "",
-      ).length;
+    const duplicateCount = role.documents.filter(
+      (d) =>
+        d.document_name.trim().toLowerCase() === document.document_name.trim().toLowerCase() &&
+        document.document_name.trim() !== "",
+    ).length;
 
-      if (duplicateCount > 1) {
-        addIssue(issues, "documents", `Duplicate document "${document.document_name}" detected.`);
-      }
-    });
-  }
-  if (role.timeline.length === 0) {
-    addIssue(issues, "timeline", "Add at least one recruitment stage.");
-  } else {
-    role.timeline.forEach((stage, index) => {
-      if (!stage.stage.trim()) {
-        addIssue(issues, "timeline", `Timeline stage ${index + 1} requires a stage name.`);
-      }
+    if (duplicateCount > 1) {
+      addIssue(issues, "documents", `Duplicate document "${document.document_name}" detected.`);
+    }
+  });
+}
+ if (role.timeline.length > 0) {
+  role.timeline.forEach((stage, index) => {
+    if (!stage.stage.trim()) {
+      addIssue(issues, "timeline", `Timeline stage ${index + 1} requires a stage name.`);
+    }
 
-      if (!stage.date) {
-        addIssue(issues, "timeline", `Timeline stage ${index + 1} requires a date.`);
-      }
-    });
-  }
-
+    if (!stage.date) {
+      addIssue(issues, "timeline", `Timeline stage ${index + 1} requires a date.`);
+    }
+  });
+}
   return {
     valid: issues.length === 0,
     issues,
