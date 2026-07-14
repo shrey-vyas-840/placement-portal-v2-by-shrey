@@ -512,33 +512,37 @@ if (isExistingCompany) {
 
     rollbackContext.createdOpportunityIds.push(recruitmentOpportunityId);
 
-    if (Array.isArray(draft.recruiters_data) && draft.recruiters_data.length > 0) {
-      for (const recruiter of draft.recruiters_data) {
-        const contactName = String(recruiter.contact_name ?? recruiter.name ?? "").trim();
-        const contactEmail = String(recruiter.contact_email ?? recruiter.email ?? "").trim();
-        const contactNumber = String(recruiter.contact_number ?? recruiter.phone ?? "").trim();
-        const contactPosition = String(
-          recruiter.contact_position ?? recruiter.designation ?? "",
-        ).trim();
+  if (
+  !isExistingCompany &&
+  Array.isArray(draft.recruiters_data) &&
+  draft.recruiters_data.length > 0
+) {
+  for (const recruiter of draft.recruiters_data) {
+    const contactName = String(recruiter.contact_name ?? recruiter.name ?? "").trim();
+    const contactEmail = String(recruiter.contact_email ?? recruiter.email ?? "").trim();
+    const contactNumber = String(recruiter.contact_number ?? recruiter.phone ?? "").trim();
+    const contactPosition = String(
+      recruiter.contact_position ?? recruiter.designation ?? "",
+    ).trim();
 
-        if (!contactName) {
-          throw new Error("Recruiter contact name is missing.");
-        }
-
-        if (!contactEmail) {
-          throw new Error("Recruiter contact email is missing.");
-        }
-
-        await (supabase as any).from("company_contacts").insert({
-          company_id: companyId,
-          contact_name: contactName,
-          contact_email: contactEmail,
-          contact_number: contactNumber || null,
-          contact_position: contactPosition || null,
-          primary_contact: Boolean(recruiter.primary_contact ?? recruiter.isPrimary),
-        });
-      }
+    if (!contactName) {
+      throw new Error("Recruiter contact name is missing.");
     }
+
+    if (!contactEmail) {
+      throw new Error("Recruiter contact email is missing.");
+    }
+
+    await (supabase as any).from("company_contacts").insert({
+      company_id: effectiveCompanyId,
+      contact_name: contactName,
+      contact_email: contactEmail,
+      contact_number: contactNumber || null,
+      contact_position: contactPosition || null,
+      primary_contact: Boolean(recruiter.primary_contact ?? recruiter.isPrimary),
+    });
+  }
+}
 
     await adminQuestionService.saveQuestions(
       recruitmentOpportunityId,
