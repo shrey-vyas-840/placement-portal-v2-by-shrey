@@ -413,6 +413,30 @@ export function RecruitmentWizardPage() {
       return;
     }
 
+    const normalizedName = company.company_name.trim().toLowerCase();
+
+    const existingCompany = companies.find(
+      (item) =>
+        String(item.company_name ?? "")
+          .trim()
+          .toLowerCase() === normalizedName,
+    );
+
+    if (existingCompany) {
+      alert(
+        'A company with this name already exists.\n\nPlease select it from the "Existing Companies" list instead of creating a new company.',
+      );
+
+      setSearchText(company.company_name);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
+      return;
+    }
+
     setSelectedCompanyId("DRAFT_COMPANY");
 
     setShowCreateCompany(false);
@@ -570,40 +594,32 @@ export function RecruitmentWizardPage() {
       setIsPublishing(true);
 
       await saveDraft({
-  draftId: draftId!,
-  authProviderId: authProviderId!,
-  draftName:
-    company.company_name.trim() === ""
-      ? "Untitled Recruitment"
-      : `${company.company_name} Recruitment`,
-  currentStep,
-  companyData: company,
-  recruitersData: recruiters,
-  driveData: drive,
-  eligibilityData: eligibility,
-  defaultQuestionsData: defaultQuestions,
-  rolesData: roles,
-  publishData: {
-    role_selection_enabled: roleSelectionEnabled,
-    minimum_role_selection: roleSelectionEnabled
-      ? minimumRoleSelection
-      : 0,
-    maximum_role_selection: roleSelectionEnabled
-      ? maximumRoleSelection
-      : 0,
-  },
-  wizardState: {
-    selectedCompanyId,
-    companySelectionMode:
-      selectedCompanyId === "DRAFT_COMPANY"
-        ? "new"
-        : selectedCompanyId
-          ? "existing"
-          : null,
-  },
-});
+        draftId: draftId!,
+        authProviderId: authProviderId!,
+        draftName:
+          company.company_name.trim() === ""
+            ? "Untitled Recruitment"
+            : `${company.company_name} Recruitment`,
+        currentStep,
+        companyData: company,
+        recruitersData: recruiters,
+        driveData: drive,
+        eligibilityData: eligibility,
+        defaultQuestionsData: defaultQuestions,
+        rolesData: roles,
+        publishData: {
+          role_selection_enabled: roleSelectionEnabled,
+          minimum_role_selection: roleSelectionEnabled ? minimumRoleSelection : 0,
+          maximum_role_selection: roleSelectionEnabled ? maximumRoleSelection : 0,
+        },
+        wizardState: {
+          selectedCompanyId,
+          companySelectionMode:
+            selectedCompanyId === "DRAFT_COMPANY" ? "new" : selectedCompanyId ? "existing" : null,
+        },
+      });
 
-await publishRecruitmentDraft(draftId!);
+      await publishRecruitmentDraft(draftId!);
 
       alert("Recruitment published successfully.");
 
@@ -1231,7 +1247,7 @@ await publishRecruitmentDraft(draftId!);
                 </div>
 
                 <div className="rounded-3xl border border-border bg-card p-8">
-                  <div className="grid gap-6 md:grid-cols-4">
+                  <div className="grid gap-6 md:grid-cols-4 items-start">
                     <div>
                       <label className="mb-2 block text-sm font-medium">Recruitment Type</label>
 
@@ -1279,37 +1295,35 @@ await publishRecruitmentDraft(draftId!);
                     </div>
 
                     <div>
-                      <div>
-                        <label className="mb-2 block text-sm font-medium">Application Opens</label>
+                      <label className="mb-2 block text-sm font-medium">Application Opens</label>
 
-                        <input
-                          type="datetime-local"
-                          value={drive.application_open}
-                          onChange={(e) =>
-                            setDrive((prev) => ({
-                              ...prev,
-                              application_open: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-xl border border-border px-4 py-3"
-                        />
-                      </div>
+                      <input
+                        type="datetime-local"
+                        value={drive.application_open}
+                        onChange={(e) =>
+                          setDrive((prev) => ({
+                            ...prev,
+                            application_open: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-border px-4 py-3"
+                      />
+                    </div>
 
-                      <div>
-                        <label className="mb-2 block text-sm font-medium">Application Closes</label>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium">Application Closes</label>
 
-                        <input
-                          type="datetime-local"
-                          value={drive.application_close}
-                          onChange={(e) =>
-                            setDrive((prev) => ({
-                              ...prev,
-                              application_close: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-xl border border-border px-4 py-3"
-                        />
-                      </div>
+                      <input
+                        type="datetime-local"
+                        value={drive.application_close}
+                        onChange={(e) =>
+                          setDrive((prev) => ({
+                            ...prev,
+                            application_close: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-border px-4 py-3"
+                      />
                     </div>
                   </div>
                   <div className="mt-2 text-sm text-muted-foreground">
@@ -1329,7 +1343,11 @@ await publishRecruitmentDraft(draftId!);
                   </p>
                 </div>
 
-                <RecruitmentEligibilityBuilder value={eligibility} onChange={setEligibility} />
+                <RecruitmentEligibilityBuilder
+                  value={eligibility}
+                  onChange={setEligibility}
+                  showInheritanceToggle={false}
+                />
               </div>
             ) : currentStep === 3 ? (
               <div className="space-y-8">
@@ -1578,14 +1596,12 @@ await publishRecruitmentDraft(draftId!);
             </div>
           </div>
         </div>
-        </div>
+      </div>
 
       {showPublishDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-lg rounded-3xl bg-card p-8 shadow-2xl">
-            <h2 className="text-2xl font-bold">
-              Publish Recruitment
-            </h2>
+            <h2 className="text-2xl font-bold">Publish Recruitment</h2>
 
             <p className="mt-2 text-sm text-muted-foreground">
               Configure how students can apply before publishing.
@@ -1622,9 +1638,7 @@ await publishRecruitmentDraft(draftId!);
               {roleSelectionEnabled && (
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      Minimum Roles
-                    </label>
+                    <label className="mb-2 block text-sm font-medium">Minimum Roles</label>
 
                     <input
                       type="number"
@@ -1636,10 +1650,7 @@ await publishRecruitmentDraft(draftId!);
                         setMinimumRoleSelection(
                           Math.max(
                             1,
-                            Math.min(
-                              roles.length,
-                              Number.parseInt(e.target.value || "1", 10),
-                            ),
+                            Math.min(roles.length, Number.parseInt(e.target.value || "1", 10)),
                           ),
                         )
                       }
@@ -1648,9 +1659,7 @@ await publishRecruitmentDraft(draftId!);
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      Maximum Roles
-                    </label>
+                    <label className="mb-2 block text-sm font-medium">Maximum Roles</label>
 
                     <input
                       type="number"
@@ -1662,10 +1671,7 @@ await publishRecruitmentDraft(draftId!);
                         setMaximumRoleSelection(
                           Math.max(
                             minimumRoleSelection,
-                            Math.min(
-                              roles.length,
-                              Number.parseInt(e.target.value || "1", 10),
-                            ),
+                            Math.min(roles.length, Number.parseInt(e.target.value || "1", 10)),
                           ),
                         )
                       }
@@ -1681,8 +1687,7 @@ await publishRecruitmentDraft(draftId!);
                 </div>
 
                 <div className="mt-1">
-                  Students may select between{" "}
-                  <strong>{minimumRoleSelection}</strong> and{" "}
+                  Students may select between <strong>{minimumRoleSelection}</strong> and{" "}
                   <strong>{maximumRoleSelection}</strong> role(s).
                 </div>
               </div>

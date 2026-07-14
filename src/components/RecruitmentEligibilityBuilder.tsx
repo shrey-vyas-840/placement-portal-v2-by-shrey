@@ -21,8 +21,9 @@ interface RecruitmentEligibilityBuilderProps {
   inheritFromRecruitmentDefaults?: boolean;
 
   onInheritanceChange?: (inherit: boolean) => void;
-
   readOnly?: boolean;
+
+  showInheritanceToggle?: boolean;
 }
 
 type EligibilityMapping = Record<string, Record<string, string[]>>;
@@ -55,9 +56,10 @@ function isValidInstitute(institute: string) {
 export function RecruitmentEligibilityBuilder({
   value,
   onChange,
-  inheritFromRecruitmentDefaults = false,
-  onInheritanceChange,
-  readOnly = false,
+inheritFromRecruitmentDefaults = false,
+onInheritanceChange,
+readOnly = false,
+showInheritanceToggle = true,
 }: RecruitmentEligibilityBuilderProps) {
   const selectedInstitutes = value.allowed_institutes;
   const selectedDegrees = value.allowed_degrees;
@@ -137,23 +139,25 @@ export function RecruitmentEligibilityBuilder({
       </div>
 
       <div className="space-y-5 p-5">
-        <label className="flex items-start gap-3 rounded-xl border border-border p-4">
-          <input
-            type="checkbox"
-            disabled={readOnly}
-            checked={inheritFromRecruitmentDefaults}
-            onChange={(e) => onInheritanceChange?.(e.target.checked)}
-          />
+  {showInheritanceToggle && (
+  <label className="flex items-start gap-3 rounded-xl border border-border p-4">
+    <input
+      type="checkbox"
+      disabled={readOnly}
+      checked={inheritFromRecruitmentDefaults}
+      onChange={(e) => onInheritanceChange?.(e.target.checked)}
+    />
 
-          <div>
-            <div className="font-medium">Inherit Recruitment Eligibility</div>
+    <div>
+      <div className="font-medium">Inherit Recruitment Eligibility</div>
 
-            <div className="mt-1 text-sm text-muted-foreground">
-              When enabled, this role inherits the recruitment-level eligibility and no custom
-              overrides are applied here.
-            </div>
-          </div>
-        </label>
+      <div className="mt-1 text-sm text-muted-foreground">
+        When enabled, this role inherits the recruitment-level eligibility and no custom
+        overrides are applied here.
+      </div>
+    </div>
+  </label>
+)}
 
         {inheritFromRecruitmentDefaults ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/20 p-5">
