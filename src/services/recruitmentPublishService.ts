@@ -296,6 +296,27 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
   const driveId = draft.created_drive_id ?? generateUuid();
 
+  const wizardState = (draft.wizard_state ?? {}) as Record<string, unknown>;
+
+const companySelectionMode =
+  typeof wizardState.companySelectionMode === "string"
+    ? wizardState.companySelectionMode
+    : "new";
+
+const selectedCompanyId =
+  typeof wizardState.selectedCompanyId === "string"
+    ? wizardState.selectedCompanyId
+    : null;
+
+const isExistingCompany =
+  companySelectionMode === "existing" &&
+  selectedCompanyId !== null &&
+  selectedCompanyId !== "DRAFT_COMPANY";
+
+const effectiveCompanyId = isExistingCompany
+  ? selectedCompanyId
+  : companyId;
+
   const generatedDriveName = `${String(draft.company_data.company_name).trim()} Recruitment`;
 
   const companyAlreadyPublished =
@@ -356,31 +377,57 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
   }
 
   try {
-    await adminDriveService.createCompanyForPublish({
-      company_id: companyId,
+    if (!isExistingCompany) {
+  await adminDriveService.createCompanyForPublish({
+    company_id: companyId,
 
-      company_name: draft.company_data.company_name,
+    company_name: draft.company_data.company_name,
 
-      company_website: draft.company_data.company_website,
+    company_website: draft.company_data.company_website,
 
-      hiring_location: draft.company_data.hiring_location,
+    hiring_location: draft.company_data.hiring_location,
 
-      industry_type: draft.company_data.industry_type,
+    industry_type: draft.company_data.industry_type,
 
-      company_description: draft.company_data.company_description,
+    company_description: draft.company_data.company_description,
 
-      company_size: draft.company_data.company_size,
-    });
+    company_size: draft.company_data.company_size,
+  });
+
+  rollbackContext.companyCreated = true;
+}
+
+if (isExistingCompany) {
+  const { error } = await (supabase as any).rpc(
+    "increment_company_past_drive_count",
+    {
+      p_company_id: effectiveCompanyId,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+} else {
+  const { error } = await (supabase as any)
+    .from("company_master")
+    .update({
+      past_drive_count: 1,
+    })
+    .eq("company_id", effectiveCompanyId);
+
+  if (error) {
+    throw error;
+  }
+}
 
     void adminOpportunityService;
     void adminQuestionService;
 
-    rollbackContext.companyCreated = true;
-
     await adminDriveService.createDriveForPublish({
       drive_id: driveId,
 
-      company_id: companyId,
+      company_id: effectiveCompanyId,
 
       drive_name: generatedDriveName,
 
@@ -724,7 +771,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
         published_drive_id: driveId,
 
-        created_company_id: companyId,
+        created_company_id: effectiveCompanyId,
 
         created_drive_id: driveId,
 
