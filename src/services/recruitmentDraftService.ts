@@ -575,3 +575,20 @@ export async function restoreDraftById(
 
     if (error) throw error;
 }
+
+export async function getPublishedRecruitmentsForUser(
+  authProviderId: string,
+): Promise<RecruitmentDraftRow[]> {
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .select("*")
+    .eq("auth_provider_id", authProviderId)
+    .eq("status", "PUBLISHED")
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as RecruitmentDraftRow[]) ?? [];
+}

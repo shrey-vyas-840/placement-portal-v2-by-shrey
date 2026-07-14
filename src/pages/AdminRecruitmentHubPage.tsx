@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import {
   getDraftsForUser,
   getArchivedDraftsForUser,
+  getPublishedRecruitmentsForUser,
   duplicateDraft,
   archiveDraftById,
   deleteDraftById,
@@ -41,6 +42,7 @@ const WORKFLOW_STEPS = [
 
 export function AdminRecruitmentHubPage() {
   const [drafts, setDrafts] = useState<any[]>([]);
+  const [publishedRecruitments, setPublishedRecruitments] = useState<any[]>([]);
   const [archivedDrafts, setArchivedDrafts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,12 +54,14 @@ export function AdminRecruitmentHubPage() {
 
       if (!user) return;
 
-      const [draftData, archivedData] = await Promise.all([
+      const [draftData, publishedData, archivedData] = await Promise.all([
         getDraftsForUser(user.id),
+        getPublishedRecruitmentsForUser(user.id),
         getArchivedDraftsForUser(user.id),
       ]);
 
       setDrafts(draftData);
+      setPublishedRecruitments(publishedData);
       setArchivedDrafts(archivedData);
     } catch (error) {
       console.error(error);
@@ -73,12 +77,14 @@ export function AdminRecruitmentHubPage() {
 
     if (!user) return;
 
-    const [draftData, archivedData] = await Promise.all([
+    const [draftData, publishedData, archivedData] = await Promise.all([
       getDraftsForUser(user.id),
+      getPublishedRecruitmentsForUser(user.id),
       getArchivedDraftsForUser(user.id),
     ]);
 
     setDrafts(draftData);
+    setPublishedRecruitments(publishedData);
     setArchivedDrafts(archivedData);
   }
 
@@ -109,18 +115,18 @@ export function AdminRecruitmentHubPage() {
     }
   }
   async function handleRestore(draftId: string) {
-  try {
-    await restoreDraftById(draftId);
+    try {
+      await restoreDraftById(draftId);
 
-    await refreshDrafts();
+      await refreshDrafts();
 
-    toast.success("Draft restored successfully.");
-  } catch (error) {
-    console.error(error);
+      toast.success("Draft restored successfully.");
+    } catch (error) {
+      console.error(error);
 
-    toast.error("Failed to restore draft.");
+      toast.error("Failed to restore draft.");
+    }
   }
-}
 
   async function handlePermanentDelete(draftId: string) {
     if (!window.confirm("Delete this draft?")) {
@@ -262,25 +268,23 @@ export function AdminRecruitmentHubPage() {
               </span>
             </div>
 
-       <div className="mt-6 max-h-[520px] overflow-y-auto space-y-4 pr-2">
-  {archivedDrafts.length === 0 ? (
-    <div className="rounded-2xl border border-dashed border-border p-8 text-center">
-      <div className="text-sm text-muted-foreground">
-        No archived recruitments.
-      </div>
-    </div>
-  ) : (
-    archivedDrafts.map((draft) => (
-      <RecruitmentDraftCard
-        key={draft.draft_id}
-        draft={draft}
-        archived
-        onRestore={handleRestore}
-        onDelete={handlePermanentDelete}
-      />
-    ))
-  )}
-</div>
+            <div className="mt-6 max-h-[520px] overflow-y-auto space-y-4 pr-2">
+              {archivedDrafts.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  <div className="text-sm text-muted-foreground">No archived recruitments.</div>
+                </div>
+              ) : (
+                archivedDrafts.map((draft) => (
+                  <RecruitmentDraftCard
+                    key={draft.draft_id}
+                    draft={draft}
+                    archived
+                    onRestore={handleRestore}
+                    onDelete={handlePermanentDelete}
+                  />
+                ))
+              )}
+            </div>
           </div>
 
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">

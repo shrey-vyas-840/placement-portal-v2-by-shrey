@@ -298,24 +298,18 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
   const wizardState = (draft.wizard_state ?? {}) as Record<string, unknown>;
 
-const companySelectionMode =
-  typeof wizardState.companySelectionMode === "string"
-    ? wizardState.companySelectionMode
-    : "new";
+  const companySelectionMode =
+    typeof wizardState.companySelectionMode === "string" ? wizardState.companySelectionMode : "new";
 
-const selectedCompanyId =
-  typeof wizardState.selectedCompanyId === "string"
-    ? wizardState.selectedCompanyId
-    : null;
+  const selectedCompanyId =
+    typeof wizardState.selectedCompanyId === "string" ? wizardState.selectedCompanyId : null;
 
-const isExistingCompany =
-  companySelectionMode === "existing" &&
-  selectedCompanyId !== null &&
-  selectedCompanyId !== "DRAFT_COMPANY";
+  const isExistingCompany =
+    companySelectionMode === "existing" &&
+    selectedCompanyId !== null &&
+    selectedCompanyId !== "DRAFT_COMPANY";
 
-const effectiveCompanyId = isExistingCompany
-  ? selectedCompanyId
-  : companyId;
+  const effectiveCompanyId = isExistingCompany ? selectedCompanyId : companyId;
 
   const generatedDriveName = `${String(draft.company_data.company_name).trim()} Recruitment`;
 
@@ -378,48 +372,45 @@ const effectiveCompanyId = isExistingCompany
 
   try {
     if (!isExistingCompany) {
-  await adminDriveService.createCompanyForPublish({
-    company_id: companyId,
+      await adminDriveService.createCompanyForPublish({
+        company_id: companyId,
 
-    company_name: draft.company_data.company_name,
+        company_name: draft.company_data.company_name,
 
-    company_website: draft.company_data.company_website,
+        company_website: draft.company_data.company_website,
 
-    hiring_location: draft.company_data.hiring_location,
+        hiring_location: draft.company_data.hiring_location,
 
-    industry_type: draft.company_data.industry_type,
+        industry_type: draft.company_data.industry_type,
 
-    company_description: draft.company_data.company_description,
+        company_description: draft.company_data.company_description,
 
-    company_size: draft.company_data.company_size,
-  });
+        company_size: draft.company_data.company_size,
+      });
 
-  rollbackContext.companyCreated = true;
-}
+      rollbackContext.companyCreated = true;
+    }
 
-if (isExistingCompany) {
-  const { error } = await (supabase as any).rpc(
-    "increment_company_past_drive_count",
-    {
-      p_company_id: effectiveCompanyId,
-    },
-  );
+    if (isExistingCompany) {
+      const { error } = await (supabase as any).rpc("increment_company_past_drive_count", {
+        p_company_id: effectiveCompanyId,
+      });
 
-  if (error) {
-    throw error;
-  }
-} else {
-  const { error } = await (supabase as any)
-    .from("company_master")
-    .update({
-      past_drive_count: 1,
-    })
-    .eq("company_id", effectiveCompanyId);
+      if (error) {
+        throw error;
+      }
+    } else {
+      const { error } = await (supabase as any)
+        .from("company_master")
+        .update({
+          past_drive_count: 1,
+        })
+        .eq("company_id", effectiveCompanyId);
 
-  if (error) {
-    throw error;
-  }
-}
+      if (error) {
+        throw error;
+      }
+    }
 
     void adminOpportunityService;
     void adminQuestionService;
@@ -512,37 +503,37 @@ if (isExistingCompany) {
 
     rollbackContext.createdOpportunityIds.push(recruitmentOpportunityId);
 
-  if (
-  !isExistingCompany &&
-  Array.isArray(draft.recruiters_data) &&
-  draft.recruiters_data.length > 0
-) {
-  for (const recruiter of draft.recruiters_data) {
-    const contactName = String(recruiter.contact_name ?? recruiter.name ?? "").trim();
-    const contactEmail = String(recruiter.contact_email ?? recruiter.email ?? "").trim();
-    const contactNumber = String(recruiter.contact_number ?? recruiter.phone ?? "").trim();
-    const contactPosition = String(
-      recruiter.contact_position ?? recruiter.designation ?? "",
-    ).trim();
+    if (
+      !isExistingCompany &&
+      Array.isArray(draft.recruiters_data) &&
+      draft.recruiters_data.length > 0
+    ) {
+      for (const recruiter of draft.recruiters_data) {
+        const contactName = String(recruiter.contact_name ?? recruiter.name ?? "").trim();
+        const contactEmail = String(recruiter.contact_email ?? recruiter.email ?? "").trim();
+        const contactNumber = String(recruiter.contact_number ?? recruiter.phone ?? "").trim();
+        const contactPosition = String(
+          recruiter.contact_position ?? recruiter.designation ?? "",
+        ).trim();
 
-    if (!contactName) {
-      throw new Error("Recruiter contact name is missing.");
+        if (!contactName) {
+          throw new Error("Recruiter contact name is missing.");
+        }
+
+        if (!contactEmail) {
+          throw new Error("Recruiter contact email is missing.");
+        }
+
+        await (supabase as any).from("company_contacts").insert({
+          company_id: effectiveCompanyId,
+          contact_name: contactName,
+          contact_email: contactEmail,
+          contact_number: contactNumber || null,
+          contact_position: contactPosition || null,
+          primary_contact: Boolean(recruiter.primary_contact ?? recruiter.isPrimary),
+        });
+      }
     }
-
-    if (!contactEmail) {
-      throw new Error("Recruiter contact email is missing.");
-    }
-
-    await (supabase as any).from("company_contacts").insert({
-      company_id: effectiveCompanyId,
-      contact_name: contactName,
-      contact_email: contactEmail,
-      contact_number: contactNumber || null,
-      contact_position: contactPosition || null,
-      primary_contact: Boolean(recruiter.primary_contact ?? recruiter.isPrimary),
-    });
-  }
-}
 
     await adminQuestionService.saveQuestions(
       recruitmentOpportunityId,

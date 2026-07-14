@@ -1085,7 +1085,7 @@ export function RecruitmentQuestionBuilder({
                           <button
                             type="button"
                             onClick={() => duplicateQuestion(index)}
-                            className="rounded-xl border h-10 px-4 text-sm text-sm transition hover:bg-gray-100"
+                            className="rounded-xl border h-10 px-4 text-sm transition hover:bg-gray-100"
                           >
                             Duplicate
                           </button>
