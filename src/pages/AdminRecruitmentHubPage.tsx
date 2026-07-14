@@ -219,11 +219,25 @@ export function AdminRecruitmentHubPage() {
                 </div>
               </div>
 
-              <span className="rounded-full bg-muted px-3 py-1 text-xs">Placeholder</span>
+              <span className="rounded-full bg-muted px-3 py-1 text-xs">
+                {publishedRecruitments.length}
+              </span>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-dashed border-border p-8 text-center">
-              <div className="text-sm text-muted-foreground">No active recruitment.</div>
+            <div className="mt-6 space-y-4">
+              {loading ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  Loading...
+                </div>
+              ) : publishedRecruitments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+                  <div className="text-sm text-muted-foreground">No published recruitment.</div>
+                </div>
+              ) : (
+                publishedRecruitments.map((draft) => (
+                  <RecruitmentDraftCard key={draft.draft_id} draft={draft} published />
+                ))
+              )}
             </div>
           </div>
         </div>

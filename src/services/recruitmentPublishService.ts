@@ -537,7 +537,10 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
     await adminQuestionService.saveQuestions(
       recruitmentOpportunityId,
-      draft.default_questions_data ?? [],
+      (draft.default_questions_data ?? []).map((question: any) => ({
+        ...question,
+        question_id: undefined,
+      })),
     );
 
     const publishedQuestionMap = new Map<string, string>();

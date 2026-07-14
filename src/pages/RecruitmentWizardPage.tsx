@@ -10,6 +10,7 @@ import { RecruitmentRoleBuilder, type RecruitmentRole } from "@/components/Recru
 import { RecruitmentRolePreview } from "@/components/RecruitmentRolePreview";
 import { validateRecruitmentRole } from "@/components/recruitmentRoleValidation";
 import { createDraft, getDraftById, saveDraft } from "@/services/recruitmentDraftService";
+import { publishRecruitmentDraft } from "@/services/recruitmentPublishService";
 import type { RecruitmentQuestion } from "@/components/RecruitmentQuestionBuilder";
 import { generateUuid } from "@/lib/generateUuid";
 import { supabase } from "@/lib/supabase";
@@ -171,6 +172,16 @@ export function RecruitmentWizardPage() {
 
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+
+  const [roleSelectionEnabled, setRoleSelectionEnabled] = useState(true);
+
+  const [minimumRoleSelection, setMinimumRoleSelection] = useState(1);
+
+  const [maximumRoleSelection, setMaximumRoleSelection] = useState(1);
+
   const filteredCompanies = useMemo(() => {
     const search = searchText.trim().toLowerCase();
 
@@ -238,16 +249,16 @@ export function RecruitmentWizardPage() {
 
               company_size: String(companyData.company_size ?? ""),
             });
-       const wizardState = (draft.wizard_state ?? {}) as Record<string, unknown>;
+            const wizardState = (draft.wizard_state ?? {}) as Record<string, unknown>;
 
-setShowCreateCompany(false);
+            setShowCreateCompany(false);
 
-const restoredSelectedCompanyId =
-  typeof wizardState.selectedCompanyId === "string"
-    ? wizardState.selectedCompanyId
-    : "DRAFT_COMPANY";
+            const restoredSelectedCompanyId =
+              typeof wizardState.selectedCompanyId === "string"
+                ? wizardState.selectedCompanyId
+                : "DRAFT_COMPANY";
 
-setSelectedCompanyId(restoredSelectedCompanyId);
+            setSelectedCompanyId(restoredSelectedCompanyId);
           }
 
           if (draft.current_step !== undefined) {
@@ -516,14 +527,10 @@ setSelectedCompanyId(restoredSelectedCompanyId);
       defaultQuestionsData: defaultQuestions,
       rolesData: roles,
       wizardState: {
-  selectedCompanyId,
-  companySelectionMode:
-    selectedCompanyId === "DRAFT_COMPANY"
-      ? "new"
-      : selectedCompanyId
-        ? "existing"
-        : null,
-},
+        selectedCompanyId,
+        companySelectionMode:
+          selectedCompanyId === "DRAFT_COMPANY" ? "new" : selectedCompanyId ? "existing" : null,
+      },
     });
 
     alert("Roles saved.");
@@ -539,26 +546,79 @@ setSelectedCompanyId(restoredSelectedCompanyId);
 
     if (invalidRole) {
       alert(`Role "${invalidRole.role_name || "Untitled Role"}" is incomplete.`);
-
       return;
     }
 
-    const confirmed = window.confirm(
-      "Publish this recruitment?\n\nAfter publishing, opportunities will be generated from all configured roles.",
-    );
+    setMaximumRoleSelection((previous) => {
+      if (previous > roles.length) {
+        return Math.max(1, roles.length);
+      }
 
-    if (!confirmed) return;
-
-    console.log("Publishing recruitment...", {
-      draftId,
-      company,
-      drive,
-      eligibility,
-      defaultQuestions,
-      roles,
+      return previous;
     });
 
-    alert("Publish pipeline will be connected in the next step.");
+    setShowPublishDialog(true);
+  }
+
+  async function confirmPublishRecruitment() {
+    if (!draftId) {
+      alert("Recruitment draft not found.");
+      return;
+    }
+
+    try {
+      setIsPublishing(true);
+
+      await saveDraft({
+  draftId: draftId!,
+  authProviderId: authProviderId!,
+  draftName:
+    company.company_name.trim() === ""
+      ? "Untitled Recruitment"
+      : `${company.company_name} Recruitment`,
+  currentStep,
+  companyData: company,
+  recruitersData: recruiters,
+  driveData: drive,
+  eligibilityData: eligibility,
+  defaultQuestionsData: defaultQuestions,
+  rolesData: roles,
+  publishData: {
+    role_selection_enabled: roleSelectionEnabled,
+    minimum_role_selection: roleSelectionEnabled
+      ? minimumRoleSelection
+      : 0,
+    maximum_role_selection: roleSelectionEnabled
+      ? maximumRoleSelection
+      : 0,
+  },
+  wizardState: {
+    selectedCompanyId,
+    companySelectionMode:
+      selectedCompanyId === "DRAFT_COMPANY"
+        ? "new"
+        : selectedCompanyId
+          ? "existing"
+          : null,
+  },
+});
+
+await publishRecruitmentDraft(draftId!);
+
+      alert("Recruitment published successfully.");
+
+      navigate({
+        to: "/admin/recruitment",
+        replace: true,
+      });
+    } catch (error) {
+      console.error(error);
+
+      alert(error instanceof Error ? error.message : "Failed to publish recruitment.");
+    } finally {
+      setIsPublishing(false);
+      setShowPublishDialog(false);
+    }
   }
 
   return (
@@ -1504,19 +1564,158 @@ setSelectedCompanyId(restoredSelectedCompanyId);
                   }
                   setCurrentStep((s) => Math.min(STEPS.length - 1, s + 1));
                 }}
-                disabled={false}
+                disabled={isPublishing}
                 className="rounded-xl bg-primary px-5 py-2 text-primary-foreground disabled:opacity-40 text-m font-semibold transition hover:bg-blue-600"
               >
                 {currentStep === 4
                   ? "Review Recruitment"
                   : currentStep === 5
-                    ? "Publish Recruitment"
+                    ? isPublishing
+                      ? "Publishing..."
+                      : "Publish Recruitment"
                     : "Next"}
               </button>
             </div>
           </div>
         </div>
-      </div>
+        </div>
+
+      {showPublishDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-lg rounded-3xl bg-card p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold">
+              Publish Recruitment
+            </h2>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+              Configure how students can apply before publishing.
+            </p>
+
+            <div className="mt-8 space-y-6">
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Enable Multiple Role Selection
+                </label>
+
+                <select
+                  value={roleSelectionEnabled ? "yes" : "no"}
+                  onChange={(e) => {
+                    const enabled = e.target.value === "yes";
+
+                    setRoleSelectionEnabled(enabled);
+
+                    if (!enabled) {
+                      setMinimumRoleSelection(0);
+                      setMaximumRoleSelection(0);
+                    } else {
+                      setMinimumRoleSelection(1);
+                      setMaximumRoleSelection(1);
+                    }
+                  }}
+                  className="w-full rounded-xl border border-border px-4 py-3"
+                >
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+
+              {roleSelectionEnabled && (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Minimum Roles
+                    </label>
+
+                    <input
+                      type="number"
+                      min={1}
+                      max={roles.length}
+                      step={1}
+                      value={minimumRoleSelection}
+                      onChange={(e) =>
+                        setMinimumRoleSelection(
+                          Math.max(
+                            1,
+                            Math.min(
+                              roles.length,
+                              Number.parseInt(e.target.value || "1", 10),
+                            ),
+                          ),
+                        )
+                      }
+                      className="w-full rounded-xl border border-border px-4 py-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Maximum Roles
+                    </label>
+
+                    <input
+                      type="number"
+                      min={1}
+                      max={roles.length}
+                      step={1}
+                      value={maximumRoleSelection}
+                      onChange={(e) =>
+                        setMaximumRoleSelection(
+                          Math.max(
+                            minimumRoleSelection,
+                            Math.min(
+                              roles.length,
+                              Number.parseInt(e.target.value || "1", 10),
+                            ),
+                          ),
+                        )
+                      }
+                      className="w-full rounded-xl border border-border px-4 py-3"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-2xl border bg-muted/20 p-4 text-sm">
+                <div>
+                  Available Roles: <strong>{roles.length}</strong>
+                </div>
+
+                <div className="mt-1">
+                  Students may select between{" "}
+                  <strong>{minimumRoleSelection}</strong> and{" "}
+                  <strong>{maximumRoleSelection}</strong> role(s).
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowPublishDialog(false)}
+                disabled={isPublishing}
+                className="rounded-xl border px-5 py-2"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  isPublishing ||
+                  (roleSelectionEnabled &&
+                    (minimumRoleSelection < 1 ||
+                      maximumRoleSelection < minimumRoleSelection ||
+                      maximumRoleSelection > roles.length))
+                }
+                onClick={confirmPublishRecruitment}
+                className="rounded-xl bg-primary px-6 py-2 text-primary-foreground disabled:opacity-50"
+              >
+                {isPublishing ? "Publishing..." : "Publish Recruitment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 interface RecruitmentDraftCardProps {
   draft: any;
   compact?: boolean;
+  published?: boolean;
   onDuplicate?: (draftId: string) => Promise<void>;
   onArchive?: (draftId: string) => Promise<void>;
   onDelete?: (draftId: string) => Promise<void>;
@@ -12,6 +13,7 @@ interface RecruitmentDraftCardProps {
 export function RecruitmentDraftCard({
   draft,
   compact = false,
+  published = false,
   onDuplicate,
   onArchive,
   onDelete,
@@ -36,15 +38,32 @@ export function RecruitmentDraftCard({
           <div className="mt-1 text-xs text-muted-foreground">{company}</div>
         </div>
 
-        <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
-          Draft
-        </span>
+    <span
+  className={
+    published
+      ? "rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700"
+      : archived
+        ? "rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+        : "rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700"
+  }
+>
+  {published ? "Published" : archived ? "Archived" : "Draft"}
+</span>
       </div>
 
       <div className="mt-4 space-y-2 text-xs text-muted-foreground">
         <div>Step {currentStep} / 6</div>
 
-        <div>Last Saved: {updated ? new Date(updated).toLocaleString() : "-"}</div>
+        <div>
+  {published ? "Published" : "Last Saved"}:{" "}
+  {published
+    ? draft.published_at
+      ? new Date(draft.published_at).toLocaleString()
+      : "-"
+    : updated
+      ? new Date(updated).toLocaleString()
+      : "-"}
+</div>
       </div>
 
       {compact ? (
@@ -59,7 +78,16 @@ export function RecruitmentDraftCard({
             Continue Editing
           </Link>
         </div>
-      ) : archived ? (
+      ) : published ? (
+  <div className="mt-5 flex flex-wrap gap-2">
+    <button
+      type="button"
+      className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
+    >
+      View Recruitment
+    </button>
+  </div>
+) : archived ? (
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             onClick={() => onRestore?.(draft.draft_id)}
