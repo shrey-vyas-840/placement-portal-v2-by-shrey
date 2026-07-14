@@ -96,6 +96,18 @@ export const adminDriveService = {
     return data ?? [];
   },
 
+  async getCompanyRecruiters(companyId: string) {
+  const { data, error } = await (supabase as any)
+    .from("company_contacts")
+    .select("*")
+    .eq("company_id", companyId)
+    .order("primary_contact", { ascending: false });
+
+  if (error) throw error;
+
+  return data ?? [];
+},
+
   async createCompanyForPublish(payload: {
     company_id: string;
     company_name: string;

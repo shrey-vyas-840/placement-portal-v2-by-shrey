@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { adminDriveService } from "@/services/adminDriveService";
 import { RecruitmentQuestionBuilder } from "@/components/RecruitmentQuestionBuilder";
@@ -211,6 +211,25 @@ export function RecruitmentWizardPage() {
   }, []);
 
   useEffect(() => {
+    if (!selectedCompanyId || selectedCompanyId === "DRAFT_COMPANY" || companies.length === 0) {
+      return;
+    }
+
+    const master = companies.find((c) => c.company_id === selectedCompanyId);
+
+    if (!master) return;
+
+    setCompany({
+      company_name: master.company_name ?? "",
+      company_website: master.company_website ?? "",
+      hiring_location: master.hiring_location ?? "",
+      industry_type: master.industry_type ?? "",
+      company_description: master.company_description ?? "",
+      company_size: master.company_size ?? "",
+    });
+  }, [companies, selectedCompanyId]);
+
+  useEffect(() => {
     async function initializeDraft() {
       try {
         const {
@@ -259,6 +278,9 @@ export function RecruitmentWizardPage() {
                 : "DRAFT_COMPANY";
 
             setSelectedCompanyId(restoredSelectedCompanyId);
+            if (restoredSelectedCompanyId !== "DRAFT_COMPANY") {
+              await loadCompanyRecruiters(restoredSelectedCompanyId);
+            }
           }
 
           if (draft.current_step !== undefined) {
@@ -366,7 +388,7 @@ export function RecruitmentWizardPage() {
         setIsSavingDraft(true);
 
         await saveDraft({
-          draftId: draftId!,
+          draftId,
           authProviderId,
           draftName:
             company.company_name.trim() === ""
@@ -374,12 +396,19 @@ export function RecruitmentWizardPage() {
               : `${company.company_name} Recruitment`,
 
           currentStep,
+
           companyData: company,
           recruitersData: recruiters,
           driveData: drive,
           eligibilityData: eligibility,
           defaultQuestionsData: defaultQuestions,
           rolesData: roles,
+
+          wizardState: {
+            selectedCompanyId,
+            companySelectionMode:
+              selectedCompanyId === "DRAFT_COMPANY" ? "new" : selectedCompanyId ? "existing" : null,
+          },
         });
       } catch (error) {
         console.error(error);
@@ -400,7 +429,36 @@ export function RecruitmentWizardPage() {
     authProviderId,
     draftId,
     draftLoaded,
+    selectedCompanyId,
   ]);
+  async function loadCompanyRecruiters(companyId: string) {
+    try {
+      const contacts = await adminDriveService.getCompanyRecruiters(companyId);
+
+      if (contacts.length === 0) {
+        setRecruiters([
+          {
+            ...EMPTY_RECRUITER(),
+            primary_contact: true,
+          },
+        ]);
+        return;
+      }
+
+      setRecruiters(
+        contacts.map((contact: any) => ({
+          id: generateUuid(),
+          contact_name: contact.contact_name ?? "",
+          contact_email: contact.contact_email ?? "",
+          contact_number: contact.contact_number ?? "",
+          contact_position: contact.contact_position ?? "Campus HR",
+          primary_contact: Boolean(contact.primary_contact),
+        })),
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   async function handleCreateCompany() {
     if (!company.company_name.trim()) {
@@ -775,7 +833,7 @@ export function RecruitmentWizardPage() {
                           return (
                             <tr
                               key={item.company_id}
-                              onClick={() => {
+                              onClick={async () => {
                                 if (dontShowCompanyWarning) {
                                   setSelectedCompanyId(item.company_id);
 
@@ -790,12 +848,12 @@ export function RecruitmentWizardPage() {
                                     company_size: item.company_size ?? "",
                                   });
 
+                                  await loadCompanyRecruiters(item.company_id);
+
                                   return;
                                 }
-
                                 setPendingCompany(item);
                                 setShowExistingCompanyDialog(true);
-                                setSelectedCompanyId(item.company_id);
                               }}
                               className={`cursor-pointer border-b transition hover:bg-muted ${
                                 selected ? "bg-primary/10 ring-1 ring-primary" : ""
@@ -879,10 +937,7 @@ export function RecruitmentWizardPage() {
                         type="button"
                         onClick={() => {
                           setShowExistingCompanyDialog(false);
-
                           setPendingCompany(null);
-
-                          setSelectedCompanyId(null);
                         }}
                         className="rounded-xl border px-5 py-2"
                       >
@@ -891,14 +946,11 @@ export function RecruitmentWizardPage() {
 
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           if (!pendingCompany) return;
 
                           setSelectedCompanyId(pendingCompany.company_id);
-                          window.scrollTo({
-                            top: document.body.scrollHeight,
-                            behavior: "smooth",
-                          });
+
                           setShowCreateCompany(false);
 
                           setCompany({
@@ -908,6 +960,13 @@ export function RecruitmentWizardPage() {
                             industry_type: pendingCompany.industry_type ?? "",
                             company_description: pendingCompany.company_description ?? "",
                             company_size: pendingCompany.company_size ?? "",
+                          });
+
+                          await loadCompanyRecruiters(pendingCompany.company_id);
+
+                          window.scrollTo({
+                            top: document.body.scrollHeight,
+                            behavior: "smooth",
                           });
 
                           setShowExistingCompanyDialog(false);
