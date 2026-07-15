@@ -22,11 +22,49 @@ export function StudentOpportunitiesPage() {
 
   const [answers, setAnswers] = useState<any>({});
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const [focusedQuestionId, setFocusedQuestionId] = useState<string | null>(null);
+
+  const [validatedQuestions, setValidatedQuestions] = useState<Record<string, boolean>>({});
+
   const [pendingApply, setPendingApply] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
-  const { showLoader } = usePageLoader(loading);
+const { showLoader } = usePageLoader(loading);
+
+const validationHints: Record<string, (q: any) => string> = {
+  text: (q) =>
+    `${q.validation?.minLength ? `Minimum ${q.validation.minLength} characters. ` : ""}${
+      q.validation?.maxLength ? `Maximum ${q.validation.maxLength} characters. ` : ""
+    }${q.validation?.alphaOnly ? "Only alphabets allowed." : ""}`.trim(),
+
+  paragraph: (q) =>
+    `${q.validation?.minLength ? `Minimum ${q.validation.minLength} characters. ` : ""}${
+      q.validation?.maxLength ? `Maximum ${q.validation.maxLength} characters.` : ""
+    }`.trim(),
+
+  number: (q) =>
+    `${q.validation?.minDigits ? `Minimum ${q.validation.minDigits} digits. ` : ""}${
+      q.validation?.maxDigits ? `Maximum ${q.validation.maxDigits} digits.` : ""
+    }`.trim(),
+
+  phone: () => "Enter a valid phone number.",
+
+  email: () => "Enter a valid email address.",
+
+  date: () => "Select a valid date.",
+
+  dropdown: () => "Choose one option.",
+
+  mcq: () => "Select one option.",
+
+  checkbox: (q) =>
+    `${q.validation?.minSelection ? `Select at least ${q.validation.minSelection}. ` : ""}${
+      q.validation?.maxSelection ? `Maximum ${q.validation.maxSelection}.` : ""
+    }`.trim(),
+};
 
   async function load() {
     try {
@@ -91,6 +129,98 @@ export function StudentOpportunitiesPage() {
   useEffect(() => {
     load();
   }, []);
+
+  function updateValidation(question: any, value: any) {
+  let error = "";
+
+  if (
+    question.is_required &&
+    (value === undefined ||
+      value === null ||
+      value === "" ||
+      (Array.isArray(value) && value.length === 0))
+  ) {
+    error = "This field is required.";
+  }
+
+  if (!error && question.question_type === "text") {
+    if (
+      question.validation?.minLength &&
+      value.length < question.validation.minLength
+    ) {
+      error = `Minimum ${question.validation.minLength} characters required.`;
+    }
+
+    if (
+      !error &&
+      question.validation?.maxLength &&
+      value.length > question.validation.maxLength
+    ) {
+      error = `Maximum ${question.validation.maxLength} characters allowed.`;
+    }
+
+    if (
+      !error &&
+      question.validation?.alphaOnly &&
+      !/^[A-Za-z ]*$/.test(value)
+    ) {
+      error = "Only alphabets are allowed.";
+    }
+  }
+
+  if (!error && question.question_type === "email") {
+    if (
+      value &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+    ) {
+      error = "Enter a valid email address.";
+    }
+  }
+
+  if (!error && question.question_type === "number") {
+    const digits = String(value ?? "").replace(/\D/g, "").length;
+
+    if (
+      question.validation?.minDigits &&
+      digits < question.validation.minDigits
+    ) {
+      error = `Minimum ${question.validation.minDigits} digits required.`;
+    }
+
+    if (
+      !error &&
+      question.validation?.maxDigits &&
+      digits > question.validation.maxDigits
+    ) {
+      error = `Maximum ${question.validation.maxDigits} digits allowed.`;
+    }
+  }
+
+  if (!error && question.question_type === "phone") {
+    const digits = String(value ?? "").replace(/\D/g, "").length;
+
+    if (digits > 0 && digits < 10) {
+      error = "Phone number must contain at least 10 digits.";
+    }
+  }
+
+  setValidationErrors((previous) => {
+    const next = { ...previous };
+
+    if (error) {
+      next[question.question_id] = error;
+    } else {
+      delete next[question.question_id];
+    }
+
+    return next;
+  });
+
+  setValidatedQuestions((validated) => ({
+    ...validated,
+    [question.question_id]: !error,
+  }));
+}
 
   async function apply(opportunityId: string, selectedRoles: string[] = []) {
     const { data: authData } = await supabase.auth.getUser();
@@ -505,30 +635,114 @@ hover:border-primary/30
         p-5
     "
                 >
-                  <label className="mb-2 block font-medium">
-                    {q.question_title}
-                    {q.is_required ? " *" : ""}
-                  </label>
+                                    <div className="mb-2 flex items-center justify-between gap-3">
+                    <label className="font-medium text-slate-800">
+                      {q.question_title}
+                      {q.is_required ? " *" : ""}
+                    </label>
+
+                    {validatedQuestions[q.question_id] &&
+                      !validationErrors[q.question_id] && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+                          ✓ Verified
+                        </span>
+                      )}
+                  </div>
+
+                  {focusedQuestionId === q.question_id &&
+                    validationHints[q.question_type] && (
+                      <p className="mb-3 text-xs text-blue-600">
+                        {validationHints[q.question_type](q)}
+                      </p>
+                    )}
+
+                  {validationErrors[q.question_id] && (
+                    <p className="mb-3 text-xs font-medium text-red-600">
+                      {validationErrors[q.question_id]}
+                    </p>
+                  )}
 
                   {q.question_type === "text" && (
                     <input
-                      className="
+                      className={`
     w-full
     rounded-xl
     border
-    border-border
     bg-white
     px-3
     py-2
-"
-                      onChange={(e) => setAnswers({ ...answers, [q.question_id]: e.target.value })}
+    transition-colors
+    ${
+      validationErrors[q.question_id]
+        ? "border-red-500 focus:border-red-500"
+        : validatedQuestions[q.question_id]
+          ? "border-emerald-500 focus:border-emerald-500"
+          : "border-border focus:border-primary"
+    }
+`}
+                      value={answers[q.question_id] || ""}
+                      onFocus={() => setFocusedQuestionId(q.question_id)}
+                      onBlur={() => setFocusedQuestionId(null)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        setAnswers({
+                          ...answers,
+                          [q.question_id]: value,
+                        });
+
+                        updateValidation(q, value);
+                      }}
                     />
                   )}
-                  {q.question_type === "number" && (
+
+                  {q.question_type === "email" && (
                     <input
-                      type="number"
-                      min={q.validation?.min}
-                      max={q.validation?.max}
+                      type="email"
+                      placeholder="example@domain.com"
+                      className={`
+      w-full
+      rounded-xl
+      border
+      bg-white
+      px-3
+      py-2
+      transition-colors
+      ${
+        validationErrors[q.question_id]
+          ? "border-red-500 focus:border-red-500"
+          : validatedQuestions[q.question_id]
+            ? "border-emerald-500 focus:border-emerald-500"
+            : "border-border focus:border-primary"
+      }
+    `}
+                      value={answers[q.question_id] || ""}
+                      onFocus={() => setFocusedQuestionId(q.question_id)}
+                      onBlur={() => setFocusedQuestionId(null)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        setAnswers({
+                          ...answers,
+                          [q.question_id]: value,
+                        });
+
+                        updateValidation(q, value);
+                      }}
+                    />
+                  )}
+
+                             {(q.question_type === "number" || q.question_type === "phone") && (
+                    <input
+                      type={q.question_type === "phone" ? "tel" : "number"}
+                      inputMode={q.question_type === "phone" ? "numeric" : undefined}
+                      min={q.question_type === "number" ? q.validation?.min : undefined}
+                      max={q.question_type === "number" ? q.validation?.max : undefined}
+                      placeholder={
+                        q.question_type === "phone"
+                          ? "Enter phone number"
+                          : undefined
+                      }
                       className="
     w-full
     rounded-xl
@@ -539,12 +753,21 @@ hover:border-primary/30
     py-2
 "
                       value={answers[q.question_id] || ""}
-                      onChange={(e) =>
+                      onFocus={() => setFocusedQuestionId(q.question_id)}
+                      onBlur={() => setFocusedQuestionId(null)}
+                      onChange={(e) => {
+                        const value =
+                          q.question_type === "phone"
+                            ? e.target.value.replace(/[^\d+]/g, "")
+                            : e.target.value;
+
                         setAnswers({
                           ...answers,
-                          [q.question_id]: e.target.value,
-                        })
-                      }
+                          [q.question_id]: value,
+                        });
+
+                        updateValidation(q, value);
+                      }}
                     />
                   )}
 
@@ -713,6 +936,13 @@ hover:border-primary/30
                         if (q.validation?.alphaOnly && answer && !/^[A-Za-z ]+$/.test(answer)) {
                           alert(`${q.question_title} allows only alphabets`);
 
+                          return;
+                        }
+                      }
+
+                      if (q.question_type === "email") {
+                        if (answer && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(answer)) {
+                          alert(`${q.question_title} is not a valid email address`);
                           return;
                         }
                       }
