@@ -3,12 +3,14 @@ import { Loader2, CheckCircle2 } from "lucide-react";
 interface ApplicationSubmissionOverlayProps {
   visible: boolean;
   stage: string;
+  progress: number;
   completed?: boolean;
 }
 
 export default function ApplicationSubmissionOverlay({
   visible,
   stage,
+  progress,
   completed = false,
 }: ApplicationSubmissionOverlayProps) {
   if (!visible) {
@@ -20,7 +22,7 @@ export default function ApplicationSubmissionOverlay({
       className="
         absolute
         inset-0
-        z-[999]
+        z-999
         flex
         items-center
         justify-center
@@ -66,22 +68,15 @@ export default function ApplicationSubmissionOverlay({
                 Current Progress
               </span>
 
-              {!completed && (
-                <span className="text-primary font-medium">
-                  Processing...
-                </span>
-              )}
+              <span className="font-medium text-primary">
+                {completed ? "Completed" : `${progress}%`}
+              </span>
             </div>
 
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
               <div
-                className="
-                  h-full
-                  w-1/3
-                  animate-pulse
-                  rounded-full
-                  bg-primary
-                "
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${progress}%` }}
               />
             </div>
           </div>

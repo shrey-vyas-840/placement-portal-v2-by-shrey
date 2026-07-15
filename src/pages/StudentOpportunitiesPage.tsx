@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { studentOpportunityService } from "@/services/studentOpportunityService";
 import ApplicationSubmissionOverlay from "@/components/ApplicationSubmissionOverlay";
+import { toast } from "sonner";
 export function StudentOpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<any[]>([]);
 
@@ -33,6 +34,8 @@ export function StudentOpportunitiesPage() {
   const [submissionOverlayVisible, setSubmissionOverlayVisible] = useState(false);
 
 const [submissionStage, setSubmissionStage] = useState("Preparing application...");
+
+const [submissionProgress, setSubmissionProgress] = useState(0);
 
 const [submissionCompleted, setSubmissionCompleted] = useState(false);
 
@@ -258,7 +261,7 @@ const [submissionCompleted, setSubmissionCompleted] = useState(false);
     const authUserId = authData.user?.id;
 
     if (!authUserId) {
-      alert("User not found");
+      toast.error("User not found");
 
       return;
     }
@@ -270,7 +273,7 @@ const [submissionCompleted, setSubmissionCompleted] = useState(false);
       .maybeSingle();
 
     if (!account) {
-      alert("Account not found");
+      toast.error("Account not found");
 
       return;
     }
@@ -282,7 +285,7 @@ const [submissionCompleted, setSubmissionCompleted] = useState(false);
       .maybeSingle();
 
     if (!student) {
-      alert("Student profile not found");
+      toast.error("Student profile not found");
 
       return;
     }
@@ -296,17 +299,46 @@ const [submissionCompleted, setSubmissionCompleted] = useState(false);
     question_id: key,
     answer_value: Array.isArray(value) ? value.join(",") : value,
   })),
-  (stage) => {
+ (stage) => {
     setSubmissionStage(stage);
-  },
+
+    switch (stage) {
+        case "Preparing application...":
+            setSubmissionProgress(10);
+            break;
+
+        case "Creating application...":
+            setSubmissionProgress(25);
+            break;
+
+        case "Saving selected roles...":
+            setSubmissionProgress(45);
+            break;
+
+        case "Uploading documents...":
+            setSubmissionProgress(65);
+            break;
+
+        case "Saving application answers...":
+            setSubmissionProgress(85);
+            break;
+
+        case "Finalizing application...":
+            setSubmissionProgress(100);
+            break;
+
+        default:
+            break;
+    }
+}
 );
 
-      alert("Application submitted");
+      toast.error("Application submitted");
 
       setLoading(true);
       await load();
     } catch (error: any) {
-      alert(error?.message || "Application failed");
+      toast.error(error?.message || "Application failed");
     }
   }
 
@@ -621,10 +653,11 @@ hover:border-primary/30
                 shadow-2xl
               "
             >
-              <ApplicationSubmissionOverlay
-  visible={submissionOverlayVisible}
-  stage={submissionStage}
-  completed={submissionCompleted}
+             <ApplicationSubmissionOverlay
+    visible={submissionOverlayVisible}
+    stage={submissionStage}
+    completed={submissionCompleted}
+    progress={submissionProgress}
 />
               <div
                 className="
@@ -1318,26 +1351,26 @@ hover:border-primary/30
                           answer === "" ||
                           (Array.isArray(answer) && answer.length === 0))
                       ) {
-                        alert(`${q.question_title} is required`);
+                       toast.error(`${q.question_title} is required`);
 
                         return;
                       }
 
                       if (q.question_type === "text") {
                         if (q.validation?.minLength && answer?.length < q.validation.minLength) {
-                          alert(`${q.question_title} is too short`);
+                          toast.error(`${q.question_title} is too short`);
 
                           return;
                         }
 
                         if (q.validation?.maxLength && answer?.length > q.validation.maxLength) {
-                          alert(`${q.question_title} is too long`);
+                          toast.error(`${q.question_title} is too long`);
 
                           return;
                         }
 
                         if (q.validation?.alphaOnly && answer && !/^[A-Za-z ]+$/.test(answer)) {
-                          alert(`${q.question_title} allows only alphabets`);
+                          toast.error(`${q.question_title} allows only alphabets`);
 
                           return;
                         }
@@ -1345,20 +1378,20 @@ hover:border-primary/30
 
                       if (q.question_type === "email") {
                         if (answer && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(answer)) {
-                          alert(`${q.question_title} is not a valid email address`);
+                          toast.error(`${q.question_title} is not a valid email address`);
                           return;
                         }
                       }
 
                       if (q.question_type === "paragraph") {
                         if (q.validation?.minLength && answer?.length < q.validation.minLength) {
-                          alert(`${q.question_title} is too short`);
+                          toast.error(`${q.question_title} is too short`);
 
                           return;
                         }
 
                         if (q.validation?.maxLength && answer?.length > q.validation.maxLength) {
-                          alert(`${q.question_title} is too long`);
+                          toast.error(`${q.question_title} is too long`);
 
                           return;
                         }
@@ -1370,25 +1403,25 @@ hover:border-primary/30
                         const digits = String(answer || "").replace(/\D/g, "").length;
 
                         if (q.validation?.min !== undefined && value < q.validation.min) {
-                          alert(`${q.question_title} is below minimum value`);
+                          toast.error(`${q.question_title} is below minimum value`);
 
                           return;
                         }
 
                         if (q.validation?.max !== undefined && value > q.validation.max) {
-                          alert(`${q.question_title} exceeds maximum value`);
+                          toast.error(`${q.question_title} exceeds maximum value`);
 
                           return;
                         }
 
                         if (q.validation?.minDigits && digits < q.validation.minDigits) {
-                          alert(`${q.question_title} requires more digits`);
+                          toast.error(`${q.question_title} requires more digits`);
 
                           return;
                         }
 
                         if (q.validation?.maxDigits && digits > q.validation.maxDigits) {
-                          alert(`${q.question_title} exceeds allowed digits`);
+                          toast.error(`${q.question_title} exceeds allowed digits`);
 
                           return;
                         }
@@ -1398,12 +1431,12 @@ hover:border-primary/30
                         const count = answer?.length || 0;
 
                         if (q.validation?.minSelection && count < q.validation.minSelection) {
-                          alert(`${q.question_title}: select more options`);
+                          toast.error(`${q.question_title}: select more options`);
 
                           return;
                         }
                         if (q.validation?.maxSelection && count > q.validation.maxSelection) {
-                          alert(`${q.question_title}: too many selections`);
+                          toast.error(`${q.question_title}: too many selections`);
 
                           return;
                         }
@@ -1419,7 +1452,7 @@ hover:border-primary/30
                         const allowed = q.validation?.allowedExtensions || [];
 
                         if (allowed.length > 0 && !allowed.includes(extension)) {
-                          alert(`${q.question_title}: invalid file type`);
+                          toast.error(`${q.question_title}: invalid file type`);
 
                           return;
                         }
@@ -1427,7 +1460,7 @@ hover:border-primary/30
                         const maxBytes = (q.validation?.maxSizeMb || 0) * 1024 * 1024;
 
                         if (maxBytes > 0 && file.size > maxBytes) {
-                          alert(`${q.question_title}: file too large`);
+                          toast.error(`${q.question_title}: file too large`);
 
                           return;
                         }
@@ -1439,7 +1472,7 @@ hover:border-primary/30
                       selectedRoleIds.length <
                         (selectedOpportunity.drive_master.minimum_role_selection ?? 0)
                     ) {
-                      alert(
+                      toast.error(
                         `Please select at least ${selectedOpportunity.drive_master.minimum_role_selection} role(s).`,
                       );
                       return;
@@ -1451,7 +1484,7 @@ hover:border-primary/30
                         (selectedOpportunity.drive_master.maximum_role_selection ??
                           Number.MAX_SAFE_INTEGER)
                     ) {
-                      alert(
+                      toast.error(
                         `You can select a maximum of ${selectedOpportunity.drive_master.maximum_role_selection} role(s).`,
                       );
                       return;
@@ -1461,15 +1494,16 @@ hover:border-primary/30
 
 setSubmissionCompleted(false);
 setSubmissionStage("Preparing application...");
+setSubmissionProgress(0);
 setSubmissionOverlayVisible(true);
 
 try {
   await apply(selectedOpportunity.opportunity_id, selectedRoleIds);
+setSubmissionProgress(100);
+setSubmissionStage("Application submitted successfully.");
+setSubmissionCompleted(true);
 
-  setSubmissionStage("Application submitted successfully.");
-  setSubmissionCompleted(true);
-
-  await new Promise((resolve) => setTimeout(resolve, 1200));
+await new Promise((resolve) => setTimeout(resolve, 1800));
 
   setSelectedOpportunity(null);
   setQuestions([]);
@@ -1479,6 +1513,7 @@ finally {
   setSubmissionOverlayVisible(false);
   setSubmissionCompleted(false);
   setSubmissionStage("Preparing application...");
+setSubmissionProgress(0);
   setPendingApply(false);
 }
                   }}
