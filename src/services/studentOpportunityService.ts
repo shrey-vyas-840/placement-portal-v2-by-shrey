@@ -117,18 +117,21 @@ export const studentOpportunityService = {
       .select(
         `
     *,
-    drive_master(
-        drive_id,
-        drive_name,
-        drive_type,
-        drive_mode,
-        lowest_package_lpa,
-        highest_package_lpa,
-        bond_years,
-        company_master(
-            company_name
-        )
-    ),
+   drive_master(
+    drive_id,
+    drive_name,
+    drive_type,
+    drive_mode,
+    lowest_package_lpa,
+    highest_package_lpa,
+    bond_years,
+    role_selection_enabled,
+    minimum_role_selection,
+    maximum_role_selection,
+    company_master(
+        company_name
+    )
+),
     student_opportunity_applications(
         student_id,
         application_status

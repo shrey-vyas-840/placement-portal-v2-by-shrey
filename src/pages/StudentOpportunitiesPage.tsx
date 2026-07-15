@@ -166,16 +166,11 @@ export function StudentOpportunitiesPage() {
         error = "Enter a valid email address.";
       }
 
-      if (
-        !error &&
-        question.validation?.allowOnlyInstituteEmail &&
-        value
-      ) {
+      if (!error && question.validation?.allowOnlyInstituteEmail && value) {
         const domain = value.split("@")[1]?.toLowerCase() ?? "";
 
         if (!domain.endsWith("indusuni.ac.in")) {
-          error =
-            "Please use your institutional email.";
+          error = "Please use your institutional email.";
         }
       }
     }
@@ -207,18 +202,11 @@ export function StudentOpportunitiesPage() {
     if (!error && question.question_type === "checkbox") {
       const count = Array.isArray(value) ? value.length : 0;
 
-      if (
-        question.validation?.minSelection &&
-        count < question.validation.minSelection
-      ) {
+      if (question.validation?.minSelection && count < question.validation.minSelection) {
         error = `Select at least ${question.validation.minSelection} option(s).`;
       }
 
-      if (
-        !error &&
-        question.validation?.maxSelection &&
-        count > question.validation.maxSelection
-      ) {
+      if (!error && question.validation?.maxSelection && count > question.validation.maxSelection) {
         error = `You can select at most ${question.validation.maxSelection} option(s).`;
       }
     }
@@ -624,13 +612,10 @@ hover:border-primary/30
 
                 <div className="mt-2 flex items-start justify-between gap-6">
                   <div>
-                    <h2 className="text-2xl font-bold">
-                      Additional Questions
-                    </h2>
+                    <h2 className="text-2xl font-bold">Additional Questions</h2>
 
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Complete all required information before submitting your
-                      application.
+                      Complete all required information before submitting your application.
                     </p>
                   </div>
 
@@ -653,7 +638,6 @@ hover:border-primary/30
                     ✕
                   </button>
                 </div>
-
                 {availableRoles.length > 0 && (
                   <div className="mt-6 rounded-2xl border bg-slate-50 p-5">
                     <div className="mb-4 flex items-center justify-between">
@@ -674,12 +658,20 @@ hover:border-primary/30
                       {availableRoles.map((role: any) => {
                         const selected = selectedRoleIds.includes(role.drive_role_id);
 
+                        const selectionLimitReached =
+                          selectedOpportunity.drive_master?.role_selection_enabled &&
+                          selectedOpportunity.drive_master?.maximum_role_selection &&
+                          selectedRoleIds.length >=
+                            selectedOpportunity.drive_master.maximum_role_selection;
+
+                        const disabled = !selected && selectionLimitReached;
+
                         return (
                           <label
                             key={role.drive_role_id}
                             className={`
                               flex
-                              cursor-pointer
+                              ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
                               items-center
                               gap-4
                               rounded-2xl
@@ -698,26 +690,33 @@ hover:border-primary/30
                               checked={selected}
                               className="h-4 w-4"
                               onChange={async (e) => {
+                                if (
+                                  e.target.checked &&
+                                  selectedOpportunity.drive_master?.role_selection_enabled &&
+                                  selectedOpportunity.drive_master?.maximum_role_selection &&
+                                  selectedRoleIds.length >=
+                                    selectedOpportunity.drive_master.maximum_role_selection
+                                ) {
+                                  return;
+                                }
+
                                 const updated = e.target.checked
                                   ? [...selectedRoleIds, role.drive_role_id]
                                   : selectedRoleIds.filter((id) => id !== role.drive_role_id);
 
                                 setSelectedRoleIds(updated);
 
-                                const qs =
-                                  await studentOpportunityService.getApplicationQuestions(
-                                    selectedOpportunity.opportunity_id,
-                                    updated,
-                                    selectedOpportunity.drive_id,
-                                  );
+                                const qs = await studentOpportunityService.getApplicationQuestions(
+                                  selectedOpportunity.opportunity_id,
+                                  updated,
+                                  selectedOpportunity.drive_id,
+                                );
 
                                 setQuestions(qs);
                               }}
                             />
 
-                            <span className="flex-1 font-medium">
-                              {role.drive_role_name}
-                            </span>
+                            <span className="flex-1 font-medium">{role.drive_role_name}</span>
 
                             {selected && (
                               <span className="text-xs font-semibold text-emerald-600">
@@ -741,9 +740,9 @@ hover:border-primary/30
                 "
               >
                 {questions.map((q: any) => (
-                <div
-                  key={q.question_id}
-                  className="
+                  <div
+                    key={q.question_id}
+                    className="
         mb-5
         rounded-2xl
         border
@@ -751,35 +750,35 @@ hover:border-primary/30
         bg-slate-50/50
         p-5
     "
-                >
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <label className="font-medium text-slate-800">
-                      {q.question_title}
-                      {q.is_required ? " *" : ""}
-                    </label>
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <label className="font-medium text-slate-800">
+                        {q.question_title}
+                        {q.is_required ? " *" : ""}
+                      </label>
 
-                    {validatedQuestions[q.question_id] && !validationErrors[q.question_id] && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                        ✓ Verified
-                      </span>
+                      {validatedQuestions[q.question_id] && !validationErrors[q.question_id] && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+                          ✓ Verified
+                        </span>
+                      )}
+                    </div>
+
+                    {focusedQuestionId === q.question_id && validationHints[q.question_type] && (
+                      <p className="mb-3 text-xs text-blue-600">
+                        {validationHints[q.question_type](q)}
+                      </p>
                     )}
-                  </div>
 
-                  {focusedQuestionId === q.question_id && validationHints[q.question_type] && (
-                    <p className="mb-3 text-xs text-blue-600">
-                      {validationHints[q.question_type](q)}
-                    </p>
-                  )}
+                    {validationErrors[q.question_id] && (
+                      <p className="mb-3 text-xs font-medium text-red-600">
+                        {validationErrors[q.question_id]}
+                      </p>
+                    )}
 
-                  {validationErrors[q.question_id] && (
-                    <p className="mb-3 text-xs font-medium text-red-600">
-                      {validationErrors[q.question_id]}
-                    </p>
-                  )}
-
-                  {q.question_type === "text" && (
-                    <input
-                      className={`
+                    {q.question_type === "text" && (
+                      <input
+                        className={`
     w-full
     rounded-xl
     border
@@ -795,27 +794,27 @@ hover:border-primary/30
           : "border-border focus:border-primary"
     }
 `}
-                      value={answers[q.question_id] || ""}
-                      onFocus={() => setFocusedQuestionId(q.question_id)}
-                      onBlur={() => setFocusedQuestionId(null)}
-                      onChange={(e) => {
-                        const value = e.target.value;
+                        value={answers[q.question_id] || ""}
+                        onFocus={() => setFocusedQuestionId(q.question_id)}
+                        onBlur={() => setFocusedQuestionId(null)}
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                        setAnswers({
-                          ...answers,
-                          [q.question_id]: value,
-                        });
+                          setAnswers({
+                            ...answers,
+                            [q.question_id]: value,
+                          });
 
-                        updateValidation(q, value);
-                      }}
-                    />
-                  )}
+                          updateValidation(q, value);
+                        }}
+                      />
+                    )}
 
-                  {q.question_type === "email" && (
-                    <input
-                      type="email"
-                      placeholder="example@domain.com"
-                      className={`
+                    {q.question_type === "email" && (
+                      <input
+                        type="email"
+                        placeholder="example@domain.com"
+                        className={`
       w-full
       rounded-xl
       border
@@ -831,30 +830,30 @@ hover:border-primary/30
             : "border-border focus:border-primary"
       }
     `}
-                      value={answers[q.question_id] || ""}
-                      onFocus={() => setFocusedQuestionId(q.question_id)}
-                      onBlur={() => setFocusedQuestionId(null)}
-                      onChange={(e) => {
-                        const value = e.target.value;
+                        value={answers[q.question_id] || ""}
+                        onFocus={() => setFocusedQuestionId(q.question_id)}
+                        onBlur={() => setFocusedQuestionId(null)}
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                        setAnswers({
-                          ...answers,
-                          [q.question_id]: value,
-                        });
+                          setAnswers({
+                            ...answers,
+                            [q.question_id]: value,
+                          });
 
-                        updateValidation(q, value);
-                      }}
-                    />
-                  )}
+                          updateValidation(q, value);
+                        }}
+                      />
+                    )}
 
-                  {(q.question_type === "number" || q.question_type === "phone") && (
-                    <input
-                      type={q.question_type === "phone" ? "tel" : "number"}
-                      inputMode={q.question_type === "phone" ? "numeric" : undefined}
-                      min={q.question_type === "number" ? q.validation?.min : undefined}
-                      max={q.question_type === "number" ? q.validation?.max : undefined}
-                      placeholder={q.question_type === "phone" ? "Enter phone number" : undefined}
-                      className="
+                    {(q.question_type === "number" || q.question_type === "phone") && (
+                      <input
+                        type={q.question_type === "phone" ? "tel" : "number"}
+                        inputMode={q.question_type === "phone" ? "numeric" : undefined}
+                        min={q.question_type === "number" ? q.validation?.min : undefined}
+                        max={q.question_type === "number" ? q.validation?.max : undefined}
+                        placeholder={q.question_type === "phone" ? "Enter phone number" : undefined}
+                        className="
     w-full
     rounded-xl
     border
@@ -863,32 +862,30 @@ hover:border-primary/30
     px-3
     py-2
 "
-                      value={answers[q.question_id] || ""}
-                      onFocus={() => setFocusedQuestionId(q.question_id)}
-                      onBlur={() => setFocusedQuestionId(null)}
-                      onChange={(e) => {
-                        const value =
-                          q.question_type === "phone"
-                            ? e.target.value
-                                .replace(/\D/g, "")
-                                .slice(0, 10)
-                            : e.target.value;
+                        value={answers[q.question_id] || ""}
+                        onFocus={() => setFocusedQuestionId(q.question_id)}
+                        onBlur={() => setFocusedQuestionId(null)}
+                        onChange={(e) => {
+                          const value =
+                            q.question_type === "phone"
+                              ? e.target.value.replace(/\D/g, "").slice(0, 10)
+                              : e.target.value;
 
-                        setAnswers({
-                          ...answers,
-                          [q.question_id]: value,
-                        });
+                          setAnswers({
+                            ...answers,
+                            [q.question_id]: value,
+                          });
 
-                        updateValidation(q, value);
-                      }}
-                    />
-                  )}
+                          updateValidation(q, value);
+                        }}
+                      />
+                    )}
 
-                  {q.question_type === "paragraph" && (
-                    <textarea
-                      rows={5}
-                      placeholder="Enter your answer..."
-                      className={`
+                    {q.question_type === "paragraph" && (
+                      <textarea
+                        rows={5}
+                        placeholder="Enter your answer..."
+                        className={`
     w-full
     rounded-xl
     border
@@ -905,28 +902,28 @@ hover:border-primary/30
           : "border-border focus:border-primary"
     }
 `}
-                      value={answers[q.question_id] || ""}
-                      onFocus={() => setFocusedQuestionId(q.question_id)}
-                      onBlur={() => setFocusedQuestionId(null)}
-                      onChange={(e) => {
-                        const value = e.target.value;
+                        value={answers[q.question_id] || ""}
+                        onFocus={() => setFocusedQuestionId(q.question_id)}
+                        onBlur={() => setFocusedQuestionId(null)}
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                        setAnswers({
-                          ...answers,
-                          [q.question_id]: value,
-                        });
+                          setAnswers({
+                            ...answers,
+                            [q.question_id]: value,
+                          });
 
-                        updateValidation(q, value);
-                      }}
-                    />
-                  )}
+                          updateValidation(q, value);
+                        }}
+                      />
+                    )}
 
-                  {q.question_type === "date" && (
-                    <input
-                      type="date"
-                      min={q.validation?.minDate}
-                      max={q.validation?.maxDate}
-                      className={`
+                    {q.question_type === "date" && (
+                      <input
+                        type="date"
+                        min={q.validation?.minDate}
+                        max={q.validation?.maxDate}
+                        className={`
     w-full
     rounded-xl
     border
@@ -942,27 +939,27 @@ hover:border-primary/30
           : "border-border focus:border-primary"
     }
 `}
-                      value={answers[q.question_id] || ""}
-                      onFocus={() => setFocusedQuestionId(q.question_id)}
-                      onBlur={() => setFocusedQuestionId(null)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-
-                        setAnswers({
-                          ...answers,
-                          [q.question_id]: value,
-                        });
-
-                        updateValidation(q, value);
-                      }}
-                    />
-                  )}
-
-                  {q.question_type === "dropdown" && (
-                    <div className="space-y-2">
-                      <select
                         value={answers[q.question_id] || ""}
-                        className={`
+                        onFocus={() => setFocusedQuestionId(q.question_id)}
+                        onBlur={() => setFocusedQuestionId(null)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          setAnswers({
+                            ...answers,
+                            [q.question_id]: value,
+                          });
+
+                          updateValidation(q, value);
+                        }}
+                      />
+                    )}
+
+                    {q.question_type === "dropdown" && (
+                      <div className="space-y-2">
+                        <select
+                          value={answers[q.question_id] || ""}
+                          className={`
     w-full
     rounded-xl
     border
@@ -979,198 +976,186 @@ hover:border-primary/30
           : "border-border focus:border-primary"
     }
 `}
-                        onFocus={() => setFocusedQuestionId(q.question_id)}
-                        onBlur={() => setFocusedQuestionId(null)}
+                          onFocus={() => setFocusedQuestionId(q.question_id)}
+                          onBlur={() => setFocusedQuestionId(null)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            setAnswers({
+                              ...answers,
+                              [q.question_id]: value,
+                            });
+
+                            updateValidation(q, value);
+                          }}
+                        >
+                          <option value="">-- Select an option --</option>
+
+                          {q.opportunity_question_options?.map((o: any) => (
+                            <option key={o.option_id} value={o.option_text}>
+                              {o.option_text}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {q.question_type === "mcq" && (
+                      <div className="space-y-3">
+                        {q.opportunity_question_options?.map((o: any) => {
+                          const selected = answers[q.question_id] === o.option_text;
+
+                          return (
+                            <label
+                              key={o.option_id}
+                              className={`
+                              flex
+                              cursor-pointer
+                              items-center
+                              gap-4
+                              rounded-2xl
+                              border
+                              p-4
+                              transition-all
+                              ${
+                                selected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border bg-white hover:border-primary/40 hover:bg-slate-50"
+                              }
+                            `}
+                            >
+                              <input
+                                type="radio"
+                                name={q.question_id}
+                                checked={selected}
+                                className="h-4 w-4"
+                                onFocus={() => setFocusedQuestionId(q.question_id)}
+                                onBlur={() => setFocusedQuestionId(null)}
+                                onChange={() => {
+                                  setAnswers({
+                                    ...answers,
+                                    [q.question_id]: o.option_text,
+                                  });
+
+                                  updateValidation(q, o.option_text);
+                                }}
+                              />
+
+                              <span className="flex-1 text-sm font-medium">{o.option_text}</span>
+
+                              {selected && (
+                                <span className="text-emerald-600 font-semibold text-xs">
+                                  ✓ Selected
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {q.question_type === "checkbox" && (
+                      <div className="space-y-3">
+                        {q.opportunity_question_options?.map((o: any) => {
+                          const selected = (answers[q.question_id] || []).includes(o.option_text);
+
+                          return (
+                            <label
+                              key={o.option_id}
+                              className={`
+                              flex
+                              cursor-pointer
+                              items-center
+                              gap-4
+                              rounded-2xl
+                              border
+                              p-4
+                              transition-all
+                              ${
+                                selected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border bg-white hover:border-primary/40 hover:bg-slate-50"
+                              }
+                            `}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                className="h-4 w-4"
+                                onFocus={() => setFocusedQuestionId(q.question_id)}
+                                onBlur={() => setFocusedQuestionId(null)}
+                                onChange={(e) => {
+                                  const old = answers[q.question_id] || [];
+
+                                  if (
+                                    e.target.checked &&
+                                    q.validation?.maxSelection &&
+                                    old.length >= q.validation.maxSelection
+                                  ) {
+                                    updateValidation(q, old);
+                                    return;
+                                  }
+
+                                  const updated = e.target.checked
+                                    ? [...old, o.option_text]
+                                    : old.filter((x: string) => x !== o.option_text);
+
+                                  setAnswers({
+                                    ...answers,
+                                    [q.question_id]: updated,
+                                  });
+
+                                  updateValidation(q, updated);
+                                }}
+                              />
+
+                              <span className="flex-1 text-sm font-medium">{o.option_text}</span>
+
+                              {selected && (
+                                <span className="text-emerald-600 text-xs font-semibold">
+                                  ✓ Selected
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })}
+
+                        {(q.validation?.minSelection || q.validation?.maxSelection) && (
+                          <div className="flex justify-between text-xs text-slate-500">
+                            <span>Selected {(answers[q.question_id] || []).length}</span>
+
+                            <span>
+                              {q.validation?.minSelection ? `Min ${q.validation.minSelection}` : ""}
+                              {q.validation?.minSelection && q.validation?.maxSelection
+                                ? " • "
+                                : ""}
+                              {q.validation?.maxSelection ? `Max ${q.validation.maxSelection}` : ""}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {q.question_type === "file" && (
+                      <input
+                        type="file"
+                        className="border w-full p-2 rounded"
                         onChange={(e) => {
-                          const value = e.target.value;
+                          const file = e.target.files?.[0];
+
+                          if (!file) {
+                            return;
+                          }
 
                           setAnswers({
                             ...answers,
-                            [q.question_id]: value,
+                            [q.question_id]: file,
                           });
-
-                          updateValidation(q, value);
                         }}
-                      >
-                        <option value="">-- Select an option --</option>
-
-                        {q.opportunity_question_options?.map((o: any) => (
-                          <option key={o.option_id} value={o.option_text}>
-                            {o.option_text}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {q.question_type === "mcq" && (
-                    <div className="space-y-3">
-                      {q.opportunity_question_options?.map((o: any) => {
-                        const selected = answers[q.question_id] === o.option_text;
-
-                        return (
-                          <label
-                            key={o.option_id}
-                            className={`
-                              flex
-                              cursor-pointer
-                              items-center
-                              gap-4
-                              rounded-2xl
-                              border
-                              p-4
-                              transition-all
-                              ${
-                                selected
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border bg-white hover:border-primary/40 hover:bg-slate-50"
-                              }
-                            `}
-                          >
-                            <input
-                              type="radio"
-                              name={q.question_id}
-                              checked={selected}
-                              className="h-4 w-4"
-                              onFocus={() => setFocusedQuestionId(q.question_id)}
-                              onBlur={() => setFocusedQuestionId(null)}
-                              onChange={() => {
-                                setAnswers({
-                                  ...answers,
-                                  [q.question_id]: o.option_text,
-                                });
-
-                                updateValidation(q, o.option_text);
-                              }}
-                            />
-
-                            <span className="flex-1 text-sm font-medium">
-                              {o.option_text}
-                            </span>
-
-                            {selected && (
-                              <span className="text-emerald-600 font-semibold text-xs">
-                                ✓ Selected
-                              </span>
-                            )}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {q.question_type === "checkbox" && (
-                    <div className="space-y-3">
-                      {q.opportunity_question_options?.map((o: any) => {
-                        const selected = (answers[q.question_id] || []).includes(o.option_text);
-
-                        return (
-                          <label
-                            key={o.option_id}
-                            className={`
-                              flex
-                              cursor-pointer
-                              items-center
-                              gap-4
-                              rounded-2xl
-                              border
-                              p-4
-                              transition-all
-                              ${
-                                selected
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border bg-white hover:border-primary/40 hover:bg-slate-50"
-                              }
-                            `}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              className="h-4 w-4"
-                              onFocus={() => setFocusedQuestionId(q.question_id)}
-                              onBlur={() => setFocusedQuestionId(null)}
-                              onChange={(e) => {
-                                const old = answers[q.question_id] || [];
-
-                                if (
-                                  e.target.checked &&
-                                  q.validation?.maxSelection &&
-                                  old.length >= q.validation.maxSelection
-                                ) {
-                                  updateValidation(q, old);
-                                  return;
-                                }
-
-                                const updated = e.target.checked
-                                  ? [...old, o.option_text]
-                                  : old.filter((x: string) => x !== o.option_text);
-
-                                setAnswers({
-                                  ...answers,
-                                  [q.question_id]: updated,
-                                });
-
-                                updateValidation(q, updated);
-                              }}
-                            />
-
-                            <span className="flex-1 text-sm font-medium">
-                              {o.option_text}
-                            </span>
-
-                            {selected && (
-                              <span className="text-emerald-600 text-xs font-semibold">
-                                ✓ Selected
-                              </span>
-                            )}
-                          </label>
-                        );
-                      })}
-
-                      {(q.validation?.minSelection || q.validation?.maxSelection) && (
-                        <div className="flex justify-between text-xs text-slate-500">
-                          <span>
-                            Selected {(answers[q.question_id] || []).length}
-                          </span>
-
-                          <span>
-                            {q.validation?.minSelection
-                              ? `Min ${q.validation.minSelection}`
-                              : ""}
-                            {q.validation?.minSelection &&
-                            q.validation?.maxSelection
-                              ? " • "
-                              : ""}
-                            {q.validation?.maxSelection
-                              ? `Max ${q.validation.maxSelection}`
-                              : ""}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {q.question_type === "file" && (
-                    <input
-                      type="file"
-                      className="border w-full p-2 rounded"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-
-                        if (!file) {
-                          return;
-                        }
-
-                        setAnswers({
-                          ...answers,
-                          [q.question_id]: file,
-                        });
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
-
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
 
               <div className="sticky bottom-0 mt-0 flex gap-3 border-t bg-white px-8 py-5">
