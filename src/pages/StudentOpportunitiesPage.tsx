@@ -64,6 +64,11 @@ export function StudentOpportunitiesPage() {
       `${q.validation?.minSelection ? `Select at least ${q.validation.minSelection}. ` : ""}${
         q.validation?.maxSelection ? `Maximum ${q.validation.maxSelection}.` : ""
       }`.trim(),
+
+    file: (q) =>
+      `Supported: ${(q.validation?.allowedExtensions ?? [])
+        .map((x: string) => x.toUpperCase())
+        .join(", ")}${q.validation?.maxSizeMb ? ` • Maximum ${q.validation.maxSizeMb} MB` : ""}`,
   };
 
   async function load() {
@@ -208,6 +213,18 @@ export function StudentOpportunitiesPage() {
 
       if (!error && question.validation?.maxSelection && count > question.validation.maxSelection) {
         error = `You can select at most ${question.validation.maxSelection} option(s).`;
+      }
+    }
+
+    if (!error && question.question_type === "date" && value) {
+      const selected = String(value);
+
+      if (question.validation?.minDate && selected < question.validation.minDate) {
+        error = `Date must be on or after ${question.validation.minDate}.`;
+      }
+
+      if (!error && question.validation?.maxDate && selected > question.validation.maxDate) {
+        error = `Date must be on or before ${question.validation.maxDate}.`;
       }
     }
 
@@ -921,8 +938,8 @@ hover:border-primary/30
                     {q.question_type === "date" && (
                       <input
                         type="date"
-                        min={q.validation?.minDate}
-                        max={q.validation?.maxDate}
+                        min={q.validation?.minDate || undefined}
+                        max={q.validation?.maxDate || undefined}
                         className={`
     w-full
     rounded-xl
@@ -1137,22 +1154,125 @@ hover:border-primary/30
                     )}
 
                     {q.question_type === "file" && (
-                      <input
-                        type="file"
-                        className="border w-full p-2 rounded"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
+                      <div className="space-y-3">
+                        <label className="block cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center transition hover:border-primary hover:bg-primary/5">
+                          <input
+                            hidden
+                            type="file"
+                            accept={(q.validation?.allowedExtensions ?? [])
+                              .map((x: string) => "." + x)
+                              .join(",")}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
 
-                          if (!file) {
-                            return;
-                          }
+                              if (!file) {
+                                return;
+                              }
 
-                          setAnswers({
-                            ...answers,
-                            [q.question_id]: file,
-                          });
-                        }}
-                      />
+                              const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+                              const allowed = q.validation?.allowedExtensions ?? [];
+
+                              if (allowed.length && !allowed.includes(extension)) {
+                                setValidationErrors((previous) => ({
+                                  ...previous,
+                                  [q.question_id]: `Allowed file types: ${allowed
+                                    .map((x: string) => x.toUpperCase())
+                                    .join(", ")}`,
+                                }));
+
+                                return;
+                              }
+
+                              const maxBytes = (q.validation?.maxSizeMb ?? 0) * 1024 * 1024;
+
+                              if (maxBytes > 0 && file.size > maxBytes) {
+                                setValidationErrors((previous) => ({
+                                  ...previous,
+                                  [q.question_id]: `Maximum file size is ${q.validation.maxSizeMb} MB.`,
+                                }));
+
+                                return;
+                              }
+
+                              setValidationErrors((previous) => {
+                                const next = { ...previous };
+                                delete next[q.question_id];
+                                return next;
+                              });
+
+                              setAnswers({
+                                ...answers,
+                                [q.question_id]: file,
+                              });
+
+                              updateValidation(q, file);
+                            }}
+                          />
+
+                          <div className="text-3xl">📎</div>
+
+                          <div className="mt-2 font-medium">
+                            {answers[q.question_id] ? "Replace uploaded file" : "Choose file"}
+                          </div>
+
+                          <div className="mt-1 text-xs text-slate-500">
+                            {(q.validation?.allowedExtensions ?? [])
+                              .map((x: string) => x.toUpperCase())
+                              .join(", ")}
+                          </div>
+
+                          {q.validation?.maxSizeMb && (
+                            <div className="mt-1 text-xs text-slate-500">
+                              Maximum {q.validation.maxSizeMb} MB
+                            </div>
+                          )}
+                        </label>
+
+                        {answers[q.question_id] && (
+                          <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                            <div>
+                              <div className="flex items-center gap-2 font-medium text-emerald-700">
+                                <span className="text-lg">📄</span>
+
+                                <span className="truncate">
+                                  {(answers[q.question_id] as File).name}
+                                </span>
+
+                                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold">
+                                  VERIFIED
+                                </span>
+                              </div>
+
+                              <div className="flex gap-2 text-xs text-emerald-600">
+                                <span>
+                                  {((answers[q.question_id] as File).size / 1024 / 1024).toFixed(2)}{" "}
+                                  MB
+                                </span>
+
+                                <span className="rounded-full bg-slate-200 px-2 py-0.5 uppercase">
+                                  {(
+                                    (answers[q.question_id] as File).name.split(".").pop() ?? ""
+                                  ).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="rounded-lg border px-3 py-1 text-sm"
+                              onClick={() =>
+                                setAnswers({
+                                  ...answers,
+                                  [q.question_id]: undefined,
+                                })
+                              }
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

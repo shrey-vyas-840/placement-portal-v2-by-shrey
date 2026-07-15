@@ -43,7 +43,7 @@ async function uploadQuestionDocument(
     .from("document_metadata")
     .insert({
       document_name: file.name,
-      document_type: "OTHER",
+      document_type: "Other",
       entity_name: "opportunity_question_answer",
       entity_id: applicationId,
       storage_url: objectPath,
@@ -482,19 +482,35 @@ placement_status
       .select("application_id")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("[APPLICATION INSERT FAILED]", error);
+      throw error;
+    }
 
     if (selectedRoleIds.length > 0) {
       const { error: selectedRolesError } = await (supabase as any)
         .from("student_application_selected_roles")
         .insert(
-          selectedRoleIds.map((driveRoleId) => ({
+          selectedRoleIds.map((driveRoleId, index) => ({
             application_id: application.application_id,
             drive_role_id: driveRoleId,
+            preference_order: index + 1,
           })),
         );
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (selectedRolesError) {
+        console.error("[SELECTED ROLE INSERT ERROR]", {
+          code: selectedRolesError.code,
+          message: selectedRolesError.message,
+          details: selectedRolesError.details,
+          hint: selectedRolesError.hint,
+          full: selectedRolesError,
+        });
+
         await (supabase as any)
           .from("student_opportunity_applications")
           .delete()

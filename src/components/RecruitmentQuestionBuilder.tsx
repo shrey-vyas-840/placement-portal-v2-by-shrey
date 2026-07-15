@@ -267,7 +267,6 @@ export function RecruitmentQuestionBuilder({
   saving = false,
   onSave,
 }: RecruitmentQuestionBuilderProps) {
-  
   const questionCount = useMemo(() => questions.length, [questions]);
 
   const requiredCount = useMemo(() => questions.filter((q) => q.is_required).length, [questions]);
@@ -866,17 +865,19 @@ export function RecruitmentQuestionBuilder({
           <div className="grid gap-3 md:grid-cols-2">
             <input
               disabled={readOnly}
+              type="date"
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
               aria-label="Earliest Date"
               value={question.validation?.minDate || ""}
               onChange={(e) => updateValidation(index, "minDate", e.target.value)}
             />
-
             <input
               disabled={readOnly}
+              type="date"
               className="rounded-xl border border-border bg-white px-4 py-3 text-sm"
               aria-label="Latest Date"
               value={question.validation?.maxDate || ""}
+              min={question.validation?.minDate || undefined}
               onChange={(e) => updateValidation(index, "maxDate", e.target.value)}
             />
           </div>

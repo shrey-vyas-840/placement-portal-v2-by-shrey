@@ -404,6 +404,12 @@ export function RecruitmentWizardPage() {
           defaultQuestionsData: defaultQuestions,
           rolesData: roles,
 
+          createdCompanyId:
+  selectedCompanyId &&
+  selectedCompanyId !== "DRAFT_COMPANY"
+    ? selectedCompanyId
+    : null,
+
           wizardState: {
             selectedCompanyId,
             companySelectionMode:
@@ -608,6 +614,13 @@ export function RecruitmentWizardPage() {
       eligibilityData: eligibility,
       defaultQuestionsData: defaultQuestions,
       rolesData: roles,
+
+      createdCompanyId:
+  selectedCompanyId &&
+  selectedCompanyId !== "DRAFT_COMPANY"
+    ? selectedCompanyId
+    : null,
+
       wizardState: {
         selectedCompanyId,
         companySelectionMode:
@@ -670,6 +683,13 @@ export function RecruitmentWizardPage() {
           minimum_role_selection: roleSelectionEnabled ? minimumRoleSelection : 0,
           maximum_role_selection: roleSelectionEnabled ? maximumRoleSelection : 0,
         },
+
+        createdCompanyId:
+  selectedCompanyId &&
+  selectedCompanyId !== "DRAFT_COMPANY"
+    ? selectedCompanyId
+    : null,
+    
         wizardState: {
           selectedCompanyId,
           companySelectionMode:
@@ -949,7 +969,7 @@ export function RecruitmentWizardPage() {
                         onClick={async () => {
                           if (!pendingCompany) return;
 
-                          setSelectedCompanyId(pendingCompany.company_id);
+                            setSelectedCompanyId(pendingCompany.company_id);
 
                           setShowCreateCompany(false);
 

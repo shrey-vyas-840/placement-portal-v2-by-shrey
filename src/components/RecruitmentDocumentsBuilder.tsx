@@ -6,6 +6,10 @@ export type RecruitmentRoleDocument = {
   document_name: string;
   description: string;
   required: boolean;
+
+  allowed_extensions: string[];
+
+  max_file_size_mb: number;
 };
 
 interface RecruitmentDocumentsBuilderProps {
@@ -25,13 +29,18 @@ const DEFAULT_DOCUMENT_SUGGESTIONS = [
 ] as const;
 
 function createDocument(overrides?: Partial<RecruitmentRoleDocument>): RecruitmentRoleDocument {
-  return {
-    id: generateUuid(),
-    document_name: "",
-    description: "",
-    required: true,
-    ...overrides,
-  };
+return {
+  id: generateUuid(),
+  document_name: "",
+  description: "",
+  required: true,
+
+  allowed_extensions: ["pdf"],
+
+  max_file_size_mb: 10,
+
+  ...overrides,
+};
 }
 
 export function RecruitmentDocumentsBuilder({
@@ -234,6 +243,62 @@ export function RecruitmentDocumentsBuilder({
                       />
                       Required document
                     </label>
+
+                    <div className="grid gap-5 md:grid-cols-2">
+  <div>
+    <label className="mb-2 block text-sm font-medium">
+      Allowed File Types
+    </label>
+
+    <div className="flex flex-wrap gap-2">
+      {["pdf","doc","docx","jpg","jpeg","png","zip"].map((extension) => (
+        <label
+          key={extension}
+          className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+        >
+          <input
+            type="checkbox"
+            checked={(document.allowed_extensions ?? []).includes(extension)}
+            onChange={(e) => {
+              updateDocument(
+                document.id,
+                "allowed_extensions",
+                e.target.checked
+                  ? [...(document.allowed_extensions ?? []), extension]
+                 : (document.allowed_extensions ?? []).filter(
+    (item) => item !== extension,
+  ),
+              );
+            }}
+          />
+
+          {extension.toUpperCase()}
+        </label>
+      ))}
+    </div>
+  </div>
+
+  <div>
+    <label className="mb-2 block text-sm font-medium">
+      Maximum File Size (MB)
+    </label>
+
+    <input
+      type="number"
+      min={1}
+      max={100}
+      value={document.max_file_size_mb ?? 10}
+      onChange={(e) =>
+        updateDocument(
+          document.id,
+          "max_file_size_mb",
+          Number(e.target.value),
+        )
+      }
+      className="w-full rounded-xl border border-border px-4 py-3"
+    />
+  </div>
+</div>
                   </div>
                 </div>
               );

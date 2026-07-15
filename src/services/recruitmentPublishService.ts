@@ -299,17 +299,37 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
   const wizardState = (draft.wizard_state ?? {}) as Record<string, unknown>;
 
   const companySelectionMode =
-    typeof wizardState.companySelectionMode === "string" ? wizardState.companySelectionMode : "new";
+  typeof wizardState.companySelectionMode === "string"
+    ? wizardState.companySelectionMode
+    : "new";
 
-  const selectedCompanyId =
-    typeof wizardState.selectedCompanyId === "string" ? wizardState.selectedCompanyId : null;
+const selectedCompanyId =
+  typeof wizardState.selectedCompanyId === "string"
+    ? wizardState.selectedCompanyId
+    : null;
 
-  const isExistingCompany =
-    companySelectionMode === "existing" &&
-    selectedCompanyId !== null &&
-    selectedCompanyId !== "DRAFT_COMPANY";
+/*
+ * A duplicated draft may already be linked to an existing company
+ * even if wizard_state was reset.
+ */
+const linkedCompanyId =
+  typeof draft.created_company_id === "string" &&
+  draft.created_company_id.trim() !== ""
+    ? draft.created_company_id
+    : null;
 
-  const effectiveCompanyId = isExistingCompany ? selectedCompanyId : companyId;
+const existingCompanyId =
+  companySelectionMode === "existing"
+    ? selectedCompanyId
+    : linkedCompanyId;
+
+const isExistingCompany =
+  existingCompanyId !== null &&
+  existingCompanyId !== "DRAFT_COMPANY";
+
+const effectiveCompanyId = isExistingCompany
+  ? existingCompanyId
+  : companyId;
 
   const generatedDriveName = `${String(draft.company_data.company_name).trim()} Recruitment`;
 
@@ -561,44 +581,60 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       publishedQuestionMap.set(question.question_title.trim().toLowerCase(), question.question_id);
     }
 
-    for (const role of draft.roles_data ?? []) {
-      for (const question of role.questions ?? []) {
-        const key = String(question.question_title).trim().toLowerCase();
+for (const role of draft.roles_data ?? []) {
+  const roleQuestions = [...(role.questions ?? [])];
 
-        if (publishedQuestionMap.has(key)) {
-          continue;
-        }
+  for (const document of role.documents ?? []) {
+    roleQuestions.push({
+      question_title: document.document_name,
+      question_type: "file",
+      is_required: Boolean(document.required),
+      validation: {
+        allowedExtensions: document.allowed_extensions ?? ["pdf"],
+        maxFileSizeMb: document.max_file_size_mb ?? 10,
+        description: document.description ?? "",
+      },
+      options: [],
+    });
+  }
 
-        const { data, error } = await (supabase as any)
-          .from("opportunity_questions")
-          .insert({
-            opportunity_id: recruitmentOpportunityId,
-            question_title: question.question_title,
-            question_type: question.question_type,
-            is_required: question.is_required,
-            validation: question.validation || {},
-            position: nextQuestionPosition++,
-          })
-          .select("question_id")
-          .single();
+  for (const question of roleQuestions) {
+    const key = String(question.question_title).trim().toLowerCase();
 
-        if (error) {
-          throw error;
-        }
-
-        publishedQuestionMap.set(key, data.question_id);
-
-        if (question.options?.length) {
-          await (supabase as any).from("opportunity_question_options").insert(
-            question.options.map((option: string, index: number) => ({
-              question_id: data.question_id,
-              option_text: option,
-              position: index,
-            })),
-          );
-        }
-      }
+    if (publishedQuestionMap.has(key)) {
+      continue;
     }
+
+    const { data, error } = await (supabase as any)
+      .from("opportunity_questions")
+      .insert({
+        opportunity_id: recruitmentOpportunityId,
+        question_title: question.question_title,
+        question_type: question.question_type,
+        is_required: question.is_required,
+        validation: question.validation || {},
+        position: nextQuestionPosition++,
+      })
+      .select("question_id")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    publishedQuestionMap.set(key, data.question_id);
+
+    if (question.options?.length) {
+      await (supabase as any).from("opportunity_question_options").insert(
+        question.options.map((option: string, index: number) => ({
+          question_id: data.question_id,
+          option_text: option,
+          position: index,
+        })),
+      );
+    }
+  }
+}
 
     for (const role of draft.roles_data ?? []) {
       const publishedRole = publishRoleMap.get(role.role_id);
@@ -607,9 +643,20 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
         throw new Error(`Missing published role mapping for ${role.role_name}`);
       }
 
-      const roleQuestionsToMap = role.inheritDefaultQuestions
-        ? [...(draft.default_questions_data ?? []), ...(role.questions ?? [])]
-        : (role.questions ?? []);
+     const roleQuestionsToMap = role.inheritDefaultQuestions
+  ? [
+      ...(draft.default_questions_data ?? []),
+      ...(role.questions ?? []),
+      ...((role.documents ?? []).map((document: any) => ({
+        question_title: document.document_name,
+      }))),
+    ]
+  : [
+      ...(role.questions ?? []),
+      ...((role.documents ?? []).map((document: any) => ({
+        question_title: document.document_name,
+      }))),
+    ];
 
       for (const question of roleQuestionsToMap) {
         const questionId = publishedQuestionMap.get(
@@ -699,21 +746,13 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
         rollbackContext.createdDriveRoleEligibilityIds.push(publishedRole.driveRoleId);
       }
 
-      for (const document of role.documents ?? []) {
-        await (supabase as any).from("drive_role_documents").insert({
-          drive_role_id: publishedRole.driveRoleId,
-
-          document_name: document.document_name,
-
-          description: document.description ?? null,
-
-          required: Boolean(document.required),
-
-          display_order: document.display_order ?? role.documents.indexOf(document) + 1,
-        });
-
-        rollbackContext.createdDriveRoleDocumentIds.push(publishedRole.driveRoleId);
-      }
+/*
+ * Documents are now published as question_type = "file"
+ * and linked through drive_role_questions.
+ *
+ * The legacy drive_role_documents pipeline is intentionally
+ * left unused for new publications.
+ */
 
       for (const stage of role.timeline ?? []) {
         await (supabase as any).from("drive_role_timeline").insert({
