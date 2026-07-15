@@ -8,7 +8,7 @@ import { adminQuestionService } from "@/services/adminQuestionService";
 import { supabase } from "@/lib/supabase";
 import { StudentLayout } from "@/components/layout/StudentLayout";
 import { studentOpportunityService } from "@/services/studentOpportunityService";
-
+import ApplicationSubmissionOverlay from "@/components/ApplicationSubmissionOverlay";
 export function StudentOpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<any[]>([]);
 
@@ -29,6 +29,12 @@ export function StudentOpportunitiesPage() {
   const [validatedQuestions, setValidatedQuestions] = useState<Record<string, boolean>>({});
 
   const [pendingApply, setPendingApply] = useState(false);
+
+  const [submissionOverlayVisible, setSubmissionOverlayVisible] = useState(false);
+
+const [submissionStage, setSubmissionStage] = useState("Preparing application...");
+
+const [submissionCompleted, setSubmissionCompleted] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -282,15 +288,18 @@ export function StudentOpportunitiesPage() {
     }
 
     try {
-      await studentOpportunityService.apply(
-        opportunityId,
-        student.student_id,
-        selectedRoles,
-        Object.entries(answers).map(([key, value]) => ({
-          question_id: key,
-          answer_value: Array.isArray(value) ? value.join(",") : value,
-        })),
-      );
+     await studentOpportunityService.apply(
+  opportunityId,
+  student.student_id,
+  selectedRoles,
+  Object.entries(answers).map(([key, value]) => ({
+    question_id: key,
+    answer_value: Array.isArray(value) ? value.join(",") : value,
+  })),
+  (stage) => {
+    setSubmissionStage(stage);
+  },
+);
 
       alert("Application submitted");
 
@@ -612,6 +621,11 @@ hover:border-primary/30
                 shadow-2xl
               "
             >
+              <ApplicationSubmissionOverlay
+  visible={submissionOverlayVisible}
+  stage={submissionStage}
+  completed={submissionCompleted}
+/>
               <div
                 className="
                   sticky
@@ -639,10 +653,14 @@ hover:border-primary/30
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedOpportunity(null);
-                      setQuestions([]);
-                      setAnswers({});
-                    }}
+  if (pendingApply) {
+    return;
+  }
+
+  setSelectedOpportunity(null);
+  setQuestions([]);
+  setAnswers({});
+}}
                     className="
                       rounded-xl
                       border
@@ -1439,21 +1457,37 @@ hover:border-primary/30
                       return;
                     }
 
-                    setPendingApply(true);
+                   setPendingApply(true);
 
-                    await apply(selectedOpportunity.opportunity_id, selectedRoleIds);
+setSubmissionCompleted(false);
+setSubmissionStage("Preparing application...");
+setSubmissionOverlayVisible(true);
 
-                    setSelectedOpportunity(null);
-                    setQuestions([]);
-                    setAnswers({});
+try {
+  await apply(selectedOpportunity.opportunity_id, selectedRoleIds);
 
-                    setPendingApply(false);
+  setSubmissionStage("Application submitted successfully.");
+  setSubmissionCompleted(true);
+
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+
+  setSelectedOpportunity(null);
+  setQuestions([]);
+  setAnswers({});
+}
+finally {
+  setSubmissionOverlayVisible(false);
+  setSubmissionCompleted(false);
+  setSubmissionStage("Preparing application...");
+  setPendingApply(false);
+}
                   }}
                 >
                   Submit Application
                 </button>
 
                 <button
+  disabled={pendingApply}
                   className="
     rounded-xl
     border

@@ -6,6 +6,7 @@ type AnswerInput = {
 };
 
 type StoredAnswerValue = string | number | boolean | null | Record<string, any> | Array<any>;
+type SubmissionProgressCallback = (stage: string) => void;
 
 function splitCsvList(value?: string | null): string[] {
   if (!value) return [];
@@ -308,12 +309,13 @@ export const studentOpportunityService = {
     );
   },
 
-  async apply(
-    opportunityId: string,
-    studentId: string,
-    selectedRoleIds: string[] = [],
-    answers: AnswerInput[] = [],
-  ) {
+ async apply(
+  opportunityId: string,
+  studentId: string,
+  selectedRoleIds: string[] = [],
+  answers: AnswerInput[] = [],
+  onProgress?: SubmissionProgressCallback,
+){
     const { data: opportunity, error: opportunityError } = await (supabase as any)
       .from("opportunity_master")
       .select(
@@ -472,7 +474,7 @@ placement_status
         throw new Error("Backlog criteria not met.");
       }
     }
-
+onProgress?.("Creating application...");
     const { data: application, error } = await (supabase as any)
       .from("student_opportunity_applications")
       .insert({
@@ -488,6 +490,7 @@ placement_status
     }
 
     if (selectedRoleIds.length > 0) {
+      onProgress?.("Saving selected roles...");
       const { error: selectedRolesError } = await (supabase as any)
         .from("student_application_selected_roles")
         .insert(
@@ -540,6 +543,7 @@ placement_status
           let answerValue: StoredAnswerValue = answer.answer_value;
 
           if (answer.answer_value instanceof File) {
+            onProgress?.(`Uploading ${answer.answer_value.name}...`);
             const documentMetadataId = await uploadQuestionDocument(
               answer.answer_value,
               studentId,
@@ -562,7 +566,7 @@ placement_status
             },
           });
         }
-
+onProgress?.("Saving application answers...");
         const { error: answerError } = await (supabase as any)
           .from("opportunity_question_answers")
           .insert(answerRows);
@@ -606,7 +610,7 @@ placement_status
         throw submissionError;
       }
     }
-
+onProgress?.("Finalizing application...");
     return application;
   },
 };
