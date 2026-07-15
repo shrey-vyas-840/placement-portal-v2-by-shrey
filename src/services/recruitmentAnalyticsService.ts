@@ -5,7 +5,7 @@ export interface RecruitmentWorkspaceSummary {
 
   driveId: string | null;
 
-  opportunityId: string | null;
+  opportunityId: string |null;
 
   companyId: string | null;
 
@@ -22,6 +22,14 @@ export interface RecruitmentWorkspaceSummary {
   totalApplications: number;
 
   totalRoles: number;
+
+  averageApplicationsPerRole: number;
+
+  recentApplications: {
+    applicationId: string;
+    studentId: string;
+    appliedAt: string;
+  }[];
 }
 
 export async function getRecruitmentWorkspaceSummary(
@@ -57,7 +65,32 @@ export async function getRecruitmentWorkspaceSummary(
 
   let applicationCount = 0;
 
+  let recentApplications: {
+  applicationId: string;
+  studentId: string;
+  appliedAt: string;
+}[] = [];
+
   if (opportunity?.opportunity_id) {
+    const { data: latestApplications } = await (supabase as any)
+  .from("student_opportunity_applications")
+  .select(`
+    application_id,
+    student_id,
+    applied_at
+  `)
+  .eq("opportunity_id", opportunity.opportunity_id)
+  .order("applied_at", {
+    ascending: false,
+  })
+  .limit(5);
+
+recentApplications =
+  latestApplications?.map((application: any) => ({
+    applicationId: application.application_id,
+    studentId: application.student_id,
+    appliedAt: application.applied_at,
+  })) ?? [];
     const { count } = await (supabase as any)
       .from("student_opportunity_applications")
       .select("*", {
@@ -110,6 +143,13 @@ export async function getRecruitmentWorkspaceSummary(
 
     totalApplications: applicationCount,
 
-    totalRoles: roleCount,
+   totalRoles: roleCount,
+
+averageApplicationsPerRole:
+  roleCount === 0
+    ? 0
+    : Number((applicationCount / roleCount).toFixed(1)),
+
+recentApplications,
   };
 }

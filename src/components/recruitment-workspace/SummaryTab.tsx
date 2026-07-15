@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { ActionCenter } from "./ActionCenter";
 import { BriefcaseBusiness, CalendarDays, FileText, CircleDot } from "lucide-react";
 
 import {
@@ -188,6 +188,131 @@ export function SummaryTab({ draft, loading }: SummaryTabProps) {
           </div>
         </div>
       </div>
+   
+<div className="space-y-5">
+
+  <ActionCenter
+    summary={summary}
+  />
+
+  <div className="grid gap-5 lg:grid-cols-2">
+
+    <div className="rounded-2xl border bg-card p-6">
+
+      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        Registration Progress
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-6">
+
+        <div>
+          <div className="text-sm text-muted-foreground">
+            Applications
+          </div>
+
+          <div className="mt-2 text-4xl font-bold">
+            {summary?.totalApplications ?? 0}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm text-muted-foreground">
+            Avg / Role
+          </div>
+
+          <div className="mt-2 text-4xl font-bold">
+            {summary?.averageApplicationsPerRole ?? 0}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm text-muted-foreground">
+            Published Roles
+          </div>
+
+          <div className="mt-2 text-2xl font-semibold">
+            {summary?.totalRoles ?? 0}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm text-muted-foreground">
+            Hiring Goal
+          </div>
+
+          <div className="mt-2 text-2xl font-semibold text-muted-foreground">
+            —
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div className="rounded-2xl border bg-card p-6">
+
+      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        Recent Activity
+      </div>
+
+      <div className="mt-6">
+
+        {summary?.recentApplications?.length ? (
+
+          <div className="space-y-4">
+
+            {summary.recentApplications.map((application) => (
+
+              <div
+                key={application.applicationId}
+                className="flex items-center justify-between rounded-xl border p-4"
+              >
+                <div>
+
+                  <div className="font-medium">
+                    Student Applied
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(application.appliedAt).toLocaleString()}
+                  </div>
+
+                </div>
+
+                <div className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                  Applied
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        ) : (
+
+          <div className="rounded-xl border border-dashed p-10 text-center">
+
+            <div className="text-lg font-semibold">
+              No Activity Yet
+            </div>
+
+            <div className="mt-2 text-sm text-muted-foreground">
+              Student applications will appear here in real time.
+            </div>
+
+          </div>
+
+        )}
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+   
     </div>
   );
 }
