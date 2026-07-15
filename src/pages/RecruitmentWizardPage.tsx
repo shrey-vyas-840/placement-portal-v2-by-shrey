@@ -211,25 +211,6 @@ export function RecruitmentWizardPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedCompanyId || selectedCompanyId === "DRAFT_COMPANY" || companies.length === 0) {
-      return;
-    }
-
-    const master = companies.find((c) => c.company_id === selectedCompanyId);
-
-    if (!master) return;
-
-    setCompany({
-      company_name: master.company_name ?? "",
-      company_website: master.company_website ?? "",
-      hiring_location: master.hiring_location ?? "",
-      industry_type: master.industry_type ?? "",
-      company_description: master.company_description ?? "",
-      company_size: master.company_size ?? "",
-    });
-  }, [companies, selectedCompanyId]);
-
-  useEffect(() => {
     async function initializeDraft() {
       try {
         const {
@@ -405,10 +386,7 @@ export function RecruitmentWizardPage() {
           rolesData: roles,
 
           createdCompanyId:
-  selectedCompanyId &&
-  selectedCompanyId !== "DRAFT_COMPANY"
-    ? selectedCompanyId
-    : null,
+            selectedCompanyId && selectedCompanyId !== "DRAFT_COMPANY" ? selectedCompanyId : null,
 
           wizardState: {
             selectedCompanyId,
@@ -437,6 +415,7 @@ export function RecruitmentWizardPage() {
     draftLoaded,
     selectedCompanyId,
   ]);
+
   async function loadCompanyRecruiters(companyId: string) {
     try {
       const contacts = await adminDriveService.getCompanyRecruiters(companyId);
@@ -461,6 +440,65 @@ export function RecruitmentWizardPage() {
           primary_contact: Boolean(contact.primary_contact),
         })),
       );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function loadPublishedRecruitmentTemplate(companyId: string) {
+    try {
+      const template = await adminDriveService.getLatestPublishedRecruitmentTemplate(companyId);
+
+      if (!template) {
+        return;
+      }
+
+      if (template.drive_data) {
+        setDrive(template.drive_data as DriveFormData);
+      }
+
+      if (template.eligibility_data) {
+        setEligibility(template.eligibility_data as RecruitmentRoleEligibility);
+      }
+
+      if (Array.isArray(template.default_questions_data)) {
+        setDefaultQuestions(
+          template.default_questions_data.map((question: RecruitmentQuestion) => ({
+            ...question,
+            question_id:
+              question.question_id && question.question_id.trim() !== ""
+                ? question.question_id
+                : generateUuid(),
+          })),
+        );
+      }
+
+      if (Array.isArray(template.roles_data)) {
+        setRoles(
+          template.roles_data.map((role: RecruitmentRole) => ({
+            ...role,
+            role_id: role.role_id && role.role_id.trim() !== "" ? generateUuid() : generateUuid(),
+
+            questions: (role.questions ?? []).map((question: RecruitmentQuestion) => ({
+              ...question,
+              question_id:
+                question.question_id && question.question_id.trim() !== ""
+                  ? generateUuid()
+                  : generateUuid(),
+            })),
+          })),
+        );
+      }
+
+      if (template.publish_data) {
+        const publish = template.publish_data as any;
+
+        setRoleSelectionEnabled(publish.role_selection_enabled ?? true);
+
+        setMinimumRoleSelection(publish.minimum_role_selection ?? 1);
+
+        setMaximumRoleSelection(publish.maximum_role_selection ?? 1);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -616,10 +654,7 @@ export function RecruitmentWizardPage() {
       rolesData: roles,
 
       createdCompanyId:
-  selectedCompanyId &&
-  selectedCompanyId !== "DRAFT_COMPANY"
-    ? selectedCompanyId
-    : null,
+        selectedCompanyId && selectedCompanyId !== "DRAFT_COMPANY" ? selectedCompanyId : null,
 
       wizardState: {
         selectedCompanyId,
@@ -680,16 +715,12 @@ export function RecruitmentWizardPage() {
         rolesData: roles,
         publishData: {
           role_selection_enabled: roleSelectionEnabled,
-          minimum_role_selection: roleSelectionEnabled ? minimumRoleSelection : 0,
-          maximum_role_selection: roleSelectionEnabled ? maximumRoleSelection : 0,
+          minimum_role_selection: roleSelectionEnabled ? minimumRoleSelection : 1,
+          maximum_role_selection: roleSelectionEnabled ? maximumRoleSelection : 1,
         },
-
         createdCompanyId:
-  selectedCompanyId &&
-  selectedCompanyId !== "DRAFT_COMPANY"
-    ? selectedCompanyId
-    : null,
-    
+          selectedCompanyId && selectedCompanyId !== "DRAFT_COMPANY" ? selectedCompanyId : null,
+
         wizardState: {
           selectedCompanyId,
           companySelectionMode:
@@ -870,6 +901,8 @@ export function RecruitmentWizardPage() {
 
                                   await loadCompanyRecruiters(item.company_id);
 
+                                  await loadPublishedRecruitmentTemplate(item.company_id);
+
                                   return;
                                 }
                                 setPendingCompany(item);
@@ -969,7 +1002,7 @@ export function RecruitmentWizardPage() {
                         onClick={async () => {
                           if (!pendingCompany) return;
 
-                            setSelectedCompanyId(pendingCompany.company_id);
+                          setSelectedCompanyId(pendingCompany.company_id);
 
                           setShowCreateCompany(false);
 
@@ -983,6 +1016,8 @@ export function RecruitmentWizardPage() {
                           });
 
                           await loadCompanyRecruiters(pendingCompany.company_id);
+
+                          await loadPublishedRecruitmentTemplate(pendingCompany.company_id);
 
                           window.scrollTo({
                             top: document.body.scrollHeight,

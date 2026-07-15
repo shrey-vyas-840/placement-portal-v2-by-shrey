@@ -108,6 +108,29 @@ export const adminDriveService = {
   return data ?? [];
 },
 
+async getLatestPublishedRecruitmentTemplate(companyId: string) {
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .select(
+      `
+      drive_data,
+      eligibility_data,
+      default_questions_data,
+      roles_data,
+      publish_data
+      `,
+    )
+    .eq("created_company_id", companyId)
+    .eq("status", "PUBLISHED")
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data;
+},
+
   async createCompanyForPublish(payload: {
     company_id: string;
     company_name: string;
