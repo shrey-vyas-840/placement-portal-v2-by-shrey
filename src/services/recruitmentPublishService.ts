@@ -333,13 +333,11 @@ const effectiveCompanyId = isExistingCompany
 
   const generatedDriveName = `${String(draft.company_data.company_name).trim()} Recruitment`;
 
-  const companyAlreadyPublished =
-    typeof draft.created_company_id === "string" && draft.created_company_id.trim() !== "";
+const driveAlreadyPublished =
+  typeof draft.created_drive_id === "string" &&
+  draft.created_drive_id.trim() !== "";
 
-  const driveAlreadyPublished =
-    typeof draft.created_drive_id === "string" && draft.created_drive_id.trim() !== "";
-
-  const isRepublish = companyAlreadyPublished || driveAlreadyPublished;
+const isRepublish = driveAlreadyPublished;
 
   const rollbackContext: PublishRollbackContext = {
     companyCreated: false,

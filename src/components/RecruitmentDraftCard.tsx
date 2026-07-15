@@ -38,32 +38,32 @@ export function RecruitmentDraftCard({
           <div className="mt-1 text-xs text-muted-foreground">{company}</div>
         </div>
 
-    <span
-  className={
-    published
-      ? "rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700"
-      : archived
-        ? "rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
-        : "rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700"
-  }
->
-  {published ? "Published" : archived ? "Archived" : "Draft"}
-</span>
+        <span
+          className={
+            published
+              ? "rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700"
+              : archived
+                ? "rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+                : "rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700"
+          }
+        >
+          {published ? "Published" : archived ? "Archived" : "Draft"}
+        </span>
       </div>
 
       <div className="mt-4 space-y-2 text-xs text-muted-foreground">
         <div>Step {currentStep} / 6</div>
 
         <div>
-  {published ? "Published" : "Last Saved"}:{" "}
-  {published
-    ? draft.published_at
-      ? new Date(draft.published_at).toLocaleString()
-      : "-"
-    : updated
-      ? new Date(updated).toLocaleString()
-      : "-"}
-</div>
+          {published ? "Published" : "Last Saved"}:{" "}
+          {published
+            ? draft.published_at
+              ? new Date(draft.published_at).toLocaleString()
+              : "-"
+            : updated
+              ? new Date(updated).toLocaleString()
+              : "-"}
+        </div>
       </div>
 
       {compact ? (
@@ -79,15 +79,18 @@ export function RecruitmentDraftCard({
           </Link>
         </div>
       ) : published ? (
-  <div className="mt-5 flex flex-wrap gap-2">
-    <button
-      type="button"
-      className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
-    >
-      View Recruitment
-    </button>
-  </div>
-) : archived ? (
+        <div className="mt-5 flex flex-wrap gap-2">
+         <Link
+  to="/admin/recruitment/$draftId"
+  params={{
+    draftId: draft.draft_id,
+  }}
+  className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
+>
+  View Recruitment
+</Link>
+        </div>
+      ) : archived ? (
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             onClick={() => onRestore?.(draft.draft_id)}
