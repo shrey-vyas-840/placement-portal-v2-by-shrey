@@ -542,20 +542,34 @@ hover:border-primary/30
           ))}
         </div>
         {selectedOpportunity && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div
+            className="
+              fixed
+              inset-0
+              z-[100]
+              flex
+              items-center
+              justify-center
+              bg-black/60
+              backdrop-blur-sm
+              p-6
+            "
+          >
             <div
               className="
-        w-full
-        max-w-3xl
-        max-h-[90vh]
-        overflow-y-auto
-        rounded-3xl
-        border
-        border-border/50
-        bg-white
-        p-8
-        shadow-2xl
-    "
+                relative
+                flex
+                max-h-[92vh]
+                w-full
+                max-w-4xl
+                flex-col
+                overflow-hidden
+                rounded-3xl
+                border
+                border-border/50
+                bg-white
+                shadow-2xl
+              "
             >
               <div className="mb-8">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -570,37 +584,77 @@ hover:border-primary/30
 
                 {availableRoles.length > 0 && (
                   <div className="mt-6 rounded-2xl border bg-slate-50 p-5">
-                    <p className="mb-3 font-medium">Select Role(s)</p>
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">Choose Role(s)</p>
 
-                    <div className="space-y-2">
-                      {availableRoles.map((role: any) => (
-                        <label
-                          key={role.drive_role_id}
-                          className="flex items-center gap-3 rounded-xl border bg-white p-3"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedRoleIds.includes(role.drive_role_id)}
-                            onChange={async (e) => {
-                              const updated = e.target.checked
-                                ? [...selectedRoleIds, role.drive_role_id]
-                                : selectedRoleIds.filter((id) => id !== role.drive_role_id);
+                        <p className="text-xs text-slate-500 mt-1">
+                          Select the role(s) you wish to apply for.
+                        </p>
+                      </div>
 
-                              setSelectedRoleIds(updated);
+                      <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                        {selectedRoleIds.length} Selected
+                      </div>
+                    </div>
 
-                              const qs = await studentOpportunityService.getApplicationQuestions(
-                                selectedOpportunity.opportunity_id,
-                                updated,
-                                selectedOpportunity.drive_id,
-                              );
+                    <div className="space-y-3">
+                      {availableRoles.map((role: any) => {
+                        const selected = selectedRoleIds.includes(role.drive_role_id);
 
-                              setQuestions(qs);
-                            }}
-                          />
+                        return (
+                          <label
+                            key={role.drive_role_id}
+                            className={`
+                              flex
+                              cursor-pointer
+                              items-center
+                              gap-4
+                              rounded-2xl
+                              border
+                              p-4
+                              transition-all
+                              ${
+                                selected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border bg-white hover:border-primary/40 hover:bg-slate-50"
+                              }
+                            `}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              className="h-4 w-4"
+                              onChange={async (e) => {
+                                const updated = e.target.checked
+                                  ? [...selectedRoleIds, role.drive_role_id]
+                                  : selectedRoleIds.filter((id) => id !== role.drive_role_id);
 
-                          <span>{role.drive_role_name}</span>
-                        </label>
-                      ))}
+                                setSelectedRoleIds(updated);
+
+                                const qs =
+                                  await studentOpportunityService.getApplicationQuestions(
+                                    selectedOpportunity.opportunity_id,
+                                    updated,
+                                    selectedOpportunity.drive_id,
+                                  );
+
+                                setQuestions(qs);
+                              }}
+                            />
+
+                            <span className="flex-1 font-medium">
+                              {role.drive_role_name}
+                            </span>
+
+                            {selected && (
+                              <span className="text-xs font-semibold text-emerald-600">
+                                ✓ Selected
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
