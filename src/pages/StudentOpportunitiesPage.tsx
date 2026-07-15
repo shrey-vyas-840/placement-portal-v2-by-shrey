@@ -571,16 +571,52 @@ hover:border-primary/30
                 shadow-2xl
               "
             >
-              <div className="mb-8">
+              <div
+                className="
+                  sticky
+                  top-0
+                  z-20
+                  border-b
+                  bg-white
+                  px-8
+                  py-6
+                "
+              >
                 <p className="text-xs uppercase tracking-widest text-muted-foreground">
                   Opportunity Application
                 </p>
 
-                <h2 className="mt-2 text-2xl font-bold">Additional Questions</h2>
+                <div className="mt-2 flex items-start justify-between gap-6">
+                  <div>
+                    <h2 className="text-2xl font-bold">
+                      Additional Questions
+                    </h2>
 
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Complete the required information before submitting your application.
-                </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Complete all required information before submitting your
+                      application.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedOpportunity(null);
+                      setQuestions([]);
+                      setAnswers({});
+                    }}
+                    className="
+                      rounded-xl
+                      border
+                      px-3
+                      py-2
+                      text-sm
+                      hover:bg-slate-100
+                    "
+                  >
+                    ✕
+                  </button>
+                </div>
 
                 {availableRoles.length > 0 && (
                   <div className="mt-6 rounded-2xl border bg-slate-50 p-5">
@@ -660,7 +696,15 @@ hover:border-primary/30
                 )}
               </div>
 
-              {questions.map((q: any) => (
+              <div
+                className="
+                  flex-1
+                  overflow-y-auto
+                  px-8
+                  py-6
+                "
+              >
+                {questions.map((q: any) => (
                 <div
                   key={q.question_id}
                   className="
@@ -1080,7 +1124,9 @@ hover:border-primary/30
                 </div>
               ))}
 
-              <div className="sticky bottom-0 mt-8 flex gap-3 border-t bg-white pt-5">
+              </div>
+
+              <div className="sticky bottom-0 mt-0 flex gap-3 border-t bg-white px-8 py-5">
                 <button
                   className="
     rounded-xl
