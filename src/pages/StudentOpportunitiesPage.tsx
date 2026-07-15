@@ -32,39 +32,39 @@ export function StudentOpportunitiesPage() {
 
   const [loading, setLoading] = useState(true);
 
-const { showLoader } = usePageLoader(loading);
+  const { showLoader } = usePageLoader(loading);
 
-const validationHints: Record<string, (q: any) => string> = {
-  text: (q) =>
-    `${q.validation?.minLength ? `Minimum ${q.validation.minLength} characters. ` : ""}${
-      q.validation?.maxLength ? `Maximum ${q.validation.maxLength} characters. ` : ""
-    }${q.validation?.alphaOnly ? "Only alphabets allowed." : ""}`.trim(),
+  const validationHints: Record<string, (q: any) => string> = {
+    text: (q) =>
+      `${q.validation?.minLength ? `Minimum ${q.validation.minLength} characters. ` : ""}${
+        q.validation?.maxLength ? `Maximum ${q.validation.maxLength} characters. ` : ""
+      }${q.validation?.alphaOnly ? "Only alphabets allowed." : ""}`.trim(),
 
-  paragraph: (q) =>
-    `${q.validation?.minLength ? `Minimum ${q.validation.minLength} characters. ` : ""}${
-      q.validation?.maxLength ? `Maximum ${q.validation.maxLength} characters.` : ""
-    }`.trim(),
+    paragraph: (q) =>
+      `${q.validation?.minLength ? `Minimum ${q.validation.minLength} characters. ` : ""}${
+        q.validation?.maxLength ? `Maximum ${q.validation.maxLength} characters.` : ""
+      }`.trim(),
 
-  number: (q) =>
-    `${q.validation?.minDigits ? `Minimum ${q.validation.minDigits} digits. ` : ""}${
-      q.validation?.maxDigits ? `Maximum ${q.validation.maxDigits} digits.` : ""
-    }`.trim(),
+    number: (q) =>
+      `${q.validation?.minDigits ? `Minimum ${q.validation.minDigits} digits. ` : ""}${
+        q.validation?.maxDigits ? `Maximum ${q.validation.maxDigits} digits.` : ""
+      }`.trim(),
 
-  phone: () => "Enter a valid phone number.",
+    phone: () => "Enter a valid phone number.",
 
-  email: () => "Enter a valid email address.",
+    email: () => "Enter a valid email address.",
 
-  date: () => "Select a valid date.",
+    date: () => "Select a valid date.",
 
-  dropdown: () => "Choose one option.",
+    dropdown: () => "Choose one option.",
 
-  mcq: () => "Select one option.",
+    mcq: () => "Select one option.",
 
-  checkbox: (q) =>
-    `${q.validation?.minSelection ? `Select at least ${q.validation.minSelection}. ` : ""}${
-      q.validation?.maxSelection ? `Maximum ${q.validation.maxSelection}.` : ""
-    }`.trim(),
-};
+    checkbox: (q) =>
+      `${q.validation?.minSelection ? `Select at least ${q.validation.minSelection}. ` : ""}${
+        q.validation?.maxSelection ? `Maximum ${q.validation.maxSelection}.` : ""
+      }`.trim(),
+  };
 
   async function load() {
     try {
@@ -131,96 +131,79 @@ const validationHints: Record<string, (q: any) => string> = {
   }, []);
 
   function updateValidation(question: any, value: any) {
-  let error = "";
+    let error = "";
 
-  if (
-    question.is_required &&
-    (value === undefined ||
-      value === null ||
-      value === "" ||
-      (Array.isArray(value) && value.length === 0))
-  ) {
-    error = "This field is required.";
+    if (
+      question.is_required &&
+      (value === undefined ||
+        value === null ||
+        value === "" ||
+        (Array.isArray(value) && value.length === 0))
+    ) {
+      error = "This field is required.";
+    }
+
+    if (!error && question.question_type === "text") {
+      if (question.validation?.minLength && value.length < question.validation.minLength) {
+        error = `Minimum ${question.validation.minLength} characters required.`;
+      }
+
+      if (
+        !error &&
+        question.validation?.maxLength &&
+        value.length > question.validation.maxLength
+      ) {
+        error = `Maximum ${question.validation.maxLength} characters allowed.`;
+      }
+
+      if (!error && question.validation?.alphaOnly && !/^[A-Za-z ]*$/.test(value)) {
+        error = "Only alphabets are allowed.";
+      }
+    }
+
+    if (!error && question.question_type === "email") {
+      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        error = "Enter a valid email address.";
+      }
+    }
+
+    if (!error && question.question_type === "number") {
+      const digits = String(value ?? "").replace(/\D/g, "").length;
+
+      if (question.validation?.minDigits && digits < question.validation.minDigits) {
+        error = `Minimum ${question.validation.minDigits} digits required.`;
+      }
+
+      if (!error && question.validation?.maxDigits && digits > question.validation.maxDigits) {
+        error = `Maximum ${question.validation.maxDigits} digits allowed.`;
+      }
+    }
+
+    if (!error && question.question_type === "phone") {
+      const digits = String(value ?? "").replace(/\D/g, "").length;
+
+      if (digits > 0 && digits < 10) {
+        error = "Phone number must contain at least 10 digits.";
+      }
+    }
+
+    setValidationErrors((previous) => {
+      const next = { ...previous };
+
+      if (error) {
+        next[question.question_id] = error;
+      } else {
+        delete next[question.question_id];
+      }
+
+      return next;
+    });
+
+    setValidatedQuestions((validated) => ({
+      ...validated,
+      [question.question_id]: !error,
+    }));
   }
-
-  if (!error && question.question_type === "text") {
-    if (
-      question.validation?.minLength &&
-      value.length < question.validation.minLength
-    ) {
-      error = `Minimum ${question.validation.minLength} characters required.`;
-    }
-
-    if (
-      !error &&
-      question.validation?.maxLength &&
-      value.length > question.validation.maxLength
-    ) {
-      error = `Maximum ${question.validation.maxLength} characters allowed.`;
-    }
-
-    if (
-      !error &&
-      question.validation?.alphaOnly &&
-      !/^[A-Za-z ]*$/.test(value)
-    ) {
-      error = "Only alphabets are allowed.";
-    }
-  }
-
-  if (!error && question.question_type === "email") {
-    if (
-      value &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-    ) {
-      error = "Enter a valid email address.";
-    }
-  }
-
-  if (!error && question.question_type === "number") {
-    const digits = String(value ?? "").replace(/\D/g, "").length;
-
-    if (
-      question.validation?.minDigits &&
-      digits < question.validation.minDigits
-    ) {
-      error = `Minimum ${question.validation.minDigits} digits required.`;
-    }
-
-    if (
-      !error &&
-      question.validation?.maxDigits &&
-      digits > question.validation.maxDigits
-    ) {
-      error = `Maximum ${question.validation.maxDigits} digits allowed.`;
-    }
-  }
-
-  if (!error && question.question_type === "phone") {
-    const digits = String(value ?? "").replace(/\D/g, "").length;
-
-    if (digits > 0 && digits < 10) {
-      error = "Phone number must contain at least 10 digits.";
-    }
-  }
-
-  setValidationErrors((previous) => {
-    const next = { ...previous };
-
-    if (error) {
-      next[question.question_id] = error;
-    } else {
-      delete next[question.question_id];
-    }
-
-    return next;
-  });
-
-  setValidatedQuestions((validated) => ({
-    ...validated,
-    [question.question_id]: !error,
-  }));
-}
 
   async function apply(opportunityId: string, selectedRoles: string[] = []) {
     const { data: authData } = await supabase.auth.getUser();
@@ -635,26 +618,24 @@ hover:border-primary/30
         p-5
     "
                 >
-                                    <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
                     <label className="font-medium text-slate-800">
                       {q.question_title}
                       {q.is_required ? " *" : ""}
                     </label>
 
-                    {validatedQuestions[q.question_id] &&
-                      !validationErrors[q.question_id] && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                          ✓ Verified
-                        </span>
-                      )}
+                    {validatedQuestions[q.question_id] && !validationErrors[q.question_id] && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+                        ✓ Verified
+                      </span>
+                    )}
                   </div>
 
-                  {focusedQuestionId === q.question_id &&
-                    validationHints[q.question_type] && (
-                      <p className="mb-3 text-xs text-blue-600">
-                        {validationHints[q.question_type](q)}
-                      </p>
-                    )}
+                  {focusedQuestionId === q.question_id && validationHints[q.question_type] && (
+                    <p className="mb-3 text-xs text-blue-600">
+                      {validationHints[q.question_type](q)}
+                    </p>
+                  )}
 
                   {validationErrors[q.question_id] && (
                     <p className="mb-3 text-xs font-medium text-red-600">
@@ -732,17 +713,13 @@ hover:border-primary/30
                     />
                   )}
 
-                             {(q.question_type === "number" || q.question_type === "phone") && (
+                  {(q.question_type === "number" || q.question_type === "phone") && (
                     <input
                       type={q.question_type === "phone" ? "tel" : "number"}
                       inputMode={q.question_type === "phone" ? "numeric" : undefined}
                       min={q.question_type === "number" ? q.validation?.min : undefined}
                       max={q.question_type === "number" ? q.validation?.max : undefined}
-                      placeholder={
-                        q.question_type === "phone"
-                          ? "Enter phone number"
-                          : undefined
-                      }
+                      placeholder={q.question_type === "phone" ? "Enter phone number" : undefined}
                       className="
     w-full
     rounded-xl
@@ -773,16 +750,38 @@ hover:border-primary/30
 
                   {q.question_type === "paragraph" && (
                     <textarea
-                      className="
+                      rows={5}
+                      placeholder="Enter your answer..."
+                      className={`
     w-full
     rounded-xl
     border
-    border-border
     bg-white
     px-3
     py-2
-"
-                      onChange={(e) => setAnswers({ ...answers, [q.question_id]: e.target.value })}
+    transition-colors
+    resize-y
+    ${
+      validationErrors[q.question_id]
+        ? "border-red-500 focus:border-red-500"
+        : validatedQuestions[q.question_id]
+          ? "border-emerald-500 focus:border-emerald-500"
+          : "border-border focus:border-primary"
+    }
+`}
+                      value={answers[q.question_id] || ""}
+                      onFocus={() => setFocusedQuestionId(q.question_id)}
+                      onBlur={() => setFocusedQuestionId(null)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        setAnswers({
+                          ...answers,
+                          [q.question_id]: value,
+                        });
+
+                        updateValidation(q, value);
+                      }}
                     />
                   )}
 
@@ -791,84 +790,218 @@ hover:border-primary/30
                       type="date"
                       min={q.validation?.minDate}
                       max={q.validation?.maxDate}
-                      className="
+                      className={`
     w-full
     rounded-xl
     border
-    border-border
     bg-white
     px-3
     py-2
-"
-                      onChange={(e) =>
+    transition-colors
+    ${
+      validationErrors[q.question_id]
+        ? "border-red-500 focus:border-red-500"
+        : validatedQuestions[q.question_id]
+          ? "border-emerald-500 focus:border-emerald-500"
+          : "border-border focus:border-primary"
+    }
+`}
+                      value={answers[q.question_id] || ""}
+                      onFocus={() => setFocusedQuestionId(q.question_id)}
+                      onBlur={() => setFocusedQuestionId(null)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
                         setAnswers({
                           ...answers,
-                          [q.question_id]: e.target.value,
-                        })
-                      }
+                          [q.question_id]: value,
+                        });
+
+                        updateValidation(q, value);
+                      }}
                     />
                   )}
 
                   {q.question_type === "dropdown" && (
-                    <select
-                      className="
+                    <div className="space-y-2">
+                      <select
+                        value={answers[q.question_id] || ""}
+                        className={`
     w-full
     rounded-xl
     border
-    border-border
     bg-white
-    px-3
-    py-2
-"
-                      onChange={(e) => setAnswers({ ...answers, [q.question_id]: e.target.value })}
-                    >
-                      <option value="">Select</option>
+    px-4
+    py-3
+    text-sm
+    transition-colors
+    ${
+      validationErrors[q.question_id]
+        ? "border-red-500 focus:border-red-500"
+        : validatedQuestions[q.question_id]
+          ? "border-emerald-500 focus:border-emerald-500"
+          : "border-border focus:border-primary"
+    }
+`}
+                        onFocus={() => setFocusedQuestionId(q.question_id)}
+                        onBlur={() => setFocusedQuestionId(null)}
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                      {q.opportunity_question_options?.map((o: any) => (
-                        <option key={o.option_id} value={o.option_text}>
-                          {o.option_text}
-                        </option>
-                      ))}
-                    </select>
+                          setAnswers({
+                            ...answers,
+                            [q.question_id]: value,
+                          });
+
+                          updateValidation(q, value);
+                        }}
+                      >
+                        <option value="">-- Select an option --</option>
+
+                        {q.opportunity_question_options?.map((o: any) => (
+                          <option key={o.option_id} value={o.option_text}>
+                            {o.option_text}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   )}
 
                   {q.question_type === "mcq" && (
-                    <div>
-                      {q.opportunity_question_options?.map((o: any) => (
-                        <label key={o.option_id} className="block">
-                          <input
-                            type="radio"
-                            name={q.question_id}
-                            onChange={() =>
-                              setAnswers({ ...answers, [q.question_id]: o.option_text })
-                            }
-                          />
-                          {o.option_text}
-                        </label>
-                      ))}
+                    <div className="space-y-3">
+                      {q.opportunity_question_options?.map((o: any) => {
+                        const selected = answers[q.question_id] === o.option_text;
+
+                        return (
+                          <label
+                            key={o.option_id}
+                            className={`
+                              flex
+                              cursor-pointer
+                              items-center
+                              gap-4
+                              rounded-2xl
+                              border
+                              p-4
+                              transition-all
+                              ${
+                                selected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border bg-white hover:border-primary/40 hover:bg-slate-50"
+                              }
+                            `}
+                          >
+                            <input
+                              type="radio"
+                              name={q.question_id}
+                              checked={selected}
+                              className="h-4 w-4"
+                              onFocus={() => setFocusedQuestionId(q.question_id)}
+                              onBlur={() => setFocusedQuestionId(null)}
+                              onChange={() => {
+                                setAnswers({
+                                  ...answers,
+                                  [q.question_id]: o.option_text,
+                                });
+
+                                updateValidation(q, o.option_text);
+                              }}
+                            />
+
+                            <span className="flex-1 text-sm font-medium">
+                              {o.option_text}
+                            </span>
+
+                            {selected && (
+                              <span className="text-emerald-600 font-semibold text-xs">
+                                ✓ Selected
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
                     </div>
                   )}
 
                   {q.question_type === "checkbox" && (
-                    <div>
-                      {q.opportunity_question_options?.map((o: any) => (
-                        <label key={o.option_id} className="block">
-                          <input
-                            type="checkbox"
-                            onChange={(e) => {
-                              const old = answers[q.question_id] || [];
+                    <div className="space-y-3">
+                      {q.opportunity_question_options?.map((o: any) => {
+                        const selected = (answers[q.question_id] || []).includes(o.option_text);
 
-                              setAnswers({
-                                ...answers,
-                                [q.question_id]: e.target.checked
+                        return (
+                          <label
+                            key={o.option_id}
+                            className={`
+                              flex
+                              cursor-pointer
+                              items-center
+                              gap-4
+                              rounded-2xl
+                              border
+                              p-4
+                              transition-all
+                              ${
+                                selected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border bg-white hover:border-primary/40 hover:bg-slate-50"
+                              }
+                            `}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              className="h-4 w-4"
+                              onFocus={() => setFocusedQuestionId(q.question_id)}
+                              onBlur={() => setFocusedQuestionId(null)}
+                              onChange={(e) => {
+                                const old = answers[q.question_id] || [];
+
+                                const updated = e.target.checked
                                   ? [...old, o.option_text]
-                                  : old.filter((x: string) => x !== o.option_text),
-                              });
-                            }}
-                          />
-                          {o.option_text}
-                        </label>
-                      ))}
+                                  : old.filter((x: string) => x !== o.option_text);
+
+                                setAnswers({
+                                  ...answers,
+                                  [q.question_id]: updated,
+                                });
+
+                                updateValidation(q, updated);
+                              }}
+                            />
+
+                            <span className="flex-1 text-sm font-medium">
+                              {o.option_text}
+                            </span>
+
+                            {selected && (
+                              <span className="text-emerald-600 text-xs font-semibold">
+                                ✓ Selected
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+
+                      {(q.validation?.minSelection || q.validation?.maxSelection) && (
+                        <div className="flex justify-between text-xs text-slate-500">
+                          <span>
+                            Selected {(answers[q.question_id] || []).length}
+                          </span>
+
+                          <span>
+                            {q.validation?.minSelection
+                              ? `Min ${q.validation.minSelection}`
+                              : ""}
+                            {q.validation?.minSelection &&
+                            q.validation?.maxSelection
+                              ? " • "
+                              : ""}
+                            {q.validation?.maxSelection
+                              ? `Max ${q.validation.maxSelection}`
+                              : ""}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
 
