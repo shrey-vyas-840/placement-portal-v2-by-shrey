@@ -165,6 +165,19 @@ export function StudentOpportunitiesPage() {
       if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         error = "Enter a valid email address.";
       }
+
+      if (
+        !error &&
+        question.validation?.allowOnlyInstituteEmail &&
+        value
+      ) {
+        const domain = value.split("@")[1]?.toLowerCase() ?? "";
+
+        if (!domain.endsWith("indusuni.ac.in")) {
+          error =
+            "Please use your institutional email.";
+        }
+      }
     }
 
     if (!error && question.question_type === "number") {
@@ -188,6 +201,25 @@ export function StudentOpportunitiesPage() {
 
       if (!error && digits > 10) {
         error = "Phone number cannot exceed 10 digits.";
+      }
+    }
+
+    if (!error && question.question_type === "checkbox") {
+      const count = Array.isArray(value) ? value.length : 0;
+
+      if (
+        question.validation?.minSelection &&
+        count < question.validation.minSelection
+      ) {
+        error = `Select at least ${question.validation.minSelection} option(s).`;
+      }
+
+      if (
+        !error &&
+        question.validation?.maxSelection &&
+        count > question.validation.maxSelection
+      ) {
+        error = `You can select at most ${question.validation.maxSelection} option(s).`;
       }
     }
 
@@ -1059,6 +1091,15 @@ hover:border-primary/30
                               onBlur={() => setFocusedQuestionId(null)}
                               onChange={(e) => {
                                 const old = answers[q.question_id] || [];
+
+                                if (
+                                  e.target.checked &&
+                                  q.validation?.maxSelection &&
+                                  old.length >= q.validation.maxSelection
+                                ) {
+                                  updateValidation(q, old);
+                                  return;
+                                }
 
                                 const updated = e.target.checked
                                   ? [...old, o.option_text]
