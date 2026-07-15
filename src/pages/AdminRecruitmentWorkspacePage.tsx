@@ -79,49 +79,23 @@ useEffect(() => {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
 
-        <div className="rounded-3xl border bg-card p-8 shadow-sm">
+        <div className="mb-6 flex items-center justify-between">
 
-          <div className="flex items-center justify-between">
+  <div>
 
-            <div>
+    <h1 className="text-3xl font-bold">
+      Recruitment Workspace
+    </h1>
 
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Recruitment Workspace
-              </div>
+    <p className="mt-1 text-sm text-muted-foreground">
+      Monitor registrations, applicants and recruitment performance.
+    </p>
 
-              <h1 className="mt-2 text-4xl font-bold">
-               {loading
-  ? "Loading Recruitment..."
-  : draft?.draft_name ?? "Untitled Recruitment"}
-              </h1>
+  </div>
 
-              <p className="mt-3 text-sm text-muted-foreground">
-                {loading
-  ? "Loading..."
-  : draft?.company_data
-      ? (
-          draft.company_data as {
-            companyName?: string;
-            company_name?: string;
-          }
-        ).companyName ??
-        (
-          draft.company_data as {
-            companyName?: string;
-            company_name?: string;
-          }
-        ).company_name ??
-        draftId
-      : draftId}
-              </p>
+</div>
 
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="mt-8 overflow-hidden rounded-3xl border bg-card">
+        <div className="overflow-hidden rounded-3xl border bg-card">
 
   <div className="border-b px-6 py-4">
 
