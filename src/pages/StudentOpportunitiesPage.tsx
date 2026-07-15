@@ -183,7 +183,11 @@ export function StudentOpportunitiesPage() {
       const digits = String(value ?? "").replace(/\D/g, "").length;
 
       if (digits > 0 && digits < 10) {
-        error = "Phone number must contain at least 10 digits.";
+        error = "Phone number must contain exactly 10 digits.";
+      }
+
+      if (!error && digits > 10) {
+        error = "Phone number cannot exceed 10 digits.";
       }
     }
 
@@ -833,7 +837,9 @@ hover:border-primary/30
                       onChange={(e) => {
                         const value =
                           q.question_type === "phone"
-                            ? e.target.value.replace(/[^\d+]/g, "")
+                            ? e.target.value
+                                .replace(/\D/g, "")
+                                .slice(0, 10)
                             : e.target.value;
 
                         setAnswers({
