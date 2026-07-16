@@ -282,7 +282,8 @@ if (companyId) {
     company?.company_name ?? "";
 
 }
-const rows = applications.map((application: any) => {
+const rows = await Promise.all(
+applications.map(async (application: any) => {
 
   const profile =
     profiles.data?.find(
@@ -334,35 +335,87 @@ const rows = applications.map((application: any) => {
 
       .join(", ");
 
-  const answerMap:
-    Record<
-      string,
-      any
-    > = {};
+const answerMap:
+Record<string, any> = {};
 
-  (
-    questions.data ??
-    []
-  ).forEach(
-    (question: any) => {
+for (const question of (questions.data ?? [])) {
 
-      const answer =
-        answers.data?.find(
-          (a: any) =>
-            a.application_id ===
-              application.application_id &&
-            a.question_id ===
-              question.question_id,
-        );
+  const answer =
+    answers.data?.find(
+      (a: any) =>
+        a.application_id ===
+          application.application_id &&
+        a.question_id ===
+          question.question_id,
+    );
+
+  const value =
+    answer?.answer?.value;
+
+  if (
+    value &&
+    typeof value === "object" &&
+    value.type === "document" &&
+    value.document_metadata_id
+  ) {
+
+    const { data: metadata } =
+      await (supabase as any)
+
+        .from("document_metadata")
+
+        .select("storage_url")
+
+        .eq(
+          "document_metadata_id",
+          value.document_metadata_id,
+        )
+
+        .single();
+
+    if (
+      metadata?.storage_url
+    ) {
+
+      const { data: signed } =
+        await supabase.storage
+
+          .from(
+            "student-question-files",
+          )
+
+          .createSignedUrl(
+
+            metadata.storage_url,
+
+            60 * 60 * 24 * 30,
+
+          );
 
       answerMap[
         question.question_title
       ] =
-        answer?.answer?.value ??
+        signed?.signedUrl ??
         "";
 
-    },
-  );
+    } else {
+
+      answerMap[
+        question.question_title
+      ] = "";
+
+    }
+
+  } else {
+
+    answerMap[
+      question.question_title
+    ] =
+      value ?? "";
+
+  }
+
+}
 
  return {
 
@@ -505,7 +558,8 @@ enrollmentNumber:
 
 };
 
-});
+})
+);
 
 return {
 
