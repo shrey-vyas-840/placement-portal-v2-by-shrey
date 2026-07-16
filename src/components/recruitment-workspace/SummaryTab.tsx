@@ -24,6 +24,14 @@ interface SummaryTabProps {
 }
 
 export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
+
+const [coverageView, setCoverageView] = useState<
+  "branch" |
+  "institute" |
+  "degree" |
+  "graduationYear"
+>("branch");
+
   if (loading) {
     return (
       <div className="flex h-[500px] items-center justify-center">
@@ -76,6 +84,38 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
     );
   }
 
+  function CoverageRow({
+    label,
+    eligible,
+    applied,
+  }: {
+    label: string;
+    eligible: number;
+    applied: number;
+  }) {
+    const remaining = eligible - applied;
+
+    const rate = eligible === 0 ? 0 : Math.round((applied / eligible) * 100);
+
+    return (
+      <tr className="border-t">
+        <td className="px-4 py-4 font-medium">{label}</td>
+
+        <td className="px-4 py-4 text-center">{eligible}</td>
+
+        <td className="px-4 py-4 text-center">{applied}</td>
+
+        <td className="px-4 py-4 text-center">{remaining}</td>
+
+        <td className="px-4 py-4 text-center">
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            {rate}%
+          </span>
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border bg-card p-6">
@@ -121,7 +161,7 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryMetricCard
           title="Applications"
           value={summary?.totalApplications ?? 0}
@@ -129,15 +169,27 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
         />
 
         <SummaryMetricCard
-          title="Roles"
-          value={summary?.totalRoles ?? 0}
-          icon={<BriefcaseBusiness className="h-6 w-6 text-primary" />}
+          title="Eligible Students"
+          value={0}
+          icon={<Users className="h-6 w-6 text-primary" />}
         />
 
         <SummaryMetricCard
-          title="Applicants"
-          value={summary?.totalApplications ?? 0}
-          icon={<Users className="h-6 w-6 text-primary" />}
+          title="Application Rate"
+          value="0%"
+          icon={<CircleDot className="h-6 w-6 text-green-600" />}
+        />
+
+        <SummaryMetricCard
+          title="Pending Eligible"
+          value={0}
+          icon={<UserCheck className="h-6 w-6 text-amber-500" />}
+        />
+
+        <SummaryMetricCard
+          title="Roles"
+          value={summary?.totalRoles ?? 0}
+          icon={<BriefcaseBusiness className="h-6 w-6 text-primary" />}
         />
 
         <SummaryMetricCard
@@ -161,6 +213,135 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
 
       <div className="space-y-5">
         <ActionCenter summary={summary} />
+
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Participation
+              </div>
+
+              <div className="mt-1 text-lg font-semibold">Student Application Trend</div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex h-64 items-center justify-center rounded-xl border border-dashed">
+            <div className="text-center">
+              <div className="text-lg font-semibold">Trend Chart</div>
+
+              <div className="mt-2 text-sm text-muted-foreground">
+                Daily applications over time will appear here.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-6">
+     <div className="flex items-center justify-between">
+
+  <div>
+
+    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+
+      Coverage
+
+    </div>
+
+    <div className="mt-1 text-lg font-semibold">
+
+      Student Participation Coverage
+
+    </div>
+
+  </div>
+
+  <div className="flex gap-2">
+
+    {[
+      ["branch", "Branch"],
+      ["institute", "Institute"],
+      ["degree", "Degree"],
+      ["graduationYear", "Graduation Year"],
+    ].map(([key, label]) => (
+
+      <button
+        key={key}
+        type="button"
+        onClick={() =>
+          setCoverageView(
+            key as
+              | "branch"
+              | "institute"
+              | "degree"
+              | "graduationYear",
+          )
+        }
+        className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
+          coverageView === key
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted hover:bg-muted/70"
+        }`}
+      >
+
+        {label}
+
+      </button>
+
+    ))}
+
+  </div>
+
+</div>
+
+          <div className="mt-6 overflow-hidden rounded-xl border">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">
+
+  {coverageView === "branch"
+    ? "Branch"
+    : coverageView === "institute"
+      ? "Institute"
+      : coverageView === "degree"
+        ? "Degree"
+        : "Graduation Year"}
+
+</th>
+
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Eligible</th>
+
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Applied</th>
+
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Remaining</th>
+
+                  <th className="px-4 py-3 text-center text-sm font-semibold">Rate</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {(summary?.coverageByBranch ?? []).length ? (
+                  (summary?.coverageByBranch ?? []).map(
+                    (branch: { branchName: string; eligible: number; applied: number }) => (
+                      <CoverageRow
+                        key={branch.branchName}
+                        label={branch.branchName}
+                        eligible={branch.eligible}
+                        applied={branch.applied}
+                      />
+                    ),
+                  )
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                      No coverage data available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div className="rounded-2xl border bg-card p-6">
           <div className="flex items-center justify-between">
@@ -213,70 +394,6 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
                 No applications yet.
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="grid gap-5 xl:grid-cols-3">
-          <div className="xl:col-span-2 rounded-2xl border bg-card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Recruitment Overview
-                </div>
-
-                <div className="mt-2 text-2xl font-bold">{summary?.companyName}</div>
-              </div>
-
-              <div className="rounded-full bg-primary/10 px-4 py-2 text-sm font-medium">
-                {summary?.applicationStatus}
-              </div>
-            </div>
-
-            <div className="mt-8 grid gap-5 md:grid-cols-2">
-              <OverviewItem
-                label="Application Window"
-                value={
-                  summary?.applicationStartDate && summary?.applicationEndDate
-                    ? `${new Date(summary.applicationStartDate).toLocaleDateString()} → ${new Date(
-                        summary.applicationEndDate,
-                      ).toLocaleDateString()}`
-                    : "-"
-                }
-              />
-
-              <OverviewItem label="Published Roles" value={summary?.totalRoles ?? 0} />
-
-              <OverviewItem label="Applications" value={summary?.totalApplications ?? 0} />
-
-              <OverviewItem
-                label="Average / Role"
-                value={summary?.averageApplicationsPerRole ?? 0}
-              />
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-card p-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Recent Activity
-            </div>
-
-            <div className="mt-6 space-y-3">
-              {summary?.recentApplications?.length ? (
-                summary.recentApplications.slice(0, 6).map((application) => (
-                  <div key={application.applicationId} className="rounded-xl border p-4">
-                    <div className="font-medium">Student Applied</div>
-
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {new Date(application.appliedAt).toLocaleString()}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
-                  No activity yet.
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>

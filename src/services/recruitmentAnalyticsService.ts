@@ -25,6 +25,42 @@ export interface RecruitmentWorkspaceSummary {
 
   averageApplicationsPerRole: number;
 
+  eligibleStudents: number;
+
+  pendingEligibleStudents: number;
+
+  applicationRate: number;
+
+  applicationsToday: number;
+
+  applicationsLast24Hours: number;
+
+  applicationsLast7Days: number;
+
+  coverageByBranch: {
+    branchName: string;
+    eligible: number;
+    applied: number;
+  }[];
+
+  coverageByInstitute: {
+    instituteName: string;
+    eligible: number;
+    applied: number;
+  }[];
+
+  coverageByDegree: {
+    degreeName: string;
+    eligible: number;
+    applied: number;
+  }[];
+
+  coverageByGraduationYear: {
+    graduationYear: string;
+    eligible: number;
+    applied: number;
+  }[];
+
   roleDistribution: {
     roleId: string;
     roleName: string;
@@ -124,6 +160,18 @@ export async function getRecruitmentWorkspaceSummary(
 
   let applicationCount = 0;
 
+  let eligibleStudents = 0;
+
+  let pendingEligibleStudents = 0;
+
+  let applicationRate = 0;
+
+  let applicationsToday = 0;
+
+  let applicationsLast24Hours = 0;
+
+  let applicationsLast7Days = 0;
+
   let recentApplications: {
     applicationId: string;
     studentId: string;
@@ -161,7 +209,73 @@ export async function getRecruitmentWorkspaceSummary(
       .eq("opportunity_id", opportunity.opportunity_id);
 
     applicationCount = count ?? 0;
+
+    const now = new Date();
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const last24 = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    applicationsToday = recentApplications.filter(
+      (application) => new Date(application.appliedAt) >= today,
+    ).length;
+
+    applicationsLast24Hours = recentApplications.filter(
+      (application) => new Date(application.appliedAt) >= last24,
+    ).length;
+
+    applicationsLast7Days = recentApplications.filter(
+      (application) => new Date(application.appliedAt) >= last7,
+    ).length;
   }
+
+  if (driveId) {
+    const { count } = await (supabase as any)
+
+      .from("student_master")
+
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+
+      .eq("placement_preference", "Interested")
+
+      .eq("is_active", true);
+
+    eligibleStudents = count ?? 0;
+
+    pendingEligibleStudents = Math.max(eligibleStudents - applicationCount, 0);
+
+    applicationRate =
+      eligibleStudents === 0 ? 0 : Number(((applicationCount / eligibleStudents) * 100).toFixed(1));
+  }
+
+  let coverageByBranch: {
+    branchName: string;
+    eligible: number;
+    applied: number;
+  }[] = [];
+
+  let coverageByInstitute: {
+    instituteName: string;
+    eligible: number;
+    applied: number;
+  }[] = [];
+
+  let coverageByDegree: {
+    degreeName: string;
+    eligible: number;
+    applied: number;
+  }[] = [];
+
+  let coverageByGraduationYear: {
+    graduationYear: string;
+    eligible: number;
+    applied: number;
+  }[] = [];
 
   let roleCount = 0;
 
@@ -170,6 +284,153 @@ export async function getRecruitmentWorkspaceSummary(
     roleName: string;
     applicationCount: number;
   }[] = [];
+
+  if (driveId) {
+    const { data: branchStudents } = await (supabase as any).from("student_academic_details")
+      .select(`
+        student_id,
+        current_institute_name,
+        current_degree_name,
+        current_branch_name,
+        graduation_year
+      `);
+
+    const { data: interestedStudents } = await (supabase as any)
+
+      .from("student_master")
+
+      .select(
+        `
+        student_id
+      `,
+      )
+
+      .eq("placement_preference", "Interested")
+
+      .eq("is_active", true);
+
+ const interestedIds = new Set<string>(
+  (interestedStudents ?? []).map(
+    (student: any) => String(student.student_id),
+  ),
+);
+    const eligibleByBranch = new Map<string, number>();
+
+    (branchStudents ?? []).forEach((student: any) => {
+      if (!interestedIds.has(student.student_id)) {
+        return;
+      }
+
+      const key = student.current_branch_name ?? "Unknown";
+
+      eligibleByBranch.set(key, (eligibleByBranch.get(key) ?? 0) + 1);
+    });
+
+    const { data: applicants } = await (supabase as any)
+
+      .from("student_opportunity_applications")
+
+      .select(
+        `
+        student_id
+      `,
+      )
+
+      .eq("opportunity_id", opportunity?.opportunity_id);
+
+ const applicantIds = new Set<string>(
+  (applicants ?? []).map(
+    (application: any) => String(application.student_id),
+  ),
+);
+
+    function buildCoverage(
+  students: any[],
+  interested: Set<string>,
+  applicants: Set<string>,
+  field: string,
+  fallback: string,
+) {
+  const eligibleMap = new Map<string, number>();
+
+  const appliedMap = new Map<string, number>();
+
+  students.forEach((student: any) => {
+    if (!interested.has(student.student_id)) return;
+
+    const key = String(student[field] ?? fallback);
+
+    eligibleMap.set(
+      key,
+      (eligibleMap.get(key) ?? 0) + 1,
+    );
+
+    if (applicants.has(student.student_id)) {
+      appliedMap.set(
+        key,
+        (appliedMap.get(key) ?? 0) + 1,
+      );
+    }
+  });
+
+  return Array.from(eligibleMap.keys())
+    .sort()
+    .map((key) => ({
+      instituteName: key,
+      degreeName: key,
+      graduationYear: key,
+      branchName: key,
+      eligible: eligibleMap.get(key) ?? 0,
+      applied: appliedMap.get(key) ?? 0,
+    }));
+}
+
+    const appliedByBranch = new Map<string, number>();
+
+    (branchStudents ?? []).forEach((student: any) => {
+      if (!applicantIds.has(student.student_id)) {
+        return;
+      }
+
+      const key = student.current_branch_name ?? "Unknown";
+
+      appliedByBranch.set(key, (appliedByBranch.get(key) ?? 0) + 1);
+    });
+
+    coverageByBranch = Array.from(eligibleByBranch.keys())
+      .sort()
+      .map((branchName) => ({
+        branchName,
+
+        eligible: eligibleByBranch.get(branchName) ?? 0,
+
+        applied: appliedByBranch.get(branchName) ?? 0,
+      }));
+
+    coverageByInstitute = buildCoverage(
+      branchStudents ?? [],
+      interestedIds,
+      applicantIds,
+      "current_institute_name",
+      "Unknown Institute",
+    );
+
+    coverageByDegree = buildCoverage(
+      branchStudents ?? [],
+      interestedIds,
+      applicantIds,
+      "current_degree_name",
+      "Unknown Degree",
+    );
+
+    coverageByGraduationYear = buildCoverage(
+      branchStudents ?? [],
+      interestedIds,
+      applicantIds,
+      "graduation_year",
+      "Unknown Year",
+    );
+  }
 
   if (driveId) {
     const { data: roles } = await (supabase as any)
@@ -233,10 +494,30 @@ export async function getRecruitmentWorkspaceSummary(
 
     totalApplications: applicationCount,
 
+    eligibleStudents,
+
+    pendingEligibleStudents,
+
+    applicationRate,
+
+    applicationsToday,
+
+    applicationsLast24Hours,
+
+    applicationsLast7Days,
+
     totalRoles: roleCount,
 
     averageApplicationsPerRole:
       roleCount === 0 ? 0 : Number((applicationCount / roleCount).toFixed(1)),
+
+    coverageByBranch,
+
+    coverageByInstitute,
+
+coverageByDegree,
+
+coverageByGraduationYear,
 
     roleDistribution,
 
