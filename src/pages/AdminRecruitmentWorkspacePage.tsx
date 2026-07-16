@@ -4,7 +4,14 @@ import { SummaryTab } from "@/components/recruitment-workspace/SummaryTab";
 import {
   getDraftById,
   type RecruitmentDraftRow,
-} from "@/services/recruitmentDraftService";  
+} from "@/services/recruitmentDraftService";
+
+import {
+  getRecruitmentWorkspaceSummary,
+  type RecruitmentWorkspaceSummary,
+} from "@/services/recruitmentAnalyticsService";
+import { ApplicantsTab } from "@/components/recruitment-workspace/ApplicantsTab";
+
 
 export function AdminRecruitmentWorkspacePage() {
   const { draftId } = useParams({
@@ -14,7 +21,8 @@ export function AdminRecruitmentWorkspacePage() {
 const [draft, setDraft] = useState<RecruitmentDraftRow | null>(null);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState<string | null>(null);
-
+const [summary, setSummary] =
+  useState<RecruitmentWorkspaceSummary | null>(null);
 const [activeTab, setActiveTab] = useState<
   "summary" | "applicants" | "exports" | "settings"
 >("summary");
@@ -53,6 +61,13 @@ useEffect(() => {
       if (!mounted) return;
 
       setDraft(result);
+
+      const workspaceSummary =
+  await getRecruitmentWorkspaceSummary(result.draft_id);
+
+if (!mounted) return;
+
+setSummary(workspaceSummary);
     } catch (err) {
       if (!mounted) return;
 
@@ -129,17 +144,18 @@ useEffect(() => {
   <div className="min-h-[600px] p-8">
 
     {activeTab === "summary" && (
-  <SummaryTab
-    draft={draft}
-    loading={loading}
-  />
+ <SummaryTab
+  draft={draft}
+  summary={summary}
+  loading={loading}
+/>
 )}
 
-    {activeTab === "applicants" && (
-      <div className="text-center text-muted-foreground">
-        Applicants module coming next.
-      </div>
-    )}
+   {activeTab === "applicants" && (
+  <ApplicantsTab
+  opportunityId={summary?.opportunityId ?? null}
+/>
+)}
 
     {activeTab === "exports" && (
       <div className="text-center text-muted-foreground">

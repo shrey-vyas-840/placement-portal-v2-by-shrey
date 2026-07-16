@@ -32,6 +32,24 @@ export interface RecruitmentWorkspaceSummary {
   }[];
 }
 
+export interface RecruitmentApplicant {
+  applicationId: string;
+
+  studentId: string;
+
+  fullName: string;
+
+  institute: string;
+
+  branch: string;
+
+  applicationStatus: string;
+
+  appliedAt: string;
+
+  roles: string[];
+}
+
 export async function getRecruitmentWorkspaceSummary(
   draftId: string,
 ): Promise<RecruitmentWorkspaceSummary> {
@@ -152,4 +170,99 @@ averageApplicationsPerRole:
 
 recentApplications,
   };
+}
+
+export async function getRecruitmentApplicants(
+  opportunityId: string
+): Promise<RecruitmentApplicant[]> {
+
+  const { data, error } = await (supabase as any)
+    .from("student_opportunity_applications")
+   .select(`
+  application_id,
+  student_id,
+  application_status,
+  applied_at,
+
+  student_master!inner (
+    first_name,
+    last_name
+  ),
+
+  student_application_selected_roles (
+    preference_order,
+
+    drive_roles (
+      drive_role_name
+    )
+  )
+`)
+    .eq("opportunity_id", opportunityId)
+    .order("applied_at", {
+      ascending: false,
+    });
+
+  if (error) throw error;
+
+  const studentIds = (data ?? []).map(
+  (application: any) => application.student_id
+);
+
+const { data: academics } = await (supabase as any)
+  .from("student_academic_details")
+  .select(`
+    student_id,
+    current_institute_name,
+    current_branch_name
+  `)
+  .in("student_id", studentIds);
+
+const academicMap = new Map(
+  (academics ?? []).map((academic: any) => [
+    academic.student_id,
+    academic,
+  ])
+);
+
+  return (
+    data?.map((application: any) => ({
+
+      applicationId: application.application_id,
+
+      studentId: application.student_id,
+
+  fullName: `${application.student_master?.first_name ?? ""} ${application.student_master?.last_name ?? ""}`.trim(),
+
+institute:
+  (academicMap.get(application.student_id) as any)
+    ?.current_institute_name ?? "-",
+
+branch:
+  (academicMap.get(application.student_id) as any)
+    ?.current_branch_name ?? "-",
+
+      applicationStatus:
+        application.application_status,
+
+      appliedAt:
+        application.applied_at,
+
+     roles:
+        (
+          application.student_application_selected_roles ??
+          []
+        )
+          .sort(
+            (a: any, b: any) =>
+              a.preference_order -
+              b.preference_order
+          )
+          .map(
+            (role: any) =>
+              role.drive_roles?.drive_role_name
+          )
+          .filter(Boolean),
+
+    })) ?? []
+  );
 }

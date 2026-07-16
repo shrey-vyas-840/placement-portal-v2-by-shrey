@@ -8,35 +8,18 @@ import {
 } from "@/services/recruitmentAnalyticsService";
 
 import type { RecruitmentDraftRow } from "@/services/recruitmentDraftService";
+
 interface SummaryTabProps {
   draft: RecruitmentDraftRow | null;
+  summary: RecruitmentWorkspaceSummary | null;
   loading: boolean;
 }
 
-export function SummaryTab({ draft, loading }: SummaryTabProps) {
-  const [summary, setSummary] = useState<RecruitmentWorkspaceSummary | null>(null);
-
-  useEffect(() => {
-    if (!draft) return;
-
-    let mounted = true;
-
-    async function loadSummary() {
-      if (!draft) return;
-
-      const result = await getRecruitmentWorkspaceSummary(draft.draft_id);
-
-      if (!mounted) return;
-
-      setSummary(result);
-    }
-
-    void loadSummary();
-
-    return () => {
-      mounted = false;
-    };
-  }, [draft]);
+export function SummaryTab({
+  draft,
+  summary,
+  loading,
+}: SummaryTabProps) {
 
   if (loading) {
     return (
