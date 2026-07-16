@@ -117,13 +117,7 @@ export const adminExportService = {
           return;
         }
 
-        const value = answer.answer?.value;
-
-        if (value && typeof value === "object" && value.fileUrl) {
-          answerMap[q.question_title] = value.fileUrl;
-        } else {
-          answerMap[q.question_title] = value ?? "";
-        }
+       
       });
 
       return {

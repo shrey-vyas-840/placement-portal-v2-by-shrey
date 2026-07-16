@@ -11,6 +11,7 @@ import {
   type RecruitmentWorkspaceSummary,
 } from "@/services/recruitmentAnalyticsService";
 import { ApplicantsTab } from "@/components/recruitment-workspace/ApplicantsTab";
+import { ExportsTab } from "@/components/recruitment-workspace/ExportsTab";
 
 
 export function AdminRecruitmentWorkspacePage() {
@@ -157,11 +158,11 @@ setSummary(workspaceSummary);
 />
 )}
 
-    {activeTab === "exports" && (
-      <div className="text-center text-muted-foreground">
-        Export Center coming next.
-      </div>
-    )}
+   {activeTab === "exports" && (
+  <ExportsTab
+    opportunityId={summary?.opportunityId ?? null}
+  />
+)}
 
     {activeTab === "settings" && (
       <div className="text-center text-muted-foreground">
