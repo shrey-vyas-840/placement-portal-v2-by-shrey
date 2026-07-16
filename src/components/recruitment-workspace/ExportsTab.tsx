@@ -1,6 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
+
+import {
   Download,
   FileSpreadsheet,
   FileText,
@@ -11,6 +29,115 @@ import { recruitmentExcelExportService } from "@/services/recruitmentExcelExport
 
 interface Props {
   opportunityId: string | null;
+}
+
+function SortableColumn({
+
+  column,
+
+  locked,
+
+  selected,
+
+  onToggle,
+
+}: {
+
+  column: string;
+
+  locked: boolean;
+
+  selected: boolean;
+
+  onToggle: (
+    checked: boolean,
+  ) => void;
+
+}) {
+
+  const {
+
+    attributes,
+
+    listeners,
+
+    setNodeRef,
+
+    transform,
+
+    transition,
+
+  } = useSortable({
+
+    id: column,
+
+  });
+
+  return (
+
+    <label
+
+      ref={setNodeRef}
+
+      style={{
+
+        transform:
+          CSS.Transform.toString(
+            transform,
+          ),
+
+        transition,
+
+      }}
+
+      {...attributes}
+
+      {...listeners}
+
+      className={`flex cursor-move items-center gap-3 rounded-xl border p-3 transition ${
+        locked
+          ? "border-primary bg-primary/5"
+          : "hover:bg-muted"
+      }`}
+
+    >
+
+      <input
+
+        type="checkbox"
+
+        checked={selected}
+
+        disabled={locked}
+
+        onChange={(e) =>
+          onToggle(
+            e.target.checked,
+          )
+        }
+
+      />
+
+      <span className="flex-1 text-sm">
+
+        {column}
+
+        {locked && (
+
+          <span className="ml-2 text-xs text-primary">
+
+            (Required)
+
+          </span>
+
+        )}
+
+      </span>
+
+    </label>
+
+  );
+
 }
 
 export function ExportsTab({
@@ -31,6 +158,56 @@ export function ExportsTab({
 
   const [exportingCsv, setExportingCsv] =
     useState(false);
+
+    const sensors =
+  useSensors(
+    useSensor(
+      PointerSensor,
+    ),
+  );
+
+function handleDragEnd(
+  event: DragEndEvent,
+) {
+
+  const {
+    active,
+    over,
+  } = event;
+
+  if (
+    !over ||
+    active.id === over.id
+  ) {
+    return;
+  }
+
+  const oldIndex =
+    selectedColumns.indexOf(
+      String(active.id),
+    );
+
+  const newIndex =
+    selectedColumns.indexOf(
+      String(over.id),
+    );
+
+  if (
+    oldIndex === -1 ||
+    newIndex === -1
+  ) {
+    return;
+  }
+
+  setSelectedColumns(
+    arrayMove(
+      selectedColumns,
+      oldIndex,
+      newIndex,
+    ),
+  );
+
+}
 
   useEffect(() => {
 
@@ -316,77 +493,154 @@ export function ExportsTab({
 
           <div className="mt-6 grid gap-3 md:grid-cols-2">
 
-                      {allColumns.map((column) => {
+                  <DndContext
 
-            const locked =
-              column === "Enrollment No" ||
-              column === "Student Name";
+  sensors={sensors}
 
-            const selected =
-              selectedColumns.includes(column);
+  collisionDetection={closestCenter}
 
-            return (
+  onDragEnd={handleDragEnd}
 
-              <label
-                key={column}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
-                  locked
-                    ? "border-primary bg-primary/5"
-                    : "hover:bg-muted"
-                }`}
-              >
+>
 
-                <input
-                  type="checkbox"
-                  checked={selected}
-                  disabled={locked}
-                  onChange={(event) => {
+  <SortableContext
 
-                    if (locked) {
-                      return;
-                    }
+    items={selectedColumns}
 
-                    if (event.target.checked) {
+    strategy={
+      verticalListSortingStrategy
+    }
 
-                      setSelectedColumns((previous) => [
+  >
 
-                        ...previous,
+    {selectedColumns.map(
+      (column) => {
 
-                        column,
+        const locked =
+          column ===
+            "Enrollment No" ||
+          column ===
+            "Student Name";
 
-                      ]);
+        return (
 
-                    } else {
+          <SortableColumn
 
-                      setSelectedColumns((previous) =>
-                        previous.filter(
-                          (item) =>
-                            item !== column,
-                        ),
-                      );
+            key={column}
 
-                    }
+            column={column}
 
-                  }}
-                />
+            locked={locked}
 
-                <span className="text-sm">
+            selected={true}
 
-                  {column}
+            onToggle={(
+              checked,
+            ) => {
 
-                  {locked && (
-                    <span className="ml-2 text-xs text-primary">
-                      (Required)
-                    </span>
-                  )}
+              if (
+                locked
+              ) {
+                return;
+              }
 
-                </span>
+              if (
+                checked
+              ) {
+                return;
+              }
 
-              </label>
+              setSelectedColumns(
+                (
+                  previous,
+                ) =>
+                  previous.filter(
+                    (
+                      value,
+                    ) =>
+                      value !==
+                      column,
+                  ),
+              );
 
-            );
+            }}
 
-          })}
+          />
+
+        );
+
+      },
+    )}
+
+  </SortableContext>
+
+</DndContext>
+
+<div className="md:col-span-2 border-t pt-4">
+
+  <h3 className="mb-3 text-sm font-medium">
+
+    Available Columns
+
+  </h3>
+
+  <div className="grid gap-3 md:grid-cols-2">
+
+    {allColumns
+
+      .filter(
+        (
+          column,
+        ) =>
+          !selectedColumns.includes(
+            column,
+          ),
+      )
+
+      .map(
+        (
+          column,
+        ) => (
+
+          <label
+            key={column}
+            className="flex items-center gap-3 rounded-xl border p-3 hover:bg-muted"
+          >
+
+            <input
+              type="checkbox"
+              checked={false}
+              onChange={() => {
+
+                setSelectedColumns(
+                  (
+                    previous,
+                  ) => [
+
+                    ...previous,
+
+                    column,
+
+                  ],
+                );
+
+              }}
+            />
+
+            <span className="text-sm">
+
+              {column}
+
+            </span>
+
+          </label>
+
+        ),
+      )}
+
+  </div>
+
+</div>
 
           </div>
 
