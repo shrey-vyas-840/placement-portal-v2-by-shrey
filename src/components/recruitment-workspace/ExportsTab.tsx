@@ -21,7 +21,6 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Download,
   FileSpreadsheet,
-  FileText,
 } from "lucide-react";
 
 import { recruitmentExportService } from "@/services/recruitmentExportService";
@@ -154,9 +153,6 @@ export function ExportsTab({
     useState<string[]>([]);
 
   const [exportingExcel, setExportingExcel] =
-    useState(false);
-
-  const [exportingCsv, setExportingCsv] =
     useState(false);
 
     const sensors =
@@ -465,18 +461,6 @@ function handleDragEnd(
 
 </button>
 
-            <button
-              type="button"
-              disabled={exportingCsv}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 transition hover:bg-muted"
-            >
-
-              <FileText className="h-5 w-5" />
-
-              Export CSV
-
-            </button>
-
           </div>
 
         </div>
@@ -676,7 +660,6 @@ function handleDragEnd(
               <tr className="border-b bg-muted/50">
 
                 {selectedColumns
-                  .slice(0, 8)
                   .map((column) => (
 
                     <th
@@ -692,131 +675,225 @@ function handleDragEnd(
 
             </thead>
 
-            <tbody>
+<tbody>
 
-              {exportData.rows
-                .slice(0, 10)
-                .map(
-                  (
-                    row: any,
-                    index: number,
-                  ) => (
+  {exportData.rows
+    .slice(0, 10)
+    .map(
+      (
+        row: any,
+        index: number,
+      ) => (
 
-                    <tr
-                      key={index}
-                      className="border-b"
-                    >
+        <tr
+          key={index}
+          className="border-b"
+        >
 
-                      {selectedColumns
-                        .slice(0, 8)
-                        .map((column) => {
+          {selectedColumns.map(
+            (
+              column,
+            ) => {
 
-                          switch (column) {
+              let value = "";
 
-                            case "Enrollment No":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.enrollmentNumber}
-                                </td>
-                              );
+              switch (column) {
 
-                            case "Student Name":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.studentName}
-                                </td>
-                              );
+                case "Enrollment No":
+                  value =
+                    row.enrollmentNumber;
+                  break;
 
-                            case "Institute Email":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.instituteEmail}
-                                </td>
-                              );
+                case "Student Name":
+                  value =
+                    row.studentName;
+                  break;
 
-                            case "Personal Email":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.personalEmail}
-                                </td>
-                              );
+                case "Institute Email":
+                  value =
+                    row.instituteEmail;
+                  break;
 
-                            case "Contact Number":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.contactNumber}
-                                </td>
-                              );
+                case "Personal Email":
+                  value =
+                    row.personalEmail;
+                  break;
 
-                            case "Institute":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.institute}
-                                </td>
-                              );
+                case "Contact Number":
+                  value =
+                    row.contactNumber;
+                  break;
 
-                            case "Branch":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.branch}
-                                </td>
-                              );
+                case "Alternate Contact Number":
+                  value =
+                    row.alternateContactNumber;
+                  break;
 
-                            case "Applied Roles":
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.appliedRoles}
-                                </td>
-                              );
+                case "Gender":
+                  value =
+                    row.gender;
+                  break;
 
-                            default:
+                case "Date of Birth":
+                  value =
+                    row.dateOfBirth;
+                  break;
 
-                              return (
-                                <td
-                                  key={column}
-                                  className="px-4 py-3"
-                                >
-                                  {row.answers?.[
-                                    column
-                                  ] ??
-                                    ""}
-                                </td>
-                              );
+                case "Placement Preference":
+                  value =
+                    row.placementPreference;
+                  break;
 
-                          }
+                case "Placement Status":
+                  value =
+                    row.placementStatus;
+                  break;
 
-                        })}
+                case "Institute":
+                  value =
+                    row.institute;
+                  break;
 
-                    </tr>
+                case "Degree":
+                  value =
+                    row.degree;
+                  break;
 
-                  ),
-                )}
+                case "Branch":
+                  value =
+                    row.branch;
+                  break;
 
-            </tbody>
+                case "Semester":
+                  value =
+                    row.semester ?? "";
+                  break;
+
+                case "CGPA":
+                  value =
+                    row.cgpa ?? "";
+                  break;
+
+                case "10th Percentage":
+                  value =
+                    row.tenthPercentage ?? "";
+                  break;
+
+                case "12th Percentage":
+                  value =
+                    row.twelfthPercentage ?? "";
+                  break;
+
+                case "Diploma Percentage":
+                  value =
+                    row.diplomaPercentage ?? "";
+                  break;
+
+                case "Active Backlogs":
+                  value =
+                    row.activeBacklogs ?? "";
+                  break;
+
+                case "Year Gap":
+                  value =
+                    row.yearGapCount ?? "";
+                  break;
+
+                case "Graduation Year":
+                  value =
+                    row.graduationYear ?? "";
+                  break;
+
+                case "Technical Skills":
+                  value =
+                    row.technicalSkills;
+                  break;
+
+                case "Programming Languages":
+                  value =
+                    row.programmingLanguages;
+                  break;
+
+                case "Tools & Technologies":
+                  value =
+                    row.toolsAndTechnologies;
+                  break;
+
+                case "GitHub":
+                  value =
+                    row.github;
+                  break;
+
+                case "LinkedIn":
+                  value =
+                    row.linkedin;
+                  break;
+
+                case "Portfolio":
+                  value =
+                    row.portfolio;
+                  break;
+
+                case "Strengths":
+                  value =
+                    row.strengths;
+                  break;
+
+                case "Profile Score":
+                  value =
+                    row.profileScore ?? "";
+                  break;
+
+                case "Application Status":
+                  value =
+                    row.applicationStatus;
+                  break;
+
+                case "Applied At":
+                  value =
+                    row.appliedAt;
+                  break;
+
+                case "Remarks":
+                  value =
+                    row.remarks;
+                  break;
+
+                case "Applied Roles":
+                  value =
+                    row.appliedRoles;
+                  break;
+
+                default:
+                  value =
+                    row.answers?.[
+                      column
+                    ] ?? "";
+
+              }
+
+              return (
+
+                <td
+                  key={column}
+                  className="max-w-xs whitespace-nowrap px-4 py-3 text-sm"
+                >
+
+                  {String(value)}
+
+                </td>
+
+              );
+
+            },
+          )}
+
+        </tr>
+
+      ),
+    )}
+
+</tbody>
 
           </table>
 

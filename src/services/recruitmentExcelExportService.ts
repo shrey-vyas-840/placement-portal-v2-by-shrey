@@ -28,82 +28,147 @@ export const recruitmentExcelExportService = {
         "Student Responses",
       );
 
-    sheet.mergeCells(
-      "A1:H1",
-    );
+   const totalColumns =
+  Math.max(
+    selectedColumns.length,
+    1,
+  );
 
-    sheet.getCell(
-      "A1",
-    ).value =
-      "INDUS UNIVERSITY";
+sheet.mergeCells(
+  1,
+  1,
+  1,
+  totalColumns,
+);
 
-    sheet.getCell(
-      "A1",
-    ).font = {
+sheet.mergeCells(
+  2,
+  1,
+  2,
+  totalColumns,
+);
+
+const titleCell =
+  sheet.getCell("A1");
+
+titleCell.value =
+  "INDUS UNIVERSITY";
+
+titleCell.font = {
+
+  bold: true,
+
+  size: 18,
+
+  color: {
+    argb: "FFFFFFFF",
+  },
+
+};
+
+titleCell.alignment = {
+
+  horizontal: "center",
+
+  vertical: "middle",
+
+};
+
+titleCell.fill = {
+
+  type: "pattern",
+
+  pattern: "solid",
+
+  fgColor: {
+    argb: "FF1E3A8A",
+  },
+
+};
+
+const companyCell =
+  sheet.getCell("A2");
+
+companyCell.value =
+  exportData.companyName;
+
+companyCell.font = {
+
+  bold: true,
+
+  size: 14,
+
+  color: {
+    argb: "FFFFFFFF",
+  },
+
+};
+
+companyCell.alignment = {
+
+  horizontal: "center",
+
+  vertical: "middle",
+
+};
+
+companyCell.fill = {
+
+  type: "pattern",
+
+  pattern: "solid",
+
+  fgColor: {
+    argb: "FF2563EB",
+  },
+
+};
+
+sheet.getRow(1).height = 30;
+
+sheet.getRow(2).height = 24;
+
+sheet.getRow(3).height = 22;
+
+const header =
+  sheet.getRow(3);
+
+header.values =
+  selectedColumns;
+
+header.eachCell(
+  (cell) => {
+
+    cell.font = {
 
       bold: true,
 
-      size: 18,
+    };
+
+    cell.alignment = {
+
+      horizontal: "center",
+
+      vertical: "middle",
 
     };
 
-    sheet.mergeCells(
-      "A2:H2",
-    );
+    cell.fill = {
 
-    sheet.getCell(
-      "A2",
-    ).value =
-      exportData.companyName;
+      type: "pattern",
 
-    sheet.getCell(
-      "A2",
-    ).font = {
+      pattern: "solid",
 
-      bold: true,
-
-      size: 14,
-
-    };
-
-    sheet.addRow([]);
-
-    const header =
-      sheet.addRow(
-        selectedColumns,
-      );
-
-    header.font = {
-
-      bold: true,
-
-    };
-
-    header.eachCell(
-      (cell) => {
-
-        cell.border = {
-
-          top: {
-            style: "thin",
-          },
-
-          left: {
-            style: "thin",
-          },
-
-          bottom: {
-            style: "thin",
-          },
-
-          right: {
-            style: "thin",
-          },
-
-        };
-
+      fgColor: {
+        argb: "FFDDEBF7",
       },
-    );
+
+    };
+
+  },
+);
+
+let excelRowIndex = 4;
 
         exportData.rows.forEach((row) => {
 
@@ -221,10 +286,14 @@ export const recruitmentExcelExportService = {
           }
 
         });
+        
+const excelRow =
+  sheet.getRow(
+    excelRowIndex++,
+  );
 
-      sheet.addRow(
-        values,
-      );
+excelRow.values =
+  values;
 
     });
 
@@ -262,23 +331,63 @@ export const recruitmentExcelExportService = {
       },
     );
 
-        sheet.views = [
-      {
-        state: "frozen",
-        ySplit: 4,
-      },
-    ];
+     sheet.views = [
 
-    sheet.autoFilter = {
-      from: {
-        row: 4,
-        column: 1,
+  {
+
+    state: "frozen",
+
+    ySplit: 3,
+
+  },
+
+];
+
+sheet.autoFilter = {
+
+  from: "A3",
+
+  to: `${String.fromCharCode(
+
+    64 +
+
+    selectedColumns.length,
+
+  )}3`,
+
+};
+
+sheet.eachRow(
+  (row) => {
+
+    row.eachCell(
+      (cell) => {
+
+        cell.border = {
+
+          top: {
+            style: "thin",
+          },
+
+          left: {
+            style: "thin",
+          },
+
+          right: {
+            style: "thin",
+          },
+
+          bottom: {
+            style: "thin",
+          },
+
+        };
+
       },
-      to: {
-        row: 4,
-        column: selectedColumns.length,
-      },
-    };
+    );
+
+  },
+);
 
    const buffer =
   await workbook.xlsx.writeBuffer();
