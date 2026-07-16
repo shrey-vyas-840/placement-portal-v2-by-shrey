@@ -1,5 +1,13 @@
-import { X, GraduationCap, Building2, UserCircle2, Briefcase } from "lucide-react";
-
+import { X } from "lucide-react";
+import { ApplicantProfileCard } from "./applicant/ApplicantProfileCard";
+import { ApplicantAcademicCard } from "./applicant/ApplicantAcademicCard";
+import { ApplicantRolesCard } from "./applicant/ApplicantRolesCard";
+import { ApplicantAnswersCard } from "./applicant/ApplicantAnswersCard";
+import { ApplicantDocumentsCard } from "./applicant/ApplicantDocumentsCard";
+import type {
+  RecruitmentQuestionAnswer,
+  RecruitmentDocument,
+} from "@/services/recruitmentAnalyticsService";
 interface ApplicantDetails {
   applicationId: string;
   studentId: string;
@@ -22,12 +30,15 @@ interface ApplicantDetails {
 
 interface Props {
   applicant: ApplicantDetails | null;
+  answers: RecruitmentQuestionAnswer[];
+  documents: RecruitmentDocument[];
   open: boolean;
   onClose: () => void;
 }
-
 export function ApplicantDetailsDrawer({
   applicant,
+  answers,
+  documents,
   open,
   onClose,
 }: Props) {
@@ -35,155 +46,56 @@ export function ApplicantDetailsDrawer({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-40 bg-black/30"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
 
       <div className="fixed right-0 top-0 z-50 h-screen w-[520px] overflow-y-auto border-l bg-background shadow-2xl">
-
         <div className="sticky top-0 flex items-center justify-between border-b bg-background px-6 py-5">
-
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Applicant
             </p>
 
-            <h2 className="mt-1 text-2xl font-bold">
-              {applicant.fullName}
-            </h2>
+            <h2 className="mt-1 text-2xl font-bold">{applicant.fullName}</h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
               Applied {new Date(applicant.appliedAt).toLocaleString()}
             </p>
           </div>
 
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 hover:bg-muted"
-          >
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-muted">
             <X className="h-5 w-5" />
           </button>
-
         </div>
 
         <div className="space-y-6 p-6">
+         <ApplicantProfileCard
+  fullName={applicant.fullName}
+  institute={applicant.institute}
+  branch={applicant.branch}
+/>
 
-          <div className="rounded-2xl border p-5">
+<ApplicantAcademicCard
+  currentCgpa={applicant.currentCgpa}
+  currentSemester={applicant.currentSemester}
+  graduationYear={applicant.graduationYear}
+  activeBacklogs={applicant.activeBacklogs}
+  yearGapCount={applicant.yearGapCount}
+/>
 
-            <h3 className="mb-4 text-lg font-semibold">
-              Student Information
-            </h3>
+<ApplicantRolesCard
+  roles={applicant.roles}
+/>
 
-            <div className="space-y-4">
+<ApplicantAnswersCard
+  answers={answers}
+/>
 
-              <div className="flex items-center gap-3">
-                <UserCircle2 className="h-5 w-5 text-primary" />
-                <span>{applicant.fullName}</span>
-              </div>
+<ApplicantDocumentsCard
+  documents={documents}
+/>
 
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-primary" />
-                <span>{applicant.institute}</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <GraduationCap className="h-5 w-5 text-primary" />
-                <span>{applicant.branch}</span>
-              </div>
-
-            </div>
-
-          </div>
-
-          <div className="rounded-2xl border p-5">
-
-  <h3 className="mb-4 text-lg font-semibold">
-    Academic Profile
-  </h3>
-
-  <div className="grid grid-cols-2 gap-4">
-
-    <div className="rounded-xl bg-muted p-4">
-      <div className="text-xs uppercase text-muted-foreground">
-        CGPA
-      </div>
-
-      <div className="mt-2 text-2xl font-bold">
-        {applicant.currentCgpa ?? "-"}
-      </div>
-    </div>
-
-    <div className="rounded-xl bg-muted p-4">
-      <div className="text-xs uppercase text-muted-foreground">
-        Semester
-      </div>
-
-      <div className="mt-2 text-2xl font-bold">
-        {applicant.currentSemester ?? "-"}
-      </div>
-    </div>
-
-    <div className="rounded-xl bg-muted p-4">
-      <div className="text-xs uppercase text-muted-foreground">
-        Graduation
-      </div>
-
-      <div className="mt-2 text-2xl font-bold">
-        {applicant.graduationYear ?? "-"}
-      </div>
-    </div>
-
-    <div className="rounded-xl bg-muted p-4">
-      <div className="text-xs uppercase text-muted-foreground">
-        Backlogs
-      </div>
-
-      <div className="mt-2 text-2xl font-bold">
-        {applicant.activeBacklogs ?? 0}
-      </div>
-    </div>
-
-    <div className="col-span-2 rounded-xl bg-muted p-4">
-      <div className="text-xs uppercase text-muted-foreground">
-        Year Gaps
-      </div>
-
-      <div className="mt-2 text-2xl font-bold">
-        {applicant.yearGapCount ?? 0}
-      </div>
-    </div>
-
-  </div>
-
-</div>
-
-          <div className="rounded-2xl border p-5">
-
-            <h3 className="mb-4 text-lg font-semibold">
-              Selected Roles
-            </h3>
-
-            <div className="space-y-3">
-
-              {applicant.roles.map((role) => (
-                <div
-                  key={role}
-                  className="flex items-center gap-3 rounded-xl bg-muted p-3"
-                >
-                  <Briefcase className="h-4 w-4 text-primary" />
-
-                  <span>{role}</span>
-
-                </div>
-              ))}
-
-            </div>
-
-          </div>
 
         </div>
-
       </div>
     </>
   );

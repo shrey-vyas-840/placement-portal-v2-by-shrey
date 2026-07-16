@@ -59,6 +59,32 @@ export interface RecruitmentApplicant {
   roles: string[];
 }
 
+export interface RecruitmentQuestionAnswer {
+  questionId: string;
+
+  questionTitle: string;
+
+  questionType: string;
+
+  answer: any;
+}
+
+export interface RecruitmentDocument {
+  documentMetadataId: string;
+
+  documentName: string;
+
+  documentType: string;
+
+  storagePath: string;
+
+  uploadedAt: string | null;
+
+  viewUrl: string;
+
+  downloadUrl: string;
+}
+
 export async function getRecruitmentWorkspaceSummary(
   draftId: string,
 ): Promise<RecruitmentWorkspaceSummary> {
@@ -299,4 +325,136 @@ applicationStatus:
 
     })) ?? []
   );
+}
+
+export async function getApplicantQuestionAnswers(
+  applicationId: string,
+): Promise<RecruitmentQuestionAnswer[]> {
+
+  const { data, error } = await (supabase as any)
+    .from("opportunity_question_answers")
+    .select(`
+      answer,
+      opportunity_questions (
+        question_id,
+        question_title,
+        question_type
+      )
+    `)
+    .eq("application_id", applicationId);
+
+  if (error) {
+    throw error;
+  }
+
+  return (
+    data?.map((row: any) => ({
+      questionId:
+        row.opportunity_questions?.question_id,
+
+      questionTitle:
+        row.opportunity_questions?.question_title,
+
+      questionType:
+        row.opportunity_questions?.question_type,
+
+      answer:
+        row.answer,
+    })) ?? []
+  );
+}
+
+
+export async function getApplicantDocuments(
+  applicationId: string,
+): Promise<RecruitmentDocument[]> {
+
+  const { data: answers, error } = await (supabase as any)
+    .from("opportunity_question_answers")
+    .select("answer")
+    .eq("application_id", applicationId);
+
+  if (error) {
+    throw error;
+  }
+
+  const ids =
+    (answers ?? [])
+      .map((row: any) => row.answer?.value)
+      .filter(
+        (value: any) =>
+          value?.type === "document" &&
+          value.document_metadata_id
+      )
+      .map(
+        (value: any) =>
+          value.document_metadata_id
+      );
+
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const { data: metadata, error: metadataError } =
+    await (supabase as any)
+      .from("document_metadata")
+      .select(`
+        document_metadata_id,
+        document_name,
+        document_type,
+        storage_url,
+        upload_timestamp
+      `)
+      .in(
+        "document_metadata_id",
+        ids
+      );
+
+  if (metadataError) {
+    throw metadataError;
+  }
+
+  const documents = await Promise.all(
+
+    (metadata ?? []).map(async (document: any) => {
+
+      const { data } =
+        await supabase.storage
+          .from("student-question-files")
+          .createSignedUrl(
+            document.storage_url,
+            60 * 60
+          );
+
+      return {
+
+        documentMetadataId:
+          document.document_metadata_id,
+
+        documentName:
+          document.document_name,
+
+        documentType:
+          document.document_type,
+
+        storagePath:
+          document.storage_url,
+
+        uploadedAt:
+          document.upload_timestamp,
+
+        viewUrl:
+          data?.signedUrl ?? "",
+
+        downloadUrl:
+          data?.signedUrl ?? "",
+
+      };
+
+    })
+
+  );
+
+  return documents;
+
 }

@@ -3,9 +3,12 @@ import { Search, Users } from "lucide-react";
 import { ApplicantDetailsDrawer } from "./ApplicantDetailsDrawer";
 import {
   getRecruitmentApplicants,
+  getApplicantQuestionAnswers,
+  getApplicantDocuments,
   type RecruitmentApplicant,
+  type RecruitmentQuestionAnswer,
+  type RecruitmentDocument,
 } from "@/services/recruitmentAnalyticsService";
-
 interface ApplicantsTabProps {
   opportunityId: string | null;
 }
@@ -23,6 +26,12 @@ export function ApplicantsTab({
 
 const [drawerOpen, setDrawerOpen] =
   useState(false);
+
+  const [answers, setAnswers] =
+  useState<RecruitmentQuestionAnswer[]>([]);
+
+  const [documents, setDocuments] =
+  useState<RecruitmentDocument[]>([]);
 
   useEffect(() => {
     if (!opportunityId) {
@@ -186,10 +195,32 @@ const [drawerOpen, setDrawerOpen] =
 
                <tr
   key={applicant.applicationId}
-  onClick={() => {
-    setSelectedApplicant(applicant);
-    setDrawerOpen(true);
-  }}
+onClick={async () => {
+
+  setSelectedApplicant(applicant);
+
+  setDrawerOpen(true);
+
+  const [
+    answerResult,
+    documentResult,
+  ] = await Promise.all([
+
+    getApplicantQuestionAnswers(
+      applicant.applicationId
+    ),
+
+    getApplicantDocuments(
+      applicant.applicationId
+    ),
+
+  ]);
+
+  setAnswers(answerResult);
+
+  setDocuments(documentResult);
+
+}}
   className="cursor-pointer transition-colors hover:bg-muted/40"
                   >
 
@@ -251,11 +282,13 @@ const [drawerOpen, setDrawerOpen] =
 
        </div>
 
-    <ApplicantDetailsDrawer
-      applicant={selectedApplicant}
-      open={drawerOpen}
-      onClose={() => setDrawerOpen(false)}
-    />
+<ApplicantDetailsDrawer
+  applicant={selectedApplicant}
+  answers={answers}
+  documents={documents}
+  open={drawerOpen}
+  onClose={() => setDrawerOpen(false)}
+/>
   </>
   );
 }
