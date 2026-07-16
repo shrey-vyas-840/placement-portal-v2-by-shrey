@@ -31,7 +31,6 @@ export interface RecruitmentWorkspaceSummary {
     appliedAt: string;
   }[];
 }
-
 export interface RecruitmentApplicant {
   applicationId: string;
 
@@ -42,6 +41,16 @@ export interface RecruitmentApplicant {
   institute: string;
 
   branch: string;
+
+  currentCgpa: number | null;
+
+  currentSemester: number | null;
+
+  graduationYear: number | null;
+
+  activeBacklogs: number | null;
+
+  yearGapCount: number | null;
 
   applicationStatus: string;
 
@@ -213,8 +222,13 @@ const { data: academics } = await (supabase as any)
   .select(`
     student_id,
     current_institute_name,
-    current_branch_name
-  `)
+    current_branch_name,
+    current_cgpa,
+    current_semester,
+    graduation_year,
+    active_backlogs,
+    year_gap_count
+`)
   .in("student_id", studentIds);
 
 const academicMap = new Map(
@@ -241,7 +255,27 @@ branch:
   (academicMap.get(application.student_id) as any)
     ?.current_branch_name ?? "-",
 
-      applicationStatus:
+currentCgpa:
+  (academicMap.get(application.student_id) as any)
+    ?.current_cgpa ?? null,
+
+currentSemester:
+  (academicMap.get(application.student_id) as any)
+    ?.current_semester ?? null,
+
+graduationYear:
+  (academicMap.get(application.student_id) as any)
+    ?.graduation_year ?? null,
+
+activeBacklogs:
+  (academicMap.get(application.student_id) as any)
+    ?.active_backlogs ?? null,
+
+yearGapCount:
+  (academicMap.get(application.student_id) as any)
+    ?.year_gap_count ?? null,
+
+applicationStatus:
         application.application_status,
 
       appliedAt:
