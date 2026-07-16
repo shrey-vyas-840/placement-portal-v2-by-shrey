@@ -36,19 +36,20 @@ function SortableColumnHandle({ column }: { column: string }) {
   setNodeRef,
   transform,
   transition,
+  isDragging,
 } = useSortable({
   id: column,
 });
 
   return (
     <button
-  style={{
-    transform:
-      CSS.Transform.toString(
-        transform,
-      ),
-    transition,
-  }}
+ style={{
+  transform: CSS.Transform.toString(transform),
+  transition:
+    transition ??
+    "transform 180ms cubic-bezier(0.2,0,0,1)",
+  opacity: isDragging ? 0.35 : 1,
+}}
       ref={setNodeRef}
       type="button"
       {...attributes}
@@ -409,27 +410,33 @@ export function ExportsTab({ opportunityId }: Props) {
                   </div>
                 </SortableContext>
 
-                <DragOverlay>
+            <DragOverlay
+  dropAnimation={{
+    duration: 220,
+    easing: "cubic-bezier(0.2, 0, 0, 1)",
+  }}
+>
 
-  {activeColumn && (
+  {activeColumn ? (
 
-    <div className="rounded-xl border bg-background px-4 py-3 shadow-2xl">
+    <div
+      className="flex w-[600px] items-center gap-3 rounded-xl border bg-background px-4 py-3 shadow-2xl"
+      style={{
+        transform: "rotate(2deg)",
+      }}
+    >
 
-      <div className="flex items-center gap-3">
+      <GripVertical className="h-5 w-5 text-primary flex-shrink-0" />
 
-        <GripVertical className="h-5 w-5 text-primary" />
+      <span className="flex-1 truncate text-sm font-medium">
 
-        <span className="font-medium">
+        {activeColumn}
 
-          {activeColumn}
-
-        </span>
-
-      </div>
+      </span>
 
     </div>
 
-  )}
+  ) : null}
 
 </DragOverlay>
 
