@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Users } from "lucide-react";
-
+import { ApplicantDetailsDrawer } from "./ApplicantDetailsDrawer";
 import {
   getRecruitmentApplicants,
   type RecruitmentApplicant,
@@ -18,6 +18,11 @@ export function ApplicantsTab({
   const [applicants, setApplicants] = useState<
     RecruitmentApplicant[]
   >([]);
+  const [selectedApplicant, setSelectedApplicant] =
+  useState<RecruitmentApplicant | null>(null);
+
+const [drawerOpen, setDrawerOpen] =
+  useState(false);
 
   useEffect(() => {
     if (!opportunityId) {
@@ -62,9 +67,9 @@ export function ApplicantsTab({
     );
   }, [applicants, search]);
 
-  return (
+ return (
+  <>
     <div className="space-y-6">
-
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
         <div>
@@ -179,9 +184,13 @@ export function ApplicantsTab({
               filteredApplicants.map(
                 (applicant) => (
 
-                  <tr
-                    key={applicant.applicationId}
-                    className="border-t"
+               <tr
+  key={applicant.applicationId}
+  onClick={() => {
+    setSelectedApplicant(applicant);
+    setDrawerOpen(true);
+  }}
+  className="cursor-pointer transition-colors hover:bg-muted/40"
                   >
 
                     <td className="px-5 py-4 font-medium">
@@ -240,6 +249,13 @@ export function ApplicantsTab({
 
       </div>
 
-    </div>
+       </div>
+
+    <ApplicantDetailsDrawer
+      applicant={selectedApplicant}
+      open={drawerOpen}
+      onClose={() => setDrawerOpen(false)}
+    />
+  </>
   );
 }
