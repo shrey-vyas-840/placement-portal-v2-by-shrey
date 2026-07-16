@@ -3,7 +3,7 @@ import { ApplicantProfileCard } from "./applicant/ApplicantProfileCard";
 import { ApplicantAcademicCard } from "./applicant/ApplicantAcademicCard";
 import { ApplicantRolesCard } from "./applicant/ApplicantRolesCard";
 import { ApplicantAnswersCard } from "./applicant/ApplicantAnswersCard";
-import { ApplicantDocumentsCard } from "./applicant/ApplicantDocumentsCard";
+
 import type {
   RecruitmentQuestionAnswer,
   RecruitmentDocument,
@@ -88,12 +88,8 @@ export function ApplicantDetailsDrawer({
 
 <ApplicantAnswersCard
   answers={answers}
-/>
-
-<ApplicantDocumentsCard
   documents={documents}
 />
-
 
         </div>
       </div>
