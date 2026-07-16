@@ -80,15 +80,15 @@ export function RecruitmentDraftCard({
         </div>
       ) : published ? (
         <div className="mt-5 flex flex-wrap gap-2">
-         <Link
-  to="/admin/recruitment/$draftId"
-  params={{
-    draftId: draft.draft_id,
-  }}
-  className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
->
-  View Recruitment
-</Link>
+          <Link
+            to="/admin/recruitment/$draftId"
+            params={{
+              draftId: draft.draft_id,
+            }}
+            className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
+          >
+            View Recruitment
+          </Link>
         </div>
       ) : archived ? (
         <div className="mt-5 flex flex-wrap gap-2">

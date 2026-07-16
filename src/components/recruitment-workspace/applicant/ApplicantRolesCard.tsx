@@ -4,18 +4,12 @@ interface Props {
   roles: string[];
 }
 
-export function ApplicantRolesCard({
-  roles,
-}: Props) {
+export function ApplicantRolesCard({ roles }: Props) {
   return (
     <div className="rounded-2xl border p-5">
-
-      <h3 className="mb-4 text-lg font-semibold">
-        Selected Roles
-      </h3>
+      <h3 className="mb-4 text-lg font-semibold">Selected Roles</h3>
 
       <div className="space-y-3">
-
         {roles.length === 0 ? (
           <div className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
             No roles selected.
@@ -32,9 +26,7 @@ export function ApplicantRolesCard({
             </div>
           ))
         )}
-
       </div>
-
     </div>
   );
 }

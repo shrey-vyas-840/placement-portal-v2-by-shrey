@@ -30,26 +30,17 @@ interface Props {
 }
 
 function SortableColumnHandle({ column }: { column: string }) {
-  const {
-  attributes,
-  listeners,
-  setNodeRef,
-  transform,
-  transition,
-  isDragging,
-} = useSortable({
-  id: column,
-});
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: column,
+  });
 
   return (
     <button
- style={{
-  transform: CSS.Transform.toString(transform),
-  transition:
-    transition ??
-    "transform 180ms cubic-bezier(0.2,0,0,1)",
-  opacity: isDragging ? 0.35 : 1,
-}}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: transition ?? "transform 180ms cubic-bezier(0.2,0,0,1)",
+        opacity: isDragging ? 0.35 : 1,
+      }}
       ref={setNodeRef}
       type="button"
       {...attributes}
@@ -78,15 +69,9 @@ export function ExportsTab({ opportunityId }: Props) {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  function handleDragStart(
-  event: DragStartEvent,
-) {
-
-  setActiveColumn(
-    String(event.active.id),
-  );
-
-}
+  function handleDragStart(event: DragStartEvent) {
+    setActiveColumn(String(event.active.id));
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -364,18 +349,16 @@ export function ExportsTab({ opportunityId }: Props) {
                 })}
               </div>
             ) : (
-             <DndContext
-  sensors={sensors}
-  collisionDetection={closestCenter}
-  onDragStart={handleDragStart}
-  onDragEnd={(event) => {
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={(event) => {
+                  handleDragEnd(event);
 
-    handleDragEnd(event);
-
-    setActiveColumn(null);
-
-  }}
->
+                  setActiveColumn(null);
+                }}
+              >
                 <SortableContext
                   items={columnOrder.filter((column) => enabledColumns.includes(column))}
                   strategy={verticalListSortingStrategy}
@@ -410,36 +393,25 @@ export function ExportsTab({ opportunityId }: Props) {
                   </div>
                 </SortableContext>
 
-            <DragOverlay
-  dropAnimation={{
-    duration: 220,
-    easing: "cubic-bezier(0.2, 0, 0, 1)",
-  }}
->
+                <DragOverlay
+                  dropAnimation={{
+                    duration: 220,
+                    easing: "cubic-bezier(0.2, 0, 0, 1)",
+                  }}
+                >
+                  {activeColumn ? (
+                    <div
+                      className="flex w-[600px] items-center gap-3 rounded-xl border bg-background px-4 py-3 shadow-2xl"
+                      style={{
+                        transform: "rotate(2deg)",
+                      }}
+                    >
+                      <GripVertical className="h-5 w-5 text-primary flex-shrink-0" />
 
-  {activeColumn ? (
-
-    <div
-      className="flex w-[600px] items-center gap-3 rounded-xl border bg-background px-4 py-3 shadow-2xl"
-      style={{
-        transform: "rotate(2deg)",
-      }}
-    >
-
-      <GripVertical className="h-5 w-5 text-primary flex-shrink-0" />
-
-      <span className="flex-1 truncate text-sm font-medium">
-
-        {activeColumn}
-
-      </span>
-
-    </div>
-
-  ) : null}
-
-</DragOverlay>
-
+                      <span className="flex-1 truncate text-sm font-medium">{activeColumn}</span>
+                    </div>
+                  ) : null}
+                </DragOverlay>
               </DndContext>
             )}
           </div>

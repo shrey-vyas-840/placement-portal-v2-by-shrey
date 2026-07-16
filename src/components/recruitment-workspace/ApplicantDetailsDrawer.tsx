@@ -35,13 +35,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
 }
-export function ApplicantDetailsDrawer({
-  applicant,
-  answers,
-  documents,
-  open,
-  onClose,
-}: Props) {
+export function ApplicantDetailsDrawer({ applicant, answers, documents, open, onClose }: Props) {
   if (!open || !applicant) return null;
 
   return (
@@ -68,29 +62,23 @@ export function ApplicantDetailsDrawer({
         </div>
 
         <div className="space-y-6 p-6">
-         <ApplicantProfileCard
-  fullName={applicant.fullName}
-  institute={applicant.institute}
-  branch={applicant.branch}
-/>
+          <ApplicantProfileCard
+            fullName={applicant.fullName}
+            institute={applicant.institute}
+            branch={applicant.branch}
+          />
 
-<ApplicantAcademicCard
-  currentCgpa={applicant.currentCgpa}
-  currentSemester={applicant.currentSemester}
-  graduationYear={applicant.graduationYear}
-  activeBacklogs={applicant.activeBacklogs}
-  yearGapCount={applicant.yearGapCount}
-/>
+          <ApplicantAcademicCard
+            currentCgpa={applicant.currentCgpa}
+            currentSemester={applicant.currentSemester}
+            graduationYear={applicant.graduationYear}
+            activeBacklogs={applicant.activeBacklogs}
+            yearGapCount={applicant.yearGapCount}
+          />
 
-<ApplicantRolesCard
-  roles={applicant.roles}
-/>
+          <ApplicantRolesCard roles={applicant.roles} />
 
-<ApplicantAnswersCard
-  answers={answers}
-  documents={documents}
-/>
-
+          <ApplicantAnswersCard answers={answers} documents={documents} />
         </div>
       </div>
     </>

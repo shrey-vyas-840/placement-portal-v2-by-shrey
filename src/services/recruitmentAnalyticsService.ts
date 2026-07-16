@@ -5,7 +5,7 @@ export interface RecruitmentWorkspaceSummary {
 
   driveId: string | null;
 
-  opportunityId: string |null;
+  opportunityId: string | null;
 
   companyId: string | null;
 
@@ -119,31 +119,33 @@ export async function getRecruitmentWorkspaceSummary(
   let applicationCount = 0;
 
   let recentApplications: {
-  applicationId: string;
-  studentId: string;
-  appliedAt: string;
-}[] = [];
+    applicationId: string;
+    studentId: string;
+    appliedAt: string;
+  }[] = [];
 
   if (opportunity?.opportunity_id) {
     const { data: latestApplications } = await (supabase as any)
-  .from("student_opportunity_applications")
-  .select(`
+      .from("student_opportunity_applications")
+      .select(
+        `
     application_id,
     student_id,
     applied_at
-  `)
-  .eq("opportunity_id", opportunity.opportunity_id)
-  .order("applied_at", {
-    ascending: false,
-  })
-  .limit(5);
+  `,
+      )
+      .eq("opportunity_id", opportunity.opportunity_id)
+      .order("applied_at", {
+        ascending: false,
+      })
+      .limit(5);
 
-recentApplications =
-  latestApplications?.map((application: any) => ({
-    applicationId: application.application_id,
-    studentId: application.student_id,
-    appliedAt: application.applied_at,
-  })) ?? [];
+    recentApplications =
+      latestApplications?.map((application: any) => ({
+        applicationId: application.application_id,
+        studentId: application.student_id,
+        appliedAt: application.applied_at,
+      })) ?? [];
     const { count } = await (supabase as any)
       .from("student_opportunity_applications")
       .select("*", {
@@ -178,42 +180,34 @@ recentApplications =
 
     companyId: draft.created_company_id ?? null,
 
-    companyName:
-      draft.company_data?.company_name ??
-      draft.company_data?.companyName ??
-      "",
+    companyName: draft.company_data?.company_name ?? draft.company_data?.companyName ?? "",
 
     recruitmentName: draft.draft_name,
 
-    applicationStatus:
-      opportunity?.application_status ?? "Draft",
+    applicationStatus: opportunity?.application_status ?? "Draft",
 
-    applicationStartDate:
-      opportunity?.application_start_date ?? null,
+    applicationStartDate: opportunity?.application_start_date ?? null,
 
-    applicationEndDate:
-      opportunity?.application_end_date ?? null,
+    applicationEndDate: opportunity?.application_end_date ?? null,
 
     totalApplications: applicationCount,
 
-   totalRoles: roleCount,
+    totalRoles: roleCount,
 
-averageApplicationsPerRole:
-  roleCount === 0
-    ? 0
-    : Number((applicationCount / roleCount).toFixed(1)),
+    averageApplicationsPerRole:
+      roleCount === 0 ? 0 : Number((applicationCount / roleCount).toFixed(1)),
 
-recentApplications,
+    recentApplications,
   };
 }
 
 export async function getRecruitmentApplicants(
-  opportunityId: string
+  opportunityId: string,
 ): Promise<RecruitmentApplicant[]> {
-
   const { data, error } = await (supabase as any)
     .from("student_opportunity_applications")
-   .select(`
+    .select(
+      `
   application_id,
   student_id,
   application_status,
@@ -231,7 +225,8 @@ export async function getRecruitmentApplicants(
       drive_role_name
     )
   )
-`)
+`,
+    )
     .eq("opportunity_id", opportunityId)
     .order("applied_at", {
       ascending: false,
@@ -239,13 +234,12 @@ export async function getRecruitmentApplicants(
 
   if (error) throw error;
 
-  const studentIds = (data ?? []).map(
-  (application: any) => application.student_id
-);
+  const studentIds = (data ?? []).map((application: any) => application.student_id);
 
-const { data: academics } = await (supabase as any)
-  .from("student_academic_details")
-  .select(`
+  const { data: academics } = await (supabase as any)
+    .from("student_academic_details")
+    .select(
+      `
     student_id,
     current_institute_name,
     current_branch_name,
@@ -254,75 +248,45 @@ const { data: academics } = await (supabase as any)
     graduation_year,
     active_backlogs,
     year_gap_count
-`)
-  .in("student_id", studentIds);
+`,
+    )
+    .in("student_id", studentIds);
 
-const academicMap = new Map(
-  (academics ?? []).map((academic: any) => [
-    academic.student_id,
-    academic,
-  ])
-);
+  const academicMap = new Map(
+    (academics ?? []).map((academic: any) => [academic.student_id, academic]),
+  );
 
   return (
     data?.map((application: any) => ({
-
       applicationId: application.application_id,
 
       studentId: application.student_id,
 
-  fullName: `${application.student_master?.first_name ?? ""} ${application.student_master?.last_name ?? ""}`.trim(),
+      fullName:
+        `${application.student_master?.first_name ?? ""} ${application.student_master?.last_name ?? ""}`.trim(),
 
-institute:
-  (academicMap.get(application.student_id) as any)
-    ?.current_institute_name ?? "-",
+      institute: (academicMap.get(application.student_id) as any)?.current_institute_name ?? "-",
 
-branch:
-  (academicMap.get(application.student_id) as any)
-    ?.current_branch_name ?? "-",
+      branch: (academicMap.get(application.student_id) as any)?.current_branch_name ?? "-",
 
-currentCgpa:
-  (academicMap.get(application.student_id) as any)
-    ?.current_cgpa ?? null,
+      currentCgpa: (academicMap.get(application.student_id) as any)?.current_cgpa ?? null,
 
-currentSemester:
-  (academicMap.get(application.student_id) as any)
-    ?.current_semester ?? null,
+      currentSemester: (academicMap.get(application.student_id) as any)?.current_semester ?? null,
 
-graduationYear:
-  (academicMap.get(application.student_id) as any)
-    ?.graduation_year ?? null,
+      graduationYear: (academicMap.get(application.student_id) as any)?.graduation_year ?? null,
 
-activeBacklogs:
-  (academicMap.get(application.student_id) as any)
-    ?.active_backlogs ?? null,
+      activeBacklogs: (academicMap.get(application.student_id) as any)?.active_backlogs ?? null,
 
-yearGapCount:
-  (academicMap.get(application.student_id) as any)
-    ?.year_gap_count ?? null,
+      yearGapCount: (academicMap.get(application.student_id) as any)?.year_gap_count ?? null,
 
-applicationStatus:
-        application.application_status,
+      applicationStatus: application.application_status,
 
-      appliedAt:
-        application.applied_at,
+      appliedAt: application.applied_at,
 
-     roles:
-        (
-          application.student_application_selected_roles ??
-          []
-        )
-          .sort(
-            (a: any, b: any) =>
-              a.preference_order -
-              b.preference_order
-          )
-          .map(
-            (role: any) =>
-              role.drive_roles?.drive_role_name
-          )
-          .filter(Boolean),
-
+      roles: (application.student_application_selected_roles ?? [])
+        .sort((a: any, b: any) => a.preference_order - b.preference_order)
+        .map((role: any) => role.drive_roles?.drive_role_name)
+        .filter(Boolean),
     })) ?? []
   );
 }
@@ -330,17 +294,18 @@ applicationStatus:
 export async function getApplicantQuestionAnswers(
   applicationId: string,
 ): Promise<RecruitmentQuestionAnswer[]> {
-
   const { data, error } = await (supabase as any)
     .from("opportunity_question_answers")
-    .select(`
+    .select(
+      `
       answer,
       opportunity_questions (
         question_id,
         question_title,
         question_type
       )
-    `)
+    `,
+    )
     .eq("application_id", applicationId);
 
   if (error) {
@@ -349,26 +314,18 @@ export async function getApplicantQuestionAnswers(
 
   return (
     data?.map((row: any) => ({
-      questionId:
-        row.opportunity_questions?.question_id,
+      questionId: row.opportunity_questions?.question_id,
 
-      questionTitle:
-        row.opportunity_questions?.question_title,
+      questionTitle: row.opportunity_questions?.question_title,
 
-      questionType:
-        row.opportunity_questions?.question_type,
+      questionType: row.opportunity_questions?.question_type,
 
-      answer:
-        row.answer,
+      answer: row.answer,
     })) ?? []
   );
 }
 
-
-export async function getApplicantDocuments(
-  applicationId: string,
-): Promise<RecruitmentDocument[]> {
-
+export async function getApplicantDocuments(applicationId: string): Promise<RecruitmentDocument[]> {
   const { data: answers, error } = await (supabase as any)
     .from("opportunity_question_answers")
     .select("answer")
@@ -378,83 +335,55 @@ export async function getApplicantDocuments(
     throw error;
   }
 
-  const ids =
-    (answers ?? [])
-      .map((row: any) => row.answer?.value)
-      .filter(
-        (value: any) =>
-          value?.type === "document" &&
-          value.document_metadata_id
-      )
-      .map(
-        (value: any) =>
-          value.document_metadata_id
-      );
+  const ids = (answers ?? [])
+    .map((row: any) => row.answer?.value)
+    .filter((value: any) => value?.type === "document" && value.document_metadata_id)
+    .map((value: any) => value.document_metadata_id);
 
   if (ids.length === 0) {
     return [];
   }
 
-  const { data: metadata, error: metadataError } =
-    await (supabase as any)
-      .from("document_metadata")
-      .select(`
+  const { data: metadata, error: metadataError } = await (supabase as any)
+    .from("document_metadata")
+    .select(
+      `
         document_metadata_id,
         document_name,
         document_type,
         storage_url,
         upload_timestamp
-      `)
-      .in(
-        "document_metadata_id",
-        ids
-      );
+      `,
+    )
+    .in("document_metadata_id", ids);
 
   if (metadataError) {
     throw metadataError;
   }
 
   const documents = await Promise.all(
-
     (metadata ?? []).map(async (document: any) => {
-
-      const { data } =
-        await supabase.storage
-          .from("student-question-files")
-          .createSignedUrl(
-            document.storage_url,
-            60 * 60
-          );
+      const { data } = await supabase.storage
+        .from("student-question-files")
+        .createSignedUrl(document.storage_url, 60 * 60);
 
       return {
+        documentMetadataId: document.document_metadata_id,
 
-        documentMetadataId:
-          document.document_metadata_id,
+        documentName: document.document_name,
 
-        documentName:
-          document.document_name,
+        documentType: document.document_type,
 
-        documentType:
-          document.document_type,
+        storagePath: document.storage_url,
 
-        storagePath:
-          document.storage_url,
+        uploadedAt: document.upload_timestamp,
 
-        uploadedAt:
-          document.upload_timestamp,
+        viewUrl: data?.signedUrl ?? "",
 
-        viewUrl:
-          data?.signedUrl ?? "",
-
-        downloadUrl:
-          data?.signedUrl ?? "",
-
+        downloadUrl: data?.signedUrl ?? "",
       };
-
-    })
-
+    }),
   );
 
   return documents;
-
 }

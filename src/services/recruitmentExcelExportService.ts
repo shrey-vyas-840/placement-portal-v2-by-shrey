@@ -225,30 +225,19 @@ export const recruitmentExcelExportService = {
 
       const excelRow = sheet.getRow(excelRowIndex++);
 
-      if (
-  excelRow.number % 2 === 0
-) {
+      if (excelRow.number % 2 === 0) {
+        excelRow.eachCell((cell) => {
+          cell.fill = {
+            type: "pattern",
 
-  excelRow.eachCell(
-    (cell) => {
+            pattern: "solid",
 
-      cell.fill = {
-
-        type: "pattern",
-
-        pattern: "solid",
-
-        fgColor: {
-          argb:
-            "FFF8FAFC",
-        },
-
-      };
-
-    },
-  );
-
-}
+            fgColor: {
+              argb: "FFF8FAFC",
+            },
+          };
+        });
+      }
 
       excelRow.values = values;
 

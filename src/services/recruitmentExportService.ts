@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
 export interface RecruitmentExportRow {
-
   applicationId: string;
 
   studentId: string;
@@ -73,7 +72,6 @@ export interface RecruitmentExportRow {
   appliedRoles: string;
 
   answers: Record<string, any>;
-
 }
 
 export interface RecruitmentExportData {
@@ -85,496 +83,286 @@ export interface RecruitmentExportData {
 }
 
 export const recruitmentExportService = {
+  async getRecruitmentExportData(opportunityId: string): Promise<RecruitmentExportData> {
+    const { data: applications, error } = await (supabase as any)
 
-  async getRecruitmentExportData(
-    opportunityId: string,
-  ): Promise<RecruitmentExportData> {
+      .from("student_opportunity_applications")
 
-    const { data: applications, error } =
-      await (supabase as any)
+      .select("*")
 
-        .from("student_opportunity_applications")
+      .eq("opportunity_id", opportunityId)
 
-        .select("*")
-
-        .eq(
-          "opportunity_id",
-          opportunityId,
-        )
-
-        .order(
-          "applied_at",
-          {
-            ascending: false,
-          },
-        );
+      .order("applied_at", {
+        ascending: false,
+      });
 
     if (error) {
       throw error;
     }
 
     if (!applications?.length) {
-
       return {
-
         companyName: "",
 
         rows: [],
 
         dynamicQuestions: [],
-
       };
-
     }
 
-    const studentIds =
-      applications.map(
-        (x: any) =>
-          x.student_id,
-      );
+    const studentIds = applications.map((x: any) => x.student_id);
 
-    const applicationIds =
-      applications.map(
-        (x: any) =>
-          x.application_id,
-      );
+    const applicationIds = applications.map((x: any) => x.application_id);
 
-   const [
+    const [profiles, academics, skills, questions, answers, selectedRoles, opportunity] =
+      await Promise.all([
+        (supabase as any)
 
-  profiles,
+          .from("student_master")
 
-  academics,
+          .select("*")
 
-  skills,
+          .in("student_id", studentIds),
 
-  questions,
+        (supabase as any)
 
-  answers,
+          .from("student_academic_details")
 
-  selectedRoles,
+          .select("*")
 
-  opportunity,
+          .in("student_id", studentIds),
 
-] = await Promise.all([
+        (supabase as any)
 
-      (supabase as any)
+          .from("student_skill_profile")
 
-        .from("student_master")
+          .select("*")
 
-        .select("*")
+          .in("student_id", studentIds),
 
-        .in(
-          "student_id",
-          studentIds,
-        ),
+        (supabase as any)
 
-      (supabase as any)
+          .from("opportunity_questions")
 
-        .from("student_academic_details")
+          .select("*")
 
-        .select("*")
+          .eq("opportunity_id", opportunityId)
 
-        .in(
-          "student_id",
-          studentIds,
-        ),
+          .order("position"),
 
-      (supabase as any)
+        (supabase as any)
 
-        .from("student_skill_profile")
+          .from("opportunity_question_answers")
 
-        .select("*")
+          .select("*")
 
-        .in(
-          "student_id",
-          studentIds,
-        ),
+          .in("application_id", applicationIds),
 
-      (supabase as any)
+        (supabase as any)
 
-        .from("opportunity_questions")
+          .from("student_application_selected_roles")
 
-        .select("*")
-
-        .eq(
-          "opportunity_id",
-          opportunityId,
-        )
-
-        .order(
-          "position",
-        ),
-
-      (supabase as any)
-
-        .from("opportunity_question_answers")
-
-        .select("*")
-
-        .in(
-          "application_id",
-          applicationIds,
-        ),
-
-      (supabase as any)
-
-        .from(
-          "student_application_selected_roles",
-        )
-
-        .select(`
+          .select(
+            `
           application_id,
           preference_order,
 
           drive_roles (
             drive_role_name
           )
-        `)
+        `,
+          )
 
-     .in(
-  "application_id",
-  applicationIds,
-),
+          .in("application_id", applicationIds),
 
-(supabase as any)
+        (supabase as any)
 
-  .from("opportunity_master")
+          .from("opportunity_master")
 
-  .select(`
+          .select(
+            `
     opportunity_title,
 
     drive_master (
       company_id
     )
-  `)
+  `,
+          )
 
-  .eq(
-    "opportunity_id",
-    opportunityId,
-  )
+          .eq("opportunity_id", opportunityId)
 
-  .single(),
+          .single(),
+      ]);
 
-]);
+    let companyName = "";
 
-  let companyName = "";
+    const companyId = opportunity.data?.drive_master?.company_id;
 
-const companyId =
-  opportunity.data?.drive_master?.company_id;
+    if (companyId) {
+      const { data: company } = await (supabase as any)
 
-if (companyId) {
+        .from("company_master")
 
-  const { data: company } =
-    await (supabase as any)
+        .select("company_name")
 
-      .from("company_master")
-
-      .select("company_name")
-
-      .eq(
-        "company_id",
-        companyId,
-      )
-
-      .single();
-
-  companyName =
-    company?.company_name ?? "";
-
-}
-const rows = await Promise.all(
-applications.map(async (application: any) => {
-
-  const profile =
-    profiles.data?.find(
-      (x: any) =>
-        x.student_id ===
-        application.student_id,
-    ) ?? null;
-
-  const academic =
-    academics.data?.find(
-      (x: any) =>
-        x.student_id ===
-        application.student_id,
-    ) ?? null;
-
-  const skill =
-    skills.data?.find(
-      (x: any) =>
-        x.student_id ===
-        application.student_id,
-    ) ?? null;
-
-  const roles =
-
-    (selectedRoles.data ?? [])
-
-      .filter(
-        (role: any) =>
-          role.application_id ===
-          application.application_id,
-      )
-
-      .sort(
-        (
-          a: any,
-          b: any,
-        ) =>
-          a.preference_order -
-          b.preference_order,
-      )
-
-      .map(
-        (role: any) =>
-          role.drive_roles
-            ?.drive_role_name,
-      )
-
-      .filter(Boolean)
-
-      .join(", ");
-
-const answerMap:
-Record<string, any> = {};
-
-for (const question of (questions.data ?? [])) {
-
-  const answer =
-    answers.data?.find(
-      (a: any) =>
-        a.application_id ===
-          application.application_id &&
-        a.question_id ===
-          question.question_id,
-    );
-
-  const value =
-    answer?.answer?.value;
-
-  if (
-    value &&
-    typeof value === "object" &&
-    value.type === "document" &&
-    value.document_metadata_id
-  ) {
-
-    const { data: metadata } =
-      await (supabase as any)
-
-        .from("document_metadata")
-
-        .select("storage_url")
-
-        .eq(
-          "document_metadata_id",
-          value.document_metadata_id,
-        )
+        .eq("company_id", companyId)
 
         .single();
 
-    if (
-      metadata?.storage_url
-    ) {
+      companyName = company?.company_name ?? "";
+    }
+    const rows = await Promise.all(
+      applications.map(async (application: any) => {
+        const profile =
+          profiles.data?.find((x: any) => x.student_id === application.student_id) ?? null;
 
-      const { data: signed } =
-        await supabase.storage
+        const academic =
+          academics.data?.find((x: any) => x.student_id === application.student_id) ?? null;
 
-          .from(
-            "student-question-files",
-          )
+        const skill =
+          skills.data?.find((x: any) => x.student_id === application.student_id) ?? null;
 
-          .createSignedUrl(
+        const roles = (selectedRoles.data ?? [])
 
-            metadata.storage_url,
+          .filter((role: any) => role.application_id === application.application_id)
 
-            60 * 60 * 24 * 30,
+          .sort((a: any, b: any) => a.preference_order - b.preference_order)
 
+          .map((role: any) => role.drive_roles?.drive_role_name)
+
+          .filter(Boolean)
+
+          .join(", ");
+
+        const answerMap: Record<string, any> = {};
+
+        for (const question of questions.data ?? []) {
+          const answer = answers.data?.find(
+            (a: any) =>
+              a.application_id === application.application_id &&
+              a.question_id === question.question_id,
           );
 
-      answerMap[
-        question.question_title
-      ] =
-        signed?.signedUrl ??
-        "";
+          const value = answer?.answer?.value;
 
-    } else {
+          if (
+            value &&
+            typeof value === "object" &&
+            value.type === "document" &&
+            value.document_metadata_id
+          ) {
+            const { data: metadata } = await (supabase as any)
 
-      answerMap[
-        question.question_title
-      ] = "";
+              .from("document_metadata")
 
-    }
+              .select("storage_url")
 
-  } else {
+              .eq("document_metadata_id", value.document_metadata_id)
 
-    answerMap[
-      question.question_title
-    ] =
-      value ?? "";
+              .single();
 
-  }
+            if (metadata?.storage_url) {
+              const { data: signed } = await supabase.storage
 
-}
+                .from("student-question-files")
 
- return {
+                .createSignedUrl(
+                  metadata.storage_url,
 
-  applicationId:
-    application.application_id,
+                  60 * 60 * 24 * 30,
+                );
 
-  studentId:
-    application.student_id,
+              answerMap[question.question_title] = signed?.signedUrl ?? "";
+            } else {
+              answerMap[question.question_title] = "";
+            }
+          } else {
+            answerMap[question.question_title] = value ?? "";
+          }
+        }
 
-enrollmentNumber:
-  profile?.enrollment_no ??
-  "",
+        return {
+          applicationId: application.application_id,
 
-  studentName:
-    `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim(),
+          studentId: application.student_id,
 
-  instituteEmail:
-    profile?.institute_email ??
-    "",
+          enrollmentNumber: profile?.enrollment_no ?? "",
 
-  personalEmail:
-    profile?.personal_email ??
-    "",
+          studentName: `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim(),
 
-  contactNumber:
-    profile?.contact_number ??
-    "",
+          instituteEmail: profile?.institute_email ?? "",
 
-  alternateContactNumber:
-    profile?.alternate_contact_number ??
-    "",
+          personalEmail: profile?.personal_email ?? "",
 
-  gender:
-    profile?.gender ??
-    "",
+          contactNumber: profile?.contact_number ?? "",
 
-  dateOfBirth:
-    profile?.date_of_birth ??
-    "",
+          alternateContactNumber: profile?.alternate_contact_number ?? "",
 
-  placementPreference:
-    profile?.placement_preference ??
-    "",
+          gender: profile?.gender ?? "",
 
-  placementStatus:
-    profile?.placement_status ??
-    "",
+          dateOfBirth: profile?.date_of_birth ?? "",
 
-  institute:
-    academic?.current_institute_name ??
-    "",
+          placementPreference: profile?.placement_preference ?? "",
 
-  degree:
-    academic?.current_degree_level ??
-    "",
+          placementStatus: profile?.placement_status ?? "",
 
-  branch:
-    academic?.current_branch_name ??
-    "",
+          institute: academic?.current_institute_name ?? "",
 
-  semester:
-    academic?.current_semester ??
-    null,
+          degree: academic?.current_degree_level ?? "",
 
-  cgpa:
-    academic?.current_cgpa ??
-    null,
+          branch: academic?.current_branch_name ?? "",
 
-  tenthPercentage:
-    academic?.tenth_percentage ??
-    null,
+          semester: academic?.current_semester ?? null,
 
-  twelfthPercentage:
-    academic?.twelfth_percentage ??
-    null,
+          cgpa: academic?.current_cgpa ?? null,
 
-  diplomaPercentage:
-    academic?.diploma_percentage ??
-    null,
+          tenthPercentage: academic?.tenth_percentage ?? null,
 
-  activeBacklogs:
-    academic?.active_backlogs ??
-    null,
+          twelfthPercentage: academic?.twelfth_percentage ?? null,
 
-  yearGapCount:
-    academic?.year_gap_count ??
-    null,
+          diplomaPercentage: academic?.diploma_percentage ?? null,
 
-  graduationYear:
-    academic?.graduation_year ??
-    null,
+          activeBacklogs: academic?.active_backlogs ?? null,
 
-  technicalSkills:
-    skill?.technical_skills ??
-    "",
+          yearGapCount: academic?.year_gap_count ?? null,
 
-  programmingLanguages:
-    skill?.programming_languages ??
-    "",
+          graduationYear: academic?.graduation_year ?? null,
 
-  toolsAndTechnologies:
-    skill?.tools_and_technologies ??
-    "",
+          technicalSkills: skill?.technical_skills ?? "",
 
-  github:
-    skill?.github_url ??
-    "",
+          programmingLanguages: skill?.programming_languages ?? "",
 
-  linkedin:
-    skill?.linkedin_url ??
-    "",
+          toolsAndTechnologies: skill?.tools_and_technologies ?? "",
 
-  portfolio:
-    skill?.portfolio_url ??
-    "",
+          github: skill?.github_url ?? "",
 
-  strengths:
-    skill?.strengths ??
-    "",
+          linkedin: skill?.linkedin_url ?? "",
 
-  profileScore:
-    profile?.profile_completion_percentage ??
-    null,
+          portfolio: skill?.portfolio_url ?? "",
 
-  applicationStatus:
-    application.application_status,
+          strengths: skill?.strengths ?? "",
 
-  appliedAt:
-    application.applied_at,
+          profileScore: profile?.profile_completion_percentage ?? null,
 
-  remarks:
-    application.remarks ??
-    "",
+          applicationStatus: application.application_status,
 
-  appliedRoles:
-    roles,
+          appliedAt: application.applied_at,
 
-  answers:
-    answerMap,
+          remarks: application.remarks ?? "",
 
-};
+          appliedRoles: roles,
 
-})
-);
+          answers: answerMap,
+        };
+      }),
+    );
 
-return {
+    return {
+      companyName,
 
-  companyName,
+      rows,
 
-  rows,
-
-  dynamicQuestions:
-    questions.data?.map(
-      (q: any) =>
-        q.question_title,
-    ) ?? [],
-
-};
-
+      dynamicQuestions: questions.data?.map((q: any) => q.question_title) ?? [],
+    };
   },
-
 };

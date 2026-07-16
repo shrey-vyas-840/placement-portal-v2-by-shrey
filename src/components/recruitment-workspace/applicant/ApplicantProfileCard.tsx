@@ -6,20 +6,12 @@ interface Props {
   branch: string;
 }
 
-export function ApplicantProfileCard({
-  fullName,
-  institute,
-  branch,
-}: Props) {
+export function ApplicantProfileCard({ fullName, institute, branch }: Props) {
   return (
     <div className="rounded-2xl border p-5">
-
-      <h3 className="mb-4 text-lg font-semibold">
-        Student Information
-      </h3>
+      <h3 className="mb-4 text-lg font-semibold">Student Information</h3>
 
       <div className="space-y-4">
-
         <div className="flex items-center gap-3">
           <UserCircle2 className="h-5 w-5 text-primary" />
           <span>{fullName}</span>
@@ -34,9 +26,7 @@ export function ApplicantProfileCard({
           <GraduationCap className="h-5 w-5 text-primary" />
           <span>{branch}</span>
         </div>
-
       </div>
-
     </div>
   );
 }
