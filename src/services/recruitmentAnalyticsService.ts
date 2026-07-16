@@ -25,6 +25,12 @@ export interface RecruitmentWorkspaceSummary {
 
   averageApplicationsPerRole: number;
 
+  roleDistribution: {
+    roleId: string;
+    roleName: string;
+    applicationCount: number;
+  }[];
+
   recentApplications: {
     applicationId: string;
     studentId: string;
@@ -159,16 +165,51 @@ export async function getRecruitmentWorkspaceSummary(
 
   let roleCount = 0;
 
+  let roleDistribution: {
+    roleId: string;
+    roleName: string;
+    applicationCount: number;
+  }[] = [];
+
   if (driveId) {
-    const { count } = await (supabase as any)
+    const { data: roles } = await (supabase as any)
+
       .from("drive_roles")
-      .select("*", {
-        count: "exact",
-        head: true,
-      })
+
+      .select(
+        `
+        drive_role_id,
+        drive_role_name
+      `,
+      )
+
       .eq("drive_id", driveId);
 
-    roleCount = count ?? 0;
+    roleCount = roles?.length ?? 0;
+
+    if (opportunity?.opportunity_id && roles?.length) {
+      const { data: selectedRoles } = await (supabase as any)
+
+        .from("student_application_selected_roles")
+
+        .select(
+          `
+          drive_role_id
+        `,
+        )
+
+        .eq("opportunity_id", opportunity.opportunity_id);
+
+      roleDistribution = roles.map((role: any) => ({
+        roleId: role.drive_role_id,
+
+        roleName: role.drive_role_name,
+
+        applicationCount: (selectedRoles ?? []).filter(
+          (selected: any) => selected.drive_role_id === role.drive_role_id,
+        ).length,
+      }));
+    }
   }
 
   return {
@@ -196,6 +237,8 @@ export async function getRecruitmentWorkspaceSummary(
 
     averageApplicationsPerRole:
       roleCount === 0 ? 0 : Number((applicationCount / roleCount).toFixed(1)),
+
+    roleDistribution,
 
     recentApplications,
   };
