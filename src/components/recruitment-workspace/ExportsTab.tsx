@@ -4,9 +4,11 @@ import {
   DndContext,
   PointerSensor,
   closestCenter,
+  DragOverlay,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
 
 import {
@@ -18,10 +20,7 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
-import {
-  Download,
-  FileSpreadsheet,
-} from "lucide-react";
+import { Download, FileSpreadsheet, GripVertical, ListFilter, ArrowUpDown } from "lucide-react";
 
 import { recruitmentExportService } from "@/services/recruitmentExportService";
 import { recruitmentExcelExportService } from "@/services/recruitmentExcelExportService";
@@ -30,185 +29,84 @@ interface Props {
   opportunityId: string | null;
 }
 
-function SortableColumn({
-
-  column,
-
-  locked,
-
-  selected,
-
-  onToggle,
-
-}: {
-
-  column: string;
-
-  locked: boolean;
-
-  selected: boolean;
-
-  onToggle: (
-    checked: boolean,
-  ) => void;
-
-}) {
-
+function SortableColumnHandle({ column }: { column: string }) {
   const {
-
-    attributes,
-
-    listeners,
-
-    setNodeRef,
-
-    transform,
-
-    transition,
-
-  } = useSortable({
-
-    id: column,
-
-  });
+  attributes,
+  listeners,
+  setNodeRef,
+  transform,
+  transition,
+} = useSortable({
+  id: column,
+});
 
   return (
-
-    <label
-
+    <button
+  style={{
+    transform:
+      CSS.Transform.toString(
+        transform,
+      ),
+    transition,
+  }}
       ref={setNodeRef}
-
-      style={{
-
-        transform:
-          CSS.Transform.toString(
-            transform,
-          ),
-
-        transition,
-
-      }}
-
+      type="button"
       {...attributes}
-
       {...listeners}
-
-      className={`flex cursor-move items-center gap-3 rounded-xl border p-3 transition ${
-        locked
-          ? "border-primary bg-primary/5"
-          : "hover:bg-muted"
-      }`}
-
+      className="cursor-grab active:cursor-grabbing"
     >
-
-      <input
-
-        type="checkbox"
-
-        checked={selected}
-
-        disabled={locked}
-
-        onChange={(e) =>
-          onToggle(
-            e.target.checked,
-          )
-        }
-
-      />
-
-      <span className="flex-1 text-sm">
-
-        {column}
-
-        {locked && (
-
-          <span className="ml-2 text-xs text-primary">
-
-            (Required)
-
-          </span>
-
-        )}
-
-      </span>
-
-    </label>
-
+      <GripVertical className="h-5 w-5 text-muted-foreground" />
+    </button>
   );
-
 }
 
-export function ExportsTab({
-  opportunityId,
-}: Props) {
+export function ExportsTab({ opportunityId }: Props) {
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [exportData, setExportData] = useState<any>(null);
 
-  const [exportData, setExportData] =
-    useState<any>(null);
+  const [enabledColumns, setEnabledColumns] = useState<string[]>([]);
 
-  const [selectedColumns, setSelectedColumns] =
-    useState<string[]>([]);
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
 
-  const [exportingExcel, setExportingExcel] =
-    useState(false);
+  const [editorMode, setEditorMode] = useState<"select" | "arrange">("select");
 
-    const sensors =
-  useSensors(
-    useSensor(
-      PointerSensor,
-    ),
-  );
+  const [activeColumn, setActiveColumn] = useState<string | null>(null);
 
-function handleDragEnd(
-  event: DragEndEvent,
+  const [exportingExcel, setExportingExcel] = useState(false);
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  function handleDragStart(
+  event: DragStartEvent,
 ) {
 
-  const {
-    active,
-    over,
-  } = event;
-
-  if (
-    !over ||
-    active.id === over.id
-  ) {
-    return;
-  }
-
-  const oldIndex =
-    selectedColumns.indexOf(
-      String(active.id),
-    );
-
-  const newIndex =
-    selectedColumns.indexOf(
-      String(over.id),
-    );
-
-  if (
-    oldIndex === -1 ||
-    newIndex === -1
-  ) {
-    return;
-  }
-
-  setSelectedColumns(
-    arrayMove(
-      selectedColumns,
-      oldIndex,
-      newIndex,
-    ),
+  setActiveColumn(
+    String(event.active.id),
   );
 
 }
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = columnOrder.indexOf(String(active.id));
+
+    const newIndex = columnOrder.indexOf(String(over.id));
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    setColumnOrder(arrayMove(columnOrder, oldIndex, newIndex));
+  }
+
   useEffect(() => {
-
     async function load() {
-
       if (!opportunityId) {
         setLoading(false);
         return;
@@ -216,693 +114,514 @@ function handleDragEnd(
 
       setLoading(true);
 
-      const result =
-        await recruitmentExportService.getRecruitmentExportData(
-          opportunityId,
-        );
+      const result = await recruitmentExportService.getRecruitmentExportData(opportunityId);
 
       setExportData(result);
 
       setLoading(false);
-
     }
 
     load();
-
   }, [opportunityId]);
 
-  const allColumns =
-    useMemo(() => {
-
-      if (!exportData) {
-        return [];
-      }
-
-      return [
-
-        "Enrollment No",
-
-        "Student Name",
-
-        "Institute Email",
-
-        "Personal Email",
-
-        "Contact Number",
-
-        "Alternate Contact Number",
-
-        "Gender",
-
-        "Date of Birth",
-
-        "Placement Preference",
-
-        "Placement Status",
-
-        "Institute",
-
-        "Degree",
-
-        "Branch",
-
-        "Semester",
-
-        "CGPA",
-
-        "10th Percentage",
-
-        "12th Percentage",
-
-        "Diploma Percentage",
-
-        "Active Backlogs",
-
-        "Year Gap",
-
-        "Graduation Year",
-
-        "Technical Skills",
-
-        "Programming Languages",
-
-        "Tools & Technologies",
-
-        "GitHub",
-
-        "LinkedIn",
-
-        "Portfolio",
-
-        "Strengths",
-
-        "Profile Score",
-
-        "Application Status",
-
-        "Applied At",
-
-        "Remarks",
-
-        "Applied Roles",
-
-        ...exportData.dynamicQuestions,
-
-      ];
-
-    }, [exportData]);
-
-  useEffect(() => {
-
-    if (
-      allColumns.length &&
-      selectedColumns.length === 0
-    ) {
-
-      setSelectedColumns(allColumns);
-
+  const allColumns = useMemo(() => {
+    if (!exportData) {
+      return [];
     }
 
-  }, [
-    allColumns,
-    selectedColumns.length,
-  ]);
+    return [
+      "Enrollment No",
+
+      "Student Name",
+
+      "Institute Email",
+
+      "Personal Email",
+
+      "Contact Number",
+
+      "Alternate Contact Number",
+
+      "Gender",
+
+      "Date of Birth",
+
+      "Placement Preference",
+
+      "Placement Status",
+
+      "Institute",
+
+      "Degree",
+
+      "Branch",
+
+      "Semester",
+
+      "CGPA",
+
+      "10th Percentage",
+
+      "12th Percentage",
+
+      "Diploma Percentage",
+
+      "Active Backlogs",
+
+      "Year Gap",
+
+      "Graduation Year",
+
+      "Technical Skills",
+
+      "Programming Languages",
+
+      "Tools & Technologies",
+
+      "GitHub",
+
+      "LinkedIn",
+
+      "Portfolio",
+
+      "Strengths",
+
+      "Profile Score",
+
+      "Application Status",
+
+      "Applied At",
+
+      "Remarks",
+
+      "Applied Roles",
+
+      ...exportData.dynamicQuestions,
+    ];
+  }, [exportData]);
+
+  useEffect(() => {
+    if (allColumns.length && columnOrder.length === 0) {
+      setColumnOrder(allColumns);
+
+      setEnabledColumns(allColumns);
+    }
+  }, [allColumns, columnOrder.length]);
 
   if (!opportunityId) {
-
     return (
-
       <div className="rounded-2xl border border-dashed p-10 text-center text-muted-foreground">
-
         Recruitment has not been published yet.
-
       </div>
-
     );
-
   }
 
   if (loading) {
-
     return (
-
       <div className="rounded-2xl border border-dashed p-10 text-center text-muted-foreground">
-
         Loading export center...
-
       </div>
-
     );
-
   }
 
   return (
-
     <div className="space-y-6">
-
-              <div className="grid gap-6 lg:grid-cols-3">
-
+      <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border bg-card p-6">
-
-          <h2 className="text-xl font-semibold">
-            Export Summary
-          </h2>
+          <h2 className="text-xl font-semibold">Export Summary</h2>
 
           <div className="mt-6 space-y-4">
-
             <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Company</span>
 
-              <span className="text-muted-foreground">
-                Company
-              </span>
-
-              <span className="font-medium">
-                {exportData.companyName}
-              </span>
-
+              <span className="font-medium">{exportData.companyName}</span>
             </div>
 
             <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Applicants</span>
 
-              <span className="text-muted-foreground">
-                Applicants
-              </span>
-
-              <span className="font-medium">
-                {exportData.rows.length}
-              </span>
-
+              <span className="font-medium">{exportData.rows.length}</span>
             </div>
 
             <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Dynamic Questions</span>
 
-              <span className="text-muted-foreground">
-                Dynamic Questions
-              </span>
-
-              <span className="font-medium">
-                {exportData.dynamicQuestions.length}
-              </span>
-
+              <span className="font-medium">{exportData.dynamicQuestions.length}</span>
             </div>
 
             <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Export Columns</span>
 
-              <span className="text-muted-foreground">
-                Export Columns
-              </span>
-
-              <span className="font-medium">
-                {selectedColumns.length}
-              </span>
-
+              <span className="font-medium">{enabledColumns.length}</span>
             </div>
-
           </div>
 
           <div className="mt-8 space-y-3">
+            <button
+              type="button"
+              disabled={exportingExcel}
+              onClick={async () => {
+                if (!exportData) {
+                  return;
+                }
 
-           <button
-  type="button"
-  disabled={exportingExcel}
-  onClick={async () => {
+                try {
+                  setExportingExcel(true);
 
-    if (!exportData) {
-      return;
-    }
+                  await recruitmentExcelExportService.export(
+                    exportData,
 
-    try {
+                    columnOrder.filter((column) => enabledColumns.includes(column)),
+                  );
+                } finally {
+                  setExportingExcel(false);
+                }
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+            >
+              <FileSpreadsheet className="h-5 w-5" />
 
-      setExportingExcel(true);
-
-      await recruitmentExcelExportService.export(
-
-        exportData,
-
-        selectedColumns,
-
-      );
-
-    } finally {
-
-      setExportingExcel(false);
-
-    }
-
-  }}
-  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
->
-
-  <FileSpreadsheet className="h-5 w-5" />
-
-  {exportingExcel
-    ? "Generating..."
-    : "Export Excel"}
-
-</button>
-
+              {exportingExcel ? "Generating..." : "Export Excel"}
+            </button>
           </div>
-
         </div>
 
         <div className="lg:col-span-2 rounded-2xl border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Export Columns</h2>
 
-          <h2 className="text-xl font-semibold">
-            Export Columns
-          </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Configure which columns appear in Excel.
+              </p>
+            </div>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Enrollment Number and Student Name are always included.
-          </p>
+            <div className="flex rounded-xl border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setEditorMode("select")}
+                className={`flex items-center gap-2 px-4 py-2 text-sm transition ${
+                  editorMode === "select" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
+              >
+                <ListFilter className="h-4 w-4" />
+                Select Columns
+              </button>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
-
-                  <DndContext
-
-  sensors={sensors}
-
-  collisionDetection={closestCenter}
-
-  onDragEnd={handleDragEnd}
-
->
-
-  <SortableContext
-
-    items={selectedColumns}
-
-    strategy={
-      verticalListSortingStrategy
-    }
-
-  >
-
-    {selectedColumns.map(
-      (column) => {
-
-        const locked =
-          column ===
-            "Enrollment No" ||
-          column ===
-            "Student Name";
-
-        return (
-
-          <SortableColumn
-
-            key={column}
-
-            column={column}
-
-            locked={locked}
-
-            selected={true}
-
-            onToggle={(
-              checked,
-            ) => {
-
-              if (
-                locked
-              ) {
-                return;
-              }
-
-              if (
-                checked
-              ) {
-                return;
-              }
-
-              setSelectedColumns(
-                (
-                  previous,
-                ) =>
-                  previous.filter(
-                    (
-                      value,
-                    ) =>
-                      value !==
-                      column,
-                  ),
-              );
-
-            }}
-
-          />
-
-        );
-
-      },
-    )}
-
-  </SortableContext>
-
-</DndContext>
-
-<div className="md:col-span-2 border-t pt-4">
-
-  <h3 className="mb-3 text-sm font-medium">
-
-    Available Columns
-
-  </h3>
-
-  <div className="grid gap-3 md:grid-cols-2">
-
-    {allColumns
-
-      .filter(
-        (
-          column,
-        ) =>
-          !selectedColumns.includes(
-            column,
-          ),
-      )
-
-      .map(
-        (
-          column,
-        ) => (
-
-          <label
-            key={column}
-            className="flex items-center gap-3 rounded-xl border p-3 hover:bg-muted"
-          >
-
-            <input
-              type="checkbox"
-              checked={false}
-              onChange={() => {
-
-                setSelectedColumns(
-                  (
-                    previous,
-                  ) => [
-
-                    ...previous,
-
-                    column,
-
-                  ],
-                );
-
-              }}
-            />
-
-            <span className="text-sm">
-
-              {column}
-
-            </span>
-
-          </label>
-
-        ),
-      )}
-
-  </div>
-
-</div>
-
+              <button
+                type="button"
+                onClick={() => setEditorMode("arrange")}
+                className={`flex items-center gap-2 px-4 py-2 text-sm transition ${
+                  editorMode === "arrange" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                Arrange Order
+              </button>
+            </div>
           </div>
 
-        </div>
+          <div className="mt-6">
+            {editorMode === "select" ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {allColumns.map((column) => {
+                  const locked = column === "Enrollment No" || column === "Student Name";
+
+                  const enabled = enabledColumns.includes(column);
+
+                  return (
+                    <label
+                      key={column}
+                      className={`flex items-center gap-3 rounded-xl border p-3 transition ${
+                        locked ? "border-primary bg-primary/5" : "hover:bg-muted"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        disabled={locked}
+                        onChange={(e) => {
+                          if (locked) {
+                            return;
+                          }
+
+                          if (e.target.checked) {
+                            setEnabledColumns((previous) => [...previous, column]);
+                          } else {
+                            setEnabledColumns((previous) =>
+                              previous.filter((value) => value !== column),
+                            );
+                          }
+                        }}
+                      />
+
+                      <span className="flex-1 text-sm">{column}</span>
+
+                      {locked && <span className="text-xs text-primary font-medium">Required</span>}
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+             <DndContext
+  sensors={sensors}
+  collisionDetection={closestCenter}
+  onDragStart={handleDragStart}
+  onDragEnd={(event) => {
+
+    handleDragEnd(event);
+
+    setActiveColumn(null);
+
+  }}
+>
+                <SortableContext
+                  items={columnOrder.filter((column) => enabledColumns.includes(column))}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {columnOrder
+                      .filter((column) => enabledColumns.includes(column))
+                      .map((column) => {
+                        const locked = column === "Enrollment No" || column === "Student Name";
+
+                        return (
+                          <div
+                            key={column}
+                            className={`flex items-center gap-3 rounded-xl border p-3 ${
+                              locked ? "border-primary bg-primary/5" : ""
+                            }`}
+                          >
+                            {locked ? (
+                              <GripVertical className="h-5 w-5 text-muted-foreground opacity-40" />
+                            ) : (
+                              <SortableColumnHandle column={column} />
+                            )}
+
+                            <span className="flex-1 text-sm">{column}</span>
+
+                            {locked && (
+                              <span className="text-xs font-medium text-primary">Required</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </SortableContext>
+
+                <DragOverlay>
+
+  {activeColumn && (
+
+    <div className="rounded-xl border bg-background px-4 py-3 shadow-2xl">
+
+      <div className="flex items-center gap-3">
+
+        <GripVertical className="h-5 w-5 text-primary" />
+
+        <span className="font-medium">
+
+          {activeColumn}
+
+        </span>
 
       </div>
 
-            <div className="rounded-2xl border bg-card p-6">
+    </div>
 
+  )}
+
+</DragOverlay>
+
+              </DndContext>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-card p-6">
         <div className="mb-5 flex items-center justify-between">
-
-          <h2 className="text-xl font-semibold">
-            Preview
-          </h2>
+          <h2 className="text-xl font-semibold">Preview</h2>
 
           <div className="text-sm text-muted-foreground">
-            Showing first{" "}
-            {Math.min(
-              exportData.rows.length,
-              10,
-            )}{" "}
-            of {exportData.rows.length}
+            Showing first {Math.min(exportData.rows.length, 10)} of {exportData.rows.length}
           </div>
-
         </div>
 
         <div className="overflow-x-auto">
-
           <table className="w-full border-collapse">
-
             <thead>
-
               <tr className="border-b bg-muted/50">
-
-                {selectedColumns
+                {columnOrder
+                  .filter((column: string) => enabledColumns.includes(column))
                   .map((column) => (
-
                     <th
                       key={column}
                       className="whitespace-nowrap px-4 py-3 text-left text-sm font-semibold"
                     >
                       {column}
                     </th>
-
                   ))}
-
               </tr>
-
             </thead>
 
-<tbody>
+            <tbody>
+              {exportData.rows.slice(0, 10).map((row: any, index: number) => (
+                <tr key={index} className="border-b">
+                  {columnOrder
+                    .filter((column: string) => enabledColumns.includes(column))
+                    .map((column) => {
+                      let value = "";
 
-  {exportData.rows
-    .slice(0, 10)
-    .map(
-      (
-        row: any,
-        index: number,
-      ) => (
+                      switch (column) {
+                        case "Enrollment No":
+                          value = row.enrollmentNumber;
+                          break;
 
-        <tr
-          key={index}
-          className="border-b"
-        >
+                        case "Student Name":
+                          value = row.studentName;
+                          break;
 
-          {selectedColumns.map(
-            (
-              column,
-            ) => {
+                        case "Institute Email":
+                          value = row.instituteEmail;
+                          break;
 
-              let value = "";
+                        case "Personal Email":
+                          value = row.personalEmail;
+                          break;
 
-              switch (column) {
+                        case "Contact Number":
+                          value = row.contactNumber;
+                          break;
 
-                case "Enrollment No":
-                  value =
-                    row.enrollmentNumber;
-                  break;
+                        case "Alternate Contact Number":
+                          value = row.alternateContactNumber;
+                          break;
 
-                case "Student Name":
-                  value =
-                    row.studentName;
-                  break;
+                        case "Gender":
+                          value = row.gender;
+                          break;
 
-                case "Institute Email":
-                  value =
-                    row.instituteEmail;
-                  break;
+                        case "Date of Birth":
+                          value = row.dateOfBirth;
+                          break;
 
-                case "Personal Email":
-                  value =
-                    row.personalEmail;
-                  break;
+                        case "Placement Preference":
+                          value = row.placementPreference;
+                          break;
 
-                case "Contact Number":
-                  value =
-                    row.contactNumber;
-                  break;
+                        case "Placement Status":
+                          value = row.placementStatus;
+                          break;
 
-                case "Alternate Contact Number":
-                  value =
-                    row.alternateContactNumber;
-                  break;
+                        case "Institute":
+                          value = row.institute;
+                          break;
 
-                case "Gender":
-                  value =
-                    row.gender;
-                  break;
+                        case "Degree":
+                          value = row.degree;
+                          break;
 
-                case "Date of Birth":
-                  value =
-                    row.dateOfBirth;
-                  break;
+                        case "Branch":
+                          value = row.branch;
+                          break;
 
-                case "Placement Preference":
-                  value =
-                    row.placementPreference;
-                  break;
+                        case "Semester":
+                          value = row.semester ?? "";
+                          break;
 
-                case "Placement Status":
-                  value =
-                    row.placementStatus;
-                  break;
+                        case "CGPA":
+                          value = row.cgpa ?? "";
+                          break;
 
-                case "Institute":
-                  value =
-                    row.institute;
-                  break;
+                        case "10th Percentage":
+                          value = row.tenthPercentage ?? "";
+                          break;
 
-                case "Degree":
-                  value =
-                    row.degree;
-                  break;
+                        case "12th Percentage":
+                          value = row.twelfthPercentage ?? "";
+                          break;
 
-                case "Branch":
-                  value =
-                    row.branch;
-                  break;
+                        case "Diploma Percentage":
+                          value = row.diplomaPercentage ?? "";
+                          break;
 
-                case "Semester":
-                  value =
-                    row.semester ?? "";
-                  break;
+                        case "Active Backlogs":
+                          value = row.activeBacklogs ?? "";
+                          break;
 
-                case "CGPA":
-                  value =
-                    row.cgpa ?? "";
-                  break;
+                        case "Year Gap":
+                          value = row.yearGapCount ?? "";
+                          break;
 
-                case "10th Percentage":
-                  value =
-                    row.tenthPercentage ?? "";
-                  break;
+                        case "Graduation Year":
+                          value = row.graduationYear ?? "";
+                          break;
 
-                case "12th Percentage":
-                  value =
-                    row.twelfthPercentage ?? "";
-                  break;
+                        case "Technical Skills":
+                          value = row.technicalSkills;
+                          break;
 
-                case "Diploma Percentage":
-                  value =
-                    row.diplomaPercentage ?? "";
-                  break;
+                        case "Programming Languages":
+                          value = row.programmingLanguages;
+                          break;
 
-                case "Active Backlogs":
-                  value =
-                    row.activeBacklogs ?? "";
-                  break;
+                        case "Tools & Technologies":
+                          value = row.toolsAndTechnologies;
+                          break;
 
-                case "Year Gap":
-                  value =
-                    row.yearGapCount ?? "";
-                  break;
+                        case "GitHub":
+                          value = row.github;
+                          break;
 
-                case "Graduation Year":
-                  value =
-                    row.graduationYear ?? "";
-                  break;
+                        case "LinkedIn":
+                          value = row.linkedin;
+                          break;
 
-                case "Technical Skills":
-                  value =
-                    row.technicalSkills;
-                  break;
+                        case "Portfolio":
+                          value = row.portfolio;
+                          break;
 
-                case "Programming Languages":
-                  value =
-                    row.programmingLanguages;
-                  break;
+                        case "Strengths":
+                          value = row.strengths;
+                          break;
 
-                case "Tools & Technologies":
-                  value =
-                    row.toolsAndTechnologies;
-                  break;
+                        case "Profile Score":
+                          value = row.profileScore ?? "";
+                          break;
 
-                case "GitHub":
-                  value =
-                    row.github;
-                  break;
+                        case "Application Status":
+                          value = row.applicationStatus;
+                          break;
 
-                case "LinkedIn":
-                  value =
-                    row.linkedin;
-                  break;
+                        case "Applied At":
+                          value = row.appliedAt;
+                          break;
 
-                case "Portfolio":
-                  value =
-                    row.portfolio;
-                  break;
+                        case "Remarks":
+                          value = row.remarks;
+                          break;
 
-                case "Strengths":
-                  value =
-                    row.strengths;
-                  break;
+                        case "Applied Roles":
+                          value = row.appliedRoles;
+                          break;
 
-                case "Profile Score":
-                  value =
-                    row.profileScore ?? "";
-                  break;
+                        default:
+                          value = row.answers?.[column] ?? "";
+                      }
 
-                case "Application Status":
-                  value =
-                    row.applicationStatus;
-                  break;
-
-                case "Applied At":
-                  value =
-                    row.appliedAt;
-                  break;
-
-                case "Remarks":
-                  value =
-                    row.remarks;
-                  break;
-
-                case "Applied Roles":
-                  value =
-                    row.appliedRoles;
-                  break;
-
-                default:
-                  value =
-                    row.answers?.[
-                      column
-                    ] ?? "";
-
-              }
-
-              return (
-
-                <td
-                  key={column}
-                  className="max-w-xs whitespace-nowrap px-4 py-3 text-sm"
-                >
-
-                  {String(value)}
-
-                </td>
-
-              );
-
-            },
-          )}
-
-        </tr>
-
-      ),
-    )}
-
-</tbody>
-
+                      return (
+                        <td key={column} className="max-w-xs whitespace-nowrap px-4 py-3 text-sm">
+                          {String(value)}
+                        </td>
+                      );
+                    })}
+                </tr>
+              ))}
+            </tbody>
           </table>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
