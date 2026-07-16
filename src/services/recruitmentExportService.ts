@@ -1,14 +1,79 @@
 import { supabase } from "@/lib/supabase";
 
 export interface RecruitmentExportRow {
-  application: any;
-  profile: any;
-  academic: any;
-  skill: any;
+
+  applicationId: string;
+
+  studentId: string;
+
+  enrollmentNumber: string;
+
+  studentName: string;
+
+  instituteEmail: string;
+
+  personalEmail: string;
+
+  contactNumber: string;
+
+  alternateContactNumber: string;
+
+  gender: string;
+
+  dateOfBirth: string;
+
+  placementPreference: string;
+
+  placementStatus: string;
+
+  institute: string;
+
+  degree: string;
+
+  branch: string;
+
+  semester: number | null;
+
+  cgpa: number | null;
+
+  tenthPercentage: number | null;
+
+  twelfthPercentage: number | null;
+
+  diplomaPercentage: number | null;
+
+  activeBacklogs: number | null;
+
+  yearGapCount: number | null;
+
+  graduationYear: number | null;
+
+  technicalSkills: string;
+
+  programmingLanguages: string;
+
+  toolsAndTechnologies: string;
+
+  github: string;
+
+  linkedin: string;
+
+  portfolio: string;
+
+  strengths: string;
+
+  profileScore: number | null;
+
+  applicationStatus: string;
+
+  appliedAt: string;
+
+  remarks: string;
 
   appliedRoles: string;
 
   answers: Record<string, any>;
+
 }
 
 export interface RecruitmentExportData {
@@ -299,23 +364,146 @@ const rows = applications.map((application: any) => {
     },
   );
 
-  return {
+ return {
 
-    application,
+  applicationId:
+    application.application_id,
 
-    profile,
+  studentId:
+    application.student_id,
 
-    academic,
+enrollmentNumber:
+  profile?.enrollment_no ??
+  "",
 
-    skill,
+  studentName:
+    `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim(),
 
-    appliedRoles:
-      roles,
+  instituteEmail:
+    profile?.institute_email ??
+    "",
 
-    answers:
-      answerMap,
+  personalEmail:
+    profile?.personal_email ??
+    "",
 
-  };
+  contactNumber:
+    profile?.contact_number ??
+    "",
+
+  alternateContactNumber:
+    profile?.alternate_contact_number ??
+    "",
+
+  gender:
+    profile?.gender ??
+    "",
+
+  dateOfBirth:
+    profile?.date_of_birth ??
+    "",
+
+  placementPreference:
+    profile?.placement_preference ??
+    "",
+
+  placementStatus:
+    profile?.placement_status ??
+    "",
+
+  institute:
+    academic?.current_institute_name ??
+    "",
+
+  degree:
+    academic?.current_degree_level ??
+    "",
+
+  branch:
+    academic?.current_branch_name ??
+    "",
+
+  semester:
+    academic?.current_semester ??
+    null,
+
+  cgpa:
+    academic?.current_cgpa ??
+    null,
+
+  tenthPercentage:
+    academic?.tenth_percentage ??
+    null,
+
+  twelfthPercentage:
+    academic?.twelfth_percentage ??
+    null,
+
+  diplomaPercentage:
+    academic?.diploma_percentage ??
+    null,
+
+  activeBacklogs:
+    academic?.active_backlogs ??
+    null,
+
+  yearGapCount:
+    academic?.year_gap_count ??
+    null,
+
+  graduationYear:
+    academic?.graduation_year ??
+    null,
+
+  technicalSkills:
+    skill?.technical_skills ??
+    "",
+
+  programmingLanguages:
+    skill?.programming_languages ??
+    "",
+
+  toolsAndTechnologies:
+    skill?.tools_and_technologies ??
+    "",
+
+  github:
+    skill?.github_url ??
+    "",
+
+  linkedin:
+    skill?.linkedin_url ??
+    "",
+
+  portfolio:
+    skill?.portfolio_url ??
+    "",
+
+  strengths:
+    skill?.strengths ??
+    "",
+
+  profileScore:
+    profile?.profile_completion_percentage ??
+    null,
+
+  applicationStatus:
+    application.application_status,
+
+  appliedAt:
+    application.applied_at,
+
+  remarks:
+    application.remarks ??
+    "",
+
+  appliedRoles:
+    roles,
+
+  answers:
+    answerMap,
+
+};
 
 });
 
