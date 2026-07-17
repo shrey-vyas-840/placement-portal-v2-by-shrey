@@ -202,7 +202,7 @@ export async function provisionStudentFromApprovedDraft(draft: any) {
     const academicPayload = {
       student_id: profile.student_id,
 
-      current_degree_level: registry.current_degree_level ?? registry.current_degree ?? null,
+      current_degree_name: registry.current_degree_name ?? registry.current_degree ?? null,
 
       current_branch_name: registry.bachelors_degree_branch ?? registry.current_branch_name ?? null,
 

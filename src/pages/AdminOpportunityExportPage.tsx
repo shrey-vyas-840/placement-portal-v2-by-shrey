@@ -91,7 +91,7 @@ const OPTIONAL_COLUMNS = [
     },
 
     {
-        key: "current_degree_level",
+        key: "current_degree_name",
         label: "Degree",
     },
 
@@ -494,9 +494,9 @@ export function AdminOpportunityExportPage({
 
                 return row.academic?.current_institute_name || "";
 
-            case "current_degree_level":
+            case "current_degree_name":
 
-                return row.academic?.current_degree_level || "";
+                return row.academic?.current_degree_name || "";
 
             case "current_branch_name":
 

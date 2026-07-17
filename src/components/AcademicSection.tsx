@@ -40,7 +40,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
   const [educationPath, setEducationPath] = useState(existingData?.education_path ?? "");
 
   const [currentDegreeName, setCurrentDegreeName] = useState(
-    existingData?.current_degree_level ?? "",
+    existingData?.current_degree_name ?? "",
   );
 
   const [currentInstituteName, setCurrentInstituteName] = useState(
@@ -108,7 +108,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
 
     setEducationPath(existingData.education_path ?? "");
 
-    setCurrentDegreeName(existingData.current_degree_level ?? "");
+    setCurrentDegreeName(existingData.current_degree_name ?? "");
 
     setCurrentInstituteName(existingData.current_institute_name ?? "");
 
@@ -225,7 +225,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
 
         education_path: educationPath,
 
-        current_degree_level: currentDegreeName,
+        current_degree_name: currentDegreeName,
 
         current_institute_name: currentInstituteName,
 
@@ -789,7 +789,7 @@ export function AcademicSection({ studentId, existingData, onSaved }: Props) {
                 onClick={() => {
                   if (originalData) {
                     setEducationPath(originalData.education_path ?? "");
-                    setCurrentDegreeName(originalData.current_degree_level ?? "");
+                    setCurrentDegreeName(originalData.current_degree_name ?? "");
                     setCurrentInstituteName(originalData.current_institute_name ?? "");
                     setCurrentBranchName(originalData.current_branch_name ?? "");
                     setCurrentSemester(originalData.current_semester?.toString() ?? "");

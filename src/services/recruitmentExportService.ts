@@ -308,7 +308,7 @@ export const recruitmentExportService = {
 
           institute: academic?.current_institute_name ?? "",
 
-          degree: academic?.current_degree_level ?? "",
+          degree: academic?.current_degree_name ?? "",
 
           branch: academic?.current_branch_name ?? "",
 

@@ -418,7 +418,7 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
           `
     student_id,
     current_institute_name,
-    current_degree_level,
+    current_degree_name,
     current_branch_name,
     graduation_year,
     current_cgpa,

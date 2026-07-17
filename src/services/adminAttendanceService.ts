@@ -81,7 +81,7 @@ async function getAcademicDetails(studentIds: string[]) {
       student_id,
       current_institute_name,
       current_branch_name,
-      current_degree_level,
+      current_degree_name,
       current_cgpa,
       graduation_year,
       active_backlogs

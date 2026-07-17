@@ -192,7 +192,7 @@ export const studentOpportunityService = {
       const instituteMatch =
         institutes.length === 0 || institutes.includes(academic.current_institute_name);
 
-      const degreeMatch = degrees.length === 0 || degrees.includes(academic.current_degree_level);
+      const degreeMatch = degrees.length === 0 || degrees.includes(academic.current_degree_name);
 
       const branchMatch = branches.length === 0 || branches.includes(academic.current_branch_name);
 
@@ -451,7 +451,7 @@ placement_status
       const instituteMatch =
         institutes.length === 0 || institutes.includes(academic.current_institute_name);
 
-      const degreeMatch = degrees.length === 0 || degrees.includes(academic.current_degree_level);
+      const degreeMatch = degrees.length === 0 || degrees.includes(academic.current_degree_name);
 
       const cgpaMatch = Number(academic.current_cgpa) >= Number(eligibility.minimum_cgpa || 0);
 

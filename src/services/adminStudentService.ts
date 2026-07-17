@@ -249,7 +249,7 @@ function evaluateEligibility(student: AnyRecord, rule: AnyRecord) {
 
   if (
     allowedDegrees.length &&
-    !allowedDegrees.some((item) => normalize(item) === normalize(student.current_degree_level))
+    !allowedDegrees.some((item) => normalize(item) === normalize(student.current_degree_name))
   ) {
     return false;
   }
@@ -435,7 +435,7 @@ async function loadDriveAnalyticsContext(driveIds: string[]) {
       `
         student_id,
         current_institute_name,
-        current_degree_level,
+        current_degree_name,
         current_branch_name,
         current_cgpa,
         active_backlogs,

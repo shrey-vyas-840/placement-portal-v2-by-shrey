@@ -164,7 +164,7 @@ export function AdminAttendancePage() {
       const enrollment = (row.student_master?.enrollment_no ?? "").toLowerCase();
       const name = getFullName(row).toLowerCase();
       const institute = row.academic?.current_institute_name ?? "";
-      const degree = row.academic?.current_degree_level ?? "";
+      const degree = row.academic?.current_degree_name ?? "";
       const branch = row.academic?.current_branch_name ?? "";
       const year = row.academic?.graduation_year ? String(row.academic.graduation_year) : "";
       const applicationStatus = row.application_status ?? "";
@@ -242,7 +242,7 @@ export function AdminAttendancePage() {
     [rows],
   );
   const degrees = useMemo(
-    () => getDistinct(rows.map((row) => row.academic?.current_degree_level)),
+    () => getDistinct(rows.map((row) => row.academic?.current_degree_name)),
     [rows],
   );
   const branches = useMemo(
@@ -271,7 +271,7 @@ export function AdminAttendancePage() {
     return getDistinct(
       rows
         .filter((row) => row.academic?.current_institute_name === instituteFilter)
-        .map((row) => row.academic?.current_degree_level),
+        .map((row) => row.academic?.current_degree_name),
     );
   }, [rows, instituteFilter, degrees]);
 
@@ -283,7 +283,7 @@ export function AdminAttendancePage() {
     }
 
     if (degreeFilter !== DEFAULT_FILTER) {
-      source = source.filter((row) => row.academic?.current_degree_level === degreeFilter);
+      source = source.filter((row) => row.academic?.current_degree_name === degreeFilter);
     }
 
     return getDistinct(source.map((row) => row.academic?.current_branch_name));
@@ -860,7 +860,7 @@ export function AdminAttendancePage() {
                     <td className="px-4 py-3">{getFullName(row)}</td>
                     <td className="px-4 py-3">{row.academic?.current_institute_name ?? "-"}</td>
                     <td className="px-4 py-3">{row.academic?.current_branch_name ?? "-"}</td>
-                    <td className="px-4 py-3">{row.academic?.current_degree_level ?? "-"}</td>
+                    <td className="px-4 py-3">{row.academic?.current_degree_name ?? "-"}</td>
                     <td className="px-4 py-3">{row.academic?.graduation_year ?? "-"}</td>
                     <td className="px-4 py-3">{row.application_status ?? "-"}</td>
                     <td className="px-4 py-3">

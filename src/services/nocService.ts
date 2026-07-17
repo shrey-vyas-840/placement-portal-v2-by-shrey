@@ -77,7 +77,7 @@ export const nocService = {
 
       institute_name: academics?.current_institute_name,
 
-      course: academics?.current_degree_level,
+      course: academics?.current_degree_name,
 
       semester: academics?.current_semester,
 

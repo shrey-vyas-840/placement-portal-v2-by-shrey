@@ -443,27 +443,36 @@ export async function getRecruitmentWorkspaceSummary(
     roleCount = roles?.length ?? 0;
 
     if (opportunity?.opportunity_id && roles?.length) {
-      const { data: selectedRoles } = await (supabase as any)
+     const { data: applications } = await (supabase as any)
+  .from("student_opportunity_applications")
+  .select("application_id")
+  .eq("opportunity_id", opportunity.opportunity_id);
 
-        .from("student_application_selected_roles")
+const applicationIds =
+  (applications ?? []).map(
+    (application: any) => application.application_id,
+  );
 
-        .select(
-          `
-          drive_role_id
-        `,
-        )
+let selectedRoles: any[] = [];
 
-        .eq("opportunity_id", opportunity.opportunity_id);
+if (applicationIds.length > 0) {
+  const { data } = await (supabase as any)
+    .from("student_application_selected_roles")
+    .select("drive_role_id")
+    .in("application_id", applicationIds);
 
-      roleDistribution = roles.map((role: any) => ({
-        roleId: role.drive_role_id,
+  selectedRoles = data ?? [];
+}
 
-        roleName: role.drive_role_name,
+roleDistribution = roles.map((role: any) => ({
+  roleId: role.drive_role_id,
 
-        applicationCount: (selectedRoles ?? []).filter(
-          (selected: any) => selected.drive_role_id === role.drive_role_id,
-        ).length,
-      }));
+  roleName: role.drive_role_name,
+
+  applicationCount: selectedRoles.filter(
+    (selected: any) => selected.drive_role_id === role.drive_role_id,
+  ).length,
+}));
     }
   }
 

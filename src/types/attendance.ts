@@ -56,7 +56,7 @@ export interface AttendanceApplicantRow {
     student_id?: string;
     current_institute_name?: string | null;
     current_branch_name?: string | null;
-    current_degree_level?: string | null;
+    current_degree_name?: string | null;
     current_cgpa?: string | number | null;
     graduation_year?: number | null;
     active_backlogs?: number | null;

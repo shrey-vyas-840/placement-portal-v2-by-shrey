@@ -353,39 +353,35 @@ async function loadRecruitmentRoles(
 
   }
 
-  const { data } =
-    await (supabase as any)
+const { data } =
+  await (supabase as any)
+    .from("drive_roles")
+    .select(`
+      drive_role_id,
+      drive_role_name,
+      drive_role_details (
+        openings
+      )
+    `)
+    .eq("drive_id", driveId);
 
-      .from("drive_roles")
+console.log("[loadRecruitmentRoles]", {
+  draftId,
+  driveId,
+  rolesFromDb: data,
+});
 
-      .select(`
-        drive_role_id,
-        drive_role_name,
-        vacancies
-      `)
+return (data ?? []).map((role: any) => ({
+  roleId: role.drive_role_id,
 
-      .eq(
-        "drive_id",
-        driveId,
-      );
+  roleName: role.drive_role_name,
 
-  return (
-    data ?? []
-  ).map((role: any) => ({
-
-    roleId:
-      role.drive_role_id,
-
-    roleName:
-      role.drive_role_name,
-
-    openings:
-      role.vacancies ?? 0,
-
-  }));
+  openings:
+    role.drive_role_details?.openings ??
+    0,
+}));
 
 }
-
 async function loadSelectedRoles(
   draftId: string,
 ): Promise<Map<string, number>> {
@@ -437,37 +433,37 @@ async function loadSelectedRoles(
 
   }
 
-  const { data } =
-    await (supabase as any)
+const { data: applications } =
+  await (supabase as any)
+    .from("student_opportunity_applications")
+    .select("application_id")
+    .eq("opportunity_id", opportunity.opportunity_id);
 
-      .from(
-        "student_application_selected_roles",
-      )
-
-      .select(
-        "drive_role_id",
-      )
-
-      .eq(
-        "opportunity_id",
-        opportunity.opportunity_id,
-      );
-
-  const counts =
-    new Map<string, number>();
-
-  (data ?? []).forEach(
-    (row: any) => {
-
-      incrementCounter(
-        counts,
-        row.drive_role_id,
-      );
-
-    },
+const applicationIds =
+  (applications ?? []).map(
+    (application: any) => application.application_id,
   );
 
-  return counts;
+if (applicationIds.length === 0) {
+  return new Map<string, number>();
+}
+
+const { data } =
+  await (supabase as any)
+    .from("student_application_selected_roles")
+    .select("drive_role_id")
+    .in("application_id", applicationIds);
+
+const counts = new Map<string, number>();
+
+(data ?? []).forEach((row: any) => {
+  incrementCounter(
+    counts,
+    row.drive_role_id,
+  );
+});
+
+return counts;
 
 }
 
@@ -885,7 +881,13 @@ export async function getRecruitmentEligibilityAnalytics(
   await loadRecruitmentRoles(
     draftId,
   );
-
+console.log(
+  "[Eligibility Analytics]",
+  {
+    draftId,
+    roles,
+  },
+);
 const selectedRoleCounts =
   await loadSelectedRoles(
     draftId,

@@ -368,7 +368,7 @@ export const adminOpportunityService = {
             student_id,
             current_institute_name,
             current_branch_name,
-            current_degree_level,
+            current_degree_name,
             current_cgpa,
             active_backlogs,
             graduation_year
@@ -416,7 +416,7 @@ export const adminOpportunityService = {
         return (
           (institutes.length === 0 || institutes.includes(student.current_institute_name)) &&
           (branches.length === 0 || branches.includes(student.current_branch_name)) &&
-          (degrees.length === 0 || degrees.includes(student.current_degree_level)) &&
+          (degrees.length === 0 || degrees.includes(student.current_degree_name)) &&
           (batches.length === 0 || batches.includes(String(student.graduation_year))) &&
           Number(student.current_cgpa) >= Number(rule.minimum_cgpa || 0) &&
           Number(student.active_backlogs) <= Number(rule.maximum_active_backlogs || 0)
@@ -618,7 +618,7 @@ export const adminOpportunityService = {
       (supabase as any).from("student_academic_details").select(`
                     student_id,
                     current_institute_name,
-                    current_degree_level,
+                    current_degree_name,
                     current_branch_name,
                     current_cgpa,
                     active_backlogs,
@@ -659,7 +659,7 @@ export const adminOpportunityService = {
 
         const instituteMatch = matchesAllowed(academic.current_institute_name, allowedInstitutes);
 
-        const degreeMatch = matchesAllowed(academic.current_degree_level, allowedDegrees);
+        const degreeMatch = matchesAllowed(academic.current_degree_name, allowedDegrees);
 
         const branchMatch = matchesAllowed(academic.current_branch_name, allowedBranches);
 
@@ -694,7 +694,7 @@ export const adminOpportunityService = {
           institute_email: student.institute_email || null,
           personal_email: student.personal_email || null,
           current_institute_name: academic.current_institute_name || null,
-          current_degree_level: academic.current_degree_level || null,
+          current_degree_name: academic.current_degree_name || null,
           current_branch_name: academic.current_branch_name || null,
           current_cgpa: academic.current_cgpa || null,
           active_backlogs: academic.active_backlogs ?? 0,
@@ -725,7 +725,7 @@ export const adminOpportunityService = {
         eligibleStudents.map((student: any) =>
           getHodEmail(
             student.current_institute_name,
-            student.current_degree_level,
+            student.current_degree_name,
             student.current_branch_name,
           ),
         ),
