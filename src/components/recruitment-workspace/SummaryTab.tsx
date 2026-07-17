@@ -288,27 +288,93 @@ function RoleInsightCard({
       <div className="space-y-5">
         <ActionCenter summary={summary} />
 
-        <div className="rounded-2xl border bg-card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Participation
-              </div>
+     <div className="rounded-2xl border bg-card p-6">
 
-              <div className="mt-1 text-lg font-semibold">Student Application Trend</div>
-            </div>
-          </div>
+  <div className="flex items-center justify-between">
 
-          <div className="mt-8 flex h-64 items-center justify-center rounded-xl border border-dashed">
-            <div className="text-center">
-              <div className="text-lg font-semibold">Trend Chart</div>
+    <div>
 
-              <div className="mt-2 text-sm text-muted-foreground">
-                Daily applications over time will appear here.
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+
+        Participation
+
+      </div>
+
+      <div className="mt-1 text-lg font-semibold">
+
+        Student Application Analytics
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+    <OverviewItem
+      label="Eligible Students"
+      value={summary?.eligibleStudents ?? 0}
+    />
+
+    <OverviewItem
+      label="Applications"
+      value={summary?.totalApplications ?? 0}
+    />
+
+    <OverviewItem
+      label="Pending Eligible"
+      value={summary?.pendingEligibleStudents ?? 0}
+    />
+
+    <OverviewItem
+      label="Application Rate"
+      value={`${summary?.applicationRate ?? 0}%`}
+    />
+
+    <OverviewItem
+      label="Today"
+      value={summary?.applicationsToday ?? 0}
+    />
+
+    <OverviewItem
+      label="Last 24 Hours"
+      value={summary?.applicationsLast24Hours ?? 0}
+    />
+
+    <OverviewItem
+      label="Last 7 Days"
+      value={summary?.applicationsLast7Days ?? 0}
+    />
+
+    <OverviewItem
+      label="Average / Role"
+      value={summary?.averageApplicationsPerRole ?? 0}
+    />
+
+  </div>
+
+  <div className="mt-8 rounded-xl border border-dashed p-12">
+
+    <div className="text-center">
+
+      <div className="text-lg font-semibold">
+
+        Daily Participation Trend
+
+      </div>
+
+      <div className="mt-2 text-sm text-muted-foreground">
+
+        Trend graph will use real daily analytics in the next phase.
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
 
         <div className="rounded-2xl border bg-card p-6">
      <div className="flex items-center justify-between">
@@ -501,6 +567,187 @@ applied={row.applied}
   </div>
 
 </div>
+
+<div className="rounded-2xl border bg-card p-6">
+
+  <div>
+
+    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+
+      Why Students Aren't Applying
+
+    </div>
+
+    <div className="mt-1 text-lg font-semibold">
+
+      Eligibility Failure Breakdown
+
+    </div>
+
+    <p className="mt-2 text-sm text-muted-foreground">
+
+      These are the primary reasons preventing students from becoming eligible
+      for this recruitment.
+
+    </p>
+
+  </div>
+
+  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+
+    {[
+      {
+        label: "Opted Out",
+        value: summary?.failureBreakdown.optOut ?? 0,
+      },
+      {
+        label: "Inactive",
+        value: summary?.failureBreakdown.inactive ?? 0,
+      },
+      {
+        label: "Institute",
+        value: summary?.failureBreakdown.institute ?? 0,
+      },
+      {
+        label: "Degree",
+        value: summary?.failureBreakdown.degree ?? 0,
+      },
+      {
+        label: "Branch",
+        value: summary?.failureBreakdown.branch ?? 0,
+      },
+      {
+        label: "Graduation Year",
+        value: summary?.failureBreakdown.graduationYear ?? 0,
+      },
+      {
+        label: "CGPA",
+        value: summary?.failureBreakdown.cgpa ?? 0,
+      },
+      {
+        label: "Backlogs",
+        value: summary?.failureBreakdown.backlog ?? 0,
+      },
+      {
+        label: "Year Gap",
+        value: summary?.failureBreakdown.yearGap ?? 0,
+      },
+      {
+        label: "Custom Rules",
+        value: summary?.failureBreakdown.custom ?? 0,
+      },
+    ].map((item) => (
+      <div
+        key={item.label}
+        className="rounded-xl border bg-muted/30 p-4"
+      >
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {item.label}
+        </div>
+
+        <div className="mt-3 text-3xl font-bold">
+          {item.value}
+        </div>
+      </div>
+    ))}
+
+  </div>
+
+</div>
+
+<div className="rounded-2xl border bg-card p-6">
+
+  <div className="flex items-center justify-between">
+
+    <div>
+
+      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+
+        Recent Activity
+
+      </div>
+
+      <div className="mt-1 text-lg font-semibold">
+
+        Latest Recruitment Activity
+
+      </div>
+
+    </div>
+
+    <div className="text-sm text-muted-foreground">
+
+      {summary?.recentApplications.length ?? 0} Recent Applications
+
+    </div>
+
+  </div>
+
+  <div className="mt-6">
+
+    {(summary?.recentApplications ?? []).length === 0 ? (
+
+      <div className="rounded-xl border border-dashed py-10 text-center text-muted-foreground">
+
+        No recent applications found.
+
+      </div>
+
+    ) : (
+
+      <div className="space-y-3">
+
+        {summary?.recentApplications.map((application) => (
+
+          <div
+            key={application.applicationId}
+            className="flex items-center justify-between rounded-xl border p-4"
+          >
+
+            <div>
+
+              <div className="font-medium">
+
+                Student ID
+
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+
+                {application.studentId}
+
+              </div>
+
+            </div>
+
+            <div className="text-right">
+
+              <div className="font-medium">
+
+                Applied
+
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+
+                {new Date(application.appliedAt).toLocaleString()}
+
+              </div>
+
+            </div>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    )}
+
+  </div>
+
+</div>
+
       </div>
     </div>
   );

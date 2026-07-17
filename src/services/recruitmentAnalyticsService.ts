@@ -79,7 +79,20 @@ selectedCount: number;
 
 actionCenter: ActionCenterItem[];
 
-  recentApplications: {
+failureBreakdown: {
+  optOut: number; 
+  inactive: number;
+  institute: number;
+  degree: number;
+  branch: number;
+  graduationYear: number;
+  cgpa: number;
+  backlog: number;
+  yearGap: number;
+  custom: number;
+};
+
+recentApplications: {
     applicationId: string;
     studentId: string;
     appliedAt: string;
@@ -554,7 +567,21 @@ selectedCount: 0,
 actionCenter:
   eligibilityAnalytics?.actionCenter ?? [],
 
-    recentApplications,
+failureBreakdown:
+  eligibilityAnalytics?.failureBreakdown ?? {
+    optOut: 0,
+    inactive: 0,
+    institute: 0,
+    degree: 0,
+    branch: 0,
+    graduationYear: 0,
+    cgpa: 0,
+    backlog: 0,
+    yearGap: 0,
+    custom: 0,
+  },
+
+recentApplications,
   };
 }
 
