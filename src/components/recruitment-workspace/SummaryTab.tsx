@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { ActionCenter } from "./ActionCenter";
+import AnalyticsLineChart from "@/components/analytics/AnalyticsLineChart";
 import {
   BriefcaseBusiness,
   CalendarDays,
@@ -354,25 +355,20 @@ function RoleInsightCard({
 
   </div>
 
-  <div className="mt-8 rounded-xl border border-dashed p-12">
+  <div className="mt-8">
 
-    <div className="text-center">
+  <AnalyticsLineChart
+    title="Daily Participation Trend"
+    subtitle="Applications received by day"
+    data={
+      (summary?.applicationTrend ?? []).map((item) => ({
+        label: item.date,
+        value: item.applications,
+      }))
+    }
+  />
 
-      <div className="text-lg font-semibold">
-
-        Daily Participation Trend
-
-      </div>
-
-      <div className="mt-2 text-sm text-muted-foreground">
-
-        Trend graph will use real daily analytics in the next phase.
-
-      </div>
-
-    </div>
-
-  </div>
+</div>
 
 </div>
 

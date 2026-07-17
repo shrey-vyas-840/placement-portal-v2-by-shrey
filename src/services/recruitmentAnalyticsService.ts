@@ -93,10 +93,16 @@ failureBreakdown: {
 };
 
 recentApplications: {
-    applicationId: string;
-    studentId: string;
-    appliedAt: string;
-  }[];
+  applicationId: string;
+  studentId: string;
+  appliedAt: string;
+}[];
+
+applicationTrend: {
+  date: string;
+  applications: number;
+}[];
+
 }
 export interface RecruitmentApplicant {
   applicationId: string;
@@ -200,11 +206,16 @@ export async function getRecruitmentWorkspaceSummary(
 
   let applicationsLast7Days = 0;
 
-  let recentApplications: {
-    applicationId: string;
-    studentId: string;
-    appliedAt: string;
-  }[] = [];
+let recentApplications: {
+  applicationId: string;
+  studentId: string;
+  appliedAt: string;
+}[] = [];
+
+let applicationTrend: {
+  date: string;
+  applications: number;
+}[] = [];
 
   if (opportunity?.opportunity_id) {
     const { data: latestApplications } = await (supabase as any)
@@ -257,6 +268,27 @@ export async function getRecruitmentWorkspaceSummary(
     applicationsLast7Days = recentApplications.filter(
       (application) => new Date(application.appliedAt) >= last7,
     ).length;
+
+    const trendMap = new Map<string, number>();
+
+(latestApplications ?? []).forEach((application: any) => {
+  const day = new Date(application.applied_at)
+    .toISOString()
+    .slice(0, 10);
+
+  trendMap.set(
+    day,
+    (trendMap.get(day) ?? 0) + 1,
+  );
+});
+
+applicationTrend = Array.from(trendMap.entries())
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([date, applications]) => ({
+    date,
+    applications,
+  }));
+
   }
 
   if (driveId) {
@@ -582,6 +614,8 @@ failureBreakdown:
   },
 
 recentApplications,
+
+applicationTrend,
   };
 }
 
