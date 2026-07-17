@@ -92,11 +92,13 @@ export interface RecruitmentWorkspaceSummary {
     custom: number;
   };
 
-  recentApplications: {
-    applicationId: string;
-    studentId: string;
-    appliedAt: string;
-  }[];
+recentApplications: {
+  applicationId: string;
+  studentId: string;
+  studentName: string;
+  enrollmentNo: string;
+  appliedAt: string;
+}[];
 
   applicationTrend: {
     date: string;
@@ -205,11 +207,13 @@ export async function getRecruitmentWorkspaceSummary(
 
   let applicationsLast7Days = 0;
 
-  let recentApplications: {
-    applicationId: string;
-    studentId: string;
-    appliedAt: string;
-  }[] = [];
+let recentApplications: {
+  applicationId: string;
+  studentId: string;
+  studentName: string;
+  enrollmentNo: string;
+  appliedAt: string;
+}[] = [];
 
   let applicationTrend: {
     date: string;
@@ -218,14 +222,21 @@ export async function getRecruitmentWorkspaceSummary(
 
   if (opportunity?.opportunity_id) {
     const { data: latestApplications } = await (supabase as any)
-      .from("student_opportunity_applications")
-      .select(
-        `
-    application_id,
-    student_id,
-    applied_at
-  `,
-      )
+  .from("student_opportunity_applications")
+  .select(
+    `
+application_id,
+student_id,
+applied_at,
+
+student_master!inner(
+  enrollment_no,
+  first_name,
+  middle_name,
+  last_name
+)
+`,
+  )
       .eq("opportunity_id", opportunity.opportunity_id)
       .order("applied_at", {
         ascending: false,
@@ -233,11 +244,29 @@ export async function getRecruitmentWorkspaceSummary(
       .limit(5);
 
     recentApplications =
-      latestApplications?.map((application: any) => ({
-        applicationId: application.application_id,
-        studentId: application.student_id,
-        appliedAt: application.applied_at,
-      })) ?? [];
+  latestApplications?.map((application: any) => {
+    const student = application.student_master;
+
+    const fullName = [
+      student?.first_name,
+      student?.middle_name,
+      student?.last_name,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return {
+      applicationId: application.application_id,
+
+      studentId: application.student_id,
+
+      studentName: fullName || "Unknown Student",
+
+      enrollmentNo: student?.enrollment_no ?? "-",
+
+      appliedAt: application.applied_at,
+    };
+  }) ?? [];
     const { count } = await (supabase as any)
       .from("student_opportunity_applications")
       .select("*", {

@@ -497,6 +497,8 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs uppercase">Student</th>
 
+                        <th className="px-4 py-3 text-left text-xs uppercase">Enrollment</th>
+
                         <th className="px-4 py-3 text-right text-xs uppercase">Applied At</th>
                       </tr>
                     </thead>
@@ -504,7 +506,13 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
                     <tbody>
                       {summary?.recentApplications.map((application) => (
                         <tr key={application.applicationId} className="border-t">
-                          <td className="px-4 py-3 font-medium">{application.studentId}</td>
+                          <td className="px-4 py-3">
+                            <div className="font-medium">{application.studentName}</div>
+                          </td>
+
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {application.enrollmentNo}
+                          </td>
 
                           <td className="px-4 py-3 text-right text-sm text-muted-foreground">
                             {new Date(application.appliedAt).toLocaleString()}
