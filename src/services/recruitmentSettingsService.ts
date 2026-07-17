@@ -133,10 +133,31 @@ class RecruitmentSettingsService {
   }
 
   async archiveRecruitment(draftId: string) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { error } = await (supabase as any)
       .from("recruitment_drafts")
       .update({
-        archived: true,
+        is_archived: true,
+        archived_at: new Date().toISOString(),
+        archived_by: user?.id ?? null,
+      })
+      .eq("draft_id", draftId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async unarchiveRecruitment(draftId: string) {
+    const { error } = await (supabase as any)
+      .from("recruitment_drafts")
+      .update({
+        is_archived: false,
+        archived_at: null,
+        archived_by: null,
       })
       .eq("draft_id", draftId);
 

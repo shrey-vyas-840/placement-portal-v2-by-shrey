@@ -285,7 +285,7 @@ export async function getActiveDrafts(): Promise<RecruitmentDraftRow[]> {
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
     .select("*")
-    .neq("status", "ARCHIVED")
+    .eq("is_archived", false)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -299,8 +299,8 @@ export async function getArchivedDrafts(): Promise<RecruitmentDraftRow[]> {
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
     .select("*")
-    .eq("status", "ARCHIVED")
-    .order("updated_at", { ascending: false });
+    .eq("is_archived", true)
+    .order("archived_at", { ascending: false });
 
   if (error) {
     throw error;
@@ -468,7 +468,7 @@ export async function getDraftsForUser(
     .from("recruitment_drafts")
     .select("*")
     .eq("auth_provider_id", authProviderId)
-    .eq("status", "DRAFT")
+    .eq("is_archived", false)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -485,7 +485,7 @@ export async function getArchivedDraftsForUser(
     .from("recruitment_drafts")
     .select("*")
     .eq("auth_provider_id", authProviderId)
-    .eq("status", "ARCHIVED")
+    .eq("is_archived", true)
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -550,10 +550,16 @@ export async function duplicateDraft(
 export async function archiveDraftById(
   draftId: string,
 ): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { error } = await (supabase as any)
     .from("recruitment_drafts")
     .update({
-      status: "ARCHIVED",
+      is_archived: true,
+      archived_at: new Date().toISOString(),
+      archived_by: user?.id ?? null,
     })
     .eq("draft_id", draftId);
 
@@ -563,19 +569,21 @@ export async function archiveDraftById(
 }
 
 export async function restoreDraftById(
-    draftId: string,
+  draftId: string,
 ): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .update({
+      is_archived: false,
+      archived_at: null,
+      archived_by: null,
+    })
+    .eq("draft_id", draftId);
 
-    const { error } = await (supabase as any)
-        .from("recruitment_drafts")
-        .update({
-            status: "DRAFT",
-        })
-        .eq("draft_id", draftId);
-
-    if (error) throw error;
+  if (error) {
+    throw error;
+  }
 }
-
 export async function getPublishedRecruitmentsForUser(
   authProviderId: string,
 ): Promise<any[]> {

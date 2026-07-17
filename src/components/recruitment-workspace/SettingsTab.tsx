@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { CalendarDays, AlertTriangle, Users, ShieldAlert, Clock3 } from "lucide-react";
 
 import type { RecruitmentDraftRow } from "@/services/recruitmentDraftService";
@@ -38,6 +39,8 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
   const [restrictedScope, setRestrictedScope] = useState<OverrideScope>("ALL");
 
   const [placedScope, setPlacedScope] = useState<OverrideScope>("ALL");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!draft) {
@@ -465,10 +468,35 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
             <button
               type="button"
-              disabled
-              className="rounded-xl bg-red-600/60 px-5 py-2 text-sm font-medium text-white cursor-not-allowed"
+              disabled={saving}
+              onClick={async () => {
+                if (!draft) return;
+
+                const confirmed = window.confirm(
+                  "Archive this recruitment?\n\nIt will be moved to the Archived Recruitments section and can be restored later.",
+                );
+
+                if (!confirmed) return;
+
+                try {
+                  setSaving(true);
+
+                  await recruitmentSettingsService.archiveRecruitment(draft.draft_id);
+
+                  toast.success("Recruitment archived successfully.");
+
+                  navigate({
+                    to: "/admin/recruitment",
+                  });
+                } catch (error: any) {
+                  toast.error(error?.message ?? "Unable to archive recruitment.");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              className="rounded-xl bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
             >
-              Coming Soon
+              Archive
             </button>
           </div>
         </div>

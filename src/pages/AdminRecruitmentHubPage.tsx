@@ -110,7 +110,7 @@ export function AdminRecruitmentHubPage() {
 
       await refreshDrafts();
 
-      toast.success("Draft archived successfully.");
+      toast.success("Recruitment freezed successfully.");
     } catch (error) {
       console.error(error);
 
@@ -132,7 +132,11 @@ export function AdminRecruitmentHubPage() {
   }
 
   async function handlePermanentDelete(draftId: string) {
-    if (!window.confirm("Delete this draft?")) {
+   if (
+  !window.confirm(
+    "Delete this recruitment permanently?\n\nThis action cannot be undone."
+  )
+) {
       return;
     }
 
@@ -141,7 +145,7 @@ export function AdminRecruitmentHubPage() {
 
       await refreshDrafts();
 
-      toast.success("Draft deleted successfully.");
+      toast.success("Recruitment deleted successfully.");
     } catch (error) {
       console.error(error);
 
@@ -154,32 +158,21 @@ export function AdminRecruitmentHubPage() {
   }, []);
 
   const filteredRecruitments = publishedRecruitments.filter((item) => {
-  const recruitmentName =
-    item.drive_name ??
-    item.recruitment_name ??
-    item.company_name ??
-    "";
+    const recruitmentName = item.drive_name ?? item.recruitment_name ?? item.company_name ?? "";
 
-  const matchesSearch = recruitmentName
-    .toLowerCase()
-    .includes(search.toLowerCase());
+    const matchesSearch = recruitmentName.toLowerCase().includes(search.toLowerCase());
 
-  const status =
-    (item.application_status ??
-      item.status ??
-      "")
-      .toString()
-      .toLowerCase();
+    const status = (item.application_status ?? item.status ?? "").toString().toLowerCase();
 
-  const matchesStatus =
-    statusFilter === "all"
-      ? true
-      : statusFilter === "open"
-        ? status === "open"
-        : status === "closed";
+    const matchesStatus =
+      statusFilter === "all"
+        ? true
+        : statusFilter === "open"
+          ? status === "open"
+          : status === "closed";
 
-  return matchesSearch && matchesStatus;
-});
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -210,7 +203,6 @@ export function AdminRecruitmentHubPage() {
         </div>
 
         <div className="mt-8">
-          
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -226,158 +218,112 @@ export function AdminRecruitmentHubPage() {
               </span>
             </div>
 
-           <div className="mt-6">
+            <div className="mt-6">
+              <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search Recruitment..."
+                  className="h-11 w-full rounded-xl border px-4 lg:max-w-md"
+                />
 
-  <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex gap-2">
+                  {(["all", "open", "closed"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`rounded-full px-5 py-2 text-sm transition ${
+                        statusFilter === status
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-muted/70"
+                      }`}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-    <input
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      placeholder="Search Recruitment..."
-      className="h-11 w-full rounded-xl border px-4 lg:max-w-md"
-    />
+              {loading ? (
+                <div className="rounded-2xl border border-dashed p-8 text-center">Loading...</div>
+              ) : filteredRecruitments.length === 0 ? (
+                <div className="rounded-2xl border border-dashed p-8 text-center">
+                  No published recruitment found.
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-2xl border">
+                  <div className="max-h-[600px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-muted">
+                        <tr>
+                          <th className="px-4 py-3 text-left">Recruitment</th>
 
-    <div className="flex gap-2">
+                          <th className="px-4 py-3 text-left">Company</th>
 
-      {(["all", "open", "closed"] as const).map((status) => (
-        <button
-          key={status}
-          onClick={() => setStatusFilter(status)}
-          className={`rounded-full px-5 py-2 text-sm transition ${
-            statusFilter === status
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted hover:bg-muted/70"
-          }`}
-        >
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </button>
-      ))}
+                          <th className="px-4 py-3 text-center">Roles</th>
 
-    </div>
+                          <th className="px-4 py-3 text-center">Applications</th>
 
-  </div>
+                          <th className="px-4 py-3 text-center">Status</th>
 
-  {loading ? (
+                          <th className="px-4 py-3 text-center">Published</th>
 
-    <div className="rounded-2xl border border-dashed p-8 text-center">
+                          <th className="px-4 py-3 text-center">Action</th>
+                        </tr>
+                      </thead>
 
-      Loading...
+                      <tbody>
+                        {filteredRecruitments.map((item) => (
+                          <tr key={item.draft_id} className="border-t">
+                            <td className="px-4 py-4 font-medium">
+                              {item.drive_name ?? item.recruitment_name ?? "-"}
+                            </td>
 
-    </div>
+                            <td className="px-4 py-4">{item.company_name ?? "-"}</td>
 
-  ) : filteredRecruitments.length === 0 ? (
+                            <td className="px-4 py-4 text-center">
+                              {item.roles_count ?? item.total_roles ?? "-"}
+                            </td>
 
-    <div className="rounded-2xl border border-dashed p-8 text-center">
+                            <td className="px-4 py-4 text-center">{item.application_count ?? 0}</td>
 
-      No published recruitment found.
+                            <td className="px-4 py-4 text-center">
+                              <span
+                                className={`rounded-full px-3 py-1 text-xs ${
+                                  (item.application_status ?? "").toLowerCase() === "open"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {item.application_status ?? "Closed"}
+                              </span>
+                            </td>
 
-    </div>
+                            <td className="px-4 py-4 text-center text-xs text-muted-foreground">
+                              {item.published_at
+                                ? new Date(item.published_at).toLocaleDateString()
+                                : "-"}
+                            </td>
 
-  ) : (
-
-    <div className="overflow-hidden rounded-2xl border">
-
-      <div className="max-h-[600px] overflow-y-auto">
-
-        <table className="w-full text-sm">
-
-          <thead className="sticky top-0 bg-muted">
-
-            <tr>
-
-              <th className="px-4 py-3 text-left">Recruitment</th>
-
-              <th className="px-4 py-3 text-left">Company</th>
-
-              <th className="px-4 py-3 text-center">Roles</th>
-
-              <th className="px-4 py-3 text-center">Applications</th>
-
-              <th className="px-4 py-3 text-center">Status</th>
-
-              <th className="px-4 py-3 text-center">Published</th>
-
-              <th className="px-4 py-3 text-center">Action</th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {filteredRecruitments.map((item) => (
-
-              <tr
-                key={item.draft_id}
-                className="border-t"
-              >
-
-                <td className="px-4 py-4 font-medium">
-                  {item.drive_name ?? item.recruitment_name ?? "-"}
-                </td>
-
-                <td className="px-4 py-4">
-                  {item.company_name ?? "-"}
-                </td>
-
-                <td className="px-4 py-4 text-center">
-                  {item.roles_count ?? item.total_roles ?? "-"}
-                </td>
-
-                <td className="px-4 py-4 text-center">
-                  {item.application_count ?? 0}
-                </td>
-
-                <td className="px-4 py-4 text-center">
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs ${
-                      (item.application_status ?? "")
-                        .toLowerCase() === "open"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {item.application_status ?? "Closed"}
-                  </span>
-
-                </td>
-
-                <td className="px-4 py-4 text-center text-xs text-muted-foreground">
-                  {item.published_at
-                    ? new Date(item.published_at).toLocaleDateString()
-                    : "-"}
-                </td>
-
-                <td className="px-4 py-4 text-center">
-
-                  <Link
-                    to="/admin/recruitment/$draftId"
-                    params={{
-                      draftId: item.draft_id,
-                    }}
-                    className="text-primary hover:underline"
-                  >
-                    View →
-                  </Link>
-
-                </td>
-
-              </tr>
-
-            ))}
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
-  )}
-
-</div>
+                            <td className="px-4 py-4 text-center">
+                              <Link
+                                to="/admin/recruitment/$draftId"
+                                params={{
+                                  draftId: item.draft_id,
+                                }}
+                                className="text-primary hover:underline"
+                              >
+                                View →
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
