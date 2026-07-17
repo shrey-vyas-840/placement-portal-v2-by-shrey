@@ -1,4 +1,5 @@
 import ReactECharts from "echarts-for-react";
+import { analyticsGradient, analyticsTheme } from "./analyticsTheme";
 
 export interface AnalyticsLineChartDataPoint {
   label: string;
@@ -18,7 +19,9 @@ export default function AnalyticsLineChart({
   data,
   height = 340,
 }: AnalyticsLineChartProps) {
+
 const option = {
+  ...analyticsTheme,
   backgroundColor: "transparent",
 
   animation: true,
@@ -100,7 +103,18 @@ const option = {
 
     boundaryGap: false,
 
-    data: data.map((item) => item.label),
+   data: data.map((item) => {
+  const date = new Date(item.label);
+
+  if (Number.isNaN(date.getTime())) {
+    return item.label;
+  }
+
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+}),
 
     axisLine: {
       show: false,
@@ -116,14 +130,21 @@ const option = {
   },
 
   yAxis: {
-    type: "value",
+  type: "value",
 
-    splitLine: {
-      lineStyle: {
-        type: "dashed",
-      },
+  minInterval: 1,
+
+  axisLabel: {
+    formatter: "{value}",
+  },
+
+  splitLine: {
+    lineStyle: {
+      type: "dashed",
+      opacity: 0.35,
     },
   },
+},
 
   series: [
     {
@@ -143,7 +164,9 @@ const option = {
         width: 4,
       },
 
-      areaStyle: {},
+      areaStyle: {
+  color: analyticsGradient,
+},
 
       emphasis: {
         focus: "series",

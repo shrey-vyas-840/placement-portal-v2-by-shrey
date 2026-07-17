@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { ActionCenter } from "./ActionCenter";
 import AnalyticsLineChart from "@/components/analytics/AnalyticsLineChart";
+import AnalyticsStackedProgressChart from "@/components/analytics/AnalyticsStackedProgressChart";
 import {
   BriefcaseBusiness,
   CalendarDays,
@@ -16,9 +17,7 @@ import {
   type RecruitmentWorkspaceSummary,
 } from "@/services/recruitmentAnalyticsService";
 
-import type {
-  RoleEligibilityAnalytics,
-} from "@/services/recruitmentEligibilityAnalyticsService";
+import type { RoleEligibilityAnalytics } from "@/services/recruitmentEligibilityAnalyticsService";
 
 import type { RecruitmentDraftRow } from "@/services/recruitmentDraftService";
 
@@ -29,13 +28,9 @@ interface SummaryTabProps {
 }
 
 export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
-
-const [coverageView, setCoverageView] = useState<
-  "branch" |
-  "institute" |
-  "degree" |
-  "graduationYear"
->("branch");
+  const [coverageView, setCoverageView] = useState<
+    "branch" | "institute" | "degree" | "graduationYear"
+  >("branch");
 
   if (loading) {
     return (
@@ -121,75 +116,50 @@ const [coverageView, setCoverageView] = useState<
     );
   }
 
-function RoleInsightCard({
-  role,
-}: {
-  role: {
-    roleId: string;
-    roleName: string;
-    eligible: number;
-    applied: number;
-    openings: number;
-    applicationRate: number;
-    applicationsPerOpening: number;
-  };
-}) {
-  return (
-    <div className="rounded-2xl border bg-card p-5">
+  function RoleInsightCard({
+    role,
+  }: {
+    role: {
+      roleId: string;
+      roleName: string;
+      eligible: number;
+      applied: number;
+      openings: number;
+      applicationRate: number;
+      applicationsPerOpening: number;
+    };
+  }) {
+    return (
+      <div className="rounded-2xl border bg-card p-5">
+        <div className="flex items-center justify-between">
+          <div className="text-lg font-semibold">{role.roleName}</div>
 
-      <div className="flex items-center justify-between">
-
-        <div className="text-lg font-semibold">
-
-          {role.roleName}
-
+          <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            {role.applicationRate}%
+          </div>
         </div>
 
-        <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+        <div className="mt-5 grid grid-cols-2 gap-4">
+          <OverviewItem label="Eligible" value={role.eligible} />
 
-          {role.applicationRate}%
+          <OverviewItem label="Applied" value={role.applied} />
 
+          <OverviewItem label="Openings" value={role.openings} />
+
+          <OverviewItem label="Applications / Opening" value={role.applicationsPerOpening} />
         </div>
-
       </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-4">
-
-        <OverviewItem
-          label="Eligible"
-          value={role.eligible}
-        />
-
-        <OverviewItem
-          label="Applied"
-          value={role.applied}
-        />
-
-        <OverviewItem
-          label="Openings"
-          value={role.openings}
-        />
-
-        <OverviewItem
-          label="Applications / Opening"
-          value={role.applicationsPerOpening}
-        />
-
-      </div>
-
-    </div>
-  );
-}
+    );
+  }
 
   const coverageRows =
-  coverageView === "branch"
-    ? summary?.coverageByBranch ?? []
-    : coverageView === "institute"
-      ? summary?.coverageByInstitute ?? []
-      : coverageView === "degree"
-        ? summary?.coverageByDegree ?? []
-        : summary?.coverageByGraduationYear ?? [];
-
+    coverageView === "branch"
+      ? (summary?.coverageByBranch ?? [])
+      : coverageView === "institute"
+        ? (summary?.coverageByInstitute ?? [])
+        : coverageView === "degree"
+          ? (summary?.coverageByDegree ?? [])
+          : (summary?.coverageByGraduationYear ?? []);
 
   return (
     <div className="space-y-5">
@@ -243,23 +213,23 @@ function RoleInsightCard({
           icon={<FileText className="h-6 w-6 text-primary" />}
         />
 
-       <SummaryMetricCard
-  title="Eligible Students"
-  value={summary?.eligibleStudents ?? 0}
-  icon={<Users className="h-6 w-6 text-primary" />}
-/>
+        <SummaryMetricCard
+          title="Eligible Students"
+          value={summary?.eligibleStudents ?? 0}
+          icon={<Users className="h-6 w-6 text-primary" />}
+        />
 
-  <SummaryMetricCard
-  title="Application Rate"
-  value={`${summary?.applicationRate ?? 0}%`}
-  icon={<CircleDot className="h-6 w-6 text-green-600" />}
-/>
+        <SummaryMetricCard
+          title="Application Rate"
+          value={`${summary?.applicationRate ?? 0}%`}
+          icon={<CircleDot className="h-6 w-6 text-green-600" />}
+        />
 
-     <SummaryMetricCard
-  title="Pending Eligible"
-  value={summary?.pendingEligibleStudents ?? 0}
-  icon={<UserCheck className="h-6 w-6 text-amber-500" />}
-/>
+        <SummaryMetricCard
+          title="Pending Eligible"
+          value={summary?.pendingEligibleStudents ?? 0}
+          icon={<UserCheck className="h-6 w-6 text-amber-500" />}
+        />
 
         <SummaryMetricCard
           title="Roles"
@@ -267,17 +237,17 @@ function RoleInsightCard({
           icon={<BriefcaseBusiness className="h-6 w-6 text-primary" />}
         />
 
- <SummaryMetricCard
-  title="Shortlisted"
-  value={summary?.shortlistedCount ?? 0}
-  icon={<UserCheck className="h-6 w-6 text-green-600" />}
-/>
+        <SummaryMetricCard
+          title="Shortlisted"
+          value={summary?.shortlistedCount ?? 0}
+          icon={<UserCheck className="h-6 w-6 text-green-600" />}
+        />
 
-  <SummaryMetricCard
-  title="Selected"
-  value={summary?.selectedCount ?? 0}
-  icon={<Trophy className="h-6 w-6 text-amber-600" />}
-/>
+        <SummaryMetricCard
+          title="Selected"
+          value={summary?.selectedCount ?? 0}
+          icon={<Trophy className="h-6 w-6 text-amber-600" />}
+        />
 
         <SummaryMetricCard
           title="Status"
@@ -289,461 +259,289 @@ function RoleInsightCard({
       <div className="space-y-5">
         <ActionCenter summary={summary} />
 
-     <div className="rounded-2xl border bg-card p-6">
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Participation
+              </div>
 
-  <div className="flex items-center justify-between">
+              <div className="mt-1 text-lg font-semibold">Student Application Analytics</div>
+            </div>
+          </div>
 
-    <div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <OverviewItem label="Eligible Students" value={summary?.eligibleStudents ?? 0} />
 
-      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <OverviewItem label="Applications" value={summary?.totalApplications ?? 0} />
 
-        Participation
+            <OverviewItem label="Pending Eligible" value={summary?.pendingEligibleStudents ?? 0} />
 
-      </div>
+            <OverviewItem label="Application Rate" value={`${summary?.applicationRate ?? 0}%`} />
 
-      <div className="mt-1 text-lg font-semibold">
+            <OverviewItem label="Today" value={summary?.applicationsToday ?? 0} />
 
-        Student Application Analytics
+            <OverviewItem label="Last 24 Hours" value={summary?.applicationsLast24Hours ?? 0} />
 
-      </div>
+            <OverviewItem label="Last 7 Days" value={summary?.applicationsLast7Days ?? 0} />
 
-    </div>
+            <OverviewItem label="Average / Role" value={summary?.averageApplicationsPerRole ?? 0} />
+          </div>
 
-  </div>
-
-  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-
-    <OverviewItem
-      label="Eligible Students"
-      value={summary?.eligibleStudents ?? 0}
-    />
-
-    <OverviewItem
-      label="Applications"
-      value={summary?.totalApplications ?? 0}
-    />
-
-    <OverviewItem
-      label="Pending Eligible"
-      value={summary?.pendingEligibleStudents ?? 0}
-    />
-
-    <OverviewItem
-      label="Application Rate"
-      value={`${summary?.applicationRate ?? 0}%`}
-    />
-
-    <OverviewItem
-      label="Today"
-      value={summary?.applicationsToday ?? 0}
-    />
-
-    <OverviewItem
-      label="Last 24 Hours"
-      value={summary?.applicationsLast24Hours ?? 0}
-    />
-
-    <OverviewItem
-      label="Last 7 Days"
-      value={summary?.applicationsLast7Days ?? 0}
-    />
-
-    <OverviewItem
-      label="Average / Role"
-      value={summary?.averageApplicationsPerRole ?? 0}
-    />
-
-  </div>
-
-  <div className="mt-8">
-
-  <AnalyticsLineChart
-    title="Daily Participation Trend"
-    subtitle="Applications received by day"
-    data={
-      (summary?.applicationTrend ?? []).map((item) => ({
-        label: item.date,
-        value: item.applications,
-      }))
-    }
-  />
-
-</div>
-
-</div>
+          <div className="mt-8">
+            <AnalyticsLineChart
+              title="Daily Participation Trend"
+              subtitle="Applications received by day"
+              data={(summary?.applicationTrend ?? []).map((item) => ({
+                label: item.date,
+                value: item.applications,
+              }))}
+            />
+          </div>
+        </div>
 
         <div className="rounded-2xl border bg-card p-6">
-     <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Department Participation
+              </div>
 
-  <div>
+              <div className="mt-1 text-lg font-semibold">Eligible vs Applied Students</div>
+            </div>
+          </div>
 
-    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          <div className="mt-6">
+            <AnalyticsStackedProgressChart
+              title="Department Participation"
+              subtitle="Applied students compared to total eligible students"
+              data={(coverageRows ?? []).map((row) => {
+                const label =
+                  "branchName" in row
+                    ? row.branchName
+                    : "instituteName" in row
+                      ? row.instituteName
+                      : "degreeName" in row
+                        ? row.degreeName
+                        : String(row.graduationYear);
 
-      Coverage
+                return {
+                  label,
+                  applied: row.applied,
+                  remaining: Math.max(row.eligible - row.applied, 0),
+                };
+              })}
+            />
+          </div>
 
-    </div>
+          <div className="mt-8 overflow-hidden rounded-xl border">
+            <div className="flex justify-end gap-2 border-b bg-muted/20 p-3">
+              {(["branch", "institute", "degree", "graduationYear"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setCoverageView(tab)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                    coverageView === tab
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted hover:bg-muted/70"
+                  }`}
+                >
+                  {tab === "graduationYear"
+                    ? "Graduation Year"
+                    : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
 
-    <div className="mt-1 text-lg font-semibold">
-
-      Student Participation Coverage
-
-    </div>
-
-  </div>
-
-  <div className="flex gap-2">
-
-    {[
-      ["branch", "Branch"],
-      ["institute", "Institute"],
-      ["degree", "Degree"],
-      ["graduationYear", "Graduation Year"],
-    ].map(([key, label]) => (
-
-      <button
-        key={key}
-        type="button"
-        onClick={() =>
-          setCoverageView(
-            key as
-              | "branch"
-              | "institute"
-              | "degree"
-              | "graduationYear",
-          )
-        }
-        className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
-          coverageView === key
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted hover:bg-muted/70"
-        }`}
-      >
-
-        {label}
-
-      </button>
-
-    ))}
-
-  </div>
-
-</div>
-
-          <div className="mt-6 overflow-hidden rounded-xl border">
-            <table className="w-full">
-              <thead className="bg-muted/50">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/20">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">
+                  <th className="px-4 py-3 text-left">
+                    {coverageView === "branch"
+                      ? "Branch"
+                      : coverageView === "institute"
+                        ? "Institute"
+                        : coverageView === "degree"
+                          ? "Degree"
+                          : "Graduation Year"}
+                  </th>
 
-  {coverageView === "branch"
-    ? "Branch"
-    : coverageView === "institute"
-      ? "Institute"
-      : coverageView === "degree"
-        ? "Degree"
-        : "Graduation Year"}
+                  <th className="px-4 py-3 text-center">Eligible</th>
 
-</th>
+                  <th className="px-4 py-3 text-center">Applied</th>
 
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Eligible</th>
+                  <th className="px-4 py-3 text-center">Remaining</th>
 
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Applied</th>
-
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Remaining</th>
-
-                  <th className="px-4 py-3 text-center text-sm font-semibold">Rate</th>
+                  <th className="px-4 py-3 text-center">Rate</th>
                 </tr>
               </thead>
 
               <tbody>
-                {coverageRows.length ? (
-                  coverageRows.map(
-                   (
-  row:
-    | {
-        branchName: string;
-        eligible: number;
-        applied: number;
-      }
-    | {
-        instituteName: string;
-        eligible: number;
-        applied: number;
-      }
-    | {
-        degreeName: string;
-        eligible: number;
-        applied: number;
-      }
-    | {
-        graduationYear: string;
-        eligible: number;
-        applied: number;
-      },
-) => (
-                      <CoverageRow
-                       key={
-  "branchName" in row
-    ? row.branchName
-    : "instituteName" in row
-      ? row.instituteName
-      : "degreeName" in row
-        ? row.degreeName
-        : row.graduationYear
-}
-
-label={
-  "branchName" in row
-    ? row.branchName
-    : "instituteName" in row
-      ? row.instituteName
-      : "degreeName" in row
-        ? row.degreeName
-        : row.graduationYear
-}
-
-eligible={row.eligible}
-
-applied={row.applied}
-                      />
-                    ),
-                  )
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
-                      No coverage data available.
-                    </td>
-                  </tr>
-                )}
+                {coverageRows.map((row) => (
+                  <CoverageRow
+                    key={
+                      "branchName" in row
+                        ? row.branchName
+                        : "instituteName" in row
+                          ? row.instituteName
+                          : "degreeName" in row
+                            ? row.degreeName
+                            : String(row.graduationYear)
+                    }
+                    label={
+                      "branchName" in row
+                        ? row.branchName
+                        : "instituteName" in row
+                          ? row.instituteName
+                          : "degreeName" in row
+                            ? row.degreeName
+                            : String(row.graduationYear)
+                    }
+                    eligible={row.eligible}
+                    applied={row.applied}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
         </div>
 
-<div className="rounded-2xl border bg-card p-6">
-
-  <div className="flex items-center justify-between">
-
-    <div>
-
-      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-
-        Role Insights
-
-      </div>
-
-      <div className="mt-1 text-lg font-semibold">
-
-        Recruitment Performance by Role
-
-      </div>
-
-    </div>
-
-    <div className="text-sm text-muted-foreground">
-
-      {summary?.roleAnalytics.length ?? 0} Roles
-
-    </div>
-
-  </div>
-
-  <div className="mt-6 grid gap-4 lg:grid-cols-2">
-
-    {(summary?.roleAnalytics ?? []).map(
-  (role: RoleEligibilityAnalytics) => (
-
-      <RoleInsightCard
-        key={role.roleId}
-        role={role}
-      />
-
-    ))}
-
-  </div>
-
-</div>
-
-<div className="rounded-2xl border bg-card p-6">
-
-  <div>
-
-    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-
-      Why Students Aren't Applying
-
-    </div>
-
-    <div className="mt-1 text-lg font-semibold">
-
-      Eligibility Failure Breakdown
-
-    </div>
-
-    <p className="mt-2 text-sm text-muted-foreground">
-
-      These are the primary reasons preventing students from becoming eligible
-      for this recruitment.
-
-    </p>
-
-  </div>
-
-  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-
-    {[
-      {
-        label: "Opted Out",
-        value: summary?.failureBreakdown.optOut ?? 0,
-      },
-      {
-        label: "Inactive",
-        value: summary?.failureBreakdown.inactive ?? 0,
-      },
-      {
-        label: "Institute",
-        value: summary?.failureBreakdown.institute ?? 0,
-      },
-      {
-        label: "Degree",
-        value: summary?.failureBreakdown.degree ?? 0,
-      },
-      {
-        label: "Branch",
-        value: summary?.failureBreakdown.branch ?? 0,
-      },
-      {
-        label: "Graduation Year",
-        value: summary?.failureBreakdown.graduationYear ?? 0,
-      },
-      {
-        label: "CGPA",
-        value: summary?.failureBreakdown.cgpa ?? 0,
-      },
-      {
-        label: "Backlogs",
-        value: summary?.failureBreakdown.backlog ?? 0,
-      },
-      {
-        label: "Year Gap",
-        value: summary?.failureBreakdown.yearGap ?? 0,
-      },
-      {
-        label: "Custom Rules",
-        value: summary?.failureBreakdown.custom ?? 0,
-      },
-    ].map((item) => (
-      <div
-        key={item.label}
-        className="rounded-xl border bg-muted/30 p-4"
-      >
-        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {item.label}
-        </div>
-
-        <div className="mt-3 text-3xl font-bold">
-          {item.value}
-        </div>
-      </div>
-    ))}
-
-  </div>
-
-</div>
-
-<div className="rounded-2xl border bg-card p-6">
-
-  <div className="flex items-center justify-between">
-
-    <div>
-
-      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-
-        Recent Activity
-
-      </div>
-
-      <div className="mt-1 text-lg font-semibold">
-
-        Latest Recruitment Activity
-
-      </div>
-
-    </div>
-
-    <div className="text-sm text-muted-foreground">
-
-      {summary?.recentApplications.length ?? 0} Recent Applications
-
-    </div>
-
-  </div>
-
-  <div className="mt-6">
-
-    {(summary?.recentApplications ?? []).length === 0 ? (
-
-      <div className="rounded-xl border border-dashed py-10 text-center text-muted-foreground">
-
-        No recent applications found.
-
-      </div>
-
-    ) : (
-
-      <div className="space-y-3">
-
-        {summary?.recentApplications.map((application) => (
-
-          <div
-            key={application.applicationId}
-            className="flex items-center justify-between rounded-xl border p-4"
-          >
-
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="flex items-center justify-between">
             <div>
-
-              <div className="font-medium">
-
-                Student ID
-
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Role Insights
               </div>
 
-              <div className="text-sm text-muted-foreground">
-
-                {application.studentId}
-
-              </div>
-
+              <div className="mt-1 text-lg font-semibold">Recruitment Performance by Role</div>
             </div>
 
-            <div className="text-right">
-
-              <div className="font-medium">
-
-                Applied
-
-              </div>
-
-              <div className="text-sm text-muted-foreground">
-
-                {new Date(application.appliedAt).toLocaleString()}
-
-              </div>
-
+            <div className="text-sm text-muted-foreground">
+              {summary?.roleAnalytics.length ?? 0} Roles
             </div>
-
           </div>
 
-        ))}
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {(summary?.roleAnalytics ?? []).map((role: RoleEligibilityAnalytics) => (
+              <RoleInsightCard key={role.roleId} role={role} />
+            ))}
+          </div>
+        </div>
 
-      </div>
+        <div className="rounded-2xl border bg-card p-6">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Why Students Aren't Applying
+            </div>
 
-    )}
+            <div className="mt-1 text-lg font-semibold">Eligibility Failure Breakdown</div>
 
-  </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              These are the primary reasons preventing students from becoming eligible for this
+              recruitment.
+            </p>
+          </div>
 
-</div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {[
+              {
+                label: "Opted Out",
+                value: summary?.failureBreakdown.optOut ?? 0,
+              },
+              {
+                label: "Inactive",
+                value: summary?.failureBreakdown.inactive ?? 0,
+              },
+              {
+                label: "Institute",
+                value: summary?.failureBreakdown.institute ?? 0,
+              },
+              {
+                label: "Degree",
+                value: summary?.failureBreakdown.degree ?? 0,
+              },
+              {
+                label: "Branch",
+                value: summary?.failureBreakdown.branch ?? 0,
+              },
+              {
+                label: "Graduation Year",
+                value: summary?.failureBreakdown.graduationYear ?? 0,
+              },
+              {
+                label: "CGPA",
+                value: summary?.failureBreakdown.cgpa ?? 0,
+              },
+              {
+                label: "Backlogs",
+                value: summary?.failureBreakdown.backlog ?? 0,
+              },
+              {
+                label: "Year Gap",
+                value: summary?.failureBreakdown.yearGap ?? 0,
+              },
+              {
+                label: "Custom Rules",
+                value: summary?.failureBreakdown.custom ?? 0,
+              },
+            ].map((item) => (
+              <div key={item.label} className="rounded-xl border bg-muted/30 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {item.label}
+                </div>
 
+                <div className="mt-3 text-3xl font-bold">{item.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Recent Activity
+              </div>
+
+              <div className="mt-1 text-lg font-semibold">Latest Recruitment Activity</div>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              {summary?.recentApplications.length ?? 0} Recent Applications
+            </div>
+          </div>
+
+          <div className="mt-6">
+            {(summary?.recentApplications ?? []).length === 0 ? (
+              <div className="rounded-xl border border-dashed py-10 text-center text-muted-foreground">
+                No recent applications found.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {summary?.recentApplications.map((application) => (
+                  <div
+                    key={application.applicationId}
+                    className="flex items-center justify-between rounded-xl border p-4"
+                  >
+                    <div>
+                      <div className="font-medium">Student ID</div>
+
+                      <div className="text-sm text-muted-foreground">{application.studentId}</div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="font-medium">Applied</div>
+
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(application.appliedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
