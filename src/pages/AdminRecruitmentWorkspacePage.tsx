@@ -9,6 +9,7 @@ import {
 } from "@/services/recruitmentAnalyticsService";
 import { ApplicantsTab } from "@/components/recruitment-workspace/ApplicantsTab";
 import { ExportsTab } from "@/components/recruitment-workspace/ExportsTab";
+import { SettingsTab } from "@/components/recruitment-workspace/SettingsTab";
 
 export function AdminRecruitmentWorkspacePage() {
   const { draftId } = useParams({
@@ -132,9 +133,7 @@ export function AdminRecruitmentWorkspacePage() {
             )}
 
             {activeTab === "settings" && (
-              <div className="text-center text-muted-foreground">
-                Recruitment settings coming later.
-              </div>
+              <SettingsTab draft={draft} summary={summary} loading={loading} />
             )}
           </div>
         </div>
