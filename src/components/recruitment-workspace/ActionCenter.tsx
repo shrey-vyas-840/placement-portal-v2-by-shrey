@@ -9,36 +9,17 @@ interface ActionCenterProps {
 export function ActionCenter({ summary }: ActionCenterProps) {
   if (!summary) return null;
 
-  const items = [
-    {
-      icon: CheckCircle2,
-      color: "text-green-600",
-      title: "Recruitment is accepting applications.",
-      description:
-        summary.applicationStatus === "Open"
-          ? "Students can currently submit applications."
-          : `Current status: ${summary.applicationStatus}`,
-    },
+const severityColor = {
+  high: "text-red-600",
+  medium: "text-amber-600",
+  low: "text-green-600",
+} as const;
 
-    ...(summary.totalApplications === 0
-      ? [
-          {
-            icon: AlertTriangle,
-            color: "text-amber-600",
-            title: "No registrations received yet.",
-            description:
-              "Consider informing eligible students before the application window closes.",
-          },
-        ]
-      : []),
-
-    {
-      icon: BriefcaseBusiness,
-      color: "text-violet-600",
-      title: `${summary.totalRoles} published role${summary.totalRoles === 1 ? "" : "s"}.`,
-      description: "All published roles are available for eligible students.",
-    },
-  ];
+const severityIcon = {
+  high: AlertTriangle,
+  medium: AlertTriangle,
+  low: CheckCircle2,
+} as const;
 
   return (
     <div className="rounded-2xl border bg-card p-6">
@@ -49,19 +30,53 @@ export function ActionCenter({ summary }: ActionCenterProps) {
       </p>
 
       <div className="mt-6 space-y-4">
-        {items.map((item) => {
-          const Icon = item.icon;
+        {summary.actionCenter.map((item) => {
+
+  const Icon =
+    severityIcon[item.severity];
+        
 
           return (
             <div key={item.title} className="flex items-start gap-4 rounded-xl border p-4">
-              <div className={item.color}>
+              <div className={
+  severityColor[item.severity]
+}>
                 <Icon className="h-6 w-6" />
               </div>
 
               <div>
-                <div className="font-medium">{item.title}</div>
+                <div className="flex items-center justify-between">
+
+  <div className="font-medium">
+
+    {item.title}
+
+  </div>
+
+  <span
+    className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${
+      item.severity === "high"
+        ? "bg-red-100 text-red-700"
+        : item.severity === "medium"
+          ? "bg-amber-100 text-amber-700"
+          : "bg-green-100 text-green-700"
+    }`}
+  >
+
+    {item.severity}
+
+  </span>
+
+</div>
 
                 <div className="text-sm text-muted-foreground">{item.description}</div>
+                <button
+  className="mt-3 rounded-lg border px-3 py-2 text-xs font-medium transition hover:bg-muted"
+>
+
+  {item.actionLabel}
+
+</button>
               </div>
             </div>
           );

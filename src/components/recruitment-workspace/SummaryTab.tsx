@@ -15,6 +15,10 @@ import {
   type RecruitmentWorkspaceSummary,
 } from "@/services/recruitmentAnalyticsService";
 
+import type {
+  RoleEligibilityAnalytics,
+} from "@/services/recruitmentEligibilityAnalyticsService";
+
 import type { RecruitmentDraftRow } from "@/services/recruitmentDraftService";
 
 interface SummaryTabProps {
@@ -116,6 +120,76 @@ const [coverageView, setCoverageView] = useState<
     );
   }
 
+function RoleInsightCard({
+  role,
+}: {
+  role: {
+    roleId: string;
+    roleName: string;
+    eligible: number;
+    applied: number;
+    openings: number;
+    applicationRate: number;
+    applicationsPerOpening: number;
+  };
+}) {
+  return (
+    <div className="rounded-2xl border bg-card p-5">
+
+      <div className="flex items-center justify-between">
+
+        <div className="text-lg font-semibold">
+
+          {role.roleName}
+
+        </div>
+
+        <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+
+          {role.applicationRate}%
+
+        </div>
+
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-4">
+
+        <OverviewItem
+          label="Eligible"
+          value={role.eligible}
+        />
+
+        <OverviewItem
+          label="Applied"
+          value={role.applied}
+        />
+
+        <OverviewItem
+          label="Openings"
+          value={role.openings}
+        />
+
+        <OverviewItem
+          label="Applications / Opening"
+          value={role.applicationsPerOpening}
+        />
+
+      </div>
+
+    </div>
+  );
+}
+
+  const coverageRows =
+  coverageView === "branch"
+    ? summary?.coverageByBranch ?? []
+    : coverageView === "institute"
+      ? summary?.coverageByInstitute ?? []
+      : coverageView === "degree"
+        ? summary?.coverageByDegree ?? []
+        : summary?.coverageByGraduationYear ?? [];
+
+
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border bg-card p-6">
@@ -168,23 +242,23 @@ const [coverageView, setCoverageView] = useState<
           icon={<FileText className="h-6 w-6 text-primary" />}
         />
 
-        <SummaryMetricCard
-          title="Eligible Students"
-          value={0}
-          icon={<Users className="h-6 w-6 text-primary" />}
-        />
+       <SummaryMetricCard
+  title="Eligible Students"
+  value={summary?.eligibleStudents ?? 0}
+  icon={<Users className="h-6 w-6 text-primary" />}
+/>
 
-        <SummaryMetricCard
-          title="Application Rate"
-          value="0%"
-          icon={<CircleDot className="h-6 w-6 text-green-600" />}
-        />
+  <SummaryMetricCard
+  title="Application Rate"
+  value={`${summary?.applicationRate ?? 0}%`}
+  icon={<CircleDot className="h-6 w-6 text-green-600" />}
+/>
 
-        <SummaryMetricCard
-          title="Pending Eligible"
-          value={0}
-          icon={<UserCheck className="h-6 w-6 text-amber-500" />}
-        />
+     <SummaryMetricCard
+  title="Pending Eligible"
+  value={summary?.pendingEligibleStudents ?? 0}
+  icon={<UserCheck className="h-6 w-6 text-amber-500" />}
+/>
 
         <SummaryMetricCard
           title="Roles"
@@ -192,17 +266,17 @@ const [coverageView, setCoverageView] = useState<
           icon={<BriefcaseBusiness className="h-6 w-6 text-primary" />}
         />
 
-        <SummaryMetricCard
-          title="Shortlisted"
-          value={0}
-          icon={<UserCheck className="h-6 w-6 text-green-600" />}
-        />
+ <SummaryMetricCard
+  title="Shortlisted"
+  value={summary?.shortlistedCount ?? 0}
+  icon={<UserCheck className="h-6 w-6 text-green-600" />}
+/>
 
-        <SummaryMetricCard
-          title="Selected"
-          value={0}
-          icon={<Trophy className="h-6 w-6 text-amber-600" />}
-        />
+  <SummaryMetricCard
+  title="Selected"
+  value={summary?.selectedCount ?? 0}
+  icon={<Trophy className="h-6 w-6 text-amber-600" />}
+/>
 
         <SummaryMetricCard
           title="Status"
@@ -320,14 +394,55 @@ const [coverageView, setCoverageView] = useState<
               </thead>
 
               <tbody>
-                {(summary?.coverageByBranch ?? []).length ? (
-                  (summary?.coverageByBranch ?? []).map(
-                    (branch: { branchName: string; eligible: number; applied: number }) => (
+                {coverageRows.length ? (
+                  coverageRows.map(
+                   (
+  row:
+    | {
+        branchName: string;
+        eligible: number;
+        applied: number;
+      }
+    | {
+        instituteName: string;
+        eligible: number;
+        applied: number;
+      }
+    | {
+        degreeName: string;
+        eligible: number;
+        applied: number;
+      }
+    | {
+        graduationYear: string;
+        eligible: number;
+        applied: number;
+      },
+) => (
                       <CoverageRow
-                        key={branch.branchName}
-                        label={branch.branchName}
-                        eligible={branch.eligible}
-                        applied={branch.applied}
+                       key={
+  "branchName" in row
+    ? row.branchName
+    : "instituteName" in row
+      ? row.instituteName
+      : "degreeName" in row
+        ? row.degreeName
+        : row.graduationYear
+}
+
+label={
+  "branchName" in row
+    ? row.branchName
+    : "instituteName" in row
+      ? row.instituteName
+      : "degreeName" in row
+        ? row.degreeName
+        : row.graduationYear
+}
+
+eligible={row.eligible}
+
+applied={row.applied}
                       />
                     ),
                   )
@@ -343,59 +458,49 @@ const [coverageView, setCoverageView] = useState<
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Role Distribution
-              </div>
+<div className="rounded-2xl border bg-card p-6">
 
-              <div className="mt-1 text-lg font-semibold">Applications per Role</div>
-            </div>
+  <div className="flex items-center justify-between">
 
-            <div className="text-sm text-muted-foreground">{summary?.totalRoles ?? 0} Roles</div>
-          </div>
+    <div>
 
-          <div className="mt-6 space-y-4">
-            {(summary?.roleDistribution ?? []).length ? (
-              (summary?.roleDistribution ?? []).map(
-                (role: { roleId: string; roleName: string; applicationCount: number }) => {
-                  const max = Math.max(
-                    ...(summary?.roleDistribution ?? []).map((r) => r.applicationCount),
-                    1,
-                  );
+      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
 
-                  const percentage = (role.applicationCount / max) * 100;
+        Role Insights
 
-                  return (
-                    <div key={role.roleId}>
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="font-medium">{role.roleName}</span>
+      </div>
 
-                        <span className="text-sm text-muted-foreground">
-                          {role.applicationCount}
-                        </span>
-                      </div>
+      <div className="mt-1 text-lg font-semibold">
 
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all duration-500"
-                          style={{
-                            width: `${percentage}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                },
-              )
-            ) : (
-              <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
-                No applications yet.
-              </div>
-            )}
-          </div>
-        </div>
+        Recruitment Performance by Role
+
+      </div>
+
+    </div>
+
+    <div className="text-sm text-muted-foreground">
+
+      {summary?.roleAnalytics.length ?? 0} Roles
+
+    </div>
+
+  </div>
+
+  <div className="mt-6 grid gap-4 lg:grid-cols-2">
+
+    {(summary?.roleAnalytics ?? []).map(
+  (role: RoleEligibilityAnalytics) => (
+
+      <RoleInsightCard
+        key={role.roleId}
+        role={role}
+      />
+
+    ))}
+
+  </div>
+
+</div>
       </div>
     </div>
   );

@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase";
-
+import {
+  getRecruitmentEligibilityAnalytics,
+  type RoleEligibilityAnalytics,
+  type ActionCenterItem,
+} from "@/services/recruitmentEligibilityAnalyticsService";
 export interface RecruitmentWorkspaceSummary {
   draftId: string;
 
@@ -30,6 +34,10 @@ export interface RecruitmentWorkspaceSummary {
   pendingEligibleStudents: number;
 
   applicationRate: number;
+
+  shortlistedCount: number;
+
+selectedCount: number;
 
   applicationsToday: number;
 
@@ -66,6 +74,10 @@ export interface RecruitmentWorkspaceSummary {
     roleName: string;
     applicationCount: number;
   }[];
+
+  roleAnalytics: RoleEligibilityAnalytics[];
+
+actionCenter: ActionCenterItem[];
 
   recentApplications: {
     applicationId: string;
@@ -166,6 +178,9 @@ export async function getRecruitmentWorkspaceSummary(
 
   let applicationRate = 0;
 
+  let eligibilityAnalytics: Awaited<ReturnType<typeof getRecruitmentEligibilityAnalytics>> | null =
+    null;
+
   let applicationsToday = 0;
 
   let applicationsLast24Hours = 0;
@@ -232,22 +247,11 @@ export async function getRecruitmentWorkspaceSummary(
   }
 
   if (driveId) {
-    const { count } = await (supabase as any)
+    eligibilityAnalytics = await getRecruitmentEligibilityAnalytics(draftId);
 
-      .from("student_master")
+    eligibleStudents = eligibilityAnalytics.eligibleStudents;
 
-      .select("*", {
-        count: "exact",
-        head: true,
-      })
-
-      .eq("placement_preference", "Interested")
-
-      .eq("is_active", true);
-
-    eligibleStudents = count ?? 0;
-
-    pendingEligibleStudents = Math.max(eligibleStudents - applicationCount, 0);
+    pendingEligibleStudents = Math.max(eligibilityAnalytics.eligibleStudents - applicationCount, 0);
 
     applicationRate =
       eligibleStudents === 0 ? 0 : Number(((applicationCount / eligibleStudents) * 100).toFixed(1));
@@ -309,11 +313,9 @@ export async function getRecruitmentWorkspaceSummary(
 
       .eq("is_active", true);
 
- const interestedIds = new Set<string>(
-  (interestedStudents ?? []).map(
-    (student: any) => String(student.student_id),
-  ),
-);
+    const interestedIds = new Set<string>(
+      (interestedStudents ?? []).map((student: any) => String(student.student_id)),
+    );
     const eligibleByBranch = new Map<string, number>();
 
     (branchStudents ?? []).forEach((student: any) => {
@@ -338,52 +340,44 @@ export async function getRecruitmentWorkspaceSummary(
 
       .eq("opportunity_id", opportunity?.opportunity_id);
 
- const applicantIds = new Set<string>(
-  (applicants ?? []).map(
-    (application: any) => String(application.student_id),
-  ),
-);
-
-    function buildCoverage(
-  students: any[],
-  interested: Set<string>,
-  applicants: Set<string>,
-  field: string,
-  fallback: string,
-) {
-  const eligibleMap = new Map<string, number>();
-
-  const appliedMap = new Map<string, number>();
-
-  students.forEach((student: any) => {
-    if (!interested.has(student.student_id)) return;
-
-    const key = String(student[field] ?? fallback);
-
-    eligibleMap.set(
-      key,
-      (eligibleMap.get(key) ?? 0) + 1,
+    const applicantIds = new Set<string>(
+      (applicants ?? []).map((application: any) => String(application.student_id)),
     );
 
-    if (applicants.has(student.student_id)) {
-      appliedMap.set(
-        key,
-        (appliedMap.get(key) ?? 0) + 1,
-      );
-    }
-  });
+    function buildCoverage(
+      students: any[],
+      interested: Set<string>,
+      applicants: Set<string>,
+      field: string,
+      fallback: string,
+    ) {
+      const eligibleMap = new Map<string, number>();
 
-  return Array.from(eligibleMap.keys())
-    .sort()
-    .map((key) => ({
-      instituteName: key,
-      degreeName: key,
-      graduationYear: key,
-      branchName: key,
-      eligible: eligibleMap.get(key) ?? 0,
-      applied: appliedMap.get(key) ?? 0,
-    }));
-}
+      const appliedMap = new Map<string, number>();
+
+      students.forEach((student: any) => {
+        if (!interested.has(student.student_id)) return;
+
+        const key = String(student[field] ?? fallback);
+
+        eligibleMap.set(key, (eligibleMap.get(key) ?? 0) + 1);
+
+        if (applicants.has(student.student_id)) {
+          appliedMap.set(key, (appliedMap.get(key) ?? 0) + 1);
+        }
+      });
+
+      return Array.from(eligibleMap.keys())
+        .sort()
+        .map((key) => ({
+          instituteName: key,
+          degreeName: key,
+          graduationYear: key,
+          branchName: key,
+          eligible: eligibleMap.get(key) ?? 0,
+          applied: appliedMap.get(key) ?? 0,
+        }));
+    }
 
     const appliedByBranch = new Map<string, number>();
 
@@ -500,6 +494,10 @@ export async function getRecruitmentWorkspaceSummary(
 
     applicationRate,
 
+    shortlistedCount: 0,
+
+selectedCount: 0,
+
     applicationsToday,
 
     applicationsLast24Hours,
@@ -511,15 +509,41 @@ export async function getRecruitmentWorkspaceSummary(
     averageApplicationsPerRole:
       roleCount === 0 ? 0 : Number((applicationCount / roleCount).toFixed(1)),
 
-    coverageByBranch,
+    coverageByBranch:
+      eligibilityAnalytics?.coverageByBranch.map((row) => ({
+        branchName: row.label,
+        eligible: row.eligible,
+        applied: row.applied,
+      })) ?? coverageByBranch,
 
-    coverageByInstitute,
+    coverageByInstitute:
+      eligibilityAnalytics?.coverageByInstitute.map((row) => ({
+        instituteName: row.label,
+        eligible: row.eligible,
+        applied: row.applied,
+      })) ?? coverageByInstitute,
 
-coverageByDegree,
+    coverageByDegree:
+      eligibilityAnalytics?.coverageByDegree.map((row) => ({
+        degreeName: row.label,
+        eligible: row.eligible,
+        applied: row.applied,
+      })) ?? coverageByDegree,
 
-coverageByGraduationYear,
+    coverageByGraduationYear:
+      eligibilityAnalytics?.coverageByGraduationYear.map((row) => ({
+        graduationYear: row.label,
+        eligible: row.eligible,
+        applied: row.applied,
+      })) ?? coverageByGraduationYear,
 
     roleDistribution,
+
+    roleAnalytics:
+  eligibilityAnalytics?.roleAnalytics ?? [],
+
+actionCenter:
+  eligibilityAnalytics?.actionCenter ?? [],
 
     recentApplications,
   };
