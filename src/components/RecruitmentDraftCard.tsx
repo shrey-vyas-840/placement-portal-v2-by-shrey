@@ -131,7 +131,7 @@ export function RecruitmentDraftCard({
             onClick={() => onArchive?.(draft.draft_id)}
             className="rounded-lg border px-3 py-2 text-xs"
           >
-            Archive
+            Freeze
           </button>
 
           <button

@@ -578,8 +578,8 @@ export async function restoreDraftById(
 
 export async function getPublishedRecruitmentsForUser(
   authProviderId: string,
-): Promise<RecruitmentDraftRow[]> {
-  const { data, error } = await (supabase as any)
+): Promise<any[]> {
+  const { data: drafts, error } = await (supabase as any)
     .from("recruitment_drafts")
     .select("*")
     .eq("auth_provider_id", authProviderId)
@@ -590,5 +590,91 @@ export async function getPublishedRecruitmentsForUser(
     throw error;
   }
 
-  return (data as RecruitmentDraftRow[]) ?? [];
+  const results = await Promise.all(
+    (drafts ?? []).map(async (draft: any) => {
+      const driveId = draft.published_drive_id;
+
+      if (!driveId) {
+        return draft;
+      }
+
+      const [
+        driveResult,
+        opportunityResult,
+        rolesResult,
+      ] = await Promise.all([
+        (supabase as any)
+          .from("drive_master")
+          .select("drive_name, company_id")
+          .eq("drive_id", driveId)
+          .maybeSingle(),
+
+        (supabase as any)
+          .from("opportunity_master")
+          .select("application_status")
+          .eq("drive_id", driveId)
+          .maybeSingle(),
+
+        (supabase as any)
+          .from("drive_roles")
+          .select("drive_role_id")
+          .eq("drive_id", driveId),
+      ]);
+
+      let companyName = "-";
+
+      if (driveResult.data?.company_id) {
+        const { data: company } = await (supabase as any)
+          .from("company_master")
+          .select("company_name")
+          .eq("company_id", driveResult.data.company_id)
+          .maybeSingle();
+
+        companyName = company?.company_name ?? "-";
+      }
+
+      let applicationCount = 0;
+
+      const { data: opportunity } = await (supabase as any)
+        .from("opportunity_master")
+        .select("opportunity_id")
+        .eq("drive_id", driveId)
+        .maybeSingle();
+
+      if (opportunity?.opportunity_id) {
+        const { count } = await (supabase as any)
+          .from("student_opportunity_applications")
+          .select("*", {
+            head: true,
+            count: "exact",
+          })
+          .eq("opportunity_id", opportunity.opportunity_id);
+
+        applicationCount = count ?? 0;
+      }
+
+      return {
+        ...draft,
+
+        recruitment_name:
+          driveResult.data?.drive_name ??
+          draft.draft_name ??
+          "-",
+
+        company_name: companyName,
+
+        roles_count:
+          rolesResult.data?.length ?? 0,
+
+        application_count:
+          applicationCount,
+
+        application_status:
+          opportunityResult.data?.application_status ??
+          "Closed",
+      };
+    }),
+  );
+
+  return results;
 }
