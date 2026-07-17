@@ -1,17 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  Eye,
-  EyeOff,
-  AlertTriangle,
-  Lock,
-  Users,
-  ShieldAlert,
-  GraduationCap,
-  Building2,
-  GitBranch,
-  Clock3,
-} from "lucide-react";
+import { CalendarDays, AlertTriangle, Users, ShieldAlert, Clock3 } from "lucide-react";
 
 import type { RecruitmentDraftRow } from "@/services/recruitmentDraftService";
 import type { RecruitmentWorkspaceSummary } from "@/services/recruitmentAnalyticsService";
@@ -35,6 +23,12 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
   const [saving, setSaving] = useState(false);
 
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+
+  const [newClosingDate, setNewClosingDate] = useState("");
+
+  const [reopening, setReopening] = useState(false);
+
   const [closingDate, setClosingDate] = useState("");
 
   const [allowRestrictedStudents, setAllowRestrictedStudents] = useState(false);
@@ -44,10 +38,6 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
   const [restrictedScope, setRestrictedScope] = useState<OverrideScope>("ALL");
 
   const [placedScope, setPlacedScope] = useState<OverrideScope>("ALL");
-
- const [visibility, setVisibility] = useState<"VISIBLE" | "HIDDEN">(
-  "VISIBLE",
-);
 
   useEffect(() => {
     if (!draft) {
@@ -77,13 +67,8 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
         setAllowRestrictedStudents(data.allowRestrictedStudents);
 
         setAllowPlacedStudents(data.allowPlacedStudents);
-
-        setVisibility(data.visibleToStudents ? "VISIBLE" : "HIDDEN");
       } catch (error: any) {
-       toast.error(
-  error?.message ??
-    "Failed to load recruitment settings.",
-);
+        toast.error(error?.message ?? "Failed to load recruitment settings.");
       }
     }
 
@@ -204,11 +189,11 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
             <div className="flex h-11 items-center rounded-xl border bg-muted/20 px-4">
               <Clock3 className="mr-3 h-4 w-4 text-muted-foreground" />
 
-             <span className="text-sm">
-  {settings?.applicationStartDate
-    ? new Date(settings.applicationStartDate).toLocaleString()
-    : "Not Available"}
-</span>
+              <span className="text-sm">
+                {settings?.applicationStartDate
+                  ? new Date(settings.applicationStartDate).toLocaleString()
+                  : "Not Available"}
+              </span>
             </div>
 
             <p className="mt-2 text-xs text-muted-foreground">
@@ -222,42 +207,15 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
             <input
               type="datetime-local"
               value={closingDate}
-              onChange={(e) => setClosingDate(e.target.value)}
-              className="h-11 w-full rounded-xl border bg-background px-4"
+              readOnly
+              disabled
+              className="h-11 w-full rounded-xl border bg-muted px-4 text-muted-foreground cursor-not-allowed"
             />
 
             <p className="mt-2 text-xs text-muted-foreground">
               Extending the deadline immediately affects student applications.
             </p>
           </div>
-        </div>
-
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            disabled={!settings || saving}
-            onClick={async () => {
-              if (!settings) return;
-
-              try {
-                setSaving(true);
-
-                await recruitmentSettingsService.extendDeadline(
-                  settings.opportunityId,
-                  closingDate,
-                );
-
-                toast.success("Application deadline updated successfully.");
-              } catch (error: any) {
-                toast.error(error?.message ?? "Unable to update application deadline.");
-              } finally {
-                setSaving(false);
-              }
-            }}
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-          >
-            Extend Deadline
-          </button>
         </div>
       </SectionCard>
 
@@ -280,37 +238,31 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
               <button
                 type="button"
                 onClick={async () => {
-  if (!settings) return;
+                  if (!settings) return;
 
-  const nextValue = !allowRestrictedStudents;
+                  const nextValue = !allowRestrictedStudents;
 
-  try {
-    setSaving(true);
+                  try {
+                    setSaving(true);
 
-    await recruitmentSettingsService.updateEligibilityOverrides(
-      settings.driveId,
-      {
-        allowRestrictedStudents: nextValue,
-        allowPlacedStudents,
-      },
-    );
+                    await recruitmentSettingsService.updateEligibilityOverrides(settings.driveId, {
+                      allowRestrictedStudents: nextValue,
+                      allowPlacedStudents,
+                    });
 
-    setAllowRestrictedStudents(nextValue);
+                    setAllowRestrictedStudents(nextValue);
 
-    toast.success(
-      nextValue
-        ? "Restricted students are now allowed for this recruitment."
-        : "Restricted students are no longer allowed for this recruitment.",
-    );
-  } catch (error: any) {
-    toast.error(
-      error?.message ??
-        "Unable to update recruitment settings.",
-    );
-  } finally {
-    setSaving(false);
-  }
-}}
+                    toast.success(
+                      nextValue
+                        ? "Restricted students are now allowed for this recruitment."
+                        : "Restricted students are no longer allowed for this recruitment.",
+                    );
+                  } catch (error: any) {
+                    toast.error(error?.message ?? "Unable to update recruitment settings.");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
                 className={
                   allowRestrictedStudents
                     ? "rounded-full bg-green-600 px-5 py-2 text-sm font-medium text-white"
@@ -359,37 +311,31 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
               <button
                 type="button"
                 onClick={async () => {
-  if (!settings) return;
+                  if (!settings) return;
 
-  const nextValue = !allowPlacedStudents;
+                  const nextValue = !allowPlacedStudents;
 
-  try {
-    setSaving(true);
+                  try {
+                    setSaving(true);
 
-    await recruitmentSettingsService.updateEligibilityOverrides(
-      settings.driveId,
-      {
-        allowRestrictedStudents,
-        allowPlacedStudents: nextValue,
-      },
-    );
+                    await recruitmentSettingsService.updateEligibilityOverrides(settings.driveId, {
+                      allowRestrictedStudents,
+                      allowPlacedStudents: nextValue,
+                    });
 
-    setAllowPlacedStudents(nextValue);
+                    setAllowPlacedStudents(nextValue);
 
-    toast.success(
-      nextValue
-        ? "Placed students are now allowed for this recruitment."
-        : "Placed students are no longer allowed for this recruitment.",
-    );
-  } catch (error: any) {
-    toast.error(
-      error?.message ??
-        "Unable to update recruitment settings.",
-    );
-  } finally {
-    setSaving(false);
-  }
-}}
+                    toast.success(
+                      nextValue
+                        ? "Placed students are now allowed for this recruitment."
+                        : "Placed students are no longer allowed for this recruitment.",
+                    );
+                  } catch (error: any) {
+                    toast.error(error?.message ?? "Unable to update recruitment settings.");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
                 className={
                   allowPlacedStudents
                     ? "rounded-full bg-green-600 px-5 py-2 text-sm font-medium text-white"
@@ -465,124 +411,49 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
       </SectionCard>
 
       <SectionCard
-        title="Recruitment Visibility"
-        description="Control whether this published recruitment is visible to students."
-        icon={
-          visibility === "VISIBLE" ? (
-            <Eye className="h-6 w-6 text-primary" />
-          ) : (
-            <EyeOff className="h-6 w-6 text-primary" />
-          )
-        }
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-        <button
-  type="button"
-  disabled={!settings || saving}
-  onClick={async () => {
-    if (!settings) return;
-
-    try {
-      setSaving(true);
-
-      await recruitmentSettingsService.updateVisibility(
-        settings.opportunityId,
-        true,
-      );
-
-      setVisibility("VISIBLE");
-
-      toast.success(
-        "Recruitment is now visible to students.",
-      );
-    } catch (error: any) {
-      toast.error(
-        error?.message ??
-          "Unable to update recruitment visibility.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }}
-            className={`rounded-2xl border p-6 text-left transition ${
-              visibility === "VISIBLE" ? "border-primary bg-primary/5" : "hover:bg-muted/30"
-            }`}
-          >
-            <Eye className="mb-4 h-7 w-7 text-primary" />
-
-            <div className="font-semibold">Visible</div>
-
-            <div className="mt-2 text-sm text-muted-foreground">
-              Students can discover and apply for this recruitment.
-            </div>
-          </button>
-
-         <button
-  type="button"
-  disabled={!settings || saving}
-  onClick={async () => {
-    if (!settings) return;
-
-    try {
-      setSaving(true);
-
-      await recruitmentSettingsService.updateVisibility(
-        settings.opportunityId,
-        false,
-      );
-
-      setVisibility("HIDDEN");
-
-      toast.success(
-        "Recruitment hidden from students.",
-      );
-    } catch (error: any) {
-      toast.error(
-        error?.message ??
-          "Unable to update recruitment visibility.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }}
-            className={`rounded-2xl border p-6 text-left transition ${
-              visibility === "HIDDEN" ? "border-destructive bg-destructive/5" : "hover:bg-muted/30"
-            }`}
-          >
-            <EyeOff className="mb-4 h-7 w-7 text-destructive" />
-
-            <div className="font-semibold">Hidden</div>
-
-            <div className="mt-2 text-sm text-muted-foreground">
-              Hide this recruitment without deleting it.
-            </div>
-          </button>
-        </div>
-      </SectionCard>
-
-      <SectionCard
         title="Danger Zone"
         description="Administrative actions affecting the lifecycle of this recruitment."
         icon={<AlertTriangle className="h-6 w-6 text-destructive" />}
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl border border-amber-300 bg-amber-50 p-5">
-            <div>
-              <div className="font-semibold text-amber-900">Close Recruitment</div>
+          {settings?.applicationStatus === "Open" && (
+            <div className="flex items-center justify-between rounded-xl border border-amber-300 bg-amber-50 p-5">
+              <div>
+                <div className="font-semibold text-amber-900">Close Recruitment</div>
 
-              <div className="mt-1 text-sm text-amber-700">
-                Immediately stop accepting applications.
+                <div className="mt-1 text-sm text-amber-700">
+                  Immediately stop accepting applications.
+                </div>
               </div>
+
+              <button
+                type="button"
+                disabled={!settings || saving}
+                onClick={async () => {
+                  if (!settings) return;
+
+                  try {
+                    setSaving(true);
+
+                    await recruitmentSettingsService.closeRecruitment(settings.opportunityId);
+
+                    toast.success("Recruitment closed.");
+
+                    const refreshed = await recruitmentSettingsService.getSettings(draft.draft_id);
+
+                    setSettings(refreshed);
+                  } catch (error: any) {
+                    toast.error(error?.message ?? "Unable to close recruitment.");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="rounded-xl bg-amber-600 space-y-4 px-5 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                Close
+              </button>
             </div>
-
-            <button
-              type="button"
-              className="rounded-xl bg-amber-600 px-5 py-2 text-sm font-medium text-white hover:bg-amber-700"
-            >
-              Close
-            </button>
-          </div>
-
+          )}
           <div className="flex items-center justify-between rounded-xl border border-red-300 bg-red-50 p-5">
             <div>
               <div className="font-semibold text-red-900">Archive Recruitment</div>
@@ -594,29 +465,120 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
             <button
               type="button"
-              className="rounded-xl bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700"
+              disabled
+              className="rounded-xl bg-red-600/60 px-5 py-2 text-sm font-medium text-white cursor-not-allowed"
             >
-              Archive
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl border p-5">
-            <div>
-              <div className="font-semibold">Reopen Recruitment</div>
-
-              <div className="mt-1 text-sm text-muted-foreground">
-                Reopen a previously closed recruitment.
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="rounded-xl border px-5 py-2 text-sm font-medium hover:bg-muted"
-            >
-              Reopen
+              Coming Soon
             </button>
           </div>
         </div>
+        <div className="mt-6 space-y-4">
+          {settings?.applicationStatus === "Closed" && (
+            <div className="flex items-center justify-between rounded-xl border border-green-300 bg-green-50 p-5">
+              <div>
+                <div className="font-semibold text-green-900">Reopen Recruitment</div>
+
+                <div className="mt-1 text-sm text-green-700">
+                  Reopen recruitment by providing a new application deadline.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setReopenDialogOpen(true)}
+                className="rounded-xl bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700"
+              >
+                Reopen
+              </button>
+            </div>
+          )}
+        </div>
+
+        {settings?.applicationStatus === "Closed" && reopenDialogOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-xl">
+              <h3 className="text-xl font-semibold">Reopen Recruitment</h3>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                Please select a new application closing date.
+              </p>
+
+              <div className="mt-6">
+                <label className="mb-2 block text-sm font-medium">New Closing Date</label>
+
+                <input
+                  type="datetime-local"
+                  value={newClosingDate}
+                  onChange={(e) => setNewClosingDate(e.target.value)}
+                  className="h-11 w-full rounded-xl border px-4"
+                />
+              </div>
+
+              <div className="mt-8 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReopenDialogOpen(false);
+                    setNewClosingDate("");
+                  }}
+                  className="rounded-xl border px-5 py-2"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  disabled={reopening}
+                  onClick={async () => {
+                    if (!settings) return;
+
+                    if (!newClosingDate) {
+                      toast.error("Please select a new closing date.");
+                      return;
+                    }
+
+                    if (new Date(newClosingDate) <= new Date()) {
+                      toast.error("Closing date must be in the future.");
+                      return;
+                    }
+
+                    try {
+                      setReopening(true);
+
+                      await recruitmentSettingsService.extendDeadline(
+                        settings.opportunityId,
+                        newClosingDate,
+                      );
+
+                      await recruitmentSettingsService.reopenRecruitment(settings.opportunityId);
+
+                      toast.success("Recruitment reopened successfully.");
+
+                      const refreshed = await recruitmentSettingsService.getSettings(
+                        draft.draft_id,
+                      );
+
+                      setSettings(refreshed);
+
+                      setClosingDate(refreshed.applicationEndDate?.slice(0, 16) ?? "");
+
+                      setReopenDialogOpen(false);
+
+                      setNewClosingDate("");
+                    } catch (error: any) {
+                      toast.error(error.message ?? "Unable to reopen recruitment.");
+                    } finally {
+                      setReopening(false);
+                    }
+                  }}
+                  className="rounded-xl bg-primary px-5 py-2 text-primary-foreground"
+                >
+                  Reopen
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </SectionCard>
     </div>
   );

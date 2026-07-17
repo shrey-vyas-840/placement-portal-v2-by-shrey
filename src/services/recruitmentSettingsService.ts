@@ -9,7 +9,6 @@ export interface RecruitmentSettings {
   applicationEndDate: string | null;
 
   applicationStatus: string | null;
-  visibleToStudents: boolean;
 
   allowRestrictedStudents: boolean;
   allowPlacedStudents: boolean;
@@ -19,7 +18,7 @@ class RecruitmentSettingsService {
   async getSettings(draftId: string): Promise<RecruitmentSettings> {
     const { data: draft, error: draftError } = await (supabase as any)
       .from("recruitment_drafts")
-      .select("published_drive_id, published_opportunity_id")
+      .select("published_drive_id")
       .eq("draft_id", draftId)
       .single();
 
@@ -58,7 +57,7 @@ class RecruitmentSettingsService {
           visible_to_students
         `,
       )
-      .eq("opportunity_id", draft.published_opportunity_id)
+      .eq("drive_id", draft.published_drive_id)
       .single();
 
     if (opportunityError) {
@@ -75,8 +74,6 @@ class RecruitmentSettingsService {
 
       applicationStatus: opportunity.application_status,
 
-      visibleToStudents: opportunity.visible_to_students ?? true,
-
       allowRestrictedStudents: drive.allow_restricted_students ?? false,
 
       allowPlacedStudents: drive.allow_placed_students ?? false,
@@ -84,10 +81,6 @@ class RecruitmentSettingsService {
   }
   async extendDeadline(opportunityId: string, newDeadline: string) {
     return adminOpportunityService.extendDeadline(opportunityId, newDeadline);
-  }
-
-  async updateVisibility(opportunityId: string, visible: boolean) {
-    return adminOpportunityService.toggleVisibility(opportunityId, visible);
   }
 
   async updateEligibilityOverrides(
