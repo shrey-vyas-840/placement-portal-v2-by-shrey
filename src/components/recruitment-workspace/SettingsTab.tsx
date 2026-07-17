@@ -35,7 +35,7 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
   const [saving, setSaving] = useState(false);
 
-  const [closingDate, setClosingDate] = useState(summary?.applicationEndDate ?? "");
+  const [closingDate, setClosingDate] = useState("");
 
   const [allowRestrictedStudents, setAllowRestrictedStudents] = useState(false);
 
@@ -45,9 +45,9 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
   const [placedScope, setPlacedScope] = useState<OverrideScope>("ALL");
 
-  const [visibility, setVisibility] = useState(
-    summary?.applicationStatus === "Closed" ? "HIDDEN" : "VISIBLE",
-  );
+ const [visibility, setVisibility] = useState<"VISIBLE" | "HIDDEN">(
+  "VISIBLE",
+);
 
   useEffect(() => {
     if (!draft) {
@@ -204,11 +204,11 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
             <div className="flex h-11 items-center rounded-xl border bg-muted/20 px-4">
               <Clock3 className="mr-3 h-4 w-4 text-muted-foreground" />
 
-              <span className="text-sm">
-                {summary.applicationStartDate
-                  ? new Date(summary.applicationStartDate).toLocaleString()
-                  : "Not Available"}
-              </span>
+             <span className="text-sm">
+  {settings?.applicationStartDate
+    ? new Date(settings.applicationStartDate).toLocaleString()
+    : "Not Available"}
+</span>
             </div>
 
             <p className="mt-2 text-xs text-muted-foreground">
@@ -279,7 +279,38 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
               <button
                 type="button"
-                onClick={() => setAllowRestrictedStudents(!allowRestrictedStudents)}
+                onClick={async () => {
+  if (!settings) return;
+
+  const nextValue = !allowRestrictedStudents;
+
+  try {
+    setSaving(true);
+
+    await recruitmentSettingsService.updateEligibilityOverrides(
+      settings.driveId,
+      {
+        allowRestrictedStudents: nextValue,
+        allowPlacedStudents,
+      },
+    );
+
+    setAllowRestrictedStudents(nextValue);
+
+    toast.success(
+      nextValue
+        ? "Restricted students are now allowed for this recruitment."
+        : "Restricted students are no longer allowed for this recruitment.",
+    );
+  } catch (error: any) {
+    toast.error(
+      error?.message ??
+        "Unable to update recruitment settings.",
+    );
+  } finally {
+    setSaving(false);
+  }
+}}
                 className={
                   allowRestrictedStudents
                     ? "rounded-full bg-green-600 px-5 py-2 text-sm font-medium text-white"
@@ -327,7 +358,38 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
               <button
                 type="button"
-                onClick={() => setAllowPlacedStudents(!allowPlacedStudents)}
+                onClick={async () => {
+  if (!settings) return;
+
+  const nextValue = !allowPlacedStudents;
+
+  try {
+    setSaving(true);
+
+    await recruitmentSettingsService.updateEligibilityOverrides(
+      settings.driveId,
+      {
+        allowRestrictedStudents,
+        allowPlacedStudents: nextValue,
+      },
+    );
+
+    setAllowPlacedStudents(nextValue);
+
+    toast.success(
+      nextValue
+        ? "Placed students are now allowed for this recruitment."
+        : "Placed students are no longer allowed for this recruitment.",
+    );
+  } catch (error: any) {
+    toast.error(
+      error?.message ??
+        "Unable to update recruitment settings.",
+    );
+  } finally {
+    setSaving(false);
+  }
+}}
                 className={
                   allowPlacedStudents
                     ? "rounded-full bg-green-600 px-5 py-2 text-sm font-medium text-white"
@@ -414,9 +476,34 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
         }
       >
         <div className="grid gap-4 md:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => setVisibility("VISIBLE")}
+        <button
+  type="button"
+  disabled={!settings || saving}
+  onClick={async () => {
+    if (!settings) return;
+
+    try {
+      setSaving(true);
+
+      await recruitmentSettingsService.updateVisibility(
+        settings.opportunityId,
+        true,
+      );
+
+      setVisibility("VISIBLE");
+
+      toast.success(
+        "Recruitment is now visible to students.",
+      );
+    } catch (error: any) {
+      toast.error(
+        error?.message ??
+          "Unable to update recruitment visibility.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }}
             className={`rounded-2xl border p-6 text-left transition ${
               visibility === "VISIBLE" ? "border-primary bg-primary/5" : "hover:bg-muted/30"
             }`}
@@ -430,9 +517,34 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
             </div>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setVisibility("HIDDEN")}
+         <button
+  type="button"
+  disabled={!settings || saving}
+  onClick={async () => {
+    if (!settings) return;
+
+    try {
+      setSaving(true);
+
+      await recruitmentSettingsService.updateVisibility(
+        settings.opportunityId,
+        false,
+      );
+
+      setVisibility("HIDDEN");
+
+      toast.success(
+        "Recruitment hidden from students.",
+      );
+    } catch (error: any) {
+      toast.error(
+        error?.message ??
+          "Unable to update recruitment visibility.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }}
             className={`rounded-2xl border p-6 text-left transition ${
               visibility === "HIDDEN" ? "border-destructive bg-destructive/5" : "hover:bg-muted/30"
             }`}

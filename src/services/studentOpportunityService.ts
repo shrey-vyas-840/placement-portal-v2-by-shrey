@@ -118,7 +118,7 @@ export const studentOpportunityService = {
       .select(
         `
     *,
-   drive_master(
+drive_master(
     drive_id,
     drive_name,
     drive_type,
@@ -129,6 +129,8 @@ export const studentOpportunityService = {
     role_selection_enabled,
     minimum_role_selection,
     maximum_role_selection,
+    allow_restricted_students,
+    allow_placed_students,
     company_master(
         company_name
     )
@@ -178,8 +180,13 @@ export const studentOpportunityService = {
           restriction_reason: activeRestriction?.restriction_reason ?? null,
           placement_preference: student?.placement_preference ?? null,
           placement_status: student?.placement_status ?? null,
-          participation_allowed: student?.placement_preference === "Interested",
-          placement_allowed: student?.placement_status === "Unplaced",
+          participation_allowed:
+  student?.placement_preference === "Interested" &&
+  (!activeRestriction ||
+    opportunity.drive_master?.allow_restricted_students),
+          placement_allowed:
+  student?.placement_status === "Unplaced" ||
+  opportunity.drive_master?.allow_placed_students,
         });
         continue;
       }
@@ -229,15 +236,21 @@ export const studentOpportunityService = {
         eligibility_status:
           instituteMatch && degreeMatch && cgpaMatch && backlogMatch ? "Eligible" : "Not Eligible",
         eligibility_reason: reason,
-        application_status: activeRestriction
-          ? "RESTRICTED"
-          : student?.placement_status !== "Unplaced"
-            ? "PLACED"
-            : student?.placement_preference !== "Interested"
-              ? "NOT_PARTICIPATING"
-              : instituteMatch && degreeMatch && cgpaMatch && backlogMatch
-                ? "ELIGIBLE"
-                : "INELIGIBLE",
+       application_status:
+  activeRestriction &&
+  !opportunity.drive_master?.allow_restricted_students
+    ? "RESTRICTED"
+    : student?.placement_status !== "Unplaced" &&
+        !opportunity.drive_master?.allow_placed_students
+      ? "PLACED"
+      : student?.placement_preference !== "Interested"
+        ? "NOT_PARTICIPATING"
+        : instituteMatch &&
+            degreeMatch &&
+            cgpaMatch &&
+            backlogMatch
+          ? "ELIGIBLE"
+          : "INELIGIBLE",
         restriction_active: !!activeRestriction,
         restriction_type: activeRestriction?.restriction_type ?? null,
         restriction_reason: activeRestriction?.restriction_reason ?? null,
@@ -309,13 +322,13 @@ export const studentOpportunityService = {
     );
   },
 
- async apply(
-  opportunityId: string,
-  studentId: string,
-  selectedRoleIds: string[] = [],
-  answers: AnswerInput[] = [],
-  onProgress?: SubmissionProgressCallback,
-){
+  async apply(
+    opportunityId: string,
+    studentId: string,
+    selectedRoleIds: string[] = [],
+    answers: AnswerInput[] = [],
+    onProgress?: SubmissionProgressCallback,
+  ) {
     const { data: opportunity, error: opportunityError } = await (supabase as any)
       .from("opportunity_master")
       .select(
@@ -358,13 +371,6 @@ export const studentOpportunityService = {
       .eq("is_active", true)
       .maybeSingle();
 
-    if (activeRestriction) {
-      throw new Error(
-        activeRestriction.restriction_reason ||
-          "Your placement activities are currently restricted.",
-      );
-    }
-
     const { data: student } = await (supabase as any)
       .from("student_master")
       .select(
@@ -384,10 +390,6 @@ placement_status
       throw new Error(
         `Your current placement preference is "${student.placement_preference}". You are not eligible to apply.`,
       );
-    }
-
-    if (student.placement_status !== "Unplaced") {
-      throw new Error("You have already been placed. Further applications are disabled.");
     }
 
     const { data: academic } = await (supabase as any)
@@ -416,7 +418,9 @@ placement_status
         `
     role_selection_enabled,
     minimum_role_selection,
-    maximum_role_selection
+    maximum_role_selection,
+    allow_restricted_students,
+    allow_placed_students
     `,
       )
       .eq("drive_id", opportunityRecord.drive_id)
@@ -424,6 +428,17 @@ placement_status
 
     if (!drive) {
       throw new Error("Drive not found.");
+    }
+
+    if (activeRestriction && !drive.allow_restricted_students) {
+      throw new Error(
+        activeRestriction.restriction_reason ||
+          "Your placement activities are currently restricted.",
+      );
+    }
+
+    if (student.placement_status !== "Unplaced" && !drive.allow_placed_students) {
+      throw new Error("You have already been placed. Further applications are disabled.");
     }
 
     if (drive.role_selection_enabled) {
@@ -474,7 +489,7 @@ placement_status
         throw new Error("Backlog criteria not met.");
       }
     }
-onProgress?.("Creating application...");
+    onProgress?.("Creating application...");
     const { data: application, error } = await (supabase as any)
       .from("student_opportunity_applications")
       .insert({
@@ -566,7 +581,7 @@ onProgress?.("Creating application...");
             },
           });
         }
-onProgress?.("Saving application answers...");
+        onProgress?.("Saving application answers...");
         const { error: answerError } = await (supabase as any)
           .from("opportunity_question_answers")
           .insert(answerRows);
@@ -610,7 +625,7 @@ onProgress?.("Saving application answers...");
         throw submissionError;
       }
     }
-onProgress?.("Finalizing application...");
+    onProgress?.("Finalizing application...");
     return application;
   },
 };
