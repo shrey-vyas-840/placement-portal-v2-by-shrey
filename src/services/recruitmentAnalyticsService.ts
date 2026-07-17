@@ -37,7 +37,7 @@ export interface RecruitmentWorkspaceSummary {
 
   shortlistedCount: number;
 
-selectedCount: number;
+  selectedCount: number;
 
   applicationsToday: number;
 
@@ -77,32 +77,31 @@ selectedCount: number;
 
   roleAnalytics: RoleEligibilityAnalytics[];
 
-actionCenter: ActionCenterItem[];
+  actionCenter: ActionCenterItem[];
 
-failureBreakdown: {
-  optOut: number; 
-  inactive: number;
-  institute: number;
-  degree: number;
-  branch: number;
-  graduationYear: number;
-  cgpa: number;
-  backlog: number;
-  yearGap: number;
-  custom: number;
-};
+  failureBreakdown: {
+    optOut: number;
+    inactive: number;
+    institute: number;
+    degree: number;
+    branch: number;
+    graduationYear: number;
+    cgpa: number;
+    backlog: number;
+    yearGap: number;
+    custom: number;
+  };
 
-recentApplications: {
-  applicationId: string;
-  studentId: string;
-  appliedAt: string;
-}[];
+  recentApplications: {
+    applicationId: string;
+    studentId: string;
+    appliedAt: string;
+  }[];
 
-applicationTrend: {
-  date: string;
-  applications: number;
-}[];
-
+  applicationTrend: {
+    date: string;
+    applications: number;
+  }[];
 }
 export interface RecruitmentApplicant {
   applicationId: string;
@@ -206,16 +205,16 @@ export async function getRecruitmentWorkspaceSummary(
 
   let applicationsLast7Days = 0;
 
-let recentApplications: {
-  applicationId: string;
-  studentId: string;
-  appliedAt: string;
-}[] = [];
+  let recentApplications: {
+    applicationId: string;
+    studentId: string;
+    appliedAt: string;
+  }[] = [];
 
-let applicationTrend: {
-  date: string;
-  applications: number;
-}[] = [];
+  let applicationTrend: {
+    date: string;
+    applications: number;
+  }[] = [];
 
   if (opportunity?.opportunity_id) {
     const { data: latestApplications } = await (supabase as any)
@@ -271,24 +270,18 @@ let applicationTrend: {
 
     const trendMap = new Map<string, number>();
 
-(latestApplications ?? []).forEach((application: any) => {
-  const day = new Date(application.applied_at)
-    .toISOString()
-    .slice(0, 10);
+    (latestApplications ?? []).forEach((application: any) => {
+      const day = new Date(application.applied_at).toISOString().slice(0, 10);
 
-  trendMap.set(
-    day,
-    (trendMap.get(day) ?? 0) + 1,
-  );
-});
+      trendMap.set(day, (trendMap.get(day) ?? 0) + 1);
+    });
 
-applicationTrend = Array.from(trendMap.entries())
-  .sort(([a], [b]) => a.localeCompare(b))
-  .map(([date, applications]) => ({
-    date,
-    applications,
-  }));
-
+    applicationTrend = Array.from(trendMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, applications]) => ({
+        date,
+        applications,
+      }));
   }
 
   if (driveId) {
@@ -488,36 +481,35 @@ applicationTrend = Array.from(trendMap.entries())
     roleCount = roles?.length ?? 0;
 
     if (opportunity?.opportunity_id && roles?.length) {
-     const { data: applications } = await (supabase as any)
-  .from("student_opportunity_applications")
-  .select("application_id")
-  .eq("opportunity_id", opportunity.opportunity_id);
+      const { data: applications } = await (supabase as any)
+        .from("student_opportunity_applications")
+        .select("application_id")
+        .eq("opportunity_id", opportunity.opportunity_id);
 
-const applicationIds =
-  (applications ?? []).map(
-    (application: any) => application.application_id,
-  );
+      const applicationIds = (applications ?? []).map(
+        (application: any) => application.application_id,
+      );
 
-let selectedRoles: any[] = [];
+      let selectedRoles: any[] = [];
 
-if (applicationIds.length > 0) {
-  const { data } = await (supabase as any)
-    .from("student_application_selected_roles")
-    .select("drive_role_id")
-    .in("application_id", applicationIds);
+      if (applicationIds.length > 0) {
+        const { data } = await (supabase as any)
+          .from("student_application_selected_roles")
+          .select("drive_role_id")
+          .in("application_id", applicationIds);
 
-  selectedRoles = data ?? [];
-}
+        selectedRoles = data ?? [];
+      }
 
-roleDistribution = roles.map((role: any) => ({
-  roleId: role.drive_role_id,
+      roleDistribution = roles.map((role: any) => ({
+        roleId: role.drive_role_id,
 
-  roleName: role.drive_role_name,
+        roleName: role.drive_role_name,
 
-  applicationCount: selectedRoles.filter(
-    (selected: any) => selected.drive_role_id === role.drive_role_id,
-  ).length,
-}));
+        applicationCount: selectedRoles.filter(
+          (selected: any) => selected.drive_role_id === role.drive_role_id,
+        ).length,
+      }));
     }
   }
 
@@ -550,7 +542,7 @@ roleDistribution = roles.map((role: any) => ({
 
     shortlistedCount: 0,
 
-selectedCount: 0,
+    selectedCount: 0,
 
     applicationsToday,
 
@@ -593,29 +585,26 @@ selectedCount: 0,
 
     roleDistribution,
 
-    roleAnalytics:
-  eligibilityAnalytics?.roleAnalytics ?? [],
+    roleAnalytics: eligibilityAnalytics?.roleAnalytics ?? [],
 
-actionCenter:
-  eligibilityAnalytics?.actionCenter ?? [],
+    actionCenter: eligibilityAnalytics?.actionCenter ?? [],
 
-failureBreakdown:
-  eligibilityAnalytics?.failureBreakdown ?? {
-    optOut: 0,
-    inactive: 0,
-    institute: 0,
-    degree: 0,
-    branch: 0,
-    graduationYear: 0,
-    cgpa: 0,
-    backlog: 0,
-    yearGap: 0,
-    custom: 0,
-  },
+    failureBreakdown: eligibilityAnalytics?.failureBreakdown ?? {
+      optOut: 0,
+      inactive: 0,
+      institute: 0,
+      degree: 0,
+      branch: 0,
+      graduationYear: 0,
+      cgpa: 0,
+      backlog: 0,
+      yearGap: 0,
+      custom: 0,
+    },
 
-recentApplications,
+    recentApplications,
 
-applicationTrend,
+    applicationTrend,
   };
 }
 

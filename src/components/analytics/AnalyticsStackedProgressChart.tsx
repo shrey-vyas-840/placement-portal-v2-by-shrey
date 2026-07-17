@@ -27,9 +27,7 @@ export default function AnalyticsStackedProgressChart({
         style={{ height }}
       >
         <div className="text-center">
-          <div className="text-lg font-semibold">
-            No participation data available
-          </div>
+          <div className="text-lg font-semibold">No participation data available</div>
 
           <div className="mt-2 text-sm text-muted-foreground">
             This chart will appear once eligible students are evaluated.
@@ -41,8 +39,7 @@ export default function AnalyticsStackedProgressChart({
 
   const sorted = [...data].sort(
     (a, b) =>
-      b.applied / (b.applied + b.remaining || 1) -
-      a.applied / (a.applied + a.remaining || 1),
+      b.applied / (b.applied + b.remaining || 1) - a.applied / (a.applied + a.remaining || 1),
   );
 
   const option = {
@@ -65,13 +62,13 @@ export default function AnalyticsStackedProgressChart({
       bottom: 0,
     },
 
-   grid: {
-  left: 220,
-  right: 40,
-  top: 80,
-  bottom: 60,
-  containLabel: true,
-},
+    grid: {
+      left: 220,
+      right: 40,
+      top: 80,
+      bottom: 60,
+      containLabel: true,
+    },
 
     xAxis: {
       type: "value",
@@ -91,9 +88,9 @@ export default function AnalyticsStackedProgressChart({
         barWidth: 34,
 
         itemStyle: {
-  color: "#2563eb",
-  borderRadius: [12, 0, 0, 12],
-},
+          color: "#2563eb",
+          borderRadius: [12, 0, 0, 12],
+        },
 
         label: {
           show: true,
@@ -115,9 +112,9 @@ export default function AnalyticsStackedProgressChart({
         barWidth: 34,
 
         itemStyle: {
-  color: "#dbeafe",
-  borderRadius: [0, 12, 12, 0],
-},
+          color: "#dbeafe",
+          borderRadius: [0, 12, 12, 0],
+        },
 
         label: {
           show: true,

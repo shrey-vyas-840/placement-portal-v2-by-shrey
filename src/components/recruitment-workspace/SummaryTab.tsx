@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { ActionCenter } from "./ActionCenter";
 import AnalyticsLineChart from "@/components/analytics/AnalyticsLineChart";
 import AnalyticsStackedProgressChart from "@/components/analytics/AnalyticsStackedProgressChart";
+import AnalyticsHorizontalBarChart from "@/components/analytics/AnalyticsHorizontalBarChart";
 import {
   BriefcaseBusiness,
   CalendarDays,
@@ -442,57 +443,29 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
             </p>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {[
-              {
-                label: "Opted Out",
-                value: summary?.failureBreakdown.optOut ?? 0,
-              },
-              {
-                label: "Inactive",
-                value: summary?.failureBreakdown.inactive ?? 0,
-              },
-              {
-                label: "Institute",
-                value: summary?.failureBreakdown.institute ?? 0,
-              },
-              {
-                label: "Degree",
-                value: summary?.failureBreakdown.degree ?? 0,
-              },
-              {
-                label: "Branch",
-                value: summary?.failureBreakdown.branch ?? 0,
-              },
-              {
-                label: "Graduation Year",
-                value: summary?.failureBreakdown.graduationYear ?? 0,
-              },
-              {
-                label: "CGPA",
-                value: summary?.failureBreakdown.cgpa ?? 0,
-              },
-              {
-                label: "Backlogs",
-                value: summary?.failureBreakdown.backlog ?? 0,
-              },
-              {
-                label: "Year Gap",
-                value: summary?.failureBreakdown.yearGap ?? 0,
-              },
-              {
-                label: "Custom Rules",
-                value: summary?.failureBreakdown.custom ?? 0,
-              },
-            ].map((item) => (
-              <div key={item.label} className="rounded-xl border bg-muted/30 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {item.label}
-                </div>
-
-                <div className="mt-3 text-3xl font-bold">{item.value}</div>
-              </div>
-            ))}
+          <div className="mt-6">
+            <AnalyticsHorizontalBarChart
+              title="Top Eligibility Barriers"
+              subtitle="Students rejected by eligibility rules"
+              data={[
+                {
+                  label: "CGPA",
+                  value: summary?.failureBreakdown.cgpa ?? 0,
+                },
+                {
+                  label: "Backlogs",
+                  value: summary?.failureBreakdown.backlog ?? 0,
+                },
+                {
+                  label: "Willing To Travel",
+                  value: summary?.failureBreakdown.travel ?? 0,
+                },
+                {
+                  label: "Custom Rules",
+                  value: summary?.failureBreakdown.custom ?? 0,
+                },
+              ]}
+            />
           </div>
         </div>
 
@@ -517,27 +490,30 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
                 No recent applications found.
               </div>
             ) : (
-              <div className="space-y-3">
-                {summary?.recentApplications.map((application) => (
-                  <div
-                    key={application.applicationId}
-                    className="flex items-center justify-between rounded-xl border p-4"
-                  >
-                    <div>
-                      <div className="font-medium">Student ID</div>
+              <div className="overflow-hidden rounded-xl border">
+                <div className="max-h-[260px] overflow-y-auto">
+                  <table className="w-full">
+                    <thead className="sticky top-0 bg-muted/30">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs uppercase">Student</th>
 
-                      <div className="text-sm text-muted-foreground">{application.studentId}</div>
-                    </div>
+                        <th className="px-4 py-3 text-right text-xs uppercase">Applied At</th>
+                      </tr>
+                    </thead>
 
-                    <div className="text-right">
-                      <div className="font-medium">Applied</div>
+                    <tbody>
+                      {summary?.recentApplications.map((application) => (
+                        <tr key={application.applicationId} className="border-t">
+                          <td className="px-4 py-3 font-medium">{application.studentId}</td>
 
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(application.appliedAt).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                            {new Date(application.appliedAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
