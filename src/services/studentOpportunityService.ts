@@ -109,6 +109,18 @@ export const studentOpportunityService = {
       .eq("is_active", true)
       .maybeSingle();
 
+    const { data: activeOverrides } = await (supabase as any)
+      .from("student_placement_overrides")
+      .select(
+        `
+    opportunity_id,
+    override_type,
+    is_active
+  `,
+      )
+      .eq("student_id", studentId)
+      .eq("is_active", true);
+
     if (!academic) {
       return [];
     }
@@ -156,6 +168,18 @@ drive_master(
           (app: any) => app.student_id === studentId,
         ) || false;
 
+      const hasRestrictedOverride = (activeOverrides ?? []).some(
+        (override: any) =>
+          override.opportunity_id === opportunity.opportunity_id &&
+          override.override_type === "RESTRICTED",
+      );
+
+      const hasPlacedOverride = (activeOverrides ?? []).some(
+        (override: any) =>
+          override.opportunity_id === opportunity.opportunity_id &&
+          override.override_type === "PLACED",
+      );
+
       const { data: eligibility } = await (supabase as any)
         .from("drive_eligibility")
         .select("*")
@@ -181,12 +205,9 @@ drive_master(
           placement_preference: student?.placement_preference ?? null,
           placement_status: student?.placement_status ?? null,
           participation_allowed:
-  student?.placement_preference === "Interested" &&
-  (!activeRestriction ||
-    opportunity.drive_master?.allow_restricted_students),
-          placement_allowed:
-  student?.placement_status === "Unplaced" ||
-  opportunity.drive_master?.allow_placed_students,
+            student?.placement_preference === "Interested" &&
+            (!activeRestriction || hasRestrictedOverride),
+          placement_allowed: student?.placement_status === "Unplaced" || hasPlacedOverride,
         });
         continue;
       }
@@ -236,21 +257,16 @@ drive_master(
         eligibility_status:
           instituteMatch && degreeMatch && cgpaMatch && backlogMatch ? "Eligible" : "Not Eligible",
         eligibility_reason: reason,
-       application_status:
-  activeRestriction &&
-  !opportunity.drive_master?.allow_restricted_students
-    ? "RESTRICTED"
-    : student?.placement_status !== "Unplaced" &&
-        !opportunity.drive_master?.allow_placed_students
-      ? "PLACED"
-      : student?.placement_preference !== "Interested"
-        ? "NOT_PARTICIPATING"
-        : instituteMatch &&
-            degreeMatch &&
-            cgpaMatch &&
-            backlogMatch
-          ? "ELIGIBLE"
-          : "INELIGIBLE",
+        application_status:
+          activeRestriction && !hasRestrictedOverride
+            ? "RESTRICTED"
+            : student?.placement_status !== "Unplaced" && !hasPlacedOverride
+              ? "PLACED"
+              : student?.placement_preference !== "Interested"
+                ? "NOT_PARTICIPATING"
+                : instituteMatch && degreeMatch && cgpaMatch && backlogMatch
+                  ? "ELIGIBLE"
+                  : "INELIGIBLE",
         restriction_active: !!activeRestriction,
         restriction_type: activeRestriction?.restriction_type ?? null,
         restriction_reason: activeRestriction?.restriction_reason ?? null,
@@ -371,6 +387,26 @@ drive_master(
       .eq("is_active", true)
       .maybeSingle();
 
+    const { data: activeOverrides } = await (supabase as any)
+      .from("student_placement_overrides")
+      .select(
+        `
+    override_type,
+    is_active
+  `,
+      )
+      .eq("student_id", studentId)
+      .eq("opportunity_id", opportunityId)
+      .eq("is_active", true);
+
+    const hasRestrictedOverride = (activeOverrides ?? []).some(
+      (override: any) => override.override_type === "RESTRICTED",
+    );
+
+    const hasPlacedOverride = (activeOverrides ?? []).some(
+      (override: any) => override.override_type === "PLACED",
+    );
+
     const { data: student } = await (supabase as any)
       .from("student_master")
       .select(
@@ -430,14 +466,14 @@ placement_status
       throw new Error("Drive not found.");
     }
 
-    if (activeRestriction && !drive.allow_restricted_students) {
+    if (activeRestriction && !hasRestrictedOverride) {
       throw new Error(
         activeRestriction.restriction_reason ||
           "Your placement activities are currently restricted.",
       );
     }
 
-    if (student.placement_status !== "Unplaced" && !drive.allow_placed_students) {
+    if (student.placement_status !== "Unplaced" && !hasPlacedOverride) {
       throw new Error("You have already been placed. Further applications are disabled.");
     }
 

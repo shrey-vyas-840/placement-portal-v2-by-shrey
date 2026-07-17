@@ -49,13 +49,9 @@ export interface RoleEligibilityAnalytics {
 }
 
 export interface ActionCenterItem {
-
   id: string;
 
-  severity:
-    | "high"
-    | "medium"
-    | "low";
+  severity: "high" | "medium" | "low";
 
   title: string;
 
@@ -63,16 +59,9 @@ export interface ActionCenterItem {
 
   actionLabel: string;
 
-  actionType:
-    | "students"
-    | "role"
-    | "applications";
+  actionType: "students" | "role" | "applications";
 
-  metadata?: Record<
-    string,
-    unknown
-  >;
-
+  metadata?: Record<string, unknown>;
 }
 
 export interface EligibilityAnalyticsResult {
@@ -125,10 +114,37 @@ export interface EligibilityAnalyticsResult {
   };
 
   studentResults: StudentEligibilityResult[];
+
+  restrictedEligibleStudents: {
+    studentId: string;
+    fullName: string;
+    enrollmentNumber: string;
+    institute: string | null;
+    branch: string | null;
+    restrictionReason: string;
+  }[];
+
+  placedEligibleStudents: {
+    studentId: string;
+    fullName: string;
+    enrollmentNumber: string;
+    institute: string | null;
+    branch: string | null;
+    companyName: string | null;
+    packageLpa: number | null;
+  }[];
 }
 
 interface StudentMasterRecord {
   student_id: string;
+
+  enrollment_no: string | null;
+
+  first_name: string | null;
+
+  middle_name: string | null;
+
+  last_name: string | null;
 
   placement_preference: string | null;
 
@@ -203,6 +219,12 @@ function incrementCounter(map: Map<string, number>, key: string) {
   map.set(key, (map.get(key) ?? 0) + 1);
 }
 
+function buildStudentFullName(student: StudentMasterRecord): string {
+  return [student.first_name, student.middle_name, student.last_name]
+    .filter((value) => value && value.trim().length > 0)
+    .join(" ");
+}
+
 async function loadRecruitmentEligibilityCriteria(
   draftId: string,
 ): Promise<RecruitmentEligibilityCriteria> {
@@ -244,6 +266,10 @@ async function loadStudents() {
   const [{ data: students }, { data: academics }] = await Promise.all([
     (supabase as any).from("student_master").select(`
           student_id,
+          enrollment_no,
+          first_name,
+          middle_name,
+          last_name,
           placement_preference,
           is_active
         `),
@@ -315,158 +341,113 @@ async function loadApplicantIds(draftId: string): Promise<Set<string>> {
   return new Set<string>((applications ?? []).map((row: any) => String(row.student_id)));
 }
 
-
 interface RecruitmentRoleRecord {
-
   roleId: string;
 
   roleName: string;
 
   openings: number;
-
 }
 
-async function loadRecruitmentRoles(
-  draftId: string,
-): Promise<RecruitmentRoleRecord[]> {
+async function loadRecruitmentRoles(draftId: string): Promise<RecruitmentRoleRecord[]> {
+  const { data: draft } = await (supabase as any)
 
-  const { data: draft } =
-    await (supabase as any)
+    .from("recruitment_drafts")
 
-      .from("recruitment_drafts")
+    .select("published_drive_id, created_drive_id")
 
-      .select(
-        "published_drive_id, created_drive_id",
-      )
+    .eq("draft_id", draftId)
 
-      .eq("draft_id", draftId)
+    .single();
 
-      .single();
-
-  const driveId =
-    draft?.published_drive_id ??
-    draft?.created_drive_id;
+  const driveId = draft?.published_drive_id ?? draft?.created_drive_id;
 
   if (!driveId) {
-
     return [];
-
   }
 
-const { data } =
-  await (supabase as any)
+  const { data } = await (supabase as any)
     .from("drive_roles")
-    .select(`
+    .select(
+      `
       drive_role_id,
       drive_role_name,
       drive_role_details (
         openings
       )
-    `)
+    `,
+    )
     .eq("drive_id", driveId);
 
-console.log("[loadRecruitmentRoles]", {
-  draftId,
-  driveId,
-  rolesFromDb: data,
-});
+  console.log("[loadRecruitmentRoles]", {
+    draftId,
+    driveId,
+    rolesFromDb: data,
+  });
 
-return (data ?? []).map((role: any) => ({
-  roleId: role.drive_role_id,
+  return (data ?? []).map((role: any) => ({
+    roleId: role.drive_role_id,
 
-  roleName: role.drive_role_name,
+    roleName: role.drive_role_name,
 
-  openings:
-    role.drive_role_details?.openings ??
-    0,
-}));
-
+    openings: role.drive_role_details?.openings ?? 0,
+  }));
 }
-async function loadSelectedRoles(
-  draftId: string,
-): Promise<Map<string, number>> {
+async function loadSelectedRoles(draftId: string): Promise<Map<string, number>> {
+  const { data: draft } = await (supabase as any)
 
-  const { data: draft } =
-    await (supabase as any)
+    .from("recruitment_drafts")
 
-      .from("recruitment_drafts")
+    .select("published_drive_id, created_drive_id")
 
-      .select(
-        "published_drive_id, created_drive_id",
-      )
+    .eq("draft_id", draftId)
 
-      .eq("draft_id", draftId)
+    .single();
 
-      .single();
-
-  const driveId =
-    draft?.published_drive_id ??
-    draft?.created_drive_id;
+  const driveId = draft?.published_drive_id ?? draft?.created_drive_id;
 
   if (!driveId) {
-
     return new Map();
-
   }
 
-  const { data: opportunity } =
-    await (supabase as any)
+  const { data: opportunity } = await (supabase as any)
 
-      .from("opportunity_master")
+    .from("opportunity_master")
 
-      .select(
-        "opportunity_id",
-      )
+    .select("opportunity_id")
 
-      .eq(
-        "drive_id",
-        driveId,
-      )
+    .eq("drive_id", driveId)
 
-      .maybeSingle();
+    .maybeSingle();
 
-  if (
-    !opportunity?.opportunity_id
-  ) {
-
+  if (!opportunity?.opportunity_id) {
     return new Map();
-
   }
 
-const { data: applications } =
-  await (supabase as any)
+  const { data: applications } = await (supabase as any)
     .from("student_opportunity_applications")
     .select("application_id")
     .eq("opportunity_id", opportunity.opportunity_id);
 
-const applicationIds =
-  (applications ?? []).map(
-    (application: any) => application.application_id,
-  );
+  const applicationIds = (applications ?? []).map((application: any) => application.application_id);
 
-if (applicationIds.length === 0) {
-  return new Map<string, number>();
-}
+  if (applicationIds.length === 0) {
+    return new Map<string, number>();
+  }
 
-const { data } =
-  await (supabase as any)
+  const { data } = await (supabase as any)
     .from("student_application_selected_roles")
     .select("drive_role_id")
     .in("application_id", applicationIds);
 
-const counts = new Map<string, number>();
+  const counts = new Map<string, number>();
 
-(data ?? []).forEach((row: any) => {
-  incrementCounter(
-    counts,
-    row.drive_role_id,
-  );
-});
+  (data ?? []).forEach((row: any) => {
+    incrementCounter(counts, row.drive_role_id);
+  });
 
-return counts;
-
+  return counts;
 }
-
 
 function buildCoverageRows(
   students: StudentMasterRecord[],
@@ -509,7 +490,6 @@ function buildCoverageRows(
 }
 
 function buildActionCenter(
-
   eligibleStudents: number,
 
   applicantIds: Set<string>,
@@ -517,122 +497,70 @@ function buildActionCenter(
   failureBreakdown: EligibilityAnalyticsResult["failureBreakdown"],
 
   roleAnalytics: RoleEligibilityAnalytics[],
-
 ): ActionCenterItem[] {
-
   const actions: ActionCenterItem[] = [];
 
-  const pendingStudents =
-    Math.max(
-      eligibleStudents -
-        applicantIds.size,
-      0,
-    );
+  const pendingStudents = Math.max(eligibleStudents - applicantIds.size, 0);
 
   if (pendingStudents > 0) {
-
     actions.push({
-
       id: "pending-applications",
 
-      severity:
-        pendingStudents >= 50
-          ? "high"
-          : "medium",
+      severity: pendingStudents >= 50 ? "high" : "medium",
 
-      title:
-        "Eligible students have not applied",
+      title: "Eligible students have not applied",
 
-      description:
-        `${pendingStudents} eligible students have not submitted an application.`,
+      description: `${pendingStudents} eligible students have not submitted an application.`,
 
-      actionLabel:
-        "View Students",
+      actionLabel: "View Students",
 
-      actionType:
-        "students",
+      actionType: "students",
 
       metadata: {
-
         pendingStudents,
-
       },
-
     });
-
   }
 
-  if (
-    failureBreakdown.optOut >
-    0
-  ) {
-
+  if (failureBreakdown.optOut > 0) {
     actions.push({
-
       id: "opted-out",
 
       severity: "medium",
 
-      title:
-        "Students opted out",
+      title: "Students opted out",
 
-      description:
-        `${failureBreakdown.optOut} students have opted out of placements.`,
+      description: `${failureBreakdown.optOut} students have opted out of placements.`,
 
-      actionLabel:
-        "View Students",
+      actionLabel: "View Students",
 
-      actionType:
-        "students",
-
+      actionType: "students",
     });
-
   }
 
-  roleAnalytics.forEach(
-    (role) => {
+  roleAnalytics.forEach((role) => {
+    if (role.applicationRate < 20) {
+      actions.push({
+        id: `role-${role.roleId}`,
 
-      if (
-        role.applicationRate <
-        20
-      ) {
+        severity: "medium",
 
-        actions.push({
+        title: `${role.roleName} has low interest`,
 
-          id:
-            `role-${role.roleId}`,
+        description: `${role.applied} applications received for ${role.openings} openings.`,
 
-          severity:
-            "medium",
+        actionLabel: "View Role",
 
-          title:
-            `${role.roleName} has low interest`,
+        actionType: "role",
 
-          description:
-            `${role.applied} applications received for ${role.openings} openings.`,
-
-          actionLabel:
-            "View Role",
-
-          actionType:
-            "role",
-
-          metadata: {
-
-            roleId:
-              role.roleId,
-
-          },
-
-        });
-
-      }
-
-    },
-  );
+        metadata: {
+          roleId: role.roleId,
+        },
+      });
+    }
+  });
 
   return actions;
-
 }
 
 function evaluateStudentEligibility(
@@ -733,7 +661,41 @@ export async function getRecruitmentEligibilityAnalytics(
 
   const { students, academicMap } = await loadStudents();
 
+  const { data: restrictions } = await (supabase as any)
+    .from("student_restrictions")
+    .select(
+      `
+    student_id,
+    restriction_reason
+  `,
+    )
+    .eq("is_active", true);
+
+  const restrictionMap = new Map<string, any>(
+    (restrictions ?? []).map((row: any) => [String(row.student_id), row]),
+  );
+
+  const { data: placements } = await (supabase as any)
+    .from("student_placement_history")
+    .select(
+      `
+    student_id,
+    company_name,
+    package_lpa,
+    is_current
+  `,
+    )
+    .eq("is_current", true);
+
+  const placementMap = new Map<string, any>(
+    (placements ?? []).map((row: any) => [String(row.student_id), row]),
+  );
+
   const studentResults: StudentEligibilityResult[] = [];
+
+  const restrictedEligibleStudents: EligibilityAnalyticsResult["restrictedEligibleStudents"] = [];
+
+  const placedEligibleStudents: EligibilityAnalyticsResult["placedEligibleStudents"] = [];
 
   const applicantIds = await loadApplicantIds(draftId);
 
@@ -792,6 +754,37 @@ export async function getRecruitmentEligibilityAnalytics(
       eligibleStudents++;
 
       eligibleStudentIds.add(student.student_id);
+
+      const academic = academicMap.get(student.student_id);
+
+      const restriction = restrictionMap.get(student.student_id);
+
+      if (restriction) {
+        restrictedEligibleStudents.push({
+          studentId: student.student_id,
+          fullName: buildStudentFullName(student),
+
+          enrollmentNumber: student.enrollment_no ?? "",
+          institute: academic?.current_institute_name ?? null,
+          branch: academic?.current_branch_name ?? null,
+          restrictionReason: restriction.restriction_reason ?? "Restricted",
+        });
+      }
+
+      const placement = placementMap.get(student.student_id);
+
+      if (placement) {
+        placedEligibleStudents.push({
+          studentId: student.student_id,
+          fullName: buildStudentFullName(student),
+
+          enrollmentNumber: student.enrollment_no ?? "",
+          institute: academic?.current_institute_name ?? null,
+          branch: academic?.current_branch_name ?? null,
+          companyName: placement.company_name ?? null,
+          packageLpa: placement.package_lpa ?? null,
+        });
+      }
 
       continue;
     }
@@ -877,76 +870,38 @@ export async function getRecruitmentEligibilityAnalytics(
     "Unknown Year",
   );
 
-  const roles =
-  await loadRecruitmentRoles(
-    draftId,
-  );
-console.log(
-  "[Eligibility Analytics]",
-  {
+  const roles = await loadRecruitmentRoles(draftId);
+  console.log("[Eligibility Analytics]", {
     draftId,
     roles,
-  },
-);
-const selectedRoleCounts =
-  await loadSelectedRoles(
-    draftId,
-  );
+  });
+  const selectedRoleCounts = await loadSelectedRoles(draftId);
 
-const roleAnalytics =
-  roles.map((role) => {
-
-    const applied =
-      selectedRoleCounts.get(
-        role.roleId,
-      ) ?? 0;
+  const roleAnalytics = roles.map((role) => {
+    const applied = selectedRoleCounts.get(role.roleId) ?? 0;
 
     const applicationRate =
-      eligibleStudents === 0
-        ? 0
-        : Number(
-            (
-              (applied /
-                eligibleStudents) *
-              100
-            ).toFixed(1),
-          );
+      eligibleStudents === 0 ? 0 : Number(((applied / eligibleStudents) * 100).toFixed(1));
 
     return {
+      roleId: role.roleId,
 
-      roleId:
-        role.roleId,
+      roleName: role.roleName,
 
-      roleName:
-        role.roleName,
-
-      eligible:
-        eligibleStudents,
+      eligible: eligibleStudents,
 
       applied,
 
-      openings:
-        role.openings,
+      openings: role.openings,
 
       applicationRate,
 
       applicationsPerOpening:
-        role.openings === 0
-          ? 0
-          : Number(
-              (
-                applied /
-                role.openings
-              ).toFixed(1),
-            ),
-
+        role.openings === 0 ? 0 : Number((applied / role.openings).toFixed(1)),
     };
-
   });
 
-  const actionCenter =
-  buildActionCenter(
-
+  const actionCenter = buildActionCenter(
     eligibleStudents,
 
     applicantIds,
@@ -954,9 +909,8 @@ const roleAnalytics =
     failureBreakdown,
 
     roleAnalytics,
-
   );
-  
+
   return {
     totalStudents: students.length,
 
@@ -987,5 +941,9 @@ const roleAnalytics =
     failureBreakdown,
 
     studentResults,
+
+    restrictedEligibleStudents,
+
+    placedEligibleStudents,
   };
 }
