@@ -268,6 +268,31 @@ export async function getDraftById(draftId: string): Promise<RecruitmentDraftRow
   return data as RecruitmentDraftRow;
 }
 
+export async function resolveCompanyWorkspace(
+  companyId: string,
+): Promise<{ draftId: string } | null> {
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .select("draft_id")
+    .eq("created_company_id", companyId)
+    .eq("status", "PUBLISHED")
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    draftId: data.draft_id,
+  };
+}
+
 export async function getAllDrafts(): Promise<RecruitmentDraftRow[]> {
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
