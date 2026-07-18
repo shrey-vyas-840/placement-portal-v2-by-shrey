@@ -64,22 +64,36 @@ class RecruitmentSettingsService {
       throw opportunityError;
     }
 
+    const now = new Date();
+
+    let effectiveStatus = opportunity.application_status;
+
+    if (opportunity.application_end_date && new Date(opportunity.application_end_date) <= now) {
+      effectiveStatus = "Closed";
+    } else if (
+      opportunity.application_start_date &&
+      new Date(opportunity.application_start_date) > now
+    ) {
+      effectiveStatus = "Upcoming";
+    } else if (opportunity.visible_to_students) {
+      effectiveStatus = "Open";
+    }
+
     return {
       driveId: drive.drive_id,
       opportunityId: opportunity.opportunity_id,
 
       applicationStartDate: opportunity.application_start_date,
-
       applicationEndDate: opportunity.application_end_date,
 
-      applicationStatus: opportunity.application_status,
+      applicationStatus: effectiveStatus,
 
       allowRestrictedStudents: drive.allow_restricted_students ?? false,
-
       allowPlacedStudents: drive.allow_placed_students ?? false,
     };
   }
   async extendDeadline(opportunityId: string, newDeadline: string) {
+
     return adminOpportunityService.extendDeadline(opportunityId, newDeadline);
   }
 

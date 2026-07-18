@@ -503,12 +503,6 @@ async function loadRecruitmentRoles(context: RecruitmentContext): Promise<Recrui
     )
     .eq("drive_id", driveId);
 
-  console.log("[loadRecruitmentRoles]", {
-    draftId: context.draftId,
-    driveId,
-    rolesFromDb: data,
-  });
-
   return (data ?? []).map((role: any) => ({
     roleId: role.drive_role_id,
 
@@ -957,10 +951,7 @@ export async function getRecruitmentEligibilityAnalytics(
   );
 
   const roles = await loadRecruitmentRoles(context);
-  console.log("[Eligibility Analytics]", {
-    draftId: context.draftId,
-    roles,
-  });
+
   const selectedRoleCounts = await loadSelectedRoles(context);
 
   const roleAnalytics = roles.map((role) => {

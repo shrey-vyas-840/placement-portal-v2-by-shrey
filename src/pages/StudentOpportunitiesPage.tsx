@@ -33,11 +33,11 @@ export function StudentOpportunitiesPage() {
 
   const [submissionOverlayVisible, setSubmissionOverlayVisible] = useState(false);
 
-const [submissionStage, setSubmissionStage] = useState("Preparing application...");
+  const [submissionStage, setSubmissionStage] = useState("Preparing application...");
 
-const [submissionProgress, setSubmissionProgress] = useState(0);
+  const [submissionProgress, setSubmissionProgress] = useState(0);
 
-const [submissionCompleted, setSubmissionCompleted] = useState(false);
+  const [submissionCompleted, setSubmissionCompleted] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -291,47 +291,47 @@ const [submissionCompleted, setSubmissionCompleted] = useState(false);
     }
 
     try {
-     await studentOpportunityService.apply(
-  opportunityId,
-  student.student_id,
-  selectedRoles,
-  Object.entries(answers).map(([key, value]) => ({
-    question_id: key,
-    answer_value: Array.isArray(value) ? value.join(",") : value,
-  })),
- (stage) => {
-    setSubmissionStage(stage);
+      await studentOpportunityService.apply(
+        opportunityId,
+        student.student_id,
+        selectedRoles,
+        Object.entries(answers).map(([key, value]) => ({
+          question_id: key,
+          answer_value: Array.isArray(value) ? value.join(",") : value,
+        })),
+        (stage) => {
+          setSubmissionStage(stage);
 
-    switch (stage) {
-        case "Preparing application...":
-            setSubmissionProgress(10);
-            break;
+          switch (stage) {
+            case "Preparing application...":
+              setSubmissionProgress(10);
+              break;
 
-        case "Creating application...":
-            setSubmissionProgress(25);
-            break;
+            case "Creating application...":
+              setSubmissionProgress(25);
+              break;
 
-        case "Saving selected roles...":
-            setSubmissionProgress(45);
-            break;
+            case "Saving selected roles...":
+              setSubmissionProgress(45);
+              break;
 
-        case "Uploading documents...":
-            setSubmissionProgress(65);
-            break;
+            case "Uploading documents...":
+              setSubmissionProgress(65);
+              break;
 
-        case "Saving application answers...":
-            setSubmissionProgress(85);
-            break;
+            case "Saving application answers...":
+              setSubmissionProgress(85);
+              break;
 
-        case "Finalizing application...":
-            setSubmissionProgress(100);
-            break;
+            case "Finalizing application...":
+              setSubmissionProgress(100);
+              break;
 
-        default:
-            break;
-    }
-}
-);
+            default:
+              break;
+          }
+        },
+      );
 
       toast.error("Application submitted");
 
@@ -381,12 +381,16 @@ const [submissionCompleted, setSubmissionCompleted] = useState(false);
           <div className="absolute right-10 bottom-0 h-24 w-24 rounded-full bg-white/20" />
         </div>
 
-        {opportunities.some((x) => x.restriction_active) && (
+        {opportunities.some(
+          (x) => x.application_status === "RESTRICTED"
+        ) && (
           <div className="mt-6 rounded-2xl border border-red-300 bg-red-50 p-5">
             <div className="font-semibold text-red-700">Placement Restriction Active</div>
 
             <p className="mt-2 text-sm text-red-600">
-              {opportunities.find((x) => x.restriction_active)?.restriction_reason}
+              {opportunities.find(
+                (x) => x.application_status === "RESTRICTED"
+              )?.restriction_reason}
             </p>
           </div>
         )}
@@ -486,7 +490,15 @@ hover:border-primary/30
                             : "Eligible"
                   }`}
                 >
-                  {opportunity.restriction_active ? "Restricted" : opportunity.eligibility_status}
+                  {opportunity.application_status === "RESTRICTED"
+                    ? "Restricted"
+                    : opportunity.application_status === "PLACED"
+                      ? "Placed"
+                      : opportunity.application_status === "NOT_PARTICIPATING"
+                        ? "Not Participating"
+                        : opportunity.application_status === "INELIGIBLE"
+                          ? "Ineligible"
+                          : "Eligible"}
                 </span>
               </div>
               <div className="mt-3 space-y-1.5 text-xs">
@@ -653,12 +665,12 @@ hover:border-primary/30
                 shadow-2xl
               "
             >
-             <ApplicationSubmissionOverlay
-    visible={submissionOverlayVisible}
-    stage={submissionStage}
-    completed={submissionCompleted}
-    progress={submissionProgress}
-/>
+              <ApplicationSubmissionOverlay
+                visible={submissionOverlayVisible}
+                stage={submissionStage}
+                completed={submissionCompleted}
+                progress={submissionProgress}
+              />
               <div
                 className="
                   sticky
@@ -686,14 +698,14 @@ hover:border-primary/30
                   <button
                     type="button"
                     onClick={() => {
-  if (pendingApply) {
-    return;
-  }
+                      if (pendingApply) {
+                        return;
+                      }
 
-  setSelectedOpportunity(null);
-  setQuestions([]);
-  setAnswers({});
-}}
+                      setSelectedOpportunity(null);
+                      setQuestions([]);
+                      setAnswers({});
+                    }}
                     className="
                       rounded-xl
                       border
@@ -1351,7 +1363,7 @@ hover:border-primary/30
                           answer === "" ||
                           (Array.isArray(answer) && answer.length === 0))
                       ) {
-                       toast.error(`${q.question_title} is required`);
+                        toast.error(`${q.question_title} is required`);
 
                         return;
                       }
@@ -1490,39 +1502,38 @@ hover:border-primary/30
                       return;
                     }
 
-                   setPendingApply(true);
+                    setPendingApply(true);
 
-setSubmissionCompleted(false);
-setSubmissionStage("Preparing application...");
-setSubmissionProgress(0);
-setSubmissionOverlayVisible(true);
+                    setSubmissionCompleted(false);
+                    setSubmissionStage("Preparing application...");
+                    setSubmissionProgress(0);
+                    setSubmissionOverlayVisible(true);
 
-try {
-  await apply(selectedOpportunity.opportunity_id, selectedRoleIds);
-setSubmissionProgress(100);
-setSubmissionStage("Application submitted successfully.");
-setSubmissionCompleted(true);
+                    try {
+                      await apply(selectedOpportunity.opportunity_id, selectedRoleIds);
+                      setSubmissionProgress(100);
+                      setSubmissionStage("Application submitted successfully.");
+                      setSubmissionCompleted(true);
 
-await new Promise((resolve) => setTimeout(resolve, 1800));
+                      await new Promise((resolve) => setTimeout(resolve, 1800));
 
-  setSelectedOpportunity(null);
-  setQuestions([]);
-  setAnswers({});
-}
-finally {
-  setSubmissionOverlayVisible(false);
-  setSubmissionCompleted(false);
-  setSubmissionStage("Preparing application...");
-setSubmissionProgress(0);
-  setPendingApply(false);
-}
+                      setSelectedOpportunity(null);
+                      setQuestions([]);
+                      setAnswers({});
+                    } finally {
+                      setSubmissionOverlayVisible(false);
+                      setSubmissionCompleted(false);
+                      setSubmissionStage("Preparing application...");
+                      setSubmissionProgress(0);
+                      setPendingApply(false);
+                    }
                   }}
                 >
                   Submit Application
                 </button>
 
                 <button
-  disabled={pendingApply}
+                  disabled={pendingApply}
                   className="
     rounded-xl
     border

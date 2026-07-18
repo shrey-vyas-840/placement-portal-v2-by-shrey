@@ -189,24 +189,28 @@ export const adminOpportunityService = {
       throw error;
     }
   },
+async extendDeadline(opportunityId: string, newDeadline: string) {
+  // Convert browser local time (IST) into a UTC timestamp
+const utcDeadline = new Date(newDeadline).toISOString();
 
-  async extendDeadline(opportunityId: string, newDeadline: string) {
-    const { error } = await (supabase as any)
+const payload = {
+  application_end_date: utcDeadline,
+  application_status: "Open",
+  visible_to_students: true,
+};
 
-      .from("opportunity_master")
+const { data, error } = await (supabase as any)
+  .from("opportunity_master")
+  .update(payload)
+  .eq("opportunity_id", opportunityId)
+  .select();
 
-      .update({
-        application_end_date: newDeadline,
+if (error) {
+  console.error(error);
+  throw error;
+}
+},
 
-        application_status: "Open",
-
-        visible_to_students: true,
-      })
-
-      .eq("opportunity_id", opportunityId);
-
-    if (error) throw error;
-  },
   async updateOpportunityStatus(opportunityId: string, status: string) {
     const { error } = await (supabase as any)
       .from("opportunity_master")

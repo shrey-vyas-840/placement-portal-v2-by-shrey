@@ -15,6 +15,17 @@ import {
 
 import { toast } from "sonner";
 
+function toLocalDateTimeInput(value: string | null) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  // datetime-local expects LOCAL time, not UTC.
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
+}
+
 interface SettingsTabProps {
   draft: RecruitmentDraftRow | null;
   summary: RecruitmentWorkspaceSummary | null;
@@ -64,7 +75,7 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
       try {
         const data = await recruitmentSettingsService.getSettings(currentDraft.draft_id);
-
+  
         if (!mounted) {
           return;
         }
@@ -79,7 +90,7 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
           }
         }
 
-        setClosingDate(data.applicationEndDate ? data.applicationEndDate.slice(0, 16) : "");
+        setClosingDate(toLocalDateTimeInput(data.applicationEndDate));
       } catch (error: any) {
         toast.error(error?.message ?? "Failed to load recruitment settings.");
       }
@@ -87,8 +98,13 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
     loadSettings();
 
+    const interval = window.setInterval(() => {
+      loadSettings();
+    }, 5000);
+
     return () => {
       mounted = false;
+      window.clearInterval(interval);
     };
   }, [draft, toast]);
 
@@ -312,7 +328,6 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
                     toast.success("Recruitment closed.");
 
                     const refreshed = await recruitmentSettingsService.getSettings(draft.draft_id);
-
                     setSettings(refreshed);
                   } catch (error: any) {
                     toast.error(error?.message ?? "Unable to close recruitment.");
@@ -457,7 +472,7 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
 
                       setSettings(refreshed);
 
-                      setClosingDate(refreshed.applicationEndDate?.slice(0, 16) ?? "");
+                      setClosingDate(toLocalDateTimeInput(refreshed.applicationEndDate));
 
                       setReopenDialogOpen(false);
 
