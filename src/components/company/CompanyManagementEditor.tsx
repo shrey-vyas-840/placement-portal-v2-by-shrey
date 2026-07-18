@@ -2,127 +2,289 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
-export function CompanyManagementEditor() {
-    return (
-        <div className="space-y-6">
+interface RecruiterContact {
+  contact_id?: string;
 
-            <Card>
+  contact_name: string;
 
-                <CardHeader>
+  contact_email: string;
 
-                    <CardTitle>
+  contact_number: string;
 
-                        Company Information
+  contact_position: string;
 
-                    </CardTitle>
+  primary_contact: boolean;
 
-                </CardHeader>
+  isNew?: boolean;
 
-                <CardContent className="space-y-6">
+  markedForDelete?: boolean;
+}
 
-                    <div className="grid grid-cols-2 gap-6">
+interface CompanyManagementEditorProps {
+  companyName: string;
+  setCompanyName: React.Dispatch<React.SetStateAction<string>>;
 
-                        <div className="space-y-2">
+  website: string;
+  setWebsite: React.Dispatch<React.SetStateAction<string>>;
 
-                            <Label>
+  industry: string;
+  setIndustry: React.Dispatch<React.SetStateAction<string>>;
 
-                                Company Name
+  location: string;
+  setLocation: React.Dispatch<React.SetStateAction<string>>;
 
-                            </Label>
+  companySize: string;
+  setCompanySize: React.Dispatch<React.SetStateAction<string>>;
 
-                            <Input />
+  description: string;
+  setDescription: React.Dispatch<React.SetStateAction<string>>;
 
-                        </div>
+  recruiters: RecruiterContact[];
 
-                        <div className="space-y-2">
+  setRecruiters: React.Dispatch<React.SetStateAction<RecruiterContact[]>>;
 
-                            <Label>
+  onSave: () => void;
+}
 
-                                Company Website
+export function CompanyManagementEditor({
+  companyName,
+  setCompanyName,
+  website,
+  setWebsite,
+  industry,
+  setIndustry,
+  location,
+  setLocation,
+  companySize,
+  setCompanySize,
+  description,
+  setDescription,
 
-                            </Label>
+  recruiters,
+  setRecruiters,
 
-                            <Input />
+  onSave,
+}: CompanyManagementEditorProps) {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Company Information</CardTitle>
+        </CardHeader>
 
-                        </div>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label>Company Name</Label>
 
-                        <div className="space-y-2">
+              <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+            </div>
 
-                            <Label>
+            <div className="space-y-2">
+              <Label>Company Website</Label>
 
-                                Industry
+              <Input value={website} onChange={(e) => setWebsite(e.target.value)} />
+            </div>
 
-                            </Label>
+            <div className="space-y-2">
+              <Label>Industry</Label>
 
-                            <Input />
+              <Input value={industry} onChange={(e) => setIndustry(e.target.value)} />
+            </div>
 
-                        </div>
+            <div className="space-y-2">
+              <Label>Hiring Location</Label>
 
-                        <div className="space-y-2">
+              <Input value={location} onChange={(e) => setLocation(e.target.value)} />
+            </div>
 
-                            <Label>
+            <div className="space-y-2">
+              <Label>Company Size</Label>
 
-                                Hiring Location
+              <Input value={companySize} onChange={(e) => setCompanySize(e.target.value)} />
+            </div>
+          </div>
 
-                            </Label>
+          <div className="space-y-2">
+            <Label>Company Description</Label>
 
-                            <Input />
+            <Textarea
+              rows={5}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
 
-                        </div>
+          <div className="flex justify-end border-t px-6 py-4">
+            <Button onClick={onSave}>Save Company Information</Button>
+          </div>
+        </CardContent>
+      </Card>
 
-                        <div className="space-y-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Recruiter Contacts</CardTitle>
+        </CardHeader>
 
-                            <Label>
+        <CardContent className="space-y-4">
+          {recruiters.map((recruiter, index) => (
+            <div key={recruiter.contact_id ?? index} className="rounded-xl border p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="font-semibold">Recruiter {index + 1}</div>
 
-                                Company Size
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      checked={recruiter.primary_contact}
+                      onChange={() => {
+                        setRecruiters((previous) =>
+                          previous.map((item, itemIndex) => ({
+                            ...item,
+                            primary_contact: itemIndex === index,
+                          })),
+                        );
+                      }}
+                    />
+                    Primary
+                  </label>
 
-                            </Label>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setRecruiters((previous) =>
+                        previous.filter((_, itemIndex) => itemIndex !== index),
+                      );
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
 
-                            <Input />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Recruiter Name</Label>
 
-                        </div>
+                  <Input
+                    value={recruiter.contact_name}
+                    onChange={(event) => {
+                      const value = event.target.value;
 
-                    </div>
+                      setRecruiters((previous) =>
+                        previous.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? {
+                                ...item,
+                                contact_name: value,
+                              }
+                            : item,
+                        ),
+                      );
+                    }}
+                  />
+                </div>
 
-                    <div className="space-y-2">
+                <div className="space-y-2">
+                  <Label>Position</Label>
 
-                        <Label>
+                  <Input
+                    value={recruiter.contact_position}
+                    onChange={(event) => {
+                      const value = event.target.value;
 
-                            Company Description
+                      setRecruiters((previous) =>
+                        previous.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? {
+                                ...item,
+                                contact_position: value,
+                              }
+                            : item,
+                        ),
+                      );
+                    }}
+                  />
+                </div>
 
-                        </Label>
+                <div className="space-y-2">
+                  <Label>Email</Label>
 
-                        <Textarea
-                            rows={5}
-                        />
+                  <Input
+                    value={recruiter.contact_email}
+                    onChange={(event) => {
+                      const value = event.target.value;
 
-                    </div>
+                      setRecruiters((previous) =>
+                        previous.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? {
+                                ...item,
+                                contact_email: value,
+                              }
+                            : item,
+                        ),
+                      );
+                    }}
+                  />
+                </div>
 
-                </CardContent>
+                <div className="space-y-2">
+                  <Label>Contact Number</Label>
 
-            </Card>
+                  <Input
+                    value={recruiter.contact_number}
+                    onChange={(event) => {
+                      const value = event.target.value;
 
-            <Card>
+                      setRecruiters((previous) =>
+                        previous.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? {
+                                ...item,
+                                contact_number: value,
+                              }
+                            : item,
+                        ),
+                      );
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
 
-                <CardHeader>
+          <div className="flex justify-between pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRecruiters((previous) => [
+                  ...previous,
 
-                    <CardTitle>
+                  {
+                    contact_name: "",
 
-                        Recruiter Contacts
+                    contact_email: "",
 
-                    </CardTitle>
+                    contact_number: "",
 
-                </CardHeader>
+                    contact_position: "",
 
-                <CardContent>
+                    primary_contact: previous.length === 0,
 
-                    Recruiter management will be added next.
-
-                </CardContent>
-
-            </Card>
-
-        </div>
-    );
+                    isNew: true,
+                  },
+                ]);
+              }}
+            >
+              + Add Recruiter
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

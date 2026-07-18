@@ -33,6 +33,8 @@ export function AdminCompaniesPage() {
 
   const [companyContacts, setCompanyContacts] = useState<Record<string, any[]>>({});
 
+  const [recruiters, setRecruiters] = useState<any[]>([]);
+
   const filteredCompanies = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -244,7 +246,29 @@ export function AdminCompaniesPage() {
             <DialogHeader>
               <DialogTitle>Edit Company</DialogTitle>
             </DialogHeader>
-            <CompanyManagementEditor />
+            <CompanyManagementEditor
+              companyName={companyName}
+              setCompanyName={setCompanyName}
+              website={website}
+              setWebsite={setWebsite}
+              industry={industry}
+              setIndustry={setIndustry}
+              location={location}
+              setLocation={setLocation}
+              companySize={companySize}
+              setCompanySize={setCompanySize}
+              description={description}
+              setDescription={setDescription}
+
+              recruiters={recruiters}
+              setRecruiters={setRecruiters}
+
+              onSave={() => {
+                handleSubmit({
+                  preventDefault() {},
+                } as React.FormEvent);
+              }}
+            />
           </DialogContent>
         </Dialog>
 
@@ -389,6 +413,13 @@ export function AdminCompaniesPage() {
                                 setIndustry(company.industry_type || "");
                                 setDescription(company.company_description || "");
                                 setCompanySize(company.company_size || "");
+                                setRecruiters(
+                                  (companyContacts[company.company_id] ?? []).map((contact) => ({
+                                    ...contact,
+                                    isNew: false,
+                                    markedForDelete: false,
+                                  })),
+                                );
                               }}
                               className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 transition hover:bg-muted"
                             >
