@@ -225,6 +225,53 @@ function buildStudentFullName(student: StudentMasterRecord): string {
     .join(" ");
 }
 
+interface RecruitmentContext {
+  draftId: string;
+
+  driveId: string | null;
+
+  opportunityId: string | null;
+}
+
+async function loadRecruitmentContext(draftId: string): Promise<RecruitmentContext> {
+  const { data: draft, error: draftError } = await (supabase as any)
+    .from("recruitment_drafts")
+    .select(
+      `
+      published_drive_id,
+      created_drive_id
+    `,
+    )
+    .eq("draft_id", draftId)
+    .single();
+
+  if (draftError) {
+    throw draftError;
+  }
+
+  const driveId = draft?.published_drive_id ?? draft?.created_drive_id ?? null;
+
+  if (!driveId) {
+    return {
+      draftId,
+      driveId: null,
+      opportunityId: null,
+    };
+  }
+
+  const { data: opportunity } = await (supabase as any)
+    .from("opportunity_master")
+    .select("opportunity_id")
+    .eq("drive_id", driveId)
+    .maybeSingle();
+
+  return {
+    draftId,
+    driveId,
+    opportunityId: opportunity?.opportunity_id ?? null,
+  };
+}
+
 async function loadRecruitmentEligibilityCriteria(
   draftId: string,
 ): Promise<RecruitmentEligibilityCriteria> {
@@ -299,34 +346,121 @@ async function loadStudents() {
   };
 }
 
-async function loadApplicantIds(draftId: string): Promise<Set<string>> {
-  const { data: draft } = await (supabase as any)
+interface EligibilitySupportData {
+  restrictionMap: Map<string, any>;
 
-    .from("recruitment_drafts")
+  placementMap: Map<string, any>;
 
-    .select("published_drive_id, created_drive_id")
+  overrideMap: Map<
+    string,
+    {
+      restricted: boolean;
 
-    .eq("draft_id", draftId)
+      placed: boolean;
+    }
+  >;
+}
 
-    .single();
+async function loadEligibilitySupportData(
+  context: RecruitmentContext,
+): Promise<EligibilitySupportData> {
+  const [restrictionsResult, placementsResult, overridesResult] = await Promise.all([
+    (supabase as any)
+      .from("student_restrictions")
+      .select(
+        `
+        student_id,
+        restriction_reason
+      `,
+      )
+      .eq("is_active", true),
 
-  const driveId = draft?.published_drive_id ?? draft?.created_drive_id;
+    (supabase as any)
+      .from("student_placement_history")
+      .select(
+        `
+        student_id,
+        company_name,
+        package_lpa,
+        is_current
+      `,
+      )
+      .eq("is_current", true),
 
-  if (!driveId) {
-    return new Set<string>();
-  }
+    context.opportunityId
+      ? (supabase as any)
+          .from("student_placement_overrides")
+          .select(
+            `
+            student_id,
+            override_type
+          `,
+          )
+          .eq("opportunity_id", context.opportunityId)
+          .eq("is_active", true)
+      : Promise.resolve({
+          data: [],
+          error: null,
+        }),
+  ]);
 
-  const { data: opportunity } = await (supabase as any)
+  if (restrictionsResult.error) throw restrictionsResult.error;
 
-    .from("opportunity_master")
+  if (placementsResult.error) throw placementsResult.error;
 
-    .select("opportunity_id")
+  if (overridesResult.error) throw overridesResult.error;
 
-    .eq("drive_id", driveId)
+  const restrictionMap = new Map<string, any>();
 
-    .maybeSingle();
+  (restrictionsResult.data ?? []).forEach((row: any) => {
+    restrictionMap.set(String(row.student_id), row);
+  });
 
-  if (!opportunity?.opportunity_id) {
+  const placementMap = new Map<string, any>();
+
+  (placementsResult.data ?? []).forEach((row: any) => {
+    placementMap.set(String(row.student_id), row);
+  });
+
+  const overrideMap = new Map<
+    string,
+    {
+      restricted: boolean;
+
+      placed: boolean;
+    }
+  >();
+
+  (overridesResult.data ?? []).forEach((row: any) => {
+    const studentId = String(row.student_id);
+
+    const current = overrideMap.get(studentId) ?? {
+      restricted: false,
+      placed: false,
+    };
+
+    if (row.override_type === "RESTRICTED") {
+      current.restricted = true;
+    }
+
+    if (row.override_type === "PLACED") {
+      current.placed = true;
+    }
+
+    overrideMap.set(studentId, current);
+  });
+
+  return {
+    restrictionMap,
+
+    placementMap,
+
+    overrideMap,
+  };
+}
+
+async function loadApplicantIds(context: RecruitmentContext): Promise<Set<string>> {
+  if (!context.opportunityId) {
     return new Set<string>();
   }
 
@@ -336,7 +470,7 @@ async function loadApplicantIds(draftId: string): Promise<Set<string>> {
 
     .select("student_id")
 
-    .eq("opportunity_id", opportunity.opportunity_id);
+    .eq("opportunity_id", context.opportunityId);
 
   return new Set<string>((applications ?? []).map((row: any) => String(row.student_id)));
 }
@@ -349,22 +483,12 @@ interface RecruitmentRoleRecord {
   openings: number;
 }
 
-async function loadRecruitmentRoles(draftId: string): Promise<RecruitmentRoleRecord[]> {
-  const { data: draft } = await (supabase as any)
-
-    .from("recruitment_drafts")
-
-    .select("published_drive_id, created_drive_id")
-
-    .eq("draft_id", draftId)
-
-    .single();
-
-  const driveId = draft?.published_drive_id ?? draft?.created_drive_id;
-
-  if (!driveId) {
+async function loadRecruitmentRoles(context: RecruitmentContext): Promise<RecruitmentRoleRecord[]> {
+  if (!context.driveId) {
     return [];
   }
+
+  const driveId = context.driveId;
 
   const { data } = await (supabase as any)
     .from("drive_roles")
@@ -380,7 +504,7 @@ async function loadRecruitmentRoles(draftId: string): Promise<RecruitmentRoleRec
     .eq("drive_id", driveId);
 
   console.log("[loadRecruitmentRoles]", {
-    draftId,
+    draftId: context.draftId,
     driveId,
     rolesFromDb: data,
   });
@@ -393,41 +517,15 @@ async function loadRecruitmentRoles(draftId: string): Promise<RecruitmentRoleRec
     openings: role.drive_role_details?.openings ?? 0,
   }));
 }
-async function loadSelectedRoles(draftId: string): Promise<Map<string, number>> {
-  const { data: draft } = await (supabase as any)
-
-    .from("recruitment_drafts")
-
-    .select("published_drive_id, created_drive_id")
-
-    .eq("draft_id", draftId)
-
-    .single();
-
-  const driveId = draft?.published_drive_id ?? draft?.created_drive_id;
-
-  if (!driveId) {
-    return new Map();
-  }
-
-  const { data: opportunity } = await (supabase as any)
-
-    .from("opportunity_master")
-
-    .select("opportunity_id")
-
-    .eq("drive_id", driveId)
-
-    .maybeSingle();
-
-  if (!opportunity?.opportunity_id) {
-    return new Map();
+async function loadSelectedRoles(context: RecruitmentContext): Promise<Map<string, number>> {
+  if (!context.opportunityId) {
+    return new Map<string, number>();
   }
 
   const { data: applications } = await (supabase as any)
     .from("student_opportunity_applications")
     .select("application_id")
-    .eq("opportunity_id", opportunity.opportunity_id);
+    .eq("opportunity_id", context.opportunityId);
 
   const applicationIds = (applications ?? []).map((application: any) => application.application_id);
 
@@ -657,39 +755,13 @@ function evaluateStudentEligibility(
 export async function getRecruitmentEligibilityAnalytics(
   draftId: string,
 ): Promise<EligibilityAnalyticsResult> {
+  const context = await loadRecruitmentContext(draftId);
+
   const criteria = await loadRecruitmentEligibilityCriteria(draftId);
 
   const { students, academicMap } = await loadStudents();
 
-  const { data: restrictions } = await (supabase as any)
-    .from("student_restrictions")
-    .select(
-      `
-    student_id,
-    restriction_reason
-  `,
-    )
-    .eq("is_active", true);
-
-  const restrictionMap = new Map<string, any>(
-    (restrictions ?? []).map((row: any) => [String(row.student_id), row]),
-  );
-
-  const { data: placements } = await (supabase as any)
-    .from("student_placement_history")
-    .select(
-      `
-    student_id,
-    company_name,
-    package_lpa,
-    is_current
-  `,
-    )
-    .eq("is_current", true);
-
-  const placementMap = new Map<string, any>(
-    (placements ?? []).map((row: any) => [String(row.student_id), row]),
-  );
+  const { restrictionMap, placementMap, overrideMap } = await loadEligibilitySupportData(context);
 
   const studentResults: StudentEligibilityResult[] = [];
 
@@ -697,7 +769,7 @@ export async function getRecruitmentEligibilityAnalytics(
 
   const placedEligibleStudents: EligibilityAnalyticsResult["placedEligibleStudents"] = [];
 
-  const applicantIds = await loadApplicantIds(draftId);
+  const applicantIds = await loadApplicantIds(context);
 
   const eligibleStudentIds = new Set<string>();
 
@@ -759,7 +831,17 @@ export async function getRecruitmentEligibilityAnalytics(
 
       const restriction = restrictionMap.get(student.student_id);
 
-      if (restriction) {
+      const override = overrideMap.get(student.student_id);
+
+      const hasRestrictedOverride = override?.restricted === true;
+
+      const hasPlacedOverride = override?.placed === true;
+
+      if (
+  restriction &&
+  !hasRestrictedOverride &&
+  !applicantIds.has(student.student_id)
+) {
         restrictedEligibleStudents.push({
           studentId: student.student_id,
           fullName: buildStudentFullName(student),
@@ -773,7 +855,11 @@ export async function getRecruitmentEligibilityAnalytics(
 
       const placement = placementMap.get(student.student_id);
 
-      if (placement) {
+      if (
+  placement &&
+  !hasPlacedOverride &&
+  !applicantIds.has(student.student_id)
+) {
         placedEligibleStudents.push({
           studentId: student.student_id,
           fullName: buildStudentFullName(student),
@@ -870,12 +956,12 @@ export async function getRecruitmentEligibilityAnalytics(
     "Unknown Year",
   );
 
-  const roles = await loadRecruitmentRoles(draftId);
+  const roles = await loadRecruitmentRoles(context);
   console.log("[Eligibility Analytics]", {
-    draftId,
+    draftId: context.draftId,
     roles,
   });
-  const selectedRoleCounts = await loadSelectedRoles(draftId);
+  const selectedRoleCounts = await loadSelectedRoles(context);
 
   const roleAnalytics = roles.map((role) => {
     const applied = selectedRoleCounts.get(role.roleId) ?? 0;
@@ -922,7 +1008,7 @@ export async function getRecruitmentEligibilityAnalytics(
 
     eligibleStudents,
 
-    pendingEligibleStudents: eligibleStudents,
+    pendingEligibleStudents: Math.max(eligibleStudents - applicantIds.size, 0),
 
     applicationRate: 0,
 

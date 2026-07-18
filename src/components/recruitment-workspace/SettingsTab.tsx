@@ -27,16 +27,14 @@ export function SettingsTab({ draft, summary, loading }: SettingsTabProps) {
   const [analytics, setAnalytics] = useState<EligibilityAnalyticsResult | null>(null);
 
   const [selectedStudent, setSelectedStudent] = useState<{
-  studentId: string;
-  fullName: string;
-  type: "RESTRICTED" | "PLACED";
-} | null>(null);
+    studentId: string;
+    fullName: string;
+    type: "RESTRICTED" | "PLACED";
+  } | null>(null);
 
-const [overrideDialogOpen, setOverrideDialogOpen] =
-  useState(false);
+  const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
 
-const [creatingOverride, setCreatingOverride] =
-  useState(false);
+  const [creatingOverride, setCreatingOverride] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -74,15 +72,12 @@ const [creatingOverride, setCreatingOverride] =
         setSettings(data);
 
         if (data.driveId) {
-  const analyticsData =
-    await getRecruitmentEligibilityAnalytics(
-      data.driveId,
-    );
+          const analyticsData = await getRecruitmentEligibilityAnalytics(currentDraft.draft_id);
 
-  if (mounted) {
-    setAnalytics(analyticsData);
-  }
-}
+          if (mounted) {
+            setAnalytics(analyticsData);
+          }
+        }
 
         setClosingDate(data.applicationEndDate ? data.applicationEndDate.slice(0, 16) : "");
       } catch (error: any) {
@@ -185,148 +180,107 @@ const [creatingOverride, setCreatingOverride] =
         </div>
       </SectionCard>
 
-<SectionCard
-  title="Student Overrides"
-  description="Eligible students blocked due to restrictions or placement."
-  icon={<Users className="h-6 w-6 text-primary" />}
->
-  <div className="grid gap-6 lg:grid-cols-2">
-
-    <div className="rounded-2xl border p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="font-semibold">
-            Restricted Students
-          </div>
-
-          <div className="mt-1 text-sm text-muted-foreground">
-            Eligible but globally restricted.
-          </div>
-        </div>
-
-        <div className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800">
-          {analytics?.restrictedEligibleStudents.length ?? 0}
-        </div>
-      </div>
-
-      <div className="mt-5 space-y-3">
-
-        {(analytics?.restrictedEligibleStudents ?? [])
-          .slice(0, 5)
-          .map((student) => (
-
-            <div
-              key={student.studentId}
-              className="flex items-center justify-between rounded-lg border p-3"
-            >
-
+      <SectionCard
+        title="Student Overrides"
+        description="Eligible students blocked due to restrictions or placement."
+        icon={<Users className="h-6 w-6 text-primary" />}
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border p-6">
+            <div className="flex items-center justify-between">
               <div>
+                <div className="font-semibold">Restricted Students</div>
 
-                <div className="font-medium">
-                  {student.fullName}
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Eligible but globally restricted.
                 </div>
-
-                <div className="text-xs text-muted-foreground">
-                  {student.restrictionReason}
-                </div>
-
               </div>
 
-            <button
-  type="button"
-  onClick={() => {
-    setSelectedStudent({
-      studentId: student.studentId,
-      fullName: student.fullName,
-      type: "RESTRICTED",
-    });
-
-    setOverrideDialogOpen(true);
-  }}
-  className="rounded-lg border px-3 py-1 text-sm hover:bg-muted"
->
-  Allow
-</button>
-
+              <div className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800">
+                {analytics?.restrictedEligibleStudents.length ?? 0}
+              </div>
             </div>
 
-          ))}
+            <div className="mt-5 space-y-3">
+              {(analytics?.restrictedEligibleStudents ?? []).slice(0, 5).map((student) => (
+                <div
+                  key={student.studentId}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <div>
+                    <div className="font-medium">{student.fullName}</div>
 
-      </div>
-    </div>
+                    <div className="text-xs text-muted-foreground">{student.restrictionReason}</div>
+                  </div>
 
-    <div className="rounded-2xl border p-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStudent({
+                        studentId: student.studentId,
+                        fullName: student.fullName,
+                        type: "RESTRICTED",
+                      });
 
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <div className="font-semibold">
-            Already Placed
+                      setOverrideDialogOpen(true);
+                    }}
+                    className="rounded-lg border px-3 py-1 text-sm hover:bg-muted"
+                  >
+                    Allow
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-1 text-sm text-muted-foreground">
-            Eligible but already placed.
-          </div>
-
-        </div>
-
-        <div className="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
-          {analytics?.placedEligibleStudents.length ?? 0}
-        </div>
-
-      </div>
-
-      <div className="mt-5 space-y-3">
-
-        {(analytics?.placedEligibleStudents ?? [])
-          .slice(0, 5)
-          .map((student) => (
-
-            <div
-              key={student.studentId}
-              className="flex items-center justify-between rounded-lg border p-3"
-            >
-
+          <div className="rounded-2xl border p-6">
+            <div className="flex items-center justify-between">
               <div>
+                <div className="font-semibold">Already Placed</div>
 
-                <div className="font-medium">
-                  {student.fullName}
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Eligible but already placed.
                 </div>
-
-                <div className="text-xs text-muted-foreground">
-                  {student.companyName}
-                </div>
-
               </div>
 
-    <button
-  type="button"
-  onClick={() => {
-    setSelectedStudent({
-      studentId: student.studentId,
-      fullName: student.fullName,
-      type: "PLACED",
-    });
-
-    setOverrideDialogOpen(true);
-  }}
-  className="rounded-lg border px-3 py-1 text-sm hover:bg-muted"
->
-  Allow
-</button>
-
+              <div className="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
+                {analytics?.placedEligibleStudents.length ?? 0}
+              </div>
             </div>
 
-          ))}
+            <div className="mt-5 space-y-3">
+              {(analytics?.placedEligibleStudents ?? []).slice(0, 5).map((student) => (
+                <div
+                  key={student.studentId}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <div>
+                    <div className="font-medium">{student.fullName}</div>
 
-      </div>
+                    <div className="text-xs text-muted-foreground">{student.companyName}</div>
+                  </div>
 
-    </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStudent({
+                        studentId: student.studentId,
+                        fullName: student.fullName,
+                        type: "PLACED",
+                      });
 
-  </div>
-</SectionCard>
-
+                      setOverrideDialogOpen(true);
+                    }}
+                    className="rounded-lg border px-3 py-1 text-sm hover:bg-muted"
+                  >
+                    Allow
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </SectionCard>
 
       <SectionCard
         title="Danger Zone"
@@ -525,120 +479,84 @@ const [creatingOverride, setCreatingOverride] =
       </SectionCard>
 
       {overrideDialogOpen && selectedStudent && settings && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl">
+            <h3 className="text-xl font-semibold">Allow Student</h3>
 
-    <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl">
+            <p className="mt-2 text-sm text-muted-foreground">
+              This will allow
+              <span className="font-medium text-foreground"> {selectedStudent.fullName}</span> to
+              participate in this recruitment only.
+            </p>
 
-      <h3 className="text-xl font-semibold">
-        Allow Student
-      </h3>
+            <div className="mt-6 rounded-xl border bg-muted/30 p-4">
+              <div className="text-sm text-muted-foreground">Override Type</div>
 
-      <p className="mt-2 text-sm text-muted-foreground">
-        This will allow
-        <span className="font-medium text-foreground">
-          {" "}
-          {selectedStudent.fullName}
-        </span>
-        {" "}to participate in this recruitment only.
-      </p>
+              <div className="mt-1 font-medium">
+                {selectedStudent.type === "RESTRICTED"
+                  ? "Restricted Student"
+                  : "Already Placed Student"}
+              </div>
+            </div>
 
-      <div className="mt-6 rounded-xl border bg-muted/30 p-4">
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setOverrideDialogOpen(false);
+                  setSelectedStudent(null);
+                }}
+                className="rounded-xl border px-5 py-2"
+              >
+                Cancel
+              </button>
 
-        <div className="text-sm text-muted-foreground">
-          Override Type
+              <button
+                type="button"
+                disabled={creatingOverride}
+                onClick={async () => {
+                  try {
+                    setCreatingOverride(true);
+
+                    await (supabase as any).from("student_placement_overrides").insert({
+                      student_id: selectedStudent.studentId,
+
+                      opportunity_id: settings.opportunityId,
+
+                      override_scope: "SPECIFIC",
+
+                      override_type: selectedStudent.type,
+
+                      override_reason: "Recruitment specific override",
+
+                      granted_at: new Date().toISOString(),
+
+                      is_active: true,
+                    });
+
+                    toast.success("Student allowed successfully.");
+
+                    const refreshed = await getRecruitmentEligibilityAnalytics(draft.draft_id);
+
+                    setAnalytics(refreshed);
+
+                    setOverrideDialogOpen(false);
+
+                    setSelectedStudent(null);
+                  } catch (error: any) {
+                    toast.error(error?.message ?? "Unable to create override.");
+                  } finally {
+                    setCreatingOverride(false);
+                  }
+                }}
+                className="rounded-xl bg-primary px-5 py-2 text-primary-foreground"
+              >
+                Allow Student
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div className="mt-1 font-medium">
-          {selectedStudent.type === "RESTRICTED"
-            ? "Restricted Student"
-            : "Already Placed Student"}
-        </div>
-
-      </div>
-
-      <div className="mt-8 flex justify-end gap-3">
-
-        <button
-          type="button"
-          onClick={() => {
-            setOverrideDialogOpen(false);
-            setSelectedStudent(null);
-          }}
-          className="rounded-xl border px-5 py-2"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="button"
-          disabled={creatingOverride}
-          onClick={async () => {
-            try {
-              setCreatingOverride(true);
-
-              await (supabase as any)
-                .from("student_placement_overrides")
-                .insert({
-                  student_id:
-                    selectedStudent.studentId,
-
-                  opportunity_id:
-                    settings.opportunityId,
-
-                  override_scope:
-                    "OPPORTUNITY",
-
-                  override_type:
-                    selectedStudent.type,
-
-                  override_reason:
-                    "Recruitment specific override",
-
-                  granted_at:
-                    new Date().toISOString(),
-
-                  is_active: true,
-                });
-
-              toast.success(
-                "Student allowed successfully.",
-              );
-
-              const refreshed =
-                await getRecruitmentEligibilityAnalytics(
-                  settings.driveId,
-                );
-
-              setAnalytics(refreshed);
-
-              setOverrideDialogOpen(false);
-
-              setSelectedStudent(null);
-
-            } catch (error: any) {
-
-              toast.error(
-                error?.message ??
-                  "Unable to create override.",
-              );
-
-            } finally {
-
-              setCreatingOverride(false);
-
-            }
-          }}
-          className="rounded-xl bg-primary px-5 py-2 text-primary-foreground"
-        >
-          Allow Student
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-)}
+      )}
     </div>
   );
 }
