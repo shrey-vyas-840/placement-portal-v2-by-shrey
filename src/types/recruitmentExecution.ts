@@ -215,3 +215,59 @@ export interface RecruitmentExecutionHistoryCreateInput {
   change_reason?: string | null;
   changed_by?: string | null;
 }
+
+/**
+ * Round ↔ Role mapping returned by the execution service.
+ *
+ * Domain model (not a database table).
+ */
+export interface RecruitmentExecutionRoundRoleMapping {
+  execution_round_role_id: string;
+
+  execution_round_id: string;
+
+  drive_role_id: string;
+
+  created_at: string;
+
+  drive_role: {
+    drive_role_id: string;
+    drive_role_name: string;
+  };
+}
+
+/**
+ * Lightweight history summary used by the Execution Workspace.
+ *
+ * Full immutable history remains available separately.
+ */
+export interface RecruitmentExecutionHistorySummary {
+  execution_participant_id: string;
+
+  execution_round_id: string;
+
+  attendance_status: ExecutionAttendanceStatus | null;
+
+  gate_status: ExecutionGateStatus | null;
+
+  progression_status: ExecutionProgressionStatus;
+
+  changed_at: string;
+}
+
+/**
+ * Root object returned by loadExecutionWorkspace().
+ */
+export interface RecruitmentExecutionWorkspace {
+  series: RecruitmentExecutionSeriesRow;
+
+  execution: RecruitmentExecutionRow;
+
+  rounds: RecruitmentExecutionRoundRow[];
+
+  participants: RecruitmentExecutionParticipantWithStudent[];
+
+  roundRoleMappings: RecruitmentExecutionRoundRoleMapping[];
+
+  historySummary: RecruitmentExecutionHistorySummary[];
+}

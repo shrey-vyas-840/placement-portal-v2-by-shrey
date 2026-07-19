@@ -235,6 +235,9 @@ class RecruitmentExecutionService {
     private readonly EXECUTION_PARTICIPANTS_TABLE =
   "recruitment_execution_participants";
 
+    private readonly EXECUTION_ROUND_ROLES_TABLE =
+    "recruitment_execution_round_roles";
+
   async loadRounds(
     executionId: string
   ): Promise<RecruitmentExecutionRoundRow[]> {
@@ -401,7 +404,28 @@ class RecruitmentExecutionService {
     }));
   }
 
+    async loadRoundRoleMappings(
+    executionId: string
+  ) {
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_ROLES_TABLE)
+      .select(`
+        *,
+        drive_roles (
+          drive_role_id,
+          drive_role_name
+        )
+      `)
+      .eq("execution_id", executionId);
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? [];
+  }
   
+
 }
 
 export const recruitmentExecutionService =
