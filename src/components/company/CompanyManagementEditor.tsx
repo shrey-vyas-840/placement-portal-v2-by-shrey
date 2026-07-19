@@ -129,7 +129,9 @@ export function CompanyManagementEditor({
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {recruiters.map((recruiter, index) => (
+          {recruiters
+    .filter((recruiter) => !recruiter.markedForDelete)
+    .map((recruiter, index) => (
             <div key={recruiter.contact_id ?? index} className="rounded-xl border p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="font-semibold">Recruiter {index + 1}</div>
@@ -151,17 +153,48 @@ export function CompanyManagementEditor({
                     Primary
                   </label>
 
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setRecruiters((previous) =>
-                        previous.filter((_, itemIndex) => itemIndex !== index),
-                      );
-                    }}
-                  >
-                    Remove
-                  </Button>
+               <Button
+    variant="destructive"
+    size="sm"
+    onClick={() => {
+
+        setRecruiters((previous) =>
+
+            previous.flatMap((item, itemIndex) => {
+
+                if (itemIndex !== index) {
+                    return item;
+                }
+
+                /*
+                 * New recruiter
+                 * → never saved
+                 * → simply remove
+                 */
+                if (!item.contact_id) {
+                    return [];
+                }
+
+                /*
+                 * Existing recruiter
+                 * → keep until Save
+                 * → mark for deletion
+                 */
+                return {
+                    ...item,
+                    markedForDelete: true,
+                };
+
+            }),
+
+        );
+
+    }}
+>
+
+    Remove
+
+</Button>
                 </div>
               </div>
 

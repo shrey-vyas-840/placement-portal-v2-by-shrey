@@ -114,15 +114,87 @@ export function AdminCompaniesPage() {
 
     try {
       if (editingCompanyId) {
-        await adminDriveService.updateCompany(editingCompanyId, {
-          company_name: companyName,
-          company_website: website,
-          hiring_location: location,
-          industry_type: industry,
-          company_description: description,
-          company_size: companySize,
-        });
-      } else {
+
+    await adminDriveService.updateCompany(editingCompanyId, {
+        company_name: companyName,
+        company_website: website,
+        hiring_location: location,
+        industry_type: industry,
+        company_description: description,
+        company_size: companySize,
+    });
+
+for (const recruiter of recruiters) {
+
+    /*
+     * Existing recruiter marked for deletion
+     */
+    if (
+        recruiter.contact_id &&
+        recruiter.markedForDelete
+    ) {
+
+        await adminDriveService.deleteCompanyContact(
+            recruiter.contact_id,
+        );
+
+        continue;
+
+    }
+
+    /*
+     * Existing recruiter
+     */
+    if (recruiter.contact_id) {
+
+        await adminDriveService.updateCompanyContact(
+            recruiter.contact_id,
+            {
+                contact_name: recruiter.contact_name,
+                contact_email: recruiter.contact_email,
+                contact_number: recruiter.contact_number,
+                contact_position: recruiter.contact_position,
+                primary_contact: recruiter.primary_contact,
+            },
+        );
+
+        continue;
+
+    }
+
+    /*
+     * Ignore completely empty new cards
+     */
+    if (
+        !recruiter.contact_name.trim() &&
+        !recruiter.contact_email.trim() &&
+        !recruiter.contact_number.trim()
+    ) {
+        continue;
+    }
+
+    /*
+     * New recruiter
+     */
+    await adminDriveService.createCompanyContact({
+
+        company_id: editingCompanyId,
+
+        contact_name: recruiter.contact_name,
+
+        contact_email: recruiter.contact_email,
+
+        contact_number: recruiter.contact_number,
+
+        contact_position: recruiter.contact_position,
+
+        primary_contact: recruiter.primary_contact,
+
+    });
+
+}
+
+} else {
         await adminDriveService.createCompany({
           company_name: companyName,
           company_website: website,
@@ -236,7 +308,7 @@ export function AdminCompaniesPage() {
             <div className="font-medium">Editing Company Information</div>
 
             <div className="text-sm text-muted-foreground">
-              Only Step-1 Company information is editable.
+              Only Company & Recruiter Information is editable.
             </div>
           </div>
         )}
