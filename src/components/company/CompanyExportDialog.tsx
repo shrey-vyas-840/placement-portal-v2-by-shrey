@@ -1,136 +1,149 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { companyExportService, type CompanyExportRow } from "@/services/companyExportService";
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { Button } from "@/components/ui/button";
 
 interface CompanyExportDialogProps {
+  open: boolean;
 
-    open: boolean;
+  onOpenChange: (open: boolean) => void;
 
-    onOpenChange: (open: boolean) => void;
-
-    totalCompanies: number;
-
+  totalCompanies: number;
 }
 
 export function CompanyExportDialog({
+  open,
 
-    open,
+  onOpenChange,
 
-    onOpenChange,
-
-    totalCompanies,
-
+  totalCompanies,
 }: CompanyExportDialogProps) {
+  const [additionalRecruiters, setAdditionalRecruiters] = useState(0);
 
-    const [additionalRecruiters, setAdditionalRecruiters] =
-        useState(0);
+  const [rows, setRows] = useState<CompanyExportRow[]>([]);
 
-    return (
+  const [loading, setLoading] = useState(false);
 
-        <Dialog
-            open={open}
-            onOpenChange={onOpenChange}
-        >
+  useEffect(() => {
+    if (!open) return;
 
-            <DialogContent className="max-w-5xl">
+    let mounted = true;
 
-                <DialogHeader>
+    async function load() {
+      setLoading(true);
 
-                    <DialogTitle>
+      try {
+        const exportData = await companyExportService.getCompanyExportData();
 
-                        Company Export Center
+        if (mounted) {
+          setRows(exportData.rows);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
 
-                    </DialogTitle>
+    load();
 
-                </DialogHeader>
+    return () => {
+      mounted = false;
+    };
+  }, [open]);
 
-                <div className="grid gap-6 lg:grid-cols-3">
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>Company Export Center</DialogTitle>
+        </DialogHeader>
 
-                    <div className="rounded-2xl border bg-card p-6">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="rounded-2xl border bg-card p-6">
+            <h2 className="text-xl font-semibold">Export Summary</h2>
 
-                        <h2 className="text-xl font-semibold">
+            <div className="mt-6 space-y-4">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Companies</span>
 
-                            Export Summary
+                <span className="font-medium">{totalCompanies}</span>
+              </div>
 
-                        </h2>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Additional Recruiters</span>
 
-                        <div className="mt-6 space-y-4">
+                <input
+                  type="number"
+                  min={0}
+                  value={additionalRecruiters}
+                  onChange={(e) => setAdditionalRecruiters(Number(e.target.value))}
+                  className="w-20 rounded-lg border px-2 py-1 text-right"
+                />
+              </div>
+            </div>
 
-                            <div className="flex justify-between">
+            <div className="mt-8">
+              <Button disabled className="w-full">
+                Export Excel
+              </Button>
+            </div>
+          </div>
 
-                                <span className="text-muted-foreground">
+          <div className="lg:col-span-2 rounded-2xl border">
+            <div className="border-b px-6 py-4">
+              <h2 className="font-semibold">Export Preview</h2>
+            </div>
 
-                                    Companies
+            <div className="max-h-[500px] overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-background">
+                  <tr>
+                    <th className="border-b px-4 py-3 text-left">Company</th>
 
-                                </span>
+                    <th className="border-b px-4 py-3 text-left">Primary HR</th>
 
-                                <span className="font-medium">
+                    <th className="border-b px-4 py-3 text-left">Contact</th>
 
-                                    {totalCompanies}
+                    <th className="border-b px-4 py-3 text-left">Recruiters</th>
+                  </tr>
+                </thead>
 
-                                </span>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className="py-10 text-center text-muted-foreground">
+                        Loading companies...
+                      </td>
+                    </tr>
+                  ) : (
+                    rows.map((company) => {
+                      const primary = company.recruiters.find((r) => r.primary_contact);
 
-                            </div>
+                      return (
+                        <tr key={company.companyId}>
+                          <td className="border-b px-4 py-3">{company.companyName}</td>
 
-                            <div className="flex justify-between">
+                          <td className="border-b px-4 py-3">{primary?.contact_name ?? "—"}</td>
 
-                                <span className="text-muted-foreground">
+                          <td className="border-b px-4 py-3">{primary?.contact_number ?? "—"}</td>
 
-                                    Additional Recruiters
-
-                                </span>
-
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={additionalRecruiters}
-                                    onChange={(e) =>
-                                        setAdditionalRecruiters(
-                                            Number(e.target.value),
-                                        )
-                                    }
-                                    className="w-20 rounded-lg border px-2 py-1 text-right"
-                                />
-
-                            </div>
-
-                        </div>
-
-                        <div className="mt-8">
-
-                            <Button
-                                disabled
-                                className="w-full"
-                            >
-
-                                Export Excel
-
-                            </Button>
-
-                        </div>
-
-                    </div>
-
-                    <div className="lg:col-span-2 rounded-2xl border border-dashed p-10 text-center text-muted-foreground">
-
-                        Column selector, drag & drop ordering and preview
-                        will be added in the next step.
-
-                    </div>
-
-                </div>
-
-            </DialogContent>
-
-        </Dialog>
-
-    );
-
+                          <td className="border-b px-4 py-3">
+                            {Math.max(company.recruiters.length - 1, 0)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

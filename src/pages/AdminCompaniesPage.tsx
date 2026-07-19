@@ -300,11 +300,11 @@ export function AdminCompaniesPage() {
           </DialogContent>
         </Dialog>
 
-<CompanyExportDialog
-    open={exportDialogOpen}
-    onOpenChange={setExportDialogOpen}
-    totalCompanies={filteredCompanies.length}
-/>
+        <CompanyExportDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          totalCompanies={filteredCompanies.length}
+        />
 
         <div className="mt-8 overflow-hidden rounded-3xl border bg-card">
           <div className="border-b px-6 py-4">
