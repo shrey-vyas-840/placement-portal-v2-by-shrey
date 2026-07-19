@@ -1,0 +1,61 @@
+export interface ExportColumn {
+
+    key: string;
+
+    label: string;
+
+    required?: boolean;
+
+    defaultEnabled?: boolean;
+
+}
+
+export interface ExportDataset<RowType = Record<string, unknown>> {
+
+    title: string;
+
+    subtitle?: string;
+
+    sheetName: string;
+
+    filename: string;
+
+    summary: {
+
+        label: string;
+
+        value: string | number;
+
+    }[];
+
+    columns: ExportColumn[];
+
+    rows: RowType[];
+
+}
+
+export interface ExportConfiguration<RowType = Record<string, unknown>> {
+
+    dataset: ExportDataset<RowType>;
+
+    getCellValue: (
+
+        row: RowType,
+
+        columnKey: string,
+
+    ) => unknown;
+
+    getCellStyle?: (
+
+        value: unknown,
+
+    ) => {
+
+        hyperlink?: string;
+
+        wrapText?: boolean;
+
+    };
+
+}
