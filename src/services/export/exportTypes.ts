@@ -8,54 +8,64 @@ export interface ExportColumn {
 
     defaultEnabled?: boolean;
 
+    width?: number;
+
+    alignment?:
+
+        | "left"
+
+        | "center"
+
+        | "right";
+
+    excelType?:
+
+        | "text"
+
+        | "number"
+
+        | "date"
+
+        | "email"
+
+        | "url"
+
+        | "phone";
+
 }
 
 export interface ExportDataset<RowType = Record<string, unknown>> {
+  title: string;
 
-    title: string;
+  subtitle?: string;
 
-    subtitle?: string;
+  sheetName: string;
 
-    sheetName: string;
+  filename: string;
 
-    filename: string;
+  summary: {
+    label: string;
 
-    summary: {
+    value: string | number;
+  }[];
 
-        label: string;
+  columns: ExportColumn[];
 
-        value: string | number;
-
-    }[];
-
-    columns: ExportColumn[];
-
-    rows: RowType[];
-
+  rows: RowType[];
 }
 
 export interface ExportConfiguration<RowType = Record<string, unknown>> {
+  dataset: ExportDataset<RowType>;
 
-    dataset: ExportDataset<RowType>;
+  getCellValue: (
+    row: RowType,
 
-    getCellValue: (
+    columnKey: string,
+  ) => unknown;
 
-        row: RowType,
+  getCellStyle?: (value: unknown) => {
+    hyperlink?: string;
 
-        columnKey: string,
-
-    ) => unknown;
-
-    getCellStyle?: (
-
-        value: unknown,
-
-    ) => {
-
-        hyperlink?: string;
-
-        wrapText?: boolean;
-
-    };
-
+    wrapText?: boolean;
+  };
 }
