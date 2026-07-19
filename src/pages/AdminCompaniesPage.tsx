@@ -5,6 +5,7 @@ import { resolveCompanyWorkspace } from "@/services/recruitmentDraftService";
 import { Building2, Pencil, Search, Users, Globe, Mail, Phone, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CompanyManagementEditor } from "@/components/company/CompanyManagementEditor";
+import { CompanyExportDialog } from "@/components/company/CompanyExportDialog";
 
 export function AdminCompaniesPage() {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export function AdminCompaniesPage() {
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const [search, setSearch] = useState("");
 
@@ -114,87 +117,69 @@ export function AdminCompaniesPage() {
 
     try {
       if (editingCompanyId) {
+        await adminDriveService.updateCompany(editingCompanyId, {
+          company_name: companyName,
+          company_website: website,
+          hiring_location: location,
+          industry_type: industry,
+          company_description: description,
+          company_size: companySize,
+        });
 
-    await adminDriveService.updateCompany(editingCompanyId, {
-        company_name: companyName,
-        company_website: website,
-        hiring_location: location,
-        industry_type: industry,
-        company_description: description,
-        company_size: companySize,
-    });
+        for (const recruiter of recruiters) {
+          /*
+           * Existing recruiter marked for deletion
+           */
+          if (recruiter.contact_id && recruiter.markedForDelete) {
+            await adminDriveService.deleteCompanyContact(recruiter.contact_id);
 
-for (const recruiter of recruiters) {
+            continue;
+          }
 
-    /*
-     * Existing recruiter marked for deletion
-     */
-    if (
-        recruiter.contact_id &&
-        recruiter.markedForDelete
-    ) {
+          /*
+           * Existing recruiter
+           */
+          if (recruiter.contact_id) {
+            await adminDriveService.updateCompanyContact(recruiter.contact_id, {
+              contact_name: recruiter.contact_name,
+              contact_email: recruiter.contact_email,
+              contact_number: recruiter.contact_number,
+              contact_position: recruiter.contact_position,
+              primary_contact: recruiter.primary_contact,
+            });
 
-        await adminDriveService.deleteCompanyContact(
-            recruiter.contact_id,
-        );
+            continue;
+          }
 
-        continue;
+          /*
+           * Ignore completely empty new cards
+           */
+          if (
+            !recruiter.contact_name.trim() &&
+            !recruiter.contact_email.trim() &&
+            !recruiter.contact_number.trim()
+          ) {
+            continue;
+          }
 
-    }
+          /*
+           * New recruiter
+           */
+          await adminDriveService.createCompanyContact({
+            company_id: editingCompanyId,
 
-    /*
-     * Existing recruiter
-     */
-    if (recruiter.contact_id) {
+            contact_name: recruiter.contact_name,
 
-        await adminDriveService.updateCompanyContact(
-            recruiter.contact_id,
-            {
-                contact_name: recruiter.contact_name,
-                contact_email: recruiter.contact_email,
-                contact_number: recruiter.contact_number,
-                contact_position: recruiter.contact_position,
-                primary_contact: recruiter.primary_contact,
-            },
-        );
+            contact_email: recruiter.contact_email,
 
-        continue;
+            contact_number: recruiter.contact_number,
 
-    }
+            contact_position: recruiter.contact_position,
 
-    /*
-     * Ignore completely empty new cards
-     */
-    if (
-        !recruiter.contact_name.trim() &&
-        !recruiter.contact_email.trim() &&
-        !recruiter.contact_number.trim()
-    ) {
-        continue;
-    }
-
-    /*
-     * New recruiter
-     */
-    await adminDriveService.createCompanyContact({
-
-        company_id: editingCompanyId,
-
-        contact_name: recruiter.contact_name,
-
-        contact_email: recruiter.contact_email,
-
-        contact_number: recruiter.contact_number,
-
-        contact_position: recruiter.contact_position,
-
-        primary_contact: recruiter.primary_contact,
-
-    });
-
-}
-
-} else {
+            primary_contact: recruiter.primary_contact,
+          });
+        }
+      } else {
         await adminDriveService.createCompany({
           company_name: companyName,
           company_website: website,
@@ -222,7 +207,7 @@ for (const recruiter of recruiters) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-[1600px] px-6 py-8">
         <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <div className="rounded-2xl bg-primary/10 p-4">
@@ -265,41 +250,12 @@ for (const recruiter of recruiters) {
 
             <button
               type="button"
+              onClick={() => setExportDialogOpen(true)}
               className="flex items-center justify-center gap-2 rounded-xl border bg-card px-4 py-2 transition hover:bg-muted"
             >
               <Download className="h-4 w-4" />
               Export
             </button>
-          </div>
-        </div>
-
-        <div className="mb-8 grid gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border bg-card p-5">
-            <div className="text-sm text-muted-foreground">Total Companies</div>
-
-            <div className="mt-2 text-3xl font-bold">{companies.length}</div>
-          </div>
-
-          <div className="rounded-2xl border bg-card p-5">
-            <div className="text-sm text-muted-foreground">Primary HR Contacts</div>
-
-            <div className="mt-2 text-3xl font-bold">{Object.keys(primaryContacts).length}</div>
-          </div>
-
-          <div className="rounded-2xl border bg-card p-5">
-            <div className="text-sm text-muted-foreground">Industries</div>
-
-            <div className="mt-2 text-3xl font-bold">
-              {new Set(companies.map((c) => c.industry_type).filter(Boolean)).size}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-card p-5">
-            <div className="text-sm text-muted-foreground">Locations</div>
-
-            <div className="mt-2 text-3xl font-bold">
-              {new Set(companies.map((c) => c.hiring_location).filter(Boolean)).size}
-            </div>
           </div>
         </div>
 
@@ -344,6 +300,12 @@ for (const recruiter of recruiters) {
           </DialogContent>
         </Dialog>
 
+<CompanyExportDialog
+    open={exportDialogOpen}
+    onOpenChange={setExportDialogOpen}
+    totalCompanies={filteredCompanies.length}
+/>
+
         <div className="mt-8 overflow-hidden rounded-3xl border bg-card">
           <div className="border-b px-6 py-4">
             <div className="flex items-center justify-between">
@@ -361,7 +323,7 @@ for (const recruiter of recruiters) {
             </div>
           </div>
 
-          <div className="max-h-[70vh] overflow-auto">
+          <div className="max-h-[85vh] overflow-auto">
             <table className="w-full border-collapse">
               <thead className="sticky top-0 z-20 bg-background">
                 <tr className="border-b bg-muted/40">
@@ -372,8 +334,6 @@ for (const recruiter of recruiters) {
                   <th className="px-5 py-3 text-left font-semibold">Email</th>
 
                   <th className="px-5 py-3 text-left font-semibold">Contact</th>
-
-                  <th className="px-5 py-3 text-left font-semibold">Industry</th>
 
                   <th className="px-5 py-3 text-left font-semibold">Location</th>
 
@@ -466,8 +426,6 @@ for (const recruiter of recruiters) {
                             "—"
                           )}
                         </td>
-
-                        <td className="px-5 py-4">{company.industry_type || "—"}</td>
 
                         <td className="px-5 py-4">{company.hiring_location}</td>
 

@@ -116,10 +116,6 @@ export function CompanyManagementEditor({
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-
-          <div className="flex justify-end border-t px-6 py-4">
-            <Button onClick={onSave}>Save Company Information</Button>
-          </div>
         </CardContent>
       </Card>
 
@@ -130,165 +126,157 @@ export function CompanyManagementEditor({
 
         <CardContent className="space-y-4">
           {recruiters
-    .filter((recruiter) => !recruiter.markedForDelete)
-    .map((recruiter, index) => (
-            <div key={recruiter.contact_id ?? index} className="rounded-xl border p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="font-semibold">Recruiter {index + 1}</div>
+            .filter((recruiter) => !recruiter.markedForDelete)
+            .map((recruiter, index) => (
+              <div key={recruiter.contact_id ?? index} className="rounded-xl border p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold">Recruiter {index + 1}</div>
 
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="radio"
-                      checked={recruiter.primary_contact}
-                      onChange={() => {
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        checked={recruiter.primary_contact}
+                        onChange={() => {
+                          setRecruiters((previous) =>
+                            previous.map((item, itemIndex) => ({
+                              ...item,
+                              primary_contact: itemIndex === index,
+                            })),
+                          );
+                        }}
+                      />
+                      Primary
+                    </label>
+
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
                         setRecruiters((previous) =>
-                          previous.map((item, itemIndex) => ({
-                            ...item,
-                            primary_contact: itemIndex === index,
-                          })),
+                          previous.flatMap((item, itemIndex) => {
+                            if (itemIndex !== index) {
+                              return item;
+                            }
+
+                            /*
+                             * New recruiter
+                             * → never saved
+                             * → simply remove
+                             */
+                            if (!item.contact_id) {
+                              return [];
+                            }
+
+                            /*
+                             * Existing recruiter
+                             * → keep until Save
+                             * → mark for deletion
+                             */
+                            return {
+                              ...item,
+                              markedForDelete: true,
+                            };
+                          }),
+                        );
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Recruiter Name</Label>
+
+                    <Input
+                      value={recruiter.contact_name}
+                      onChange={(event) => {
+                        const value = event.target.value;
+
+                        setRecruiters((previous) =>
+                          previous.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  contact_name: value,
+                                }
+                              : item,
+                          ),
                         );
                       }}
                     />
-                    Primary
-                  </label>
+                  </div>
 
-               <Button
-    variant="destructive"
-    size="sm"
-    onClick={() => {
+                  <div className="space-y-2">
+                    <Label>Position</Label>
 
-        setRecruiters((previous) =>
+                    <Input
+                      value={recruiter.contact_position}
+                      onChange={(event) => {
+                        const value = event.target.value;
 
-            previous.flatMap((item, itemIndex) => {
+                        setRecruiters((previous) =>
+                          previous.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  contact_position: value,
+                                }
+                              : item,
+                          ),
+                        );
+                      }}
+                    />
+                  </div>
 
-                if (itemIndex !== index) {
-                    return item;
-                }
+                  <div className="space-y-2">
+                    <Label>Email</Label>
 
-                /*
-                 * New recruiter
-                 * → never saved
-                 * → simply remove
-                 */
-                if (!item.contact_id) {
-                    return [];
-                }
+                    <Input
+                      value={recruiter.contact_email}
+                      onChange={(event) => {
+                        const value = event.target.value;
 
-                /*
-                 * Existing recruiter
-                 * → keep until Save
-                 * → mark for deletion
-                 */
-                return {
-                    ...item,
-                    markedForDelete: true,
-                };
+                        setRecruiters((previous) =>
+                          previous.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  contact_email: value,
+                                }
+                              : item,
+                          ),
+                        );
+                      }}
+                    />
+                  </div>
 
-            }),
+                  <div className="space-y-2">
+                    <Label>Contact Number</Label>
 
-        );
+                    <Input
+                      value={recruiter.contact_number}
+                      onChange={(event) => {
+                        const value = event.target.value;
 
-    }}
->
-
-    Remove
-
-</Button>
+                        setRecruiters((previous) =>
+                          previous.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  contact_number: value,
+                                }
+                              : item,
+                          ),
+                        );
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Recruiter Name</Label>
-
-                  <Input
-                    value={recruiter.contact_name}
-                    onChange={(event) => {
-                      const value = event.target.value;
-
-                      setRecruiters((previous) =>
-                        previous.map((item, itemIndex) =>
-                          itemIndex === index
-                            ? {
-                                ...item,
-                                contact_name: value,
-                              }
-                            : item,
-                        ),
-                      );
-                    }}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Position</Label>
-
-                  <Input
-                    value={recruiter.contact_position}
-                    onChange={(event) => {
-                      const value = event.target.value;
-
-                      setRecruiters((previous) =>
-                        previous.map((item, itemIndex) =>
-                          itemIndex === index
-                            ? {
-                                ...item,
-                                contact_position: value,
-                              }
-                            : item,
-                        ),
-                      );
-                    }}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Email</Label>
-
-                  <Input
-                    value={recruiter.contact_email}
-                    onChange={(event) => {
-                      const value = event.target.value;
-
-                      setRecruiters((previous) =>
-                        previous.map((item, itemIndex) =>
-                          itemIndex === index
-                            ? {
-                                ...item,
-                                contact_email: value,
-                              }
-                            : item,
-                        ),
-                      );
-                    }}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Contact Number</Label>
-
-                  <Input
-                    value={recruiter.contact_number}
-                    onChange={(event) => {
-                      const value = event.target.value;
-
-                      setRecruiters((previous) =>
-                        previous.map((item, itemIndex) =>
-                          itemIndex === index
-                            ? {
-                                ...item,
-                                contact_number: value,
-                              }
-                            : item,
-                        ),
-                      );
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
+            ))}
 
           <div className="flex justify-between pt-4">
             <Button
@@ -318,6 +306,23 @@ export function CompanyManagementEditor({
           </div>
         </CardContent>
       </Card>
+      <div className="flex justify-end gap-3 border-t pt-6">
+
+    <Button
+        variant="outline"
+        type="button"
+    >
+        Cancel
+    </Button>
+
+    <Button
+        type="button"
+        onClick={onSave}
+    >
+        Save Changes
+    </Button>
+
+</div>
     </div>
   );
 }
