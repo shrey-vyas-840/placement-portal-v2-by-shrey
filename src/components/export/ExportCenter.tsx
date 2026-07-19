@@ -32,63 +32,31 @@ export function ExportCenter<RowType>({
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("columns");
 
-  const defaultColumns =
-    dataset.columns
+  const defaultColumns = dataset.columns
 
-        .filter(
+    .filter((column) => column.defaultEnabled || column.required)
 
-            (column) =>
+    .map((column) => column.key);
 
-                column.defaultEnabled ||
+  const [selectedColumns, setSelectedColumns] = useState(defaultColumns);
 
-                column.required,
-
-        )
-
-        .map(
-
-            (column) => column.key,
-
-        );
-
-const [selectedColumns, setSelectedColumns] =
-    useState(defaultColumns);
-
-useEffect(() => {
-
-    const saved =
-        localStorage.getItem(storageKey);
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
 
     if (!saved) {
-
-        return;
-
+      return;
     }
 
     try {
+      const parsed = JSON.parse(saved);
 
-        const parsed =
-            JSON.parse(saved);
-
-        if (
-
-            Array.isArray(parsed) &&
-
-            parsed.length
-
-        ) {
-
-            setSelectedColumns(parsed);
-
-        }
-
+      if (Array.isArray(parsed) && parsed.length) {
+        setSelectedColumns(parsed);
+      }
     } catch {
-
-        // Ignore corrupted layouts
-
+      // Ignore corrupted layouts
     }
-
-}, [storageKey]);
+  }, [storageKey]);
 
   const summary = useMemo(
     () => [
@@ -109,6 +77,32 @@ useEffect(() => {
 
     [dataset.summary, dataset.columns, selectedColumns],
   );
+
+  function resetToDefaults() {
+
+    setSelectedColumns(
+
+        dataset.columns
+
+            .filter(
+
+                (column) =>
+
+                    column.defaultEnabled ||
+
+                    column.required,
+
+            )
+
+            .map(
+
+                (column) => column.key,
+
+            ),
+
+    );
+
+}
 
   async function handleExport() {
     try {
@@ -146,27 +140,64 @@ useEffect(() => {
             <p className="text-sm text-muted-foreground">Choose columns and arrange their order.</p>
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              size="sm"
+          <div className="flex flex-wrap gap-2">
 
-              variant={activeTab === "columns" ? "default" : "outline"}
+    <Button
 
-              onClick={() => setActiveTab("columns")}
-            >
-              Select Columns
-            </Button>
+        size="sm"
 
-            <Button
-              size="sm"
+        variant={
+            activeTab === "columns"
+                ? "default"
+                : "outline"
+        }
 
-              variant={activeTab === "order" ? "default" : "outline"}
+        onClick={() =>
+            setActiveTab("columns")
+        }
 
-              onClick={() => setActiveTab("order")}
-            >
-              Arrange Order
-            </Button>
-          </div>
+    >
+
+        Select Columns
+
+    </Button>
+
+    <Button
+
+        size="sm"
+
+        variant={
+            activeTab === "order"
+                ? "default"
+                : "outline"
+        }
+
+        onClick={() =>
+            setActiveTab("order")
+        }
+
+    >
+
+        Arrange Order
+
+    </Button>
+
+    <Button
+
+        size="sm"
+
+        variant="secondary"
+
+        onClick={resetToDefaults}
+
+    >
+
+        Reset Defaults
+
+    </Button>
+
+</div>
+
         </div>
 
         <div className="p-6">

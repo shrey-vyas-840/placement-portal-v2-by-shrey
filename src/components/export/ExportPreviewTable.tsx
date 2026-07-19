@@ -65,9 +65,21 @@ export function ExportPreviewTable<RowType>({
                 >
                   {selectedColumns.map((column) => (
                     <td
+
+    title={String(
+
+        getCellValue(
+
+            row,
+
+            column,
+
+        ) ?? "",
+
+    )}
                       key={column}
 
-                      className="whitespace-nowrap px-4 py-3 align-top"
+                      className="max-w-xs truncate whitespace-nowrap px-4 py-3 align-top"
                     >
                       {String(
                         getCellValue(

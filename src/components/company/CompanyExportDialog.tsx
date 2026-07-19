@@ -53,72 +53,84 @@ export default function CompanyExportDialog({
 
   const dataset = useMemo<ExportDataset<CompanyExportRow>>(() => {
     const columns: ExportColumn[] = [
-     {
-    key: "Company Name",
-    label: "Company Name",
-    required: true,
-    defaultEnabled: true,
-    width: 35,
-    excelType: "text",
-},
+      {
+        key: "Company Name",
+        label: "Company Name",
+        group: "Company Information",
+        required: true,
+        defaultEnabled: true,
+        width: 35,
+        excelType: "text",
+      },
 
       {
         key: "Primary HR Name",
         label: "Primary HR Name",
+        group: "Primary Recruiter",
         required: true,
         defaultEnabled: true,
       },
 
-{
-    key: "Primary HR Contact",
-    label: "Primary HR Contact",
-    required: true,
-    defaultEnabled: true,
-    width: 18,
-    excelType: "phone",
-},
+      {
+        key: "Primary HR Contact",
+        label: "Primary HR Contact",
+        group: "Primary Recruiter",
+        required: true,
+        defaultEnabled: true,
+        width: 18,
+        excelType: "phone",
+      },
 
-   {
-    key: "Primary HR Email",
-    label: "Primary HR Email",
-    width: 32,
-    excelType: "email",
-},
+      {
+        key: "Primary HR Email",
+        label: "Primary HR Email",
+        group: "Primary Recruiter",
+        width: 32,
+        excelType: "email",
+      },
 
       {
         key: "Primary HR Position",
         label: "Primary HR Position",
+        group: "Primary Recruiter",
       },
 
-     {
-    key: "Website",
-    label: "Website",
-    width: 40,
-    excelType: "url",
-},
+      {
+        key: "Website",
+        label: "Website",
+        group: "Company Information",
+        width: 40,
+        excelType: "url",
+      },
+
       {
         key: "Industry",
         label: "Industry",
+        group: "Company Information",
       },
 
       {
         key: "Hiring Location",
         label: "Hiring Location",
+        group: "Company Information",
       },
 
       {
         key: "Company Size",
         label: "Company Size",
+        group: "Company Information",
       },
 
       {
         key: "Description",
         label: "Description",
+        group: "Company Information",
       },
 
       {
         key: "Past Recruitment Count",
         label: "Past Recruitment Count",
+        group: "Statistics",
       },
     ];
 
@@ -126,26 +138,26 @@ export default function CompanyExportDialog({
       columns.push(
         {
           key: `Recruiter ${i} Name`,
-
           label: `Recruiter ${i} Name`,
+          group: "Additional Recruiters",
         },
 
         {
           key: `Recruiter ${i} Email`,
-
           label: `Recruiter ${i} Email`,
+          group: "Additional Recruiters",
         },
 
         {
           key: `Recruiter ${i} Contact`,
-
           label: `Recruiter ${i} Contact`,
+          group: "Additional Recruiters",
         },
 
         {
           key: `Recruiter ${i} Position`,
-
           label: `Recruiter ${i} Position`,
+          group: "Additional Recruiters",
         },
       );
     }

@@ -20,6 +20,8 @@ import { GripVertical } from "lucide-react";
 
 interface SortableColumnProps {
   column: string;
+
+  order: number;
 }
 
 function SortableColumn({ column }: SortableColumnProps) {
@@ -34,7 +36,7 @@ function SortableColumn({ column }: SortableColumnProps) {
 
     transition,
   } = useSortable({
-    id: column,
+    id: column.replace(/^\d+\.\s/, ""),
   });
 
   return (
@@ -127,11 +129,18 @@ export function ExportColumnSorter({
         strategy={verticalListSortingStrategy}
       >
         <div className="space-y-2">
-          {selectedColumns.map((column) => (
+          <div className="mb-4 rounded-lg border border-dashed bg-muted/30 p-3 text-sm text-muted-foreground">
+            Drag and drop the columns below to change the export order. The Excel file and preview
+            will always follow this order.
+          </div>
+
+          {selectedColumns.map((column, index) => (
             <SortableColumn
               key={column}
 
               column={column}
+
+              order={index + 1}
             />
           ))}
         </div>

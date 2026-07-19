@@ -1,37 +1,19 @@
 export interface ExportColumn {
+  key: string;
 
-    key: string;
+  label: string;
 
-    label: string;
+  group?: string;
 
-    required?: boolean;
+  required?: boolean;
 
-    defaultEnabled?: boolean;
+  defaultEnabled?: boolean;
 
-    width?: number;
+  width?: number;
 
-    alignment?:
+  alignment?: "left" | "center" | "right";
 
-        | "left"
-
-        | "center"
-
-        | "right";
-
-    excelType?:
-
-        | "text"
-
-        | "number"
-
-        | "date"
-
-        | "email"
-
-        | "url"
-
-        | "phone";
-
+  excelType?: "text" | "number" | "date" | "email" | "url" | "phone";
 }
 
 export interface ExportDataset<RowType = Record<string, unknown>> {
