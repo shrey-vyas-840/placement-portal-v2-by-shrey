@@ -213,7 +213,7 @@ export default function AttendanceReviewDialog({
 
                         <th className="text-left">Student</th>
 
-                        <th className="text-left">Branch</th>
+                        
 
                         <th className="text-left">Absence Status</th>
                       </tr>
@@ -238,8 +238,6 @@ export default function AttendanceReviewDialog({
                                 <td>
                                   {participant.student.first_name} {participant.student.last_name}
                                 </td>
-
-                                <td>--</td>
 
                                 <td className="p-3 align-top">
                                   <select
@@ -318,8 +316,6 @@ export default function AttendanceReviewDialog({
 
                         <th className="text-left">Student</th>
 
-                        <th className="text-left">Branch</th>
-
                         <th className="text-left">Restriction</th>
 
                         <th className="text-left">Override</th>
@@ -340,8 +336,6 @@ export default function AttendanceReviewDialog({
                                 <td>
                                   {participant.student.first_name} {participant.student.last_name}
                                 </td>
-
-                                <td>--</td>
 
                                 <td>{participant.restriction_reason ?? "Active Restriction"}</td>
 

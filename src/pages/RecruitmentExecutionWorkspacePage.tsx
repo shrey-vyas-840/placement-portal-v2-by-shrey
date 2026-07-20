@@ -110,18 +110,33 @@ export function RecruitmentExecutionWorkspacePage() {
         executionId: workspace.execution.execution_id,
         executionRoundId: selectedRound.execution_round_id,
         executionRevision: workspace.execution.revision_number,
-        rows: participants.map((participant) => ({
-          executionParticipantId: participant.execution_participant_id,
-          attendanceStatus:
-            editedRows[participant.execution_participant_id]?.attendanceStatus ?? null,
-          gateStatus: editedRows[participant.execution_participant_id]?.gateStatus ?? null,
-          progressionStatus:
-            editedRows[participant.execution_participant_id]?.progressionStatus ?? "NONE",
-          remarks: "",
-        })),
+        rows: participants.map((participant) => {
+          const row = editedRows[participant.execution_participant_id];
+
+          return {
+            executionParticipantId: participant.execution_participant_id,
+
+            attendanceStatus: row?.attendanceStatus ?? null,
+
+            gateStatus: row?.gateStatus ?? null,
+
+            progressionStatus: row?.progressionStatus ?? "NONE",
+
+            remarks: row?.remarks ?? "",
+
+            absenceDisposition: row?.absenceDisposition ?? null,
+
+            absenceReason: row?.absenceReason ?? "",
+
+            restrictionOverride: row?.restrictionOverride ?? false,
+
+            restrictionOverrideReason: row?.overrideReason ?? "",
+          };
+        }),
       });
 
       toast.success("Round saved successfully.");
+      setAttendanceReviewOpen(false);
 
       if (result.progressedParticipants > 0) {
         toast.success(`${result.progressedParticipants} participant(s) progressed.`);
@@ -382,12 +397,8 @@ export function RecruitmentExecutionWorkspacePage() {
                           }}
                         >
                           <option value="">—</option>
-                          <option value="PRESENT">
-🟢 Present
-</option>
-                          <option value="ABSENT">
-🟠 Absent
-</option>
+                          <option value="PRESENT">🟢 Present</option>
+                          <option value="ABSENT">🟠 Absent</option>
                         </select>
                       </td>
 
