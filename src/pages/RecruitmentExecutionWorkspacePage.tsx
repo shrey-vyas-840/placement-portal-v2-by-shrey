@@ -19,6 +19,10 @@ interface Props {
 export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
   const [loading, setLoading] = useState(true);
 
+  const [saving, setSaving] = useState(false);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   const [workspace, setWorkspace] = useState<RecruitmentExecutionWorkspace | null>(null);
 
   const [selectedRoundId, setSelectedRoundId] = useState("");
@@ -65,6 +69,7 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
       });
 
       setEditedRows(initialState);
+      setHasUnsavedChanges(false);
     } finally {
       setLoading(false);
     }
@@ -96,60 +101,76 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
   );
 
   const handleSaveRound = async () => {
-    if (!workspace || !selectedRound) {
-      return;
+    setSaving(true);
+
+    try {
+      if (!workspace || !selectedRound) {
+        return;
+      }
+
+      const result = await recruitmentExecutionService.saveRound({
+        executionId: workspace.execution.execution_id,
+        executionRoundId: selectedRound.execution_round_id,
+        executionRevision: workspace.execution.revision_number,
+        rows: participants.map((participant) => ({
+          executionParticipantId: participant.execution_participant_id,
+          attendanceStatus:
+            editedRows[participant.execution_participant_id]?.attendanceStatus ?? null,
+          gateStatus: editedRows[participant.execution_participant_id]?.gateStatus ?? null,
+          progressionStatus:
+            editedRows[participant.execution_participant_id]?.progressionStatus ?? "NONE",
+          remarks: editedRows[participant.execution_participant_id]?.remarks ?? "",
+        })),
+      });
+
+      console.log("Saved Events:", result.savedEvents);
+
+      console.log("Progressed Participants:", result.progressedParticipants);
+
+      await loadWorkspace();
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSaving(false);
     }
-
-    const result = await recruitmentExecutionService.saveRound({
-      executionId: workspace.execution.execution_id,
-      executionRoundId: selectedRound.execution_round_id,
-      executionRevision: workspace.execution.revision_number,
-      rows: participants.map((participant) => ({
-        executionParticipantId: participant.execution_participant_id,
-        attendanceStatus:
-          editedRows[participant.execution_participant_id]?.attendanceStatus ?? null,
-        gateStatus: editedRows[participant.execution_participant_id]?.gateStatus ?? null,
-        progressionStatus:
-          editedRows[participant.execution_participant_id]?.progressionStatus ?? "NONE",
-        remarks: editedRows[participant.execution_participant_id]?.remarks ?? "",
-      })),
-    });
-
-    console.log("Saved Events:", result.savedEvents);
-
-    console.log("Progressed Participants:", result.progressedParticipants);
-
-    await loadWorkspace();
   };
 
   const handleProgressToNextRound = async () => {
-    if (!workspace || !selectedRound) {
-      return;
+    setSaving(true);
+
+    try {
+      if (!workspace || !selectedRound) {
+        return;
+      }
+
+      const currentIndex = workspace.rounds.findIndex(
+        (round) => round.execution_round_id === selectedRound.execution_round_id,
+      );
+
+      if (currentIndex === -1 || currentIndex === workspace.rounds.length - 1) {
+        return;
+      }
+
+      const nextRound = workspace.rounds[currentIndex + 1];
+
+      const result = await recruitmentExecutionService.progressToNextRound({
+        executionId: workspace.execution.execution_id,
+        currentRoundId: selectedRound.execution_round_id,
+        nextRoundId: nextRound.execution_round_id,
+      });
+
+      console.log("Progressed Participants:", result.progressedParticipants);
+
+      setSelectedRoundId(nextRound.execution_round_id);
+
+      await loadWorkspace();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSaving(false);
     }
-
-    const currentIndex = workspace.rounds.findIndex(
-      (round) => round.execution_round_id === selectedRound.execution_round_id,
-    );
-
-    if (currentIndex === -1 || currentIndex === workspace.rounds.length - 1) {
-      return;
-    }
-
-    const nextRound = workspace.rounds[currentIndex + 1];
-
-    const result = await recruitmentExecutionService.progressToNextRound({
-      executionId: workspace.execution.execution_id,
-      currentRoundId: selectedRound.execution_round_id,
-      nextRoundId: nextRound.execution_round_id,
-    });
-
-    console.log("Progressed Participants:", result.progressedParticipants);
-
-    setSelectedRoundId(nextRound.execution_round_id);
-
-    await loadWorkspace();
   };
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -292,7 +313,9 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
                         value={
                           editedRows[participant.execution_participant_id]?.attendanceStatus ?? ""
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setHasUnsavedChanges(true);
+
                           setEditedRows((prev) => ({
                             ...prev,
                             [participant.execution_participant_id]: {
@@ -300,8 +323,8 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
                               attendanceStatus: (e.target.value ||
                                 null) as ExecutionAttendanceStatus | null,
                             },
-                          }))
-                        }
+                          }));
+                        }}
                       >
                         <option value="">—</option>
                         <option value="PRESENT">Present</option>
@@ -313,15 +336,17 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
                       <select
                         className="w-full rounded border px-2 py-1 text-sm"
                         value={editedRows[participant.execution_participant_id]?.gateStatus ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setHasUnsavedChanges(true);
+
                           setEditedRows((prev) => ({
                             ...prev,
                             [participant.execution_participant_id]: {
                               ...prev[participant.execution_participant_id],
                               gateStatus: (e.target.value || null) as ExecutionGateStatus | null,
                             },
-                          }))
-                        }
+                          }));
+                        }}
                       >
                         <option value="">—</option>
                         <option value="ALLOWED">Allowed</option>
@@ -336,15 +361,17 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
                           editedRows[participant.execution_participant_id]?.progressionStatus ??
                           "NONE"
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setHasUnsavedChanges(true);
+
                           setEditedRows((prev) => ({
                             ...prev,
                             [participant.execution_participant_id]: {
                               ...prev[participant.execution_participant_id],
                               progressionStatus: e.target.value as ExecutionProgressionStatus,
                             },
-                          }))
-                        }
+                          }));
+                        }}
                       >
                         <option value="NONE">No Progress</option>
 
@@ -360,15 +387,17 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
                         className="w-full rounded border px-2 py-1 text-sm"
                         placeholder="Remarks"
                         value={editedRows[participant.execution_participant_id]?.remarks ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setHasUnsavedChanges(true);
+
                           setEditedRows((prev) => ({
                             ...prev,
                             [participant.execution_participant_id]: {
                               ...prev[participant.execution_participant_id],
                               remarks: e.target.value,
                             },
-                          }))
-                        }
+                          }));
+                        }}
                       />
                     </td>
                   </tr>
@@ -380,7 +409,8 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
             <button
               type="button"
               onClick={handleSaveRound}
-              className="rounded-md border px-4 py-2 text-sm"
+              disabled={saving || !hasUnsavedChanges}
+              className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               Save Round
             </button>
@@ -389,6 +419,7 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
               type="button"
               onClick={handleProgressToNextRound}
               disabled={
+                saving ||
                 !workspace ||
                 workspace.rounds.findIndex(
                   (round) => round.execution_round_id === selectedRoundId,
@@ -402,7 +433,8 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
 
             <button
               type="button"
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+              disabled={saving}
+              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               Final Save
             </button>
