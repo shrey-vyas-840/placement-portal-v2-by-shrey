@@ -7,7 +7,8 @@ export interface JsonObject {
 export type ExecutionSeriesStatus = "ACTIVE" | "FINALIZED" | "ARCHIVED";
 export type ExecutionStatus = "ACTIVE" | "FINALIZED" | "SUPERSEDED";
 export type ExecutionScope = "COMMON" | "ROLE_SPECIFIC";
-export type ExecutionRoundStatus = "DRAFT" | "READY" | "IN_PROGRESS" | "COMPLETED" | "STALE" | "LOCKED";
+export type ExecutionRoundStatus =
+  "DRAFT" | "READY" | "IN_PROGRESS" | "COMPLETED" | "STALE" | "LOCKED";
 export type ExecutionAttendanceStatus = "PRESENT" | "ABSENT";
 export type ExecutionGateStatus = "ALLOWED" | "RESTRICTED";
 export type ExecutionProgressionStatus = "NONE" | "SHORTLISTED" | "SELECTED";
@@ -94,8 +95,7 @@ export interface RecruitmentExecutionParticipantRow {
  *
  * This is NOT a database table.
  */
-export interface RecruitmentExecutionParticipantWithStudent
-  extends RecruitmentExecutionParticipantRow {
+export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentExecutionParticipantRow {
   application_status: string;
 
   student: {
@@ -242,6 +242,8 @@ export interface RecruitmentExecutionRoundRoleMapping {
  * Full immutable history remains available separately.
  */
 export interface RecruitmentExecutionHistorySummary {
+  history_id: string;
+  
   execution_participant_id: string;
 
   execution_round_id: string;

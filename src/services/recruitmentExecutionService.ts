@@ -7,7 +7,14 @@ import type {
   RecruitmentExecutionSnapshot,
   RecruitmentExecutionRoundRow,
   RecruitmentExecutionParticipantWithStudent,
+  RecruitmentExecutionRoundRoleMapping,
+  RecruitmentExecutionHistorySummary,
+  RecruitmentExecutionHistoryCreateInput,
+  RecruitmentExecutionWorkspace,
   ExecutionScope,
+  ExecutionAttendanceStatus,
+  ExecutionGateStatus,
+  ExecutionProgressionStatus,
 } from "@/types/recruitmentExecution";
 
 /**
@@ -33,11 +40,7 @@ import type {
 const EXECUTION_SERIES_TABLE = "recruitment_execution_series";
 const EXECUTIONS_TABLE = "recruitment_executions";
 
-function requireData<T>(
-  data: T | null,
-  error: unknown,
-  operation: string
-): T {
+function requireData<T>(data: T | null, error: unknown, operation: string): T {
   if (error) {
     throw error;
   }
@@ -56,13 +59,11 @@ class RecruitmentExecutionService {
    * --------------------------------------------------------------------------
    */
 
-  async getExecutionSeries(
-    opportunityId: string
-  ): Promise<RecruitmentExecutionSeriesRow | null> {
+  async getExecutionSeries(seriesId: string): Promise<RecruitmentExecutionSeriesRow | null> {
     const { data, error } = await (supabase as any)
       .from(EXECUTION_SERIES_TABLE)
       .select("*")
-      .eq("opportunity_id", opportunityId)
+      .eq("series_id", seriesId)
       .maybeSingle();
 
     if (error) {
@@ -94,7 +95,7 @@ class RecruitmentExecutionService {
     return requireData(
       data as RecruitmentExecutionSeriesRow | null,
       error,
-      "createExecutionSeries"
+      "createExecutionSeries",
     );
   }
 
@@ -104,9 +105,7 @@ class RecruitmentExecutionService {
    * --------------------------------------------------------------------------
    */
 
-  async getLatestExecution(
-    seriesId: string
-  ): Promise<RecruitmentExecutionRow | null> {
+  async getLatestExecution(seriesId: string): Promise<RecruitmentExecutionRow | null> {
     const { data, error } = await (supabase as any)
       .from(EXECUTIONS_TABLE)
       .select("*")
@@ -136,22 +135,17 @@ class RecruitmentExecutionService {
         series_id: input.seriesId,
         revision_number: input.revisionNumber,
         execution_snapshot: input.snapshot,
-        reopened_from_execution_id:
-          input.reopenedFromExecutionId ?? null,
+        reopened_from_execution_id: input.reopenedFromExecutionId ?? null,
         started_by: input.startedBy ?? null,
         reopen_reason: input.reopenReason ?? null,
       })
       .select()
       .single();
 
-    return requireData(
-      data as RecruitmentExecutionRow | null,
-      error,
-      "createExecutionRevision"
-    );
+    return requireData(data as RecruitmentExecutionRow | null, error, "createExecutionRevision");
   }
 
-    async finalizeExecution(input: {
+  async finalizeExecution(input: {
     executionId: string;
     finalizedBy?: string | null;
     finalizationNotes?: string | null;
@@ -168,11 +162,7 @@ class RecruitmentExecutionService {
       .select()
       .single();
 
-    return requireData(
-      data as RecruitmentExecutionRow | null,
-      error,
-      "finalizeExecution"
-    );
+    return requireData(data as RecruitmentExecutionRow | null, error, "finalizeExecution");
   }
 
   async reopenExecution(input: {
@@ -191,9 +181,7 @@ class RecruitmentExecutionService {
     });
   }
 
-  async getExecutionRevision(
-    executionId: string
-  ): Promise<RecruitmentExecutionRow | null> {
+  async getExecutionRevision(executionId: string): Promise<RecruitmentExecutionRow | null> {
     const { data, error } = await (supabase as any)
       .from(EXECUTIONS_TABLE)
       .select("*")
@@ -207,9 +195,7 @@ class RecruitmentExecutionService {
     return data as RecruitmentExecutionRow | null;
   }
 
-  async listExecutionRevisions(
-    seriesId: string
-  ): Promise<RecruitmentExecutionRow[]> {
+  async listExecutionRevisions(seriesId: string): Promise<RecruitmentExecutionRow[]> {
     const { data, error } = await (supabase as any)
       .from(EXECUTIONS_TABLE)
       .select("*")
@@ -225,22 +211,26 @@ class RecruitmentExecutionService {
     return (data ?? []) as RecruitmentExecutionRow[];
   }
 
-    // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // Round Management
   // --------------------------------------------------------------------------
 
-  private readonly EXECUTION_ROUNDS_TABLE =
-    "recruitment_execution_rounds";
+  private readonly EXECUTION_ROUNDS_TABLE = "recruitment_execution_rounds";
 
-    private readonly EXECUTION_PARTICIPANTS_TABLE =
-  "recruitment_execution_participants";
+  private readonly EXECUTION_PARTICIPANTS_TABLE = "recruitment_execution_participants";
 
-    private readonly EXECUTION_ROUND_ROLES_TABLE =
+  private readonly EXECUTION_ROUND_ROLES_TABLE = "recruitment_execution_round_roles";
+
+  private readonly EXECUTION_HISTORY_TABLE = "recruitment_execution_history";
+
+  private readonly APPLICATIONS_TABLE = "student_opportunity_applications";
+
+  private readonly EXECUTION_FINAL_SELECTION_TABLE = "recruitment_execution_final_selection";
+
+    private readonly EXECUTION_ROUND_ROLE_MAPPING_TABLE =
     "recruitment_execution_round_roles";
 
-  async loadRounds(
-    executionId: string
-  ): Promise<RecruitmentExecutionRoundRow[]> {
+  async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
       .select("*")
@@ -283,11 +273,7 @@ class RecruitmentExecutionService {
       .select()
       .single();
 
-    return requireData(
-      data as RecruitmentExecutionRoundRow | null,
-      error,
-      "createRound"
-    );
+    return requireData(data as RecruitmentExecutionRoundRow | null, error, "createRound");
   }
 
   async updateRound(input: {
@@ -311,16 +297,10 @@ class RecruitmentExecutionService {
       .select()
       .single();
 
-    return requireData(
-      data as RecruitmentExecutionRoundRow | null,
-      error,
-      "updateRound"
-    );
+    return requireData(data as RecruitmentExecutionRoundRow | null, error, "updateRound");
   }
 
-  async getRound(
-    executionRoundId: string
-  ): Promise<RecruitmentExecutionRoundRow | null> {
+  async getRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow | null> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
       .select("*")
@@ -339,11 +319,12 @@ class RecruitmentExecutionService {
   // --------------------------------------------------------------------------
 
   async loadParticipants(
-    executionId: string
+    executionId: string,
   ): Promise<RecruitmentExecutionParticipantWithStudent[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_PARTICIPANTS_TABLE)
-      .select(`
+      .select(
+        `
         *,
         student_opportunity_applications (
           application_status,
@@ -367,7 +348,8 @@ class RecruitmentExecutionService {
             )
           )
         )
-      `)
+      `,
+      )
       .eq("execution_id", executionId);
 
     if (error) {
@@ -383,52 +365,507 @@ class RecruitmentExecutionService {
       updated_at: participant.updated_at,
 
       application_status:
-        participant.student_opportunity_applications
-          ?.application_status ?? "Applied",
+        participant.student_opportunity_applications?.application_status ?? "Applied",
 
-      student:
-        participant.student_opportunity_applications
-          ?.student_master,
+      student: participant.student_opportunity_applications?.student_master,
 
-      selected_roles:
-        (
-          participant.student_opportunity_applications
-            ?.student_application_selected_roles ?? []
-        ).map((role: any) => ({
-          selected_role_id: role.selected_role_id,
-          drive_role_id: role.drive_role_id,
-          preference_order: role.preference_order,
-          drive_role_name:
-            role.drive_roles?.drive_role_name ?? "",
-        })),
+      selected_roles: (
+        participant.student_opportunity_applications?.student_application_selected_roles ?? []
+      ).map((role: any) => ({
+        selected_role_id: role.selected_role_id,
+        drive_role_id: role.drive_role_id,
+        preference_order: role.preference_order,
+        drive_role_name: role.drive_roles?.drive_role_name ?? "",
+      })),
     }));
   }
 
-    async loadRoundRoleMappings(
-    executionId: string
-  ) {
+  async loadRoundRoleMappings(
+    executionId: string,
+  ): Promise<RecruitmentExecutionRoundRoleMapping[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUND_ROLES_TABLE)
-      .select(`
+      .select(
+        `
         *,
         drive_roles (
           drive_role_id,
           drive_role_name
         )
-      `)
+      `,
+      )
       .eq("execution_id", executionId);
 
     if (error) {
       throw error;
     }
 
-    return data ?? [];
-  }
-  
+    return (data ?? []).map((mapping: any) => ({
+      execution_round_role_id: mapping.execution_round_role_id,
+      execution_round_id: mapping.execution_round_id,
+      drive_role_id: mapping.drive_role_id,
+      created_at: mapping.created_at,
 
+      drive_role: {
+        drive_role_id: mapping.drive_roles?.drive_role_id,
+        drive_role_name: mapping.drive_roles?.drive_role_name ?? "",
+      },
+    }));
+  }
+
+  // --------------------------------------------------------------------------
+  // History
+  // --------------------------------------------------------------------------
+
+  async loadHistorySummary(executionId: string): Promise<RecruitmentExecutionHistorySummary[]> {
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_HISTORY_TABLE)
+      .select(
+        `
+        history_id,
+        execution_participant_id,
+        execution_round_id,
+        attendance_status,
+        gate_status,
+        progression_status,
+        changed_at,
+        history_revision
+      `,
+      )
+      .eq("execution_id", executionId)
+      .order("history_revision", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const latest = new Map<string, RecruitmentExecutionHistorySummary>();
+
+    for (const row of data ?? []) {
+      const key = `${row.execution_participant_id}:${row.execution_round_id}`;
+
+      if (latest.has(key)) {
+        continue;
+      }
+
+      latest.set(key, {
+        history_id: row.history_id,
+
+        execution_participant_id: row.execution_participant_id,
+
+        execution_round_id: row.execution_round_id,
+
+        attendance_status: row.attendance_status,
+
+        gate_status: row.gate_status,
+
+        progression_status: row.progression_status,
+
+        changed_at: row.changed_at,
+      });
+    }
+
+    return [...latest.values()];
+  }
+
+  // --------------------------------------------------------------------------
+  // Participant Initialization
+  // --------------------------------------------------------------------------
+
+  async initializeParticipants(executionId: string): Promise<number> {
+    const execution = await this.getExecutionRevision(executionId);
+
+    if (!execution) {
+      throw new Error("Execution not found.");
+    }
+
+    const series = await this.getExecutionSeries(execution.series_id);
+
+    if (!series) {
+      throw new Error("Execution series not found.");
+    }
+
+    const { data: applications, error: applicationError } = await (supabase as any)
+      .from(this.APPLICATIONS_TABLE)
+      .select(
+        `
+          application_id,
+          student_id
+        `,
+      )
+      .eq("opportunity_id", series.opportunity_id);
+
+    if (applicationError) {
+      throw applicationError;
+    }
+
+    const { data: existingParticipants, error: existingError } = await (supabase as any)
+      .from(this.EXECUTION_PARTICIPANTS_TABLE)
+      .select("application_id")
+      .eq("execution_id", executionId);
+
+    if (existingError) {
+      throw existingError;
+    }
+
+    const existingApplicationIds = new Set(
+      (existingParticipants ?? []).map((participant: any) => participant.application_id),
+    );
+
+    const rowsToInsert = (applications ?? [])
+      .filter((application: any) => !existingApplicationIds.has(application.application_id))
+      .map((application: any) => ({
+        execution_id: executionId,
+        application_id: application.application_id,
+        student_id: application.student_id,
+      }));
+
+    if (rowsToInsert.length === 0) {
+      return 0;
+    }
+
+    const { error: insertError } = await (supabase as any)
+      .from(this.EXECUTION_PARTICIPANTS_TABLE)
+      .insert(rowsToInsert);
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    return rowsToInsert.length;
+  }
+
+  // --------------------------------------------------------------------------
+  // Round Save Helpers
+  // --------------------------------------------------------------------------
+
+  private async validateRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow> {
+    const round = await this.getRound(executionRoundId);
+
+    if (!round) {
+      throw new Error("Execution round not found.");
+    }
+
+    return round;
+  }
+
+  private async getLatestParticipantState(executionId: string, executionRoundId: string) {
+    const history = await this.loadHistorySummary(executionId);
+
+    const lookup = new Map(
+      history
+        .filter((item) => item.execution_round_id === executionRoundId)
+        .map((item) => [item.execution_participant_id, item]),
+    );
+
+    return lookup;
+  }
+
+  private buildHistoryEvents(input: {
+    executionId: string;
+    executionRoundId: string;
+    executionRevision: number;
+    historyRevision: number;
+    changedBy?: string | null;
+
+    rows: Array<{
+      executionParticipantId: string;
+
+      attendanceStatus: ExecutionAttendanceStatus | null;
+
+      gateStatus: ExecutionGateStatus | null;
+
+      progressionStatus: ExecutionProgressionStatus;
+
+      remarks?: string | null;
+
+      previousHistoryId?: string | null;
+    }>;
+  }): RecruitmentExecutionHistoryCreateInput[] {
+    return input.rows.map((row) => ({
+      execution_id: input.executionId,
+
+      execution_round_id: input.executionRoundId,
+
+      execution_participant_id: row.executionParticipantId,
+
+      execution_revision: input.executionRevision,
+
+      history_revision: input.historyRevision,
+
+      attendance_status: row.attendanceStatus,
+
+      gate_status: row.gateStatus,
+
+      progression_status: row.progressionStatus,
+
+      remarks: row.remarks ?? null,
+
+      previous_history_id: row.previousHistoryId ?? null,
+
+      changed_by: input.changedBy ?? null,
+    }));
+  }
+
+  private async insertHistoryEvents(
+    events: RecruitmentExecutionHistoryCreateInput[],
+  ): Promise<number> {
+    if (events.length === 0) {
+      return 0;
+    }
+
+    const { error } = await (supabase as any).from(this.EXECUTION_HISTORY_TABLE).insert(events);
+
+    if (error) {
+      throw error;
+    }
+
+    return events.length;
+  }
+
+  // --------------------------------------------------------------------------
+  // Round Save
+  // --------------------------------------------------------------------------
+
+  async saveRound(input: {
+    executionId: string;
+    executionRoundId: string;
+    executionRevision: number;
+    historyRevision: number;
+    changedBy?: string | null;
+    rows: Array<{
+      executionParticipantId: string;
+      attendanceStatus: ExecutionAttendanceStatus | null;
+      gateStatus: ExecutionGateStatus | null;
+      progressionStatus: ExecutionProgressionStatus;
+      remarks?: string | null;
+    }>;
+  }): Promise<{
+    savedEvents: number;
+  }> {
+    await this.validateRound(input.executionRoundId);
+
+    const latestState = await this.getLatestParticipantState(
+      input.executionId,
+      input.executionRoundId,
+    );
+
+    const events = this.buildHistoryEvents({
+      executionId: input.executionId,
+      executionRoundId: input.executionRoundId,
+      executionRevision: input.executionRevision,
+      historyRevision: input.historyRevision,
+      changedBy: input.changedBy,
+
+      rows: input.rows.map((row) => {
+        const previousState = latestState.get(row.executionParticipantId);
+
+        return {
+          executionParticipantId: row.executionParticipantId,
+          attendanceStatus: row.attendanceStatus,
+          gateStatus: row.gateStatus,
+          progressionStatus: row.progressionStatus,
+          remarks: row.remarks,
+          previousHistoryId: previousState?.history_id ?? null,
+        };
+      }),
+    });
+
+    const savedEvents = await this.insertHistoryEvents(events);
+
+    return {
+      savedEvents,
+    };
+  }
+
+    // --------------------------------------------------------------------------
+  // Progression Engine
+  // --------------------------------------------------------------------------
+
+  private async getRoundRoleIds(
+    executionRoundId: string,
+  ): Promise<string[]> {
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+      .select("drive_role_id")
+      .eq("execution_round_id", executionRoundId);
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []).map(
+      (row: any) => row.drive_role_id,
+    );
+  }
+
+  private filterParticipantsForNextRound(input: {
+    participants: RecruitmentExecutionParticipantWithStudent[];
+    history: RecruitmentExecutionHistorySummary[];
+    allowedRoleIds: string[];
+    scope: ExecutionScope;
+  }): RecruitmentExecutionParticipantWithStudent[] {
+    const historyLookup = new Map(
+      input.history.map((item) => [
+        item.execution_participant_id,
+        item,
+      ]),
+    );
+
+    return input.participants.filter(
+      (participant) => {
+        const latest = historyLookup.get(
+          participant.execution_participant_id,
+        );
+
+        if (
+          latest?.progression_status !==
+          "SHORTLISTED"
+        ) {
+          return false;
+        }
+
+        if (input.scope === "COMMON") {
+          return true;
+        }
+
+        return participant.selected_roles.some(
+          (role) =>
+            input.allowedRoleIds.includes(
+              role.drive_role_id,
+            ),
+        );
+      },
+    );
+  }
+
+    private async deriveNextRoundParticipants(input: {
+    executionId: string;
+    currentRoundId: string;
+    nextRoundId: string;
+  }): Promise<RecruitmentExecutionParticipantWithStudent[]> {
+    const [nextRound, participants, history] =
+      await Promise.all([
+        this.getRound(input.nextRoundId),
+        this.loadParticipants(input.executionId),
+        this.loadHistorySummary(input.executionId),
+      ]);
+
+    if (!nextRound) {
+      throw new Error("Next round not found.");
+    }
+
+    const allowedRoleIds =
+      nextRound.scope === "ROLE_SPECIFIC"
+        ? await this.getRoundRoleIds(
+            input.nextRoundId,
+          )
+        : [];
+
+    return this.filterParticipantsForNextRound({
+      participants,
+      history,
+      allowedRoleIds,
+      scope: nextRound.scope,
+    });
+  }
+
+    private async populateNextRoundParticipants(input: {
+    executionId: string;
+    currentRoundId: string;
+    nextRoundId: string;
+  }): Promise<number> {
+    const participants =
+      await this.deriveNextRoundParticipants({
+        executionId: input.executionId,
+        currentRoundId: input.currentRoundId,
+        nextRoundId: input.nextRoundId,
+      });
+
+    if (participants.length === 0) {
+      return 0;
+    }
+
+    const rows = participants.map((participant) => ({
+      execution_id: input.executionId,
+      application_id: participant.application_id,
+      student_id: participant.student_id,
+    }));
+
+    const { error } = await (supabase as any)
+      .from(this.EXECUTION_PARTICIPANTS_TABLE)
+      .upsert(rows, {
+        onConflict:
+          "execution_id,application_id",
+        ignoreDuplicates: true,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return rows.length;
+  }
+
+    // --------------------------------------------------------------------------
+  // Round Progression
+  // --------------------------------------------------------------------------
+
+  async progressToNextRound(input: {
+    executionId: string;
+    currentRoundId: string;
+    nextRoundId: string;
+  }): Promise<{
+    progressedParticipants: number;
+  }> {
+    await this.validateRound(input.currentRoundId);
+    await this.validateRound(input.nextRoundId);
+
+    const progressedParticipants =
+      await this.populateNextRoundParticipants({
+        executionId: input.executionId,
+        currentRoundId: input.currentRoundId,
+        nextRoundId: input.nextRoundId,
+      });
+
+    return {
+      progressedParticipants,
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // Workspace Facade
+  // --------------------------------------------------------------------------
+
+  async loadExecutionWorkspace(executionId: string): Promise<RecruitmentExecutionWorkspace> {
+    const execution = await this.getExecutionRevision(executionId);
+
+    if (!execution) {
+      throw new Error("Execution not found.");
+    }
+
+    const series = await this.getExecutionSeries(execution.series_id);
+
+    if (!series) {
+      throw new Error("Execution series not found.");
+    }
+
+    const [rounds, participants, roundRoleMappings, historySummary] = await Promise.all([
+      this.loadRounds(executionId),
+      this.loadParticipants(executionId),
+      this.loadRoundRoleMappings(executionId),
+      this.loadHistorySummary(executionId),
+    ]);
+
+    return {
+      series,
+      execution,
+      rounds,
+      participants,
+      roundRoleMappings,
+      historySummary,
+    };
+  }
 }
 
-export const recruitmentExecutionService =
-  new RecruitmentExecutionService();
-
-  
+export const recruitmentExecutionService = new RecruitmentExecutionService();
