@@ -114,6 +114,38 @@ export function AdminRecruitmentWorkspacePage() {
   });
 };
 
+
+  const handleResumeProcess = () => {
+  const executionId = summary?.execution.latestExecutionId;
+  
+if (!executionId) {
+  return;
+}
+
+  navigate({
+    to: "/admin/recruitment-execution",
+    search: {
+      executionId,
+    },
+  });
+};
+
+const handleViewProcess = () => {
+  const executionId = summary?.execution.latestExecutionId;
+
+if (!executionId) {
+  return;
+}
+
+  navigate({
+    to: "/admin/recruitment-execution",
+    search: {
+      executionId,
+    },
+  });
+};
+
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -161,10 +193,12 @@ export function AdminRecruitmentWorkspacePage() {
             )}
 
             {activeTab === "recruitment-process" && (
-             <RecruitmentProcessTab
-  summary={summary}
-  loading={loading}
-  onStartProcess={handleStartProcess}
+            <RecruitmentProcessTab
+    summary={summary}
+    loading={loading}
+    onStartProcess={handleStartProcess}
+    onResumeProcess={handleResumeProcess}
+    onViewProcess={handleViewProcess}
 />
             )}
 

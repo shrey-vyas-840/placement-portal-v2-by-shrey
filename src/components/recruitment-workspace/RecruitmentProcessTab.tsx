@@ -5,12 +5,17 @@ interface RecruitmentProcessTabProps {
   loading: boolean;
 
   onStartProcess?: () => Promise<void>;
+onResumeProcess?: () => void;
+onViewProcess?: () => void;
+
 }
 
 export function RecruitmentProcessTab({
   summary,
   loading,
   onStartProcess,
+  onResumeProcess,
+  onViewProcess,
 }: RecruitmentProcessTabProps) {
   if (loading) {
     return (
@@ -103,31 +108,33 @@ export function RecruitmentProcessTab({
 
           <div className="mt-8 space-y-4">
             {primaryAction === "START" && (
-             <button
-  type="button"
-  onClick={() => void onStartProcess?.()}
-  className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
->
-  Start Process
-</button>
+              <button
+                type="button"
+                onClick={() => void onStartProcess?.()}
+                className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
+              >
+                Start Process
+              </button>
             )}
 
             {primaryAction === "RESUME" && (
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
-              >
-                Resume Process
-              </button>
+             <button
+  type="button"
+  onClick={onResumeProcess}
+  className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
+>
+  Resume Process
+</button>
             )}
 
             {primaryAction === "VIEW" && (
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
-              >
-                View Process
-              </button>
+             <button
+  type="button"
+  onClick={onViewProcess}
+  className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
+>
+  View Process
+</button>
             )}
 
             {secondaryAction === "REOPEN" && (
