@@ -15,6 +15,28 @@ export type ExecutionProgressionStatus = "NONE" | "SHORTLISTED" | "SELECTED";
 export type ExecutionAbsenceDisposition =
   | "UNALLOWED"
   | "ALLOWED";
+  export interface RecruitmentExecutionEditedRow {
+  attendanceStatus: ExecutionAttendanceStatus | null;
+
+  gateStatus: ExecutionGateStatus | null;
+
+  progressionStatus: ExecutionProgressionStatus;
+
+  /**
+   * Temporary compatibility field.
+   * Will be removed after Attendance Review
+   * fully replaces the Remarks workflow.
+   */
+  remarks: string;
+
+  absenceDisposition: ExecutionAbsenceDisposition | null;
+
+  absenceReason: string;
+
+  restrictionOverride: boolean;
+
+  overrideReason: string;
+}
 export type ExecutionEventType =
   | "EXECUTION_STARTED"
   | "ROUND_CREATED"

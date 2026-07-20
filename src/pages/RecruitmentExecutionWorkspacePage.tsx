@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { recruitmentExecutionService } from "@/services/recruitmentExecutionService";
 import { useNavigate } from "@tanstack/react-router";
 import { getExecutionBootstrapContext } from "@/services/recruitmentExecutionBootstrapService";
+import AttendanceReviewDialog from "@/components/recruitment-workspace/AttendanceReviewDialog";
 import type {
   RecruitmentExecutionWorkspace,
   RecruitmentExecutionRoundRow,
@@ -11,6 +12,7 @@ import type {
   ExecutionAttendanceStatus,
   ExecutionGateStatus,
   ExecutionProgressionStatus,
+  RecruitmentExecutionEditedRow,
 } from "@/types/recruitmentExecution";
 
 export function RecruitmentExecutionWorkspacePage() {
@@ -28,16 +30,10 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [selectedRoundId, setSelectedRoundId] = useState("");
 
+  const [attendanceReviewOpen, setAttendanceReviewOpen] = useState(false);
+
   const [editedRows, setEditedRows] = useState<
-    Record<
-      string,
-      {
-        attendanceStatus: ExecutionAttendanceStatus | null;
-        gateStatus: ExecutionGateStatus | null;
-        progressionStatus: ExecutionProgressionStatus;
-        remarks: string;
-      }
-    >
+   Record<string, RecruitmentExecutionEditedRow>
   >({});
 
   const loadWorkspace = useCallback(async () => {
@@ -50,15 +46,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
       setSelectedRoundId(data.rounds[0]?.execution_round_id ?? "");
 
-      const initialState: Record<
-        string,
-        {
-          attendanceStatus: ExecutionAttendanceStatus | null;
-          gateStatus: ExecutionGateStatus | null;
-          progressionStatus: ExecutionProgressionStatus;
-          remarks: string;
-        }
-      > = {};
+      const initialState: Record<string, RecruitmentExecutionEditedRow> = {};
 
       data.participants.forEach((participant) => {
         initialState[participant.execution_participant_id] = {
@@ -69,6 +57,14 @@ export function RecruitmentExecutionWorkspacePage() {
           progressionStatus: "NONE",
 
           remarks: "",
+
+          absenceDisposition: null,
+
+          absenceReason: "",
+
+          restrictionOverride: false,
+
+          overrideReason: "",
         };
       });
 
@@ -123,7 +119,7 @@ export function RecruitmentExecutionWorkspacePage() {
           gateStatus: editedRows[participant.execution_participant_id]?.gateStatus ?? null,
           progressionStatus:
             editedRows[participant.execution_participant_id]?.progressionStatus ?? "NONE",
-          remarks: editedRows[participant.execution_participant_id]?.remarks ?? "",
+          remarks: "",
         })),
       });
 
@@ -513,7 +509,7 @@ export function RecruitmentExecutionWorkspacePage() {
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <button
               type="button"
-              onClick={handleSaveRound}
+              onClick={() => setAttendanceReviewOpen(true)}
               disabled={saving || !hasUnsavedChanges}
               className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -547,6 +543,27 @@ export function RecruitmentExecutionWorkspacePage() {
           </div>
         </div>
       </div>
+
+      <AttendanceReviewDialog
+  open={attendanceReviewOpen}
+  onOpenChange={setAttendanceReviewOpen}
+  participants={participants}
+  editedRows={editedRows}
+  onEditedRowChange={(
+    participantId,
+    changes,
+  ) => {
+    setEditedRows((prev) => ({
+      ...prev,
+      [participantId]: {
+        ...prev[participantId],
+        ...changes,
+      },
+    }));
+
+    setHasUnsavedChanges(true);
+  }}
+/>
     </div>
   );
 }
