@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { recruitmentExecutionService } from "@/services/recruitmentExecutionService";
 
@@ -12,11 +12,11 @@ import type {
   ExecutionProgressionStatus,
 } from "@/types/recruitmentExecution";
 
-interface Props {
-  executionId: string;
-}
+export function RecruitmentExecutionWorkspacePage() {
+  const { executionId } = useSearch({
+    from: "/admin/recruitment-execution",
+  });
 
-export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
   const [loading, setLoading] = useState(true);
 
   const [saving, setSaving] = useState(false);
@@ -123,24 +123,18 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
         })),
       });
 
-toast.success("Round saved successfully.");
+      toast.success("Round saved successfully.");
 
-if (result.progressedParticipants > 0) {
-  toast.success(
-    `${result.progressedParticipants} participant(s) progressed.`,
-  );
-}
+      if (result.progressedParticipants > 0) {
+        toast.success(`${result.progressedParticipants} participant(s) progressed.`);
+      }
 
       await loadWorkspace();
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error(error);
 
-toast.error(
-  error instanceof Error
-    ? error.message
-    : "Unable to save round.",
-);
+      toast.error(error instanceof Error ? error.message : "Unable to save round.");
     } finally {
       setSaving(false);
     }
@@ -170,25 +164,54 @@ toast.error(
         nextRoundId: nextRound.execution_round_id,
       });
 
-toast.success(
-  `${result.progressedParticipants} participant(s) progressed to the next round.`,
-);
+      toast.success(
+        `${result.progressedParticipants} participant(s) progressed to the next round.`,
+      );
 
       setSelectedRoundId(nextRound.execution_round_id);
 
       await loadWorkspace();
     } catch (error) {
-    console.error(error);
+      console.error(error);
 
-toast.error(
-  error instanceof Error
-    ? error.message
-    : "Unable to progress participants.",
-);
+      toast.error(error instanceof Error ? error.message : "Unable to progress participants.");
     } finally {
       setSaving(false);
     }
   };
+
+  const handleFinalizeExecution = async () => {
+    if (!workspace) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Finalize this recruitment execution?\n\nAfter finalization, this execution will become read-only.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await recruitmentExecutionService.finalizeExecutionWorkflow({
+        executionId: workspace.execution.execution_id,
+      });
+
+      toast.success("Recruitment execution finalized successfully.");
+
+      await loadWorkspace();
+    } catch (error) {
+      console.error(error);
+
+      toast.error(error instanceof Error ? error.message : "Unable to finalize execution.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -451,7 +474,8 @@ toast.error(
 
             <button
               type="button"
-              disabled={saving}
+              onClick={handleFinalizeExecution}
+              disabled={saving || hasUnsavedChanges}
               className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               Final Save

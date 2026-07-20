@@ -26,6 +26,7 @@ import { Route as StudentNocRouteImport } from './routes/student/noc'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminStudentsRouteImport } from './routes/admin/students'
 import { Route as AdminRecruitmentNewRouteImport } from './routes/admin/recruitment-new'
+import { Route as AdminRecruitmentExecutionRouteImport } from './routes/admin/recruitment-execution'
 import { Route as AdminRecruitmentRouteImport } from './routes/admin/recruitment'
 import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
 import { Route as AdminOnboardingApprovalsRouteImport } from './routes/admin/onboarding-approvals'
@@ -129,6 +130,12 @@ const AdminRecruitmentNewRoute = AdminRecruitmentNewRouteImport.update({
   path: '/admin/recruitment-new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRecruitmentExecutionRoute =
+  AdminRecruitmentExecutionRouteImport.update({
+    id: '/admin/recruitment-execution',
+    path: '/admin/recruitment-execution',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminRecruitmentRoute = AdminRecruitmentRouteImport.update({
   id: '/admin/recruitment',
   path: '/admin/recruitment',
@@ -239,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/admin/onboarding-approvals': typeof AdminOnboardingApprovalsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/recruitment': typeof AdminRecruitmentRouteWithChildren
+  '/admin/recruitment-execution': typeof AdminRecruitmentExecutionRoute
   '/admin/recruitment-new': typeof AdminRecruitmentNewRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -273,6 +281,7 @@ export interface FileRoutesByTo {
   '/admin/drives': typeof AdminDrivesRoute
   '/admin/noc': typeof AdminNocRoute
   '/admin/onboarding-approvals': typeof AdminOnboardingApprovalsRoute
+  '/admin/recruitment-execution': typeof AdminRecruitmentExecutionRoute
   '/admin/recruitment-new': typeof AdminRecruitmentNewRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -310,6 +319,7 @@ export interface FileRoutesById {
   '/admin/onboarding-approvals': typeof AdminOnboardingApprovalsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRouteWithChildren
   '/admin/recruitment': typeof AdminRecruitmentRouteWithChildren
+  '/admin/recruitment-execution': typeof AdminRecruitmentExecutionRoute
   '/admin/recruitment-new': typeof AdminRecruitmentNewRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-approvals'
     | '/admin/opportunities'
     | '/admin/recruitment'
+    | '/admin/recruitment-execution'
     | '/admin/recruitment-new'
     | '/admin/students'
     | '/auth/callback'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/admin/drives'
     | '/admin/noc'
     | '/admin/onboarding-approvals'
+    | '/admin/recruitment-execution'
     | '/admin/recruitment-new'
     | '/admin/students'
     | '/auth/callback'
@@ -418,6 +430,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-approvals'
     | '/admin/opportunities'
     | '/admin/recruitment'
+    | '/admin/recruitment-execution'
     | '/admin/recruitment-new'
     | '/admin/students'
     | '/auth/callback'
@@ -455,6 +468,7 @@ export interface RootRouteChildren {
   AdminOnboardingApprovalsRoute: typeof AdminOnboardingApprovalsRoute
   AdminOpportunitiesRoute: typeof AdminOpportunitiesRouteWithChildren
   AdminRecruitmentRoute: typeof AdminRecruitmentRouteWithChildren
+  AdminRecruitmentExecutionRoute: typeof AdminRecruitmentExecutionRoute
   AdminRecruitmentNewRoute: typeof AdminRecruitmentNewRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -588,6 +602,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/recruitment-new'
       fullPath: '/admin/recruitment-new'
       preLoaderRoute: typeof AdminRecruitmentNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recruitment-execution': {
+      id: '/admin/recruitment-execution'
+      path: '/admin/recruitment-execution'
+      fullPath: '/admin/recruitment-execution'
+      preLoaderRoute: typeof AdminRecruitmentExecutionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/recruitment': {
@@ -757,6 +778,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminOnboardingApprovalsRoute: AdminOnboardingApprovalsRoute,
   AdminOpportunitiesRoute: AdminOpportunitiesRouteWithChildren,
   AdminRecruitmentRoute: AdminRecruitmentRouteWithChildren,
+  AdminRecruitmentExecutionRoute: AdminRecruitmentExecutionRoute,
   AdminRecruitmentNewRoute: AdminRecruitmentNewRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,

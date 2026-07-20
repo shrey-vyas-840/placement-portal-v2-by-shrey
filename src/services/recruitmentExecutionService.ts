@@ -227,6 +227,12 @@ class RecruitmentExecutionService {
 
   private readonly EXECUTION_FINAL_SELECTION_TABLE = "recruitment_execution_final_selection";
 
+  private readonly PLACEMENT_HISTORY_TABLE = "student_placement_history";
+
+  private readonly STUDENT_MASTER_TABLE = "student_master";
+
+  private readonly OPPORTUNITY_TABLE = "opportunity_master";
+
   private readonly EXECUTION_ROUND_ROLE_MAPPING_TABLE = "recruitment_execution_round_roles";
 
   async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
@@ -548,25 +554,23 @@ class RecruitmentExecutionService {
     return round;
   }
 
-private async getNextHistoryRevision(
-  executionId: string,
-): Promise<number> {
-  const { data, error } = await (supabase as any)
-    .from(this.EXECUTION_HISTORY_TABLE)
-    .select("history_revision")
-    .eq("execution_id", executionId)
-    .order("history_revision", {
-      ascending: false,
-    })
-    .limit(1)
-    .maybeSingle();
+  private async getNextHistoryRevision(executionId: string): Promise<number> {
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_HISTORY_TABLE)
+      .select("history_revision")
+      .eq("execution_id", executionId)
+      .order("history_revision", {
+        ascending: false,
+      })
+      .limit(1)
+      .maybeSingle();
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+
+    return (data?.history_revision ?? 0) + 1;
   }
-
-  return (data?.history_revision ?? 0) + 1;
-}
 
   private async getLatestParticipantState(executionId: string, executionRoundId: string) {
     const history = await this.loadHistorySummary(executionId);
@@ -674,10 +678,7 @@ private async getNextHistoryRevision(
       executionId: input.executionId,
       executionRoundId: input.executionRoundId,
       executionRevision: input.executionRevision,
-      historyRevision:
-  await this.getNextHistoryRevision(
-    input.executionId,
-  ),
+      historyRevision: await this.getNextHistoryRevision(input.executionId),
       changedBy: input.changedBy,
 
       rows: input.rows.map((row) => {
@@ -800,6 +801,91 @@ private async getNextHistoryRevision(
     return participants.length;
   }
 
+  private async getSelectedParticipants(executionId: string) {
+    const history = await this.loadHistorySummary(executionId);
+
+    const selectedIds = new Set(
+      history
+        .filter((row) => row.progression_status === "SELECTED")
+        .map((row) => row.execution_participant_id),
+    );
+
+    const participants = await this.loadParticipants(executionId);
+
+    return participants.filter((participant) =>
+      selectedIds.has(participant.execution_participant_id),
+    );
+  }
+
+  private async buildFinalSelectionRows(executionId: string) {
+    const participants = await this.getSelectedParticipants(executionId);
+
+    return participants.map((participant) => ({
+      execution_id: executionId,
+      execution_participant_id: participant.execution_participant_id,
+      application_id: participant.application_id,
+      student_id: participant.student_id,
+    }));
+  }
+
+  private async getExecutionContext(executionId: string) {
+    const execution = await this.getExecutionRevision(executionId);
+
+    if (!execution) {
+      throw new Error("Execution not found.");
+    }
+
+    const series = await this.getExecutionSeries(execution.series_id);
+
+    if (!series) {
+      throw new Error("Execution series not found.");
+    }
+
+    const { data: opportunity, error } = await (supabase as any)
+      .from(this.OPPORTUNITY_TABLE)
+      .select("*")
+      .eq("opportunity_id", series.opportunity_id)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      execution,
+      series,
+      opportunity,
+    };
+  }
+
+  private async buildPlacementHistoryRows(executionId: string) {
+    const participants = await this.getSelectedParticipants(executionId);
+
+    if (participants.length === 0) {
+      return [];
+    }
+
+    const { series, opportunity } = await this.getExecutionContext(executionId);
+
+    return participants.map((participant) => ({
+      student_id: participant.student_id,
+      opportunity_id: series.opportunity_id,
+      drive_id: series.drive_id,
+      company_id: series.company_id,
+      company_name: opportunity.company_name ?? "",
+      package_lpa: 0,
+      placement_type: "On Campus Placement",
+      placed_at: new Date().toISOString().slice(0, 10),
+      is_current: true,
+    }));
+  }
+
+  private async buildStudentPlacementUpdates(executionId: string) {
+    const participants = await this.getSelectedParticipants(executionId);
+
+    return participants.map((participant) => participant.student_id);
+  }
+
   // --------------------------------------------------------------------------
   // Round Progression
   // --------------------------------------------------------------------------
@@ -822,6 +908,38 @@ private async getNextHistoryRevision(
 
     return {
       progressedParticipants,
+    };
+  }
+
+  async finalizeExecutionWorkflow(input: {
+    executionId: string;
+    finalizedBy?: string | null;
+    finalizationNotes?: string | null;
+  }) {
+    const finalSelectionRows = await this.buildFinalSelectionRows(input.executionId);
+    const placementHistoryRows = await this.buildPlacementHistoryRows(input.executionId);
+    const studentIds = await this.buildStudentPlacementUpdates(input.executionId);
+    const { data: execution, error } = await (supabase as any).rpc(
+      "finalize_recruitment_execution",
+      {
+        p_execution_id: input.executionId,
+        p_finalized_by: input.finalizedBy ?? null,
+        p_finalization_notes: input.finalizationNotes ?? null,
+        p_final_selection_rows: finalSelectionRows,
+        p_placement_history_rows: placementHistoryRows,
+        p_student_ids: studentIds,
+      },
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      execution,
+      finalSelectionCount: finalSelectionRows.length,
+      placementHistoryCount: placementHistoryRows.length,
+      updatedStudents: studentIds.length,
     };
   }
 

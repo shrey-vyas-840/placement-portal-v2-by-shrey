@@ -66,12 +66,21 @@ const NAV_ITEMS: NavItem[] = [
     description: "Wizard entry point and workflow hub.",
     badge: "R",
   },
+{
+   to: "/admin/recruitment-execution",
+  label: "Execution",
+  description: "Recruitment execution workspace.",
+  badge: "Ex",
+},
   {
     to: "/admin/opportunities",
     label: "Opportunities",
     description: "Roles, questions and applicants.",
     badge: "O",
   },
+
+
+
   {
     to: "/admin/attendance",
     label: "Attendance",
@@ -90,6 +99,8 @@ const NAV_ITEMS: NavItem[] = [
   description: "Student onboarding review and approvals.",
   badge: "OB",
 },
+
+
 ];
 
 const CHART_COLORS = [
@@ -777,7 +788,7 @@ export function AdminDashboardPage() {
             subtitle="Primary entry point for campus recruitments. Existing company, drive, and opportunity pages remain available as management screens."
             right={<StatusChip label="Mode" value="Additive hub" />}
           >
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <Link
                 to="/admin/recruitment"
                 className="rounded-2xl border border-primary/20 bg-primary/5 p-4 transition hover:border-primary/40 hover:bg-primary/10"
@@ -817,6 +828,26 @@ export function AdminDashboardPage() {
                   Manage roles, questions, and applicants.
                 </div>
               </Link>
+<Link
+  to="/admin/recruitment"
+  className="rounded-2xl border border-primary/20 bg-primary/5 p-4 transition hover:border-primary/40 hover:bg-primary/10"
+>
+  <div className="flex items-center justify-between">
+    <div>
+      <div className="text-sm font-semibold">
+        Recruitment Execution
+      </div>
+
+      <div className="mt-1 text-xs text-muted-foreground">
+        Manage live rounds, attendance, results and finalization.
+      </div>
+    </div>
+
+    <div className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">
+      Open →
+    </div>
+  </div>
+</Link>
             </div>
           </SectionCard>
           <SectionCard

@@ -101,6 +101,7 @@ export function WorkspaceCatalogPage() {
           <MenuLink to="/admin/companies" label="Company Management" />
           <MenuLink to="/admin/drives" label="Drive Management" />
           <MenuLink to="/admin/attendance" label="Attendance System" />
+          <MenuLink to="/admin/recruitment-execution" label="Recruitment Execution Workspace" />
           <MenuLink to="/admin/noc" label="NOC Automation Workflow" />
           <MenuLink to="/admin/onboarding-approvals" label="Onboarding Management" />
         </div>
