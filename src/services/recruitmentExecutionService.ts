@@ -227,8 +227,7 @@ class RecruitmentExecutionService {
 
   private readonly EXECUTION_FINAL_SELECTION_TABLE = "recruitment_execution_final_selection";
 
-    private readonly EXECUTION_ROUND_ROLE_MAPPING_TABLE =
-    "recruitment_execution_round_roles";
+  private readonly EXECUTION_ROUND_ROLE_MAPPING_TABLE = "recruitment_execution_round_roles";
 
   async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
     const { data, error } = await (supabase as any)
@@ -549,6 +548,26 @@ class RecruitmentExecutionService {
     return round;
   }
 
+private async getNextHistoryRevision(
+  executionId: string,
+): Promise<number> {
+  const { data, error } = await (supabase as any)
+    .from(this.EXECUTION_HISTORY_TABLE)
+    .select("history_revision")
+    .eq("execution_id", executionId)
+    .order("history_revision", {
+      ascending: false,
+    })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data?.history_revision ?? 0) + 1;
+}
+
   private async getLatestParticipantState(executionId: string, executionRoundId: string) {
     const history = await this.loadHistorySummary(executionId);
 
@@ -631,7 +650,7 @@ class RecruitmentExecutionService {
     executionId: string;
     executionRoundId: string;
     executionRevision: number;
-    historyRevision: number;
+    nextRoundId?: string;
     changedBy?: string | null;
     rows: Array<{
       executionParticipantId: string;
@@ -642,6 +661,7 @@ class RecruitmentExecutionService {
     }>;
   }): Promise<{
     savedEvents: number;
+    progressedParticipants: number;
   }> {
     await this.validateRound(input.executionRoundId);
 
@@ -654,7 +674,10 @@ class RecruitmentExecutionService {
       executionId: input.executionId,
       executionRoundId: input.executionRoundId,
       executionRevision: input.executionRevision,
-      historyRevision: input.historyRevision,
+      historyRevision:
+  await this.getNextHistoryRevision(
+    input.executionId,
+  ),
       changedBy: input.changedBy,
 
       rows: input.rows.map((row) => {
@@ -673,18 +696,27 @@ class RecruitmentExecutionService {
 
     const savedEvents = await this.insertHistoryEvents(events);
 
+    let progressedParticipants = 0;
+
+    if (input.nextRoundId) {
+      progressedParticipants = await this.populateNextRoundParticipants({
+        executionId: input.executionId,
+        currentRoundId: input.executionRoundId,
+        nextRoundId: input.nextRoundId,
+      });
+    }
+
     return {
       savedEvents,
+      progressedParticipants,
     };
   }
 
-    // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // Progression Engine
   // --------------------------------------------------------------------------
 
-  private async getRoundRoleIds(
-    executionRoundId: string,
-  ): Promise<string[]> {
+  private async getRoundRoleIds(executionRoundId: string): Promise<string[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
       .select("drive_role_id")
@@ -694,9 +726,7 @@ class RecruitmentExecutionService {
       throw error;
     }
 
-    return (data ?? []).map(
-      (row: any) => row.drive_role_id,
-    );
+    return (data ?? []).map((row: any) => row.drive_role_id);
   }
 
   private filterParticipantsForNextRound(input: {
@@ -706,61 +736,43 @@ class RecruitmentExecutionService {
     scope: ExecutionScope;
   }): RecruitmentExecutionParticipantWithStudent[] {
     const historyLookup = new Map(
-      input.history.map((item) => [
-        item.execution_participant_id,
-        item,
-      ]),
+      input.history.map((item) => [item.execution_participant_id, item]),
     );
 
-    return input.participants.filter(
-      (participant) => {
-        const latest = historyLookup.get(
-          participant.execution_participant_id,
-        );
+    return input.participants.filter((participant) => {
+      const latest = historyLookup.get(participant.execution_participant_id);
 
-        if (
-          latest?.progression_status !==
-          "SHORTLISTED"
-        ) {
-          return false;
-        }
+      if (latest?.progression_status !== "SHORTLISTED") {
+        return false;
+      }
 
-        if (input.scope === "COMMON") {
-          return true;
-        }
+      if (input.scope === "COMMON") {
+        return true;
+      }
 
-        return participant.selected_roles.some(
-          (role) =>
-            input.allowedRoleIds.includes(
-              role.drive_role_id,
-            ),
-        );
-      },
-    );
+      return participant.selected_roles.some((role) =>
+        input.allowedRoleIds.includes(role.drive_role_id),
+      );
+    });
   }
 
-    private async deriveNextRoundParticipants(input: {
+  private async deriveNextRoundParticipants(input: {
     executionId: string;
     currentRoundId: string;
     nextRoundId: string;
   }): Promise<RecruitmentExecutionParticipantWithStudent[]> {
-    const [nextRound, participants, history] =
-      await Promise.all([
-        this.getRound(input.nextRoundId),
-        this.loadParticipants(input.executionId),
-        this.loadHistorySummary(input.executionId),
-      ]);
+    const [nextRound, participants, history] = await Promise.all([
+      this.getRound(input.nextRoundId),
+      this.loadParticipants(input.executionId),
+      this.loadHistorySummary(input.executionId),
+    ]);
 
     if (!nextRound) {
       throw new Error("Next round not found.");
     }
 
     const allowedRoleIds =
-      nextRound.scope === "ROLE_SPECIFIC"
-        ? await this.getRoundRoleIds(
-            input.nextRoundId,
-          )
-        : [];
+      nextRound.scope === "ROLE_SPECIFIC" ? await this.getRoundRoleIds(input.nextRoundId) : [];
 
     return this.filterParticipantsForNextRound({
       participants,
@@ -770,44 +782,25 @@ class RecruitmentExecutionService {
     });
   }
 
-    private async populateNextRoundParticipants(input: {
+  private async populateNextRoundParticipants(input: {
     executionId: string;
     currentRoundId: string;
     nextRoundId: string;
   }): Promise<number> {
-    const participants =
-      await this.deriveNextRoundParticipants({
-        executionId: input.executionId,
-        currentRoundId: input.currentRoundId,
-        nextRoundId: input.nextRoundId,
-      });
+    const participants = await this.deriveNextRoundParticipants({
+      executionId: input.executionId,
+      currentRoundId: input.currentRoundId,
+      nextRoundId: input.nextRoundId,
+    });
 
-    if (participants.length === 0) {
-      return 0;
-    }
+    // Participants already exist at the execution level.
+    // Progression is represented by immutable history events,
+    // not by creating duplicate participant records.
 
-    const rows = participants.map((participant) => ({
-      execution_id: input.executionId,
-      application_id: participant.application_id,
-      student_id: participant.student_id,
-    }));
-
-    const { error } = await (supabase as any)
-      .from(this.EXECUTION_PARTICIPANTS_TABLE)
-      .upsert(rows, {
-        onConflict:
-          "execution_id,application_id",
-        ignoreDuplicates: true,
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    return rows.length;
+    return participants.length;
   }
 
-    // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // Round Progression
   // --------------------------------------------------------------------------
 
@@ -821,15 +814,37 @@ class RecruitmentExecutionService {
     await this.validateRound(input.currentRoundId);
     await this.validateRound(input.nextRoundId);
 
-    const progressedParticipants =
-      await this.populateNextRoundParticipants({
-        executionId: input.executionId,
-        currentRoundId: input.currentRoundId,
-        nextRoundId: input.nextRoundId,
-      });
+    const progressedParticipants = await this.populateNextRoundParticipants({
+      executionId: input.executionId,
+      currentRoundId: input.currentRoundId,
+      nextRoundId: input.nextRoundId,
+    });
 
     return {
       progressedParticipants,
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // Dashboard
+  // --------------------------------------------------------------------------
+
+  async getExecutionDashboard(executionId: string) {
+    const workspace = await this.loadExecutionWorkspace(executionId);
+
+    const totalParticipants = workspace.participants.length;
+
+    const totalRounds = workspace.rounds.length;
+
+    const finalizedRounds = 0;
+
+    return {
+      ...workspace,
+      metrics: {
+        totalParticipants,
+        totalRounds,
+        finalizedRounds,
+      },
     };
   }
 
