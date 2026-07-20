@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
-
+import { toast } from "sonner";
 import { recruitmentExecutionService } from "@/services/recruitmentExecutionService";
 
 import type {
@@ -123,14 +123,24 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
         })),
       });
 
-      console.log("Saved Events:", result.savedEvents);
+toast.success("Round saved successfully.");
 
-      console.log("Progressed Participants:", result.progressedParticipants);
+if (result.progressedParticipants > 0) {
+  toast.success(
+    `${result.progressedParticipants} participant(s) progressed.`,
+  );
+}
 
       await loadWorkspace();
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error(error);
+
+toast.error(
+  error instanceof Error
+    ? error.message
+    : "Unable to save round.",
+);
     } finally {
       setSaving(false);
     }
@@ -160,13 +170,21 @@ export function RecruitmentExecutionWorkspacePage({ executionId }: Props) {
         nextRoundId: nextRound.execution_round_id,
       });
 
-      console.log("Progressed Participants:", result.progressedParticipants);
+toast.success(
+  `${result.progressedParticipants} participant(s) progressed to the next round.`,
+);
 
       setSelectedRoundId(nextRound.execution_round_id);
 
       await loadWorkspace();
     } catch (error) {
-      console.error(error);
+    console.error(error);
+
+toast.error(
+  error instanceof Error
+    ? error.message
+    : "Unable to progress participants.",
+);
     } finally {
       setSaving(false);
     }
