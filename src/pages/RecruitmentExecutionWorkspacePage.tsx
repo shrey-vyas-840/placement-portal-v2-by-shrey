@@ -62,17 +62,14 @@ export function RecruitmentExecutionWorkspacePage() {
 
       data.participants.forEach((participant) => {
         initialState[participant.execution_participant_id] = {
-  attendanceStatus: null,
+          attendanceStatus: null,
 
-  gateStatus:
-    participant.effective_gate_status === "RESTRICTED"
-      ? "RESTRICTED"
-      : "ALLOWED",
+          gateStatus: participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED",
 
-  progressionStatus: "NONE",
+          progressionStatus: "NONE",
 
-  remarks: "",
-};
+          remarks: "",
+        };
       });
 
       setEditedRows(initialState);
@@ -328,154 +325,188 @@ export function RecruitmentExecutionWorkspacePage() {
               </thead>
 
               <tbody>
-                {participants.map((participant) => (
-                  <tr key={participant.execution_participant_id} className="border-b">
-                    <td className="px-3 py-3">
-                      <div className="font-medium">
-                        {`${participant.student.first_name} ${participant.student.last_name}`}
-                      </div>
+                {participants.map((participant) => {
+                  const editedRow = editedRows[participant.execution_participant_id];
 
-                      <div className="text-xs text-muted-foreground">
-                        {participant.student.institute_email}
-                      </div>
-                    </td>
+                  const isRestricted = participant.effective_gate_status === "RESTRICTED";
 
-                    <td className="px-3 py-3">{participant.student.enrollment_no}</td>
+                  const isOverrideApplied = editedRow?.gateStatus === "ALLOWED";
 
-                    <td className="px-3 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {participant.selected_roles.map((role) => (
-                          <span
-                            key={role.drive_role_id}
-                            className="rounded bg-muted px-2 py-1 text-xs"
-                          >
-                            {role.drive_role_name}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
+                  const effectiveGateStatus =
+                    isRestricted && !isOverrideApplied ? "RESTRICTED" : "ALLOWED";
 
-                    <td className="px-3 py-3">
-                      <select
-                        className="w-full rounded border px-2 py-1 text-sm"
-                        value={
-                          editedRows[participant.execution_participant_id]?.attendanceStatus ?? ""
-                        }
-                        onChange={(e) => {
-                          setHasUnsavedChanges(true);
+                  return (
+                    <tr key={participant.execution_participant_id} className="border-b">
+                      <td className="px-3 py-3">
+                        <div className="font-medium">
+                          {`${participant.student.first_name} ${participant.student.last_name}`}
+                        </div>
 
-                          setEditedRows((prev) => ({
-                            ...prev,
-                            [participant.execution_participant_id]: {
-                              ...prev[participant.execution_participant_id],
-                              attendanceStatus: (e.target.value ||
-                                null) as ExecutionAttendanceStatus | null,
-                            },
-                          }));
-                        }}
-                      >
-                        <option value="">—</option>
-                        <option value="PRESENT">Present</option>
-                        <option value="ABSENT">Absent</option>
-                      </select>
-                    </td>
+                        <div className="text-xs text-muted-foreground">
+                          {participant.student.institute_email}
+                        </div>
+                      </td>
 
-                   <td className="px-3 py-3">
-  <div className="space-y-2">
-    {participant.effective_gate_status === "ALLOWED" ? (
-      <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-        ✓ Allowed
-      </span>
-    ) : (
-      <>
-        <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-          Restricted
-        </span>
+                      <td className="px-3 py-3">{participant.student.enrollment_no}</td>
 
-        {participant.restriction_reason && (
-          <div className="text-xs text-muted-foreground">
-            {participant.restriction_reason}
-          </div>
-        )}
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {participant.selected_roles.map((role) => (
+                            <span
+                              key={role.drive_role_id}
+                              className="rounded bg-muted px-2 py-1 text-xs"
+                            >
+                              {role.drive_role_name}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
 
-        {participant.can_override_gate && (
-          <button
-            type="button"
-            className="rounded border px-2 py-1 text-xs"
-            onClick={() => {
-              setHasUnsavedChanges(true);
+                      <td className="px-3 py-3">
+                        <select
+                          className="w-full rounded border px-2 py-1 text-sm"
+                          value={
+                            editedRows[participant.execution_participant_id]?.attendanceStatus ?? ""
+                          }
+                          onChange={(e) => {
+                            setHasUnsavedChanges(true);
 
-              setEditedRows((prev) => ({
-                ...prev,
-                [participant.execution_participant_id]: {
-                  ...prev[participant.execution_participant_id],
-                  gateStatus: "ALLOWED",
-                },
-              }));
-            }}
-          >
-            Allow for this Recruitment
-          </button>
-        )}
+                            setEditedRows((prev) => ({
+                              ...prev,
+                              [participant.execution_participant_id]: {
+                                ...prev[participant.execution_participant_id],
+                                attendanceStatus: (e.target.value ||
+                                  null) as ExecutionAttendanceStatus | null,
+                              },
+                            }));
+                          }}
+                        >
+                          <option value="">—</option>
+                          <option value="PRESENT">Present</option>
+                          <option value="ABSENT">Absent</option>
+                        </select>
+                      </td>
 
-        {editedRows[participant.execution_participant_id]?.gateStatus ===
-          "ALLOWED" && (
-          <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-            Allowed (Override)
-          </span>
-        )}
-      </>
-    )}
-  </div>
-</td>
-                    <td className="px-3 py-3">
-                      <select
-                        className="w-full rounded border px-2 py-1 text-sm"
-                        value={
-                          editedRows[participant.execution_participant_id]?.progressionStatus ??
-                          "NONE"
-                        }
-                        onChange={(e) => {
-                          setHasUnsavedChanges(true);
+                      <td className="px-3 py-3">
+                        <div className="space-y-2">
+                          {effectiveGateStatus === "RESTRICTED" ? (
+                            <>
+                              <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                                Restricted
+                              </span>
 
-                          setEditedRows((prev) => ({
-                            ...prev,
-                            [participant.execution_participant_id]: {
-                              ...prev[participant.execution_participant_id],
-                              progressionStatus: e.target.value as ExecutionProgressionStatus,
-                            },
-                          }));
-                        }}
-                      >
-                        <option value="NONE">No Progress</option>
+                              {participant.restriction_reason && (
+                                <div className="text-xs text-muted-foreground">
+                                  {participant.restriction_reason}
+                                </div>
+                              )}
 
-                        <option value="SHORTLISTED">Shortlisted</option>
+                              {participant.can_override_gate && (
+                                <button
+                                  type="button"
+                                  className="rounded border px-2 py-1 text-xs"
+                                  onClick={() => {
+                                    setHasUnsavedChanges(true);
 
-                        <option value="SELECTED">Selected</option>
-                      </select>
-                    </td>
+                                    setEditedRows((prev) => ({
+                                      ...prev,
+                                      [participant.execution_participant_id]: {
+                                        ...prev[participant.execution_participant_id],
+                                        gateStatus: "ALLOWED",
+                                      },
+                                    }));
+                                  }}
+                                >
+                                  Allow for this Recruitment
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                                {isOverrideApplied ? "Allowed (Override)" : "Allowed"}
+                              </span>
 
-                    <td className="px-3 py-3">
-                      <input
-                        type="text"
-                        className="w-full rounded border px-2 py-1 text-sm"
-                        placeholder="Remarks"
-                        value={editedRows[participant.execution_participant_id]?.remarks ?? ""}
-                        onChange={(e) => {
-                          setHasUnsavedChanges(true);
+                              {isOverrideApplied && participant.restriction_reason && (
+                                <div className="text-xs text-muted-foreground">
+                                  Originally Restricted
+                                  <br />
+                                  {participant.restriction_reason}
+                                </div>
+                              )}
 
-                          setEditedRows((prev) => ({
-                            ...prev,
-                            [participant.execution_participant_id]: {
-                              ...prev[participant.execution_participant_id],
-                              remarks: e.target.value,
-                            },
-                          }));
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                              {isOverrideApplied && (
+                                <button
+                                  type="button"
+                                  className="rounded border px-2 py-1 text-xs"
+                                  onClick={() => {
+                                    setHasUnsavedChanges(true);
+
+                                    setEditedRows((prev) => ({
+                                      ...prev,
+                                      [participant.execution_participant_id]: {
+                                        ...prev[participant.execution_participant_id],
+                                        gateStatus: "RESTRICTED",
+                                      },
+                                    }));
+                                  }}
+                                >
+                                  Remove Override
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <select
+                          className="w-full rounded border px-2 py-1 text-sm"
+                          value={
+                            editedRows[participant.execution_participant_id]?.progressionStatus ??
+                            "NONE"
+                          }
+                          onChange={(e) => {
+                            setHasUnsavedChanges(true);
+
+                            setEditedRows((prev) => ({
+                              ...prev,
+                              [participant.execution_participant_id]: {
+                                ...prev[participant.execution_participant_id],
+                                progressionStatus: e.target.value as ExecutionProgressionStatus,
+                              },
+                            }));
+                          }}
+                        >
+                          <option value="NONE">No Progress</option>
+
+                          <option value="SHORTLISTED">Shortlisted</option>
+
+                          <option value="SELECTED">Selected</option>
+                        </select>
+                      </td>
+
+                      <td className="px-3 py-3">
+                        <input
+                          type="text"
+                          className="w-full rounded border px-2 py-1 text-sm"
+                          placeholder="Remarks"
+                          value={editedRows[participant.execution_participant_id]?.remarks ?? ""}
+                          onChange={(e) => {
+                            setHasUnsavedChanges(true);
+
+                            setEditedRows((prev) => ({
+                              ...prev,
+                              [participant.execution_participant_id]: {
+                                ...prev[participant.execution_participant_id],
+                                remarks: e.target.value,
+                              },
+                            }));
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
