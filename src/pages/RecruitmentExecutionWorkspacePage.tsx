@@ -544,7 +544,7 @@ export function RecruitmentExecutionWorkspacePage() {
         </div>
       </div>
 
-      <AttendanceReviewDialog
+<AttendanceReviewDialog
   open={attendanceReviewOpen}
   onOpenChange={setAttendanceReviewOpen}
   participants={participants}
@@ -562,6 +562,11 @@ export function RecruitmentExecutionWorkspacePage() {
     }));
 
     setHasUnsavedChanges(true);
+  }}
+  saving={saving}
+  onSave={() => {
+    setAttendanceReviewOpen(false);
+    void handleSaveRound();
   }}
 />
     </div>

@@ -22,14 +22,20 @@ interface AttendanceReviewDialogProps {
     participantId: string,
     changes: Partial<RecruitmentExecutionEditedRow>,
   ) => void;
+
+  saving: boolean;
+
+  onSave: () => void;
 }
 
 export default function AttendanceReviewDialog({
   open,
   onOpenChange,
   participants,
-  editedRows,
-  onEditedRowChange,
+editedRows,
+onEditedRowChange,
+saving,
+onSave,
 }: AttendanceReviewDialogProps) {
   const [activeSection, setActiveSection] = useState<ReviewSection>("ABSENTEES");
 
@@ -56,6 +62,32 @@ export default function AttendanceReviewDialog({
       overridden: rows.filter((r) => r.restrictionOverride).length,
     };
   }, [editedRows, participants]);
+
+const validationErrors = useMemo(() => {
+  const errors: string[] = [];
+
+  Object.values(editedRows).forEach((row) => {
+    if (
+      row.attendanceStatus === "ABSENT" &&
+      row.absenceDisposition === "ALLOWED" &&
+      row.absenceReason.trim() === ""
+    ) {
+      errors.push("Allowed absence requires a reason.");
+    }
+
+    if (
+      row.restrictionOverride &&
+      row.overrideReason.trim() === ""
+    ) {
+      errors.push("Restriction override requires a reason.");
+    }
+  });
+
+  return errors;
+}, [editedRows]);
+
+const canSave =
+  validationErrors.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -238,6 +270,47 @@ export default function AttendanceReviewDialog({
               )}
             </div>
           </section>
+          <div className="sticky bottom-0 flex items-center justify-between border-t bg-background px-6 py-4">
+
+  <div className="text-sm">
+
+    {validationErrors.length > 0 && (
+
+      <span className="text-destructive">
+
+        {validationErrors.length}
+        {" "}
+        validation issue(s)
+
+      </span>
+
+    )}
+
+  </div>
+
+  <div className="flex gap-3">
+
+    <Button
+      variant="outline"
+      onClick={() =>
+        onOpenChange(false)
+      }
+    >
+      Cancel
+    </Button>
+
+    <Button
+      disabled={
+        !canSave || saving
+      }
+      onClick={onSave}
+    >
+      Save Attendance
+    </Button>
+
+  </div>
+
+</div>
         </div>
       </DialogContent>
     </Dialog>
