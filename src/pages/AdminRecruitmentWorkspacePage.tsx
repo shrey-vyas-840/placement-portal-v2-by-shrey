@@ -8,6 +8,7 @@ import {
   type RecruitmentWorkspaceSummary,
 } from "@/services/recruitmentAnalyticsService";
 import { ApplicantsTab } from "@/components/recruitment-workspace/ApplicantsTab";
+import { RecruitmentProcessTab } from "@/components/recruitment-workspace/RecruitmentProcessTab";
 import { ExportsTab } from "@/components/recruitment-workspace/ExportsTab";
 import { SettingsTab } from "@/components/recruitment-workspace/SettingsTab";
 
@@ -20,9 +21,13 @@ export function AdminRecruitmentWorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<RecruitmentWorkspaceSummary | null>(null);
-  const [activeTab, setActiveTab] = useState<"summary" | "applicants" | "exports" | "settings">(
-    "summary",
-  );
+const [activeTab, setActiveTab] = useState<
+  | "summary"
+  | "applicants"
+  | "recruitment-process"
+  | "exports"
+  | "settings"
+>("summary");
 
   const tabs = useMemo(
     () => [
@@ -30,14 +35,18 @@ export function AdminRecruitmentWorkspacePage() {
         id: "summary",
         label: "Summary",
       },
-      {
-        id: "applicants",
-        label: "Applicants",
-      },
-      {
-        id: "exports",
-        label: "Exports",
-      },
+{
+  id: "applicants",
+  label: "Applicants",
+},
+{
+  id: "recruitment-process",
+  label: "Recruitment Process",
+},
+{
+  id: "exports",
+  label: "Exports",
+},
       {
         id: "settings",
         label: "Settings",
@@ -127,6 +136,13 @@ export function AdminRecruitmentWorkspacePage() {
             {activeTab === "applicants" && (
               <ApplicantsTab opportunityId={summary?.opportunityId ?? null} />
             )}
+
+{activeTab === "recruitment-process" && (
+  <RecruitmentProcessTab
+    summary={summary}
+    loading={loading}
+  />
+)}
 
             {activeTab === "exports" && (
               <ExportsTab opportunityId={summary?.opportunityId ?? null} />
