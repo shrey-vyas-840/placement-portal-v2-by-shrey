@@ -32,9 +32,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [attendanceReviewOpen, setAttendanceReviewOpen] = useState(false);
 
-  const [editedRows, setEditedRows] = useState<
-   Record<string, RecruitmentExecutionEditedRow>
-  >({});
+  const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -302,8 +300,8 @@ export function RecruitmentExecutionWorkspacePage() {
           </div>
           <div className="mt-6 overflow-x-auto">
             <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="border-b">
+              <thead className="sticky top-0 z-10 bg-background">
+                <tr className="border-b transition-colors hover:bg-muted/30">
                   <th className="px-3 py-3 text-left text-sm">Student</th>
 
                   <th className="px-3 py-3 text-left text-sm">Enrollment</th>
@@ -315,8 +313,6 @@ export function RecruitmentExecutionWorkspacePage() {
                   <th className="px-3 py-3 text-left text-sm">Gate</th>
 
                   <th className="px-3 py-3 text-left text-sm">Progression</th>
-
-                  <th className="px-3 py-3 text-left text-sm">Remarks</th>
                 </tr>
               </thead>
 
@@ -360,7 +356,15 @@ export function RecruitmentExecutionWorkspacePage() {
 
                       <td className="px-3 py-3">
                         <select
-                          className="w-full rounded border px-2 py-1 text-sm"
+                          className={`w-full rounded-lg border px-3 py-2 text-sm font-medium transition-colors
+
+    ${
+      editedRow?.attendanceStatus === "PRESENT"
+        ? "border-green-300 bg-green-50 text-green-700"
+        : editedRow?.attendanceStatus === "ABSENT"
+          ? "border-amber-300 bg-amber-50 text-amber-700"
+          : "border-border bg-background"
+    }`}
                           value={
                             editedRows[participant.execution_participant_id]?.attendanceStatus ?? ""
                           }
@@ -378,82 +382,39 @@ export function RecruitmentExecutionWorkspacePage() {
                           }}
                         >
                           <option value="">—</option>
-                          <option value="PRESENT">Present</option>
-                          <option value="ABSENT">Absent</option>
+                          <option value="PRESENT">
+🟢 Present
+</option>
+                          <option value="ABSENT">
+🟠 Absent
+</option>
                         </select>
                       </td>
 
                       <td className="px-3 py-3">
                         <div className="space-y-2">
                           {effectiveGateStatus === "RESTRICTED" ? (
-                            <>
-                              <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                                Restricted
-                              </span>
-
-                              {participant.restriction_reason && (
-                                <div className="text-xs text-muted-foreground">
-                                  {participant.restriction_reason}
-                                </div>
-                              )}
-
-                              {participant.can_override_gate && (
-                                <button
-                                  type="button"
-                                  className="rounded border px-2 py-1 text-xs"
-                                  onClick={() => {
-                                    setHasUnsavedChanges(true);
-
-                                    setEditedRows((prev) => ({
-                                      ...prev,
-                                      [participant.execution_participant_id]: {
-                                        ...prev[participant.execution_participant_id],
-                                        gateStatus: "ALLOWED",
-                                      },
-                                    }));
-                                  }}
-                                >
-                                  Allow for this Recruitment
-                                </button>
-                              )}
-                            </>
+                            <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                              Restricted
+                            </span>
+                          ) : isOverrideApplied ? (
+                            <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                              Allowed (Override)
+                            </span>
                           ) : (
-                            <>
-                              <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                                {isOverrideApplied ? "Allowed (Override)" : "Allowed"}
-                              </span>
+                            <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                              Allowed
+                            </span>
+                          )}
 
-                              {isOverrideApplied && participant.restriction_reason && (
-                                <div className="text-xs text-muted-foreground">
-                                  Originally Restricted
-                                  <br />
-                                  {participant.restriction_reason}
-                                </div>
-                              )}
-
-                              {isOverrideApplied && (
-                                <button
-                                  type="button"
-                                  className="rounded border px-2 py-1 text-xs"
-                                  onClick={() => {
-                                    setHasUnsavedChanges(true);
-
-                                    setEditedRows((prev) => ({
-                                      ...prev,
-                                      [participant.execution_participant_id]: {
-                                        ...prev[participant.execution_participant_id],
-                                        gateStatus: "RESTRICTED",
-                                      },
-                                    }));
-                                  }}
-                                >
-                                  Remove Override
-                                </button>
-                              )}
-                            </>
+                          {participant.restriction_reason && (
+                            <p className="max-w-xs text-xs text-muted-foreground">
+                              {participant.restriction_reason}
+                            </p>
                           )}
                         </div>
                       </td>
+
                       <td className="px-3 py-3">
                         <select
                           className="w-full rounded border px-2 py-1 text-sm"
@@ -480,33 +441,20 @@ export function RecruitmentExecutionWorkspacePage() {
                           <option value="SELECTED">Selected</option>
                         </select>
                       </td>
-
-                      <td className="px-3 py-3">
-                        <input
-                          type="text"
-                          className="w-full rounded border px-2 py-1 text-sm"
-                          placeholder="Remarks"
-                          value={editedRows[participant.execution_participant_id]?.remarks ?? ""}
-                          onChange={(e) => {
-                            setHasUnsavedChanges(true);
-
-                            setEditedRows((prev) => ({
-                              ...prev,
-                              [participant.execution_participant_id]: {
-                                ...prev[participant.execution_participant_id],
-                                remarks: e.target.value,
-                              },
-                            }));
-                          }}
-                        />
-                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <div className="mt-8 flex items-center justify-between rounded-xl border bg-muted/30 p-4">
+            <div>
+              <div className="font-medium">Attendance Review</div>
+
+              <div className="text-sm text-muted-foreground">
+                Review absentees and restriction overrides before saving.
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => setAttendanceReviewOpen(true)}
@@ -544,31 +492,28 @@ export function RecruitmentExecutionWorkspacePage() {
         </div>
       </div>
 
-<AttendanceReviewDialog
-  open={attendanceReviewOpen}
-  onOpenChange={setAttendanceReviewOpen}
-  participants={participants}
-  editedRows={editedRows}
-  onEditedRowChange={(
-    participantId,
-    changes,
-  ) => {
-    setEditedRows((prev) => ({
-      ...prev,
-      [participantId]: {
-        ...prev[participantId],
-        ...changes,
-      },
-    }));
+      <AttendanceReviewDialog
+        open={attendanceReviewOpen}
+        onOpenChange={setAttendanceReviewOpen}
+        participants={participants}
+        editedRows={editedRows}
+        onEditedRowChange={(participantId, changes) => {
+          setEditedRows((prev) => ({
+            ...prev,
+            [participantId]: {
+              ...prev[participantId],
+              ...changes,
+            },
+          }));
 
-    setHasUnsavedChanges(true);
-  }}
-  saving={saving}
-  onSave={() => {
-    setAttendanceReviewOpen(false);
-    void handleSaveRound();
-  }}
-/>
+          setHasUnsavedChanges(true);
+        }}
+        saving={saving}
+        onSave={() => {
+          setAttendanceReviewOpen(false);
+          void handleSaveRound();
+        }}
+      />
     </div>
   );
 }
