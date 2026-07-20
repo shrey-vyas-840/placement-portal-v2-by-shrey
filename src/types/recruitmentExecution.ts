@@ -111,6 +111,16 @@ export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentE
   };
 
   selected_roles: ParticipantRoleSelection[];
+
+  is_globally_restricted: boolean;
+
+restriction_reason: string | null;
+
+effective_gate_status: "ALLOWED" | "RESTRICTED";
+
+can_override_gate: boolean;
+
+has_opportunity_override: boolean;
 }
 
 export interface ParticipantRoleSelection {
@@ -242,7 +252,7 @@ export interface RecruitmentExecutionRoundRoleMapping {
  * Full immutable history remains available separately.
  */
 export interface RecruitmentExecutionHistorySummary {
-  history_id: string;
+execution_history_id: string;
   
   execution_participant_id: string;
 

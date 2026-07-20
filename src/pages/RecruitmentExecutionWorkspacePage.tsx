@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { recruitmentExecutionService } from "@/services/recruitmentExecutionService";
-
+import { useNavigate } from "@tanstack/react-router";
+import { getExecutionBootstrapContext } from "@/services/recruitmentExecutionBootstrapService";
 import type {
   RecruitmentExecutionWorkspace,
   RecruitmentExecutionRoundRow,
@@ -61,11 +62,17 @@ export function RecruitmentExecutionWorkspacePage() {
 
       data.participants.forEach((participant) => {
         initialState[participant.execution_participant_id] = {
-          attendanceStatus: null,
-          gateStatus: null,
-          progressionStatus: "NONE",
-          remarks: "",
-        };
+  attendanceStatus: null,
+
+  gateStatus:
+    participant.effective_gate_status === "RESTRICTED"
+      ? "RESTRICTED"
+      : "ALLOWED",
+
+  progressionStatus: "NONE",
+
+  remarks: "",
+};
       });
 
       setEditedRows(initialState);
@@ -373,28 +380,54 @@ export function RecruitmentExecutionWorkspacePage() {
                       </select>
                     </td>
 
-                    <td className="px-3 py-3">
-                      <select
-                        className="w-full rounded border px-2 py-1 text-sm"
-                        value={editedRows[participant.execution_participant_id]?.gateStatus ?? ""}
-                        onChange={(e) => {
-                          setHasUnsavedChanges(true);
+                   <td className="px-3 py-3">
+  <div className="space-y-2">
+    {participant.effective_gate_status === "ALLOWED" ? (
+      <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+        ✓ Allowed
+      </span>
+    ) : (
+      <>
+        <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+          Restricted
+        </span>
 
-                          setEditedRows((prev) => ({
-                            ...prev,
-                            [participant.execution_participant_id]: {
-                              ...prev[participant.execution_participant_id],
-                              gateStatus: (e.target.value || null) as ExecutionGateStatus | null,
-                            },
-                          }));
-                        }}
-                      >
-                        <option value="">—</option>
-                        <option value="ALLOWED">Allowed</option>
-                        <option value="RESTRICTED">Restricted</option>
-                      </select>
-                    </td>
+        {participant.restriction_reason && (
+          <div className="text-xs text-muted-foreground">
+            {participant.restriction_reason}
+          </div>
+        )}
 
+        {participant.can_override_gate && (
+          <button
+            type="button"
+            className="rounded border px-2 py-1 text-xs"
+            onClick={() => {
+              setHasUnsavedChanges(true);
+
+              setEditedRows((prev) => ({
+                ...prev,
+                [participant.execution_participant_id]: {
+                  ...prev[participant.execution_participant_id],
+                  gateStatus: "ALLOWED",
+                },
+              }));
+            }}
+          >
+            Allow for this Recruitment
+          </button>
+        )}
+
+        {editedRows[participant.execution_participant_id]?.gateStatus ===
+          "ALLOWED" && (
+          <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+            Allowed (Override)
+          </span>
+        )}
+      </>
+    )}
+  </div>
+</td>
                     <td className="px-3 py-3">
                       <select
                         className="w-full rounded border px-2 py-1 text-sm"

@@ -3,157 +3,141 @@ import type { RecruitmentWorkspaceSummary } from "@/services/recruitmentAnalytic
 interface RecruitmentProcessTabProps {
   summary: RecruitmentWorkspaceSummary | null;
   loading: boolean;
+
+  onStartProcess?: () => Promise<void>;
 }
 
 export function RecruitmentProcessTab({
   summary,
   loading,
+  onStartProcess,
 }: RecruitmentProcessTabProps) {
   if (loading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
-        <div className="text-muted-foreground">
-          Loading recruitment process...
-        </div>
+        <div className="text-muted-foreground">Loading recruitment process...</div>
       </div>
     );
+  }
+
+  const execution = summary?.execution;
+
+  let primaryAction: "START" | "RESUME" | "VIEW" | null = null;
+
+  let secondaryAction: "REOPEN" | null = null;
+
+  if (execution) {
+    if (execution.canStartExecution) {
+      primaryAction = "START";
+    } else if (execution.canResumeExecution) {
+      primaryAction = "RESUME";
+    } else if (execution.canViewExecution) {
+      primaryAction = "VIEW";
+    }
+
+    if (execution.canReopenExecution) {
+      secondaryAction = "REOPEN";
+    }
   }
 
   if (!summary) {
     return (
       <div className="flex h-[400px] items-center justify-center">
-        <div className="text-destructive">
-          Recruitment process unavailable.
-        </div>
+        <div className="text-destructive">Recruitment process unavailable.</div>
       </div>
     );
   }
 
-return (
-  <div className="space-y-6">
+  return (
+    <div className="space-y-6">
+      <div className="rounded-3xl border bg-card p-8">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              Recruitment Process
+            </div>
 
-    <div className="rounded-3xl border bg-card p-8">
+            <h2 className="mt-2 text-3xl font-bold">Recruitment Process</h2>
 
-      <div className="flex items-start justify-between">
-
-        <div>
-
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Recruitment Process
+            <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+              Manage the operational recruitment lifecycle after applications have been received.
+              Start, resume, view or reopen the recruitment process from here.
+            </p>
           </div>
-
-          <h2 className="mt-2 text-3xl font-bold">
-            Recruitment Process
-          </h2>
-
-          <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
-            Manage the operational recruitment lifecycle after applications
-            have been received. Start, resume, view or reopen the recruitment
-            process from here.
-          </p>
-
         </div>
-
       </div>
 
-    </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-3xl border bg-card p-6">
+          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Status</div>
 
-    <div className="grid gap-6 lg:grid-cols-2">
+          <div className="mt-4">
+            <div className="text-2xl font-bold">{summary.execution.status.replace("_", " ")}</div>
 
-      <div className="rounded-3xl border bg-card p-6">
-
-        <div className="text-sm font-semibold">
-          Current Process
+            <div className="mt-3 text-sm text-muted-foreground">Current lifecycle state</div>
+          </div>
         </div>
 
-        <div className="mt-6 space-y-5">
-
-          <div className="flex items-center justify-between">
-
-            <span className="text-muted-foreground">
-              Status
-            </span>
-
-            <span className="rounded-full border px-3 py-1 text-sm font-medium">
-              {summary.execution.status.replace("_", " ")}
-            </span>
-
+        <div className="rounded-3xl border bg-card p-6">
+          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Current Revision
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="mt-4">
+            <div className="text-4xl font-bold">{summary.execution.latestRevision ?? "—"}</div>
 
-            <span className="text-muted-foreground">
-              Current Revision
-            </span>
-
-            <span className="font-medium">
-              {summary.execution.latestRevision ?? "—"}
-            </span>
-
+            <div className="mt-3 text-sm text-muted-foreground">Current execution revision</div>
           </div>
-
-          <div className="flex items-center justify-between">
-
-            <span className="text-muted-foreground">
-              Participants
-            </span>
-
-            <span className="font-medium">
-              {summary.execution.exists ? "Ready" : "Not Initialized"}
-            </span>
-
-          </div>
-
         </div>
 
-      </div>
+        <div className="rounded-3xl border bg-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Next Action
+            </div>
 
-      <div className="rounded-3xl border bg-card p-6">
+            <div className="mt-3 text-sm text-muted-foreground">
+              Continue the recruitment lifecycle.
+            </div>
+          </div>
 
-        <div className="text-sm font-semibold">
-          Available Actions
-        </div>
-
-        <div className="mt-6 space-y-4">
-
-     <button
+          <div className="mt-8 space-y-4">
+            {primaryAction === "START" && (
+             <button
   type="button"
-  disabled={!summary.execution.canStartExecution}
-  className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+  onClick={() => void onStartProcess?.()}
+  className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
 >
   Start Process
 </button>
+            )}
 
-   <button
-  type="button"
-  disabled={!summary.execution.canResumeExecution}
-  className="w-full rounded-xl border px-5 py-3 disabled:cursor-not-allowed disabled:opacity-50"
->
-  Resume Process
-</button>
+            {primaryAction === "RESUME" && (
+              <button
+                type="button"
+                className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
+              >
+                Resume Process
+              </button>
+            )}
 
-<button
-  type="button"
-  disabled={!summary.execution.canViewExecution}
-  className="w-full rounded-xl border px-5 py-3 disabled:cursor-not-allowed disabled:opacity-50"
->
-  View Process
-</button>
+            {primaryAction === "VIEW" && (
+              <button
+                type="button"
+                className="w-full rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground"
+              >
+                View Process
+              </button>
+            )}
 
-<button
-  type="button"
-  disabled={!summary.execution.canReopenExecution}
-  className="w-full rounded-xl border px-5 py-3 disabled:cursor-not-allowed disabled:opacity-50"
->
-  Reopen Process
-</button>
-
+            {secondaryAction === "REOPEN" && (
+              <button type="button" className="w-full rounded-xl border px-5 py-3">
+                Reopen Process
+              </button>
+            )}
+          </div>
         </div>
-
       </div>
-
     </div>
-
-  </div>
-);
-} 
+  );
+}

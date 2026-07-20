@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "@tanstack/react-router";
 import { SummaryTab } from "@/components/recruitment-workspace/SummaryTab";
 import { getDraftById, type RecruitmentDraftRow } from "@/services/recruitmentDraftService";
-
 import {
   getRecruitmentWorkspaceSummary,
   type RecruitmentWorkspaceSummary,
@@ -11,11 +10,16 @@ import { ApplicantsTab } from "@/components/recruitment-workspace/ApplicantsTab"
 import { RecruitmentProcessTab } from "@/components/recruitment-workspace/RecruitmentProcessTab";
 import { ExportsTab } from "@/components/recruitment-workspace/ExportsTab";
 import { SettingsTab } from "@/components/recruitment-workspace/SettingsTab";
+import { useNavigate } from "@tanstack/react-router";
+import { recruitmentExecutionService } from "@/services/recruitmentExecutionService";
+import { getExecutionBootstrapContext } from "@/services/recruitmentExecutionBootstrapService";
 
 export function AdminRecruitmentWorkspacePage() {
   const { draftId } = useParams({
     from: "/admin/recruitment/$draftId",
   });
+
+  const navigate = useNavigate();
 
   const [draft, setDraft] = useState<RecruitmentDraftRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +91,29 @@ export function AdminRecruitmentWorkspacePage() {
     };
   }, [draftId]);
 
+  const handleStartProcess = async () => {
+  if (!draft) {
+    return;
+  }
+
+  const bootstrap =
+    await getExecutionBootstrapContext(
+      draft.draft_id,
+    );
+
+  const execution =
+    await recruitmentExecutionService.startExecutionWorkflow({
+      ...bootstrap,
+    });
+
+  await navigate({
+    to: "/admin/recruitment-execution",
+    search: {
+      executionId: execution.execution_id,
+    },
+  });
+};
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -134,7 +161,11 @@ export function AdminRecruitmentWorkspacePage() {
             )}
 
             {activeTab === "recruitment-process" && (
-              <RecruitmentProcessTab summary={summary} loading={loading} />
+             <RecruitmentProcessTab
+  summary={summary}
+  loading={loading}
+  onStartProcess={handleStartProcess}
+/>
             )}
 
             {activeTab === "exports" && (

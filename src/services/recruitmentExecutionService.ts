@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { recruitmentExecutionRestrictionService } from "./recruitmentExecutionRestrictionService";
 
 import type {
   RecruitmentExecutionSeriesRow,
@@ -143,6 +144,87 @@ class RecruitmentExecutionService {
       .single();
 
     return requireData(data as RecruitmentExecutionRow | null, error, "createExecutionRevision");
+  }
+
+  async startExecutionWorkflow(input: {
+    opportunityId: string;
+    driveId: string;
+    companyId: string;
+    seriesSnapshot: RecruitmentExecutionSeriesSnapshot;
+    startedBy?: string | null;
+  }) {
+    // --------------------------------------------------
+    // Locate existing execution series
+    // --------------------------------------------------
+
+    const { data: existingSeries, error: seriesLookupError } = await (supabase as any)
+      .from(EXECUTION_SERIES_TABLE)
+      .select("*")
+      .eq("opportunity_id", input.opportunityId)
+      .maybeSingle();
+
+    if (seriesLookupError) {
+      throw seriesLookupError;
+    }
+
+    let series = existingSeries as RecruitmentExecutionSeriesRow | null;
+
+    // --------------------------------------------------
+    // Create execution series (first launch)
+    // --------------------------------------------------
+
+    if (!series) {
+      series = await this.createExecutionSeries({
+        opportunityId: input.opportunityId,
+        driveId: input.driveId,
+        companyId: input.companyId,
+        snapshot: input.seriesSnapshot,
+        createdBy: input.startedBy,
+      });
+    }
+
+    // --------------------------------------------------
+    // Existing execution?
+    // --------------------------------------------------
+
+    const latestExecution = await this.getLatestExecution(series.series_id);
+
+    if (latestExecution) {
+      return latestExecution;
+    }
+
+    // --------------------------------------------------
+    // Create Revision 1
+    // --------------------------------------------------
+
+    const executionSnapshot: RecruitmentExecutionSnapshot = {
+      series_id: series.series_id,
+
+      revision_number: 1,
+
+      started_by: input.startedBy ?? null,
+
+      started_at: new Date().toISOString(),
+
+      participant_application_ids: [],
+
+      planned_rounds: [],
+    };
+
+    const execution = await this.createExecutionRevision({
+      seriesId: series.series_id,
+      revisionNumber: 1,
+      snapshot: executionSnapshot,
+      startedBy: input.startedBy,
+    });
+
+    // --------------------------------------------------
+    // Initialize participants
+    // --------------------------------------------------
+
+    await this.initializeParticipants(execution.execution_id);
+
+    return execution;
   }
 
   async finalizeExecution(input: {
@@ -361,56 +443,96 @@ class RecruitmentExecutionService {
       throw error;
     }
 
-    return (data ?? []).map((participant: any) => ({
-      execution_participant_id: participant.execution_participant_id,
-      execution_id: participant.execution_id,
-      application_id: participant.application_id,
-      student_id: participant.student_id,
-      created_at: participant.created_at,
-      updated_at: participant.updated_at,
+    const participantRows = (data ?? []) as any[];
 
-      application_status:
-        participant.student_opportunity_applications?.application_status ?? "Applied",
+    const studentIds = participantRows.map((participant) => participant.student_id).filter(Boolean);
 
-      student: participant.student_opportunity_applications?.student_master,
+    const execution = await this.getExecutionRevision(executionId);
 
-      selected_roles: (
-        participant.student_opportunity_applications?.student_application_selected_roles ?? []
-      ).map((role: any) => ({
-        selected_role_id: role.selected_role_id,
-        drive_role_id: role.drive_role_id,
-        preference_order: role.preference_order,
-        drive_role_name: role.drive_roles?.drive_role_name ?? "",
-      })),
-    }));
+    if (!execution) {
+      throw new Error("Execution not found.");
+    }
+
+    const series = await this.getExecutionSeries(execution.series_id);
+
+    if (!series) {
+      throw new Error("Execution series not found.");
+    }
+
+    const restrictionStates =
+      await recruitmentExecutionRestrictionService.resolveParticipantRestrictions(
+        series.opportunity_id,
+        studentIds,
+      );
+
+    return participantRows.map((participant: any) => {
+      const restriction = restrictionStates.get(participant.student_id);
+
+      return {
+        execution_participant_id: participant.execution_participant_id,
+        execution_id: participant.execution_id,
+        application_id: participant.application_id,
+        student_id: participant.student_id,
+        created_at: participant.created_at,
+        updated_at: participant.updated_at,
+
+        application_status:
+          participant.student_opportunity_applications?.application_status ?? "Applied",
+
+        student: participant.student_opportunity_applications?.student_master,
+
+        selected_roles: (
+          participant.student_opportunity_applications?.student_application_selected_roles ?? []
+        ).map((role: any) => ({
+          selected_role_id: role.selected_role_id,
+          drive_role_id: role.drive_role_id,
+          preference_order: role.preference_order,
+          drive_role_name: role.drive_roles?.drive_role_name ?? "",
+        })),
+        is_globally_restricted: restriction?.isGloballyRestricted ?? false,
+
+        restriction_reason: restriction?.restrictionReason ?? null,
+
+        effective_gate_status: restriction?.effectiveGateStatus ?? "ALLOWED",
+
+        can_override_gate: restriction?.canOverride ?? false,
+
+        has_opportunity_override: restriction?.hasOpportunityOverride ?? false,
+      };
+    });
   }
 
   async loadRoundRoleMappings(
     executionId: string,
   ): Promise<RecruitmentExecutionRoundRoleMapping[]> {
+    const rounds = await this.loadRounds(executionId);
+
+    if (rounds.length === 0) {
+      return [];
+    }
+
+    const roundIds = rounds.map((r) => r.execution_round_id);
+
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUND_ROLES_TABLE)
       .select(
         `
-        *,
-        drive_roles (
-          drive_role_id,
-          drive_role_name
-        )
-      `,
+      *,
+      drive_roles (
+        drive_role_id,
+        drive_role_name
       )
-      .eq("execution_id", executionId);
+    `,
+      )
+      .in("execution_round_id", roundIds);
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     return (data ?? []).map((mapping: any) => ({
       execution_round_role_id: mapping.execution_round_role_id,
       execution_round_id: mapping.execution_round_id,
       drive_role_id: mapping.drive_role_id,
       created_at: mapping.created_at,
-
       drive_role: {
         drive_role_id: mapping.drive_roles?.drive_role_id,
         drive_role_name: mapping.drive_roles?.drive_role_name ?? "",
@@ -427,7 +549,7 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_HISTORY_TABLE)
       .select(
         `
-        history_id,
+    execution_history_id,
         execution_participant_id,
         execution_round_id,
         attendance_status,
@@ -454,7 +576,7 @@ class RecruitmentExecutionService {
       }
 
       latest.set(key, {
-        history_id: row.history_id,
+        execution_history_id: row.execution_history_id,
 
         execution_participant_id: row.execution_participant_id,
 
@@ -690,7 +812,7 @@ class RecruitmentExecutionService {
           gateStatus: row.gateStatus,
           progressionStatus: row.progressionStatus,
           remarks: row.remarks,
-          previousHistoryId: previousState?.history_id ?? null,
+          previousHistoryId: previousState?.execution_history_id ?? null,
         };
       }),
     });
