@@ -21,13 +21,9 @@ export function AdminRecruitmentWorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<RecruitmentWorkspaceSummary | null>(null);
-const [activeTab, setActiveTab] = useState<
-  | "summary"
-  | "applicants"
-  | "recruitment-process"
-  | "exports"
-  | "settings"
->("summary");
+  const [activeTab, setActiveTab] = useState<
+    "summary" | "applicants" | "recruitment-process" | "exports" | "settings"
+  >("summary");
 
   const tabs = useMemo(
     () => [
@@ -35,18 +31,18 @@ const [activeTab, setActiveTab] = useState<
         id: "summary",
         label: "Summary",
       },
-{
-  id: "applicants",
-  label: "Applicants",
-},
-{
-  id: "recruitment-process",
-  label: "Recruitment Process",
-},
-{
-  id: "exports",
-  label: "Exports",
-},
+      {
+        id: "applicants",
+        label: "Applicants",
+      },
+      {
+        id: "recruitment-process",
+        label: "Recruitment Process",
+      },
+      {
+        id: "exports",
+        label: "Exports",
+      },
       {
         id: "settings",
         label: "Settings",
@@ -137,12 +133,9 @@ const [activeTab, setActiveTab] = useState<
               <ApplicantsTab opportunityId={summary?.opportunityId ?? null} />
             )}
 
-{activeTab === "recruitment-process" && (
-  <RecruitmentProcessTab
-    summary={summary}
-    loading={loading}
-  />
-)}
+            {activeTab === "recruitment-process" && (
+              <RecruitmentProcessTab summary={summary} loading={loading} />
+            )}
 
             {activeTab === "exports" && (
               <ExportsTab opportunityId={summary?.opportunityId ?? null} />

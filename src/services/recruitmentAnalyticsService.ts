@@ -92,18 +92,36 @@ export interface RecruitmentWorkspaceSummary {
     custom: number;
   };
 
-recentApplications: {
-  applicationId: string;
-  studentId: string;
-  studentName: string;
-  enrollmentNo: string;
-  appliedAt: string;
-}[];
+  recentApplications: {
+    applicationId: string;
+    studentId: string;
+    studentName: string;
+    enrollmentNo: string;
+    appliedAt: string;
+  }[];
 
   applicationTrend: {
     date: string;
     applications: number;
   }[];
+
+  execution: {
+    exists: boolean;
+
+    latestExecutionId: string | null;
+
+    latestRevision: number | null;
+
+    status: "NOT_STARTED" | "ACTIVE" | "FINALIZED";
+
+    canStartExecution: boolean;
+
+    canResumeExecution: boolean;
+
+    canViewExecution: boolean;
+
+    canReopenExecution: boolean;
+  };
 }
 export interface RecruitmentApplicant {
   applicationId: string;
@@ -207,13 +225,13 @@ export async function getRecruitmentWorkspaceSummary(
 
   let applicationsLast7Days = 0;
 
-let recentApplications: {
-  applicationId: string;
-  studentId: string;
-  studentName: string;
-  enrollmentNo: string;
-  appliedAt: string;
-}[] = [];
+  let recentApplications: {
+    applicationId: string;
+    studentId: string;
+    studentName: string;
+    enrollmentNo: string;
+    appliedAt: string;
+  }[] = [];
 
   let applicationTrend: {
     date: string;
@@ -222,9 +240,9 @@ let recentApplications: {
 
   if (opportunity?.opportunity_id) {
     const { data: latestApplications } = await (supabase as any)
-  .from("student_opportunity_applications")
-  .select(
-    `
+      .from("student_opportunity_applications")
+      .select(
+        `
 application_id,
 student_id,
 applied_at,
@@ -236,7 +254,7 @@ student_master!inner(
   last_name
 )
 `,
-  )
+      )
       .eq("opportunity_id", opportunity.opportunity_id)
       .order("applied_at", {
         ascending: false,
@@ -244,29 +262,25 @@ student_master!inner(
       .limit(5);
 
     recentApplications =
-  latestApplications?.map((application: any) => {
-    const student = application.student_master;
+      latestApplications?.map((application: any) => {
+        const student = application.student_master;
 
-    const fullName = [
-      student?.first_name,
-      student?.middle_name,
-      student?.last_name,
-    ]
-      .filter(Boolean)
-      .join(" ");
+        const fullName = [student?.first_name, student?.middle_name, student?.last_name]
+          .filter(Boolean)
+          .join(" ");
 
-    return {
-      applicationId: application.application_id,
+        return {
+          applicationId: application.application_id,
 
-      studentId: application.student_id,
+          studentId: application.student_id,
 
-      studentName: fullName || "Unknown Student",
+          studentName: fullName || "Unknown Student",
 
-      enrollmentNo: student?.enrollment_no ?? "-",
+          enrollmentNo: student?.enrollment_no ?? "-",
 
-      appliedAt: application.applied_at,
-    };
-  }) ?? [];
+          appliedAt: application.applied_at,
+        };
+      }) ?? [];
     const { count } = await (supabase as any)
       .from("student_opportunity_applications")
       .select("*", {
@@ -349,6 +363,24 @@ student_master!inner(
   }[] = [];
 
   let roleCount = 0;
+
+  let executionSummary = {
+    exists: false,
+
+    latestExecutionId: null as string | null,
+
+    latestRevision: null as number | null,
+
+    status: "NOT_STARTED" as "NOT_STARTED" | "ACTIVE" | "FINALIZED",
+
+    canStartExecution: false,
+
+    canResumeExecution: false,
+
+    canViewExecution: false,
+
+    canReopenExecution: false,
+  };
 
   let roleDistribution: {
     roleId: string;
@@ -542,6 +574,78 @@ student_master!inner(
     }
   }
 
+  if (opportunity?.opportunity_id) {
+const { data: executionSeries } = await (supabase as any)
+  .from("recruitment_execution_series")
+  .select(`
+    series_id,
+    current_revision_number,
+    series_status
+  `)
+  .eq("opportunity_id", opportunity.opportunity_id)
+  .maybeSingle();
+
+if (executionSeries) {
+  const { data: latestExecution } = await (supabase as any)
+    .from("recruitment_executions")
+    .select(`
+      execution_id,
+      revision_number,
+      execution_status
+    `)
+    .eq("series_id", executionSeries.series_id)
+    .order("revision_number", {
+      ascending: false,
+    })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestExecution) {
+    executionSummary = {
+      exists: true,
+
+      latestExecutionId: latestExecution.execution_id,
+
+      latestRevision:
+        latestExecution.revision_number ?? 1,
+
+      status:
+        latestExecution.execution_status === "FINALIZED"
+          ? "FINALIZED"
+          : "ACTIVE",
+
+      canStartExecution: false,
+
+      canResumeExecution:
+        latestExecution.execution_status !== "FINALIZED",
+
+      canViewExecution: true,
+
+      canReopenExecution:
+        latestExecution.execution_status === "FINALIZED",
+    };
+  }
+} else {
+  executionSummary = {
+    exists: false,
+
+    latestExecutionId: null,
+
+    latestRevision: null,
+
+    status: "NOT_STARTED",
+
+    canStartExecution: true,
+
+    canResumeExecution: false,
+
+    canViewExecution: false,
+
+    canReopenExecution: false,
+  };
+}
+  }
+
   return {
     draftId,
 
@@ -634,6 +738,8 @@ student_master!inner(
     recentApplications,
 
     applicationTrend,
+
+    execution: executionSummary,
   };
 }
 
