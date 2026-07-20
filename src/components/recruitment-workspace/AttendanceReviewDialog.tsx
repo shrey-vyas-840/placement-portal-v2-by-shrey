@@ -32,10 +32,10 @@ export default function AttendanceReviewDialog({
   open,
   onOpenChange,
   participants,
-editedRows,
-onEditedRowChange,
-saving,
-onSave,
+  editedRows,
+  onEditedRowChange,
+  saving,
+  onSave,
 }: AttendanceReviewDialogProps) {
   const [activeSection, setActiveSection] = useState<ReviewSection>("ABSENTEES");
 
@@ -63,31 +63,27 @@ onSave,
     };
   }, [editedRows, participants]);
 
-const validationErrors = useMemo(() => {
-  const errors: string[] = [];
+  const validationErrors = useMemo(() => {
+    const errors: string[] = [];
 
-  Object.values(editedRows).forEach((row) => {
-    if (
-      row.attendanceStatus === "ABSENT" &&
-      row.absenceDisposition === "ALLOWED" &&
-      row.absenceReason.trim() === ""
-    ) {
-      errors.push("Allowed absence requires a reason.");
-    }
+    Object.values(editedRows).forEach((row) => {
+      if (
+        row.attendanceStatus === "ABSENT" &&
+        row.absenceDisposition === "ALLOWED" &&
+        row.absenceReason.trim() === ""
+      ) {
+        errors.push("Allowed absence requires a reason.");
+      }
 
-    if (
-      row.restrictionOverride &&
-      row.overrideReason.trim() === ""
-    ) {
-      errors.push("Restriction override requires a reason.");
-    }
-  });
+      if (row.restrictionOverride && row.overrideReason.trim() === "") {
+        errors.push("Restriction override requires a reason.");
+      }
+    });
 
-  return errors;
-}, [editedRows]);
+    return errors;
+  }, [editedRows]);
 
-const canSave =
-  validationErrors.length === 0;
+  const canSave = validationErrors.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -250,12 +246,106 @@ const canSave =
               )}
 
               {activeSection === "RESTRICTIONS" && (
-                <div className="rounded-lg border p-6">
-                  <h3 className="font-semibold">Restrictions</h3>
+                <div className="rounded-lg border">
+                  <div className="border-b p-4">
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="font-semibold">Restrictions</h3>
 
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Review restricted students and overrides.
-                  </p>
+                        <p className="text-sm text-muted-foreground">
+                          Review globally restricted students before saving attendance.
+                        </p>
+                      </div>
+
+                      <div className="text-right text-sm">
+                        <div>Restricted : {counts.restricted}</div>
+
+                        <div>Overridden : {counts.overridden}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="p-3 text-left">Enrollment</th>
+
+                        <th className="text-left">Student</th>
+
+                        <th className="text-left">Branch</th>
+
+                        <th className="text-left">Restriction</th>
+
+                        <th className="text-left">Override</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {participants
+                        .filter((participant) => participant.is_globally_restricted)
+                        .map((participant) => {
+                          const editedRow = editedRows[participant.execution_participant_id];
+
+                          return (
+                            <>
+                              <tr key={participant.execution_participant_id} className="border-b">
+                                <td className="p-3">{participant.student.enrollment_no}</td>
+
+                                <td>
+                                  {participant.student.first_name} {participant.student.last_name}
+                                </td>
+
+                                <td>--</td>
+
+                                <td>{participant.restriction_reason ?? "Active Restriction"}</td>
+
+                                <td className="p-3">
+                                  <select
+                                    className="w-56 rounded-md border bg-background px-3 py-2 text-sm"
+                                    value={editedRow.restrictionOverride ? "ALLOW" : "RESTRICT"}
+                                    onChange={(e) =>
+                                      onEditedRowChange(participant.execution_participant_id, {
+                                        restrictionOverride: e.target.value === "ALLOW",
+                                      })
+                                    }
+                                  >
+                                    <option value="RESTRICT">Restricted</option>
+
+                                    <option value="ALLOW">Allowed for Recruitment</option>
+                                  </select>
+                                </td>
+                              </tr>
+
+                              {editedRow.restrictionOverride && (
+                                <tr className="border-b bg-muted/20">
+                                  <td />
+
+                                  <td colSpan={4} className="py-3">
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium">
+                                        Override Reason *
+                                      </label>
+
+                                      <Input
+                                        placeholder="Enter override reason..."
+
+                                        value={editedRow.overrideReason}
+
+                                        onChange={(e) =>
+                                          onEditedRowChange(participant.execution_participant_id, {
+                                            overrideReason: e.target.value,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </>
+                          );
+                        })}
+                    </tbody>
+                  </table>
                 </div>
               )}
 
@@ -271,46 +361,24 @@ const canSave =
             </div>
           </section>
           <div className="sticky bottom-0 flex items-center justify-between border-t bg-background px-6 py-4">
+            <div className="text-sm">
+              {validationErrors.length > 0 && (
+                <span className="text-destructive">
+                  {validationErrors.length} validation issue(s)
+                </span>
+              )}
+            </div>
 
-  <div className="text-sm">
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
 
-    {validationErrors.length > 0 && (
-
-      <span className="text-destructive">
-
-        {validationErrors.length}
-        {" "}
-        validation issue(s)
-
-      </span>
-
-    )}
-
-  </div>
-
-  <div className="flex gap-3">
-
-    <Button
-      variant="outline"
-      onClick={() =>
-        onOpenChange(false)
-      }
-    >
-      Cancel
-    </Button>
-
-    <Button
-      disabled={
-        !canSave || saving
-      }
-      onClick={onSave}
-    >
-      Save Attendance
-    </Button>
-
-  </div>
-
-</div>
+              <Button disabled={!canSave || saving} onClick={onSave}>
+                Save Attendance
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
