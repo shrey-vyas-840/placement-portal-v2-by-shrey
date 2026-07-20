@@ -12,6 +12,9 @@ export type ExecutionRoundStatus =
 export type ExecutionAttendanceStatus = "PRESENT" | "ABSENT";
 export type ExecutionGateStatus = "ALLOWED" | "RESTRICTED";
 export type ExecutionProgressionStatus = "NONE" | "SHORTLISTED" | "SELECTED";
+export type ExecutionAbsenceDisposition =
+  | "UNALLOWED"
+  | "ALLOWED";
 export type ExecutionEventType =
   | "EXECUTION_STARTED"
   | "ROUND_CREATED"
@@ -85,6 +88,57 @@ export interface RecruitmentExecutionParticipantRow {
   created_at: string;
   updated_at: string;
 }
+
+export interface RecruitmentExecutionAttendanceReviewRow {
+  attendance_review_id: string;
+
+  execution_id: string;
+
+  execution_round_id: string;
+
+  execution_participant_id: string;
+
+  absence_disposition: ExecutionAbsenceDisposition | null;
+
+  absence_reason: string | null;
+
+  restriction_override: boolean;
+
+  override_reason: string | null;
+
+  is_draft: boolean;
+
+  created_by: string | null;
+
+  created_at: string;
+
+  updated_at: string;
+}
+
+export interface RecruitmentExecutionAttendanceReviewDraft {
+  execution_participant_id: string;
+
+  absence_disposition: ExecutionAbsenceDisposition | null;
+
+  absence_reason: string;
+
+  restriction_override: boolean;
+
+  override_reason: string;
+}
+
+export interface RecruitmentExecutionAttendanceReviewSummary {
+  totalAbsent: number;
+
+  totalAllowedAbsence: number;
+
+  totalUnallowedAbsence: number;
+
+  totalRestricted: number;
+
+  totalOverrides: number;
+}
+
 
 /**
  * Participant returned by the execution service.
