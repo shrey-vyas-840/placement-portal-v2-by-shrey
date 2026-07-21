@@ -75,26 +75,21 @@ export function RecruitmentExecutionWorkspacePage() {
         initialState[participant.execution_participant_id] = {
           attendanceStatus: history?.attendance_status ?? null,
 
-    gateStatus:
-  history?.restriction_override
-    ? "ALLOWED"
-    : (
-        history?.gate_status ??
-        (participant.effective_gate_status === "RESTRICTED"
-          ? "RESTRICTED"
-          : "ALLOWED")
-      ),
+          gateStatus: history?.restriction_override
+            ? "ALLOWED"
+            : (history?.gate_status ??
+              (participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED")),
 
           progressionStatus: history?.progression_status ?? "NONE",
-remarks: history?.remarks ?? "",
+          remarks: history?.remarks ?? "",
 
-absenceDisposition: history?.absence_disposition ?? null,
+          absenceDisposition: history?.absence_disposition ?? null,
 
-absenceReason: history?.absence_reason ?? "",
+          absenceReason: history?.absence_reason ?? "",
 
-restrictionOverride: history?.restriction_override ?? false,
+          restrictionOverride: history?.restriction_override ?? false,
 
-overrideReason: history?.restriction_override_reason ?? "",
+          overrideReason: history?.restriction_override_reason ?? "",
         };
       });
 
@@ -424,25 +419,24 @@ overrideReason: history?.restriction_override_reason ?? "",
                     {participants.map((participant) => {
                       const editedRow = editedRows[participant.execution_participant_id];
 
-                      const isRestricted = participant.effective_gate_status === "RESTRICTED";
-
-                      const isOverrideApplied = editedRow?.gateStatus === "ALLOWED";
-
                       const effectiveGateStatus =
-                        isRestricted && !isOverrideApplied ? "RESTRICTED" : "ALLOWED";
+                        editedRow?.restrictionOverride === true
+                          ? "ALLOWED_OVERRIDE"
+                          : (editedRow?.gateStatus ??
+                            (participant.effective_gate_status === "RESTRICTED"
+                              ? "RESTRICTED"
+                              : "ALLOWED"));
 
-                        const canProgress =
-  (
-    editedRow?.attendanceStatus === "PRESENT" ||
-    (
-      editedRow?.attendanceStatus === "ABSENT" &&
-      editedRow?.absenceDisposition === "ALLOWED"
-    )
-  ) &&
-  (
-    editedRow?.gateStatus === "ALLOWED" ||
-    editedRow?.restrictionOverride === true
-  );
+                      const effectiveAttendanceAllowed =
+                        editedRow?.attendanceStatus === "PRESENT" ||
+                        (editedRow?.attendanceStatus === "ABSENT" &&
+                          editedRow?.absenceDisposition === "ALLOWED");
+
+                      const effectiveGateAllowed =
+                        editedRow?.restrictionOverride === true ||
+                        editedRow?.gateStatus === "ALLOWED";
+
+                      const canProgress = effectiveAttendanceAllowed && effectiveGateAllowed;
 
                       return (
                         <tr key={participant.execution_participant_id} className="border-b">
@@ -517,7 +511,7 @@ overrideReason: history?.restriction_override_reason ?? "",
                                 <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
                                   Restricted
                                 </span>
-                              ) : isOverrideApplied ? (
+                              ) : effectiveGateStatus === "ALLOWED_OVERRIDE" ? (
                                 <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                                   Allowed (Override)
                                 </span>
@@ -559,28 +553,22 @@ overrideReason: history?.restriction_override_reason ?? "",
                             >
                               <option value="NONE">No Progress</option>
 
-                              <option
-  value="SHORTLISTED"
-  disabled={!canProgress}
->
-  Shortlisted
-</option>
+                              <option value="SHORTLISTED" disabled={!canProgress}>
+                                Shortlisted
+                              </option>
 
-<option
-  value="SELECTED"
-  disabled={!canProgress}
->
-  Selected
-</option>
-                           </select>
+                              <option value="SELECTED" disabled={!canProgress}>
+                                Selected
+                              </option>
+                            </select>
 
-{!canProgress && (
-  <p className="mt-1 text-xs text-amber-600">
-    Candidate cannot progress until attendance/restriction issues are resolved.
-  </p>
-)}
-
-</td>
+                            {!canProgress && (
+                              <p className="mt-1 text-xs text-amber-600">
+                                Candidate cannot progress until attendance/restriction issues are
+                                resolved.
+                              </p>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -717,13 +705,34 @@ overrideReason: history?.restriction_override_reason ?? "",
         participants={participants}
         editedRows={editedRows}
         onEditedRowChange={(participantId, changes) => {
-          setEditedRows((prev) => ({
-            ...prev,
-            [participantId]: {
-              ...prev[participantId],
-              ...changes,
-            },
-          }));
+  setEditedRows((prev) => {
+  const current = prev[participantId];
+
+  const next = {
+    ...current,
+    ...changes,
+  };
+
+  const attendanceAllowed =
+    next.attendanceStatus === "PRESENT" ||
+    (
+      next.attendanceStatus === "ABSENT" &&
+      next.absenceDisposition === "ALLOWED"
+    );
+
+  const gateAllowed =
+    next.restrictionOverride === true ||
+    next.gateStatus === "ALLOWED";
+
+  if (!attendanceAllowed || !gateAllowed) {
+    next.progressionStatus = "NONE";
+  }
+
+  return {
+    ...prev,
+    [participantId]: next,
+  };
+});
 
           setHasUnsavedChanges(true);
           setRoundDirty(true);
