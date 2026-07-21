@@ -38,11 +38,15 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [selectedRoundId, setSelectedRoundId] = useState("");
 
+  const [pendingRoundId, setPendingRoundId] = useState("");
+
   const [attendanceReviewOpen, setAttendanceReviewOpen] = useState(false);
 
   const [createRoundOpen, setCreateRoundOpen] = useState(false);
 
   const [progressSummaryOpen, setProgressSummaryOpen] = useState(false);
+
+  const [progressToNextRound, setProgressToNextRound] = useState(false);
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
@@ -111,6 +115,23 @@ export function RecruitmentExecutionWorkspacePage() {
     void loadWorkspace();
   }, [loadWorkspace]);
 
+  useEffect(() => {
+  if (!workspace || !pendingRoundId) {
+    return;
+  }
+
+  const exists = workspace.rounds.some(
+    (round) => round.execution_round_id === pendingRoundId,
+  );
+
+  if (!exists) {
+    return;
+  }
+
+  setSelectedRoundId(pendingRoundId);
+  setPendingRoundId("");
+}, [workspace, pendingRoundId]);
+
   const selectedRound = useMemo<RecruitmentExecutionRoundRow | null>(() => {
     if (!workspace) {
       return null;
@@ -132,44 +153,49 @@ export function RecruitmentExecutionWorkspacePage() {
     [participants, workspace],
   );
 
-  const activeRoleOptions = useMemo<ActiveRoleOption[]>(() => {
-    const roleMap = new Map<
-      string,
-      {
-        driveRoleId: string;
-        roleName: string;
-        candidateCount: number;
-      }
-    >();
-
-    participants.forEach((participant) => {
-      participant.selected_roles.forEach((role) => {
-        const existing = roleMap.get(role.drive_role_id);
-
-        if (existing) {
-          existing.candidateCount += 1;
-        } else {
-          roleMap.set(role.drive_role_id, {
-            driveRoleId: role.drive_role_id,
-            roleName: role.drive_role_name,
-            candidateCount: 1,
-          });
-        }
-      });
-    });
-
-    return [...roleMap.values()].sort((a, b) => a.roleName.localeCompare(b.roleName));
-  }, [participants]);
-
   const shortlistedParticipants = useMemo(
     () =>
       participants.filter((participant) => {
         const row = editedRows[participant.execution_participant_id];
 
-        return row?.progressionStatus === "SHORTLISTED" && row?.attendanceStatus === "PRESENT";
+        const attendanceAllowed =
+          row?.attendanceStatus === "PRESENT" ||
+          (row?.attendanceStatus === "ABSENT" && row?.absenceDisposition === "ALLOWED");
+
+        const gateAllowed = row?.restrictionOverride === true || row?.gateStatus === "ALLOWED";
+
+        return row?.progressionStatus === "SHORTLISTED" && attendanceAllowed && gateAllowed;
       }),
     [participants, editedRows],
   );
+
+  
+const activeRoleOptions = useMemo<ActiveRoleOption[]>(() => {
+  const roleMap = new Map<
+    string,
+    ActiveRoleOption
+  >();
+
+  shortlistedParticipants.forEach((participant) => {
+    participant.selected_roles.forEach((role) => {
+      const existing = roleMap.get(role.drive_role_id);
+
+      if (existing) {
+        existing.candidateCount += 1;
+      } else {
+        roleMap.set(role.drive_role_id, {
+          driveRoleId: role.drive_role_id,
+          roleName: role.drive_role_name,
+          candidateCount: 1,
+        });
+      }
+    });
+  });
+
+  return [...roleMap.values()].sort((a, b) =>
+    a.roleName.localeCompare(b.roleName),
+  );
+}, [shortlistedParticipants]);
 
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
@@ -635,7 +661,10 @@ export function RecruitmentExecutionWorkspacePage() {
         roleSummary={shortlistedRoleSummary}
         onCancel={() => setProgressSummaryOpen(false)}
         onContinue={() => {
+          setProgressToNextRound(true);
+
           setProgressSummaryOpen(false);
+
           setCreateRoundOpen(true);
         }}
       />
@@ -672,7 +701,7 @@ export function RecruitmentExecutionWorkspacePage() {
               );
             }
 
-            if (progressSummaryOpen && selectedRoundId) {
+            if (progressToNextRound && selectedRoundId) {
               const roleIds = data.roundType === "COMMON" ? [] : data.roleIds;
 
               const inserted = await recruitmentExecutionService.populateRoundParticipants({
@@ -683,18 +712,19 @@ export function RecruitmentExecutionWorkspacePage() {
               });
 
               toast.success(`${inserted} shortlisted participant(s) moved to the next round.`);
+              setProgressToNextRound(false);
             }
 
             await loadWorkspace();
 
-            setSelectedRoundId(round.execution_round_id);
+            setPendingRoundId(round.execution_round_id);
             setProgressSummaryOpen(false);
             setCreateRoundOpen(false);
 
             toast.success("Round created successfully.");
           } catch (error) {
             console.error(error);
-
+            setProgressToNextRound(false);
             toast.error(error instanceof Error ? error.message : "Unable to create round.");
           } finally {
             setSaving(false);

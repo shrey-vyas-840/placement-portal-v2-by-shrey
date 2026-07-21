@@ -241,25 +241,23 @@ export default function AttendanceReviewDialog({
                                   <select
                                     className="w-52 rounded-md border bg-background px-3 py-2 text-sm"
                                     value={editedRow.absenceDisposition ?? "UNALLOWED"}
-                                  onChange={(e) => {
-  const disposition = e.target.value as "ALLOWED" | "UNALLOWED";
+                                    onChange={(e) => {
+                                      const disposition = e.target.value as "ALLOWED" | "UNALLOWED";
 
-onEditedRowChange(participant.execution_participant_id, {
-  attendanceStatus: "ABSENT",
+                                      onEditedRowChange(participant.execution_participant_id, {
+                                        attendanceStatus: "ABSENT",
 
-  absenceDisposition: disposition,
+                                        absenceDisposition: disposition,
 
-  absenceReason:
-    disposition === "ALLOWED"
-      ? editedRow.absenceReason
-      : "",
+                                        absenceReason:
+                                          disposition === "ALLOWED" ? editedRow.absenceReason : "",
 
-  progressionStatus:
-    disposition === "ALLOWED"
-      ? editedRow.progressionStatus
-      : "NONE",
-});
-}}
+                                        progressionStatus:
+                                          disposition === "ALLOWED"
+                                            ? editedRow.progressionStatus
+                                            : "NONE",
+                                      });
+                                    }}
                                   >
                                     <option value="UNALLOWED">🟠 Unallowed Absence</option>
 
@@ -353,25 +351,21 @@ onEditedRowChange(participant.execution_participant_id, {
                                   <select
                                     className="w-56 rounded-md border bg-background px-3 py-2 text-sm"
                                     value={editedRow.restrictionOverride ? "ALLOW" : "RESTRICT"}
-                               onChange={(e) => {
-  const allowed = e.target.value === "ALLOW";
+                                    onChange={(e) => {
+                                      const allowed = e.target.value === "ALLOW";
 
-onEditedRowChange(participant.execution_participant_id, {
-  gateStatus: allowed ? "ALLOWED" : "RESTRICTED",
+                                      onEditedRowChange(participant.execution_participant_id, {
+                                        gateStatus: allowed ? "ALLOWED" : "RESTRICTED",
 
-  restrictionOverride: allowed,
+                                        restrictionOverride: allowed,
 
-  overrideReason:
-    allowed
-      ? editedRow.overrideReason
-      : "",
+                                        overrideReason: allowed ? editedRow.overrideReason : "",
 
-  progressionStatus:
-    allowed
-      ? editedRow.progressionStatus
-      : "NONE",
-});
-}}
+                                        progressionStatus: allowed
+                                          ? editedRow.progressionStatus
+                                          : "NONE",
+                                      });
+                                    }}
                                   >
                                     <option value="RESTRICT">🔴 Restricted</option>
 
