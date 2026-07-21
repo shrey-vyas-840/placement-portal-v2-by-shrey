@@ -22,26 +22,21 @@ class RecruitmentExecutionAttendanceReviewService {
       throw error;
     }
 
-    const map = new Map<
-      string,
-      RecruitmentExecutionAttendanceReviewDraft
-    >();
+    const map = new Map<string, RecruitmentExecutionAttendanceReviewDraft>();
 
-    (data ?? []).forEach(
-      (row: RecruitmentExecutionAttendanceReviewRow) => {
-        map.set(row.execution_participant_id, {
-          execution_participant_id: row.execution_participant_id,
+    (data ?? []).forEach((row: RecruitmentExecutionAttendanceReviewRow) => {
+      map.set(row.execution_participant_id, {
+        execution_participant_id: row.execution_participant_id,
 
-          absence_disposition: row.absence_disposition,
+        absence_disposition: row.absence_disposition,
 
-          absence_reason: row.absence_reason ?? "",
+        absence_reason: row.absence_reason ?? "",
 
-          restriction_override: row.restriction_override,
+        restriction_override: row.restriction_override,
 
-          override_reason: row.override_reason ?? "",
-        });
-      },
-    );
+        override_reason: row.override_reason ?? "",
+      });
+    });
 
     return map;
   }
@@ -55,45 +50,34 @@ class RecruitmentExecutionAttendanceReviewService {
       return;
     }
 
-const payload = rows.map((row) => ({
-  execution_id: executionId,
+    const payload = rows.map((row) => ({
+      execution_id: executionId,
 
-  execution_round_id: executionRoundId,
+      execution_round_id: executionRoundId,
 
-  execution_participant_id: row.execution_participant_id,
+      execution_participant_id: row.execution_participant_id,
 
-  absence_disposition: row.absence_disposition,
+      absence_disposition: row.absence_disposition,
 
-  absence_reason:
-    row.absence_disposition === "ALLOWED"
-      ? row.absence_reason || null
-      : null,
+      absence_reason: row.absence_disposition === "ALLOWED" ? row.absence_reason || null : null,
 
-  restriction_override: row.restriction_override,
+      restriction_override: row.restriction_override,
 
-  override_reason:
-    row.restriction_override
-      ? row.override_reason || null
-      : null,
+      override_reason: row.restriction_override ? row.override_reason || null : null,
 
-  is_draft: true,
-}));
+      is_draft: true,
+    }));
 
-    const { error } = await (supabase as any)
-      .from(TABLE)
-      .upsert(payload, {
-        onConflict:
-          "execution_round_id,execution_participant_id",
-      });
+    const { error } = await (supabase as any).from(TABLE).upsert(payload, {
+      onConflict: "execution_round_id,execution_participant_id",
+    });
 
     if (error) {
       throw error;
     }
   }
 
-  async clearDraft(
-    executionRoundId: string,
-  ): Promise<void> {
+  async clearDraft(executionRoundId: string): Promise<void> {
     const { error } = await (supabase as any)
       .from(TABLE)
       .delete()
@@ -108,25 +92,15 @@ const payload = rows.map((row) => ({
     drafts: RecruitmentExecutionAttendanceReviewDraft[],
   ): RecruitmentExecutionAttendanceReviewSummary {
     return {
-      totalAbsent: drafts.filter(
-        (d) => d.absence_disposition !== null,
-      ).length,
+      totalAbsent: drafts.filter((d) => d.absence_disposition !== null).length,
 
-      totalAllowedAbsence: drafts.filter(
-        (d) => d.absence_disposition === "ALLOWED",
-      ).length,
+      totalAllowedAbsence: drafts.filter((d) => d.absence_disposition === "ALLOWED").length,
 
-      totalUnallowedAbsence: drafts.filter(
-        (d) => d.absence_disposition === "UNALLOWED",
-      ).length,
+      totalUnallowedAbsence: drafts.filter((d) => d.absence_disposition === "UNALLOWED").length,
 
-      totalRestricted: drafts.filter(
-        (d) => !d.restriction_override,
-      ).length,
+      totalRestricted: drafts.filter((d) => !d.restriction_override).length,
 
-      totalOverrides: drafts.filter(
-        (d) => d.restriction_override,
-      ).length,
+      totalOverrides: drafts.filter((d) => d.restriction_override).length,
     };
   }
 }
