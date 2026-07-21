@@ -367,6 +367,29 @@ class RecruitmentExecutionService {
     return requireData(data as RecruitmentExecutionRoundRow | null, error, "createRound");
   }
 
+  async assignRolesToRound(
+  executionRoundId: string,
+  roleIds: string[],
+): Promise<void> {
+
+  if (roleIds.length === 0) {
+    return;
+  }
+
+  const rows = roleIds.map((roleId) => ({
+    execution_round_id: executionRoundId,
+    drive_role_id: roleId,
+  }));
+
+  const { error } = await (supabase as any)
+    .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+    .insert(rows);
+
+  if (error) {
+    throw error;
+  }
+}
+
   async updateRound(input: {
     executionRoundId: string;
     roundName: string;
@@ -498,6 +521,7 @@ class RecruitmentExecutionService {
         roleIds: [...round.roleIds],
       }));
   }
+
 
   // --------------------------------------------------------------------------
   // Participants
