@@ -244,13 +244,21 @@ export default function AttendanceReviewDialog({
                                   onChange={(e) => {
   const disposition = e.target.value as "ALLOWED" | "UNALLOWED";
 
-  onEditedRowChange(participant.execution_participant_id, {
-    absenceDisposition: disposition,
-    absenceReason:
-      disposition === "ALLOWED"
-        ? editedRow.absenceReason
-        : "",
-  });
+onEditedRowChange(participant.execution_participant_id, {
+  attendanceStatus: "ABSENT",
+
+  absenceDisposition: disposition,
+
+  absenceReason:
+    disposition === "ALLOWED"
+      ? editedRow.absenceReason
+      : "",
+
+  progressionStatus:
+    disposition === "ALLOWED"
+      ? editedRow.progressionStatus
+      : "NONE",
+});
 }}
                                   >
                                     <option value="UNALLOWED">🟠 Unallowed Absence</option>
@@ -348,13 +356,21 @@ export default function AttendanceReviewDialog({
                                onChange={(e) => {
   const allowed = e.target.value === "ALLOW";
 
-  onEditedRowChange(participant.execution_participant_id, {
-    restrictionOverride: allowed,
-    overrideReason:
-      allowed
-        ? editedRow.overrideReason
-        : "",
-  });
+onEditedRowChange(participant.execution_participant_id, {
+  gateStatus: allowed ? "ALLOWED" : "RESTRICTED",
+
+  restrictionOverride: allowed,
+
+  overrideReason:
+    allowed
+      ? editedRow.overrideReason
+      : "",
+
+  progressionStatus:
+    allowed
+      ? editedRow.progressionStatus
+      : "NONE",
+});
 }}
                                   >
                                     <option value="RESTRICT">🔴 Restricted</option>

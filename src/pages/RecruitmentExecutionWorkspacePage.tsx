@@ -419,22 +419,21 @@ export function RecruitmentExecutionWorkspacePage() {
                     {participants.map((participant) => {
                       const editedRow = editedRows[participant.execution_participant_id];
 
-                      const effectiveGateStatus =
-                        editedRow?.restrictionOverride === true
+                      const effectiveGateStatus: ExecutionGateStatus | "ALLOWED_OVERRIDE" =
+                        editedRow?.restrictionOverride
                           ? "ALLOWED_OVERRIDE"
-                          : (editedRow?.gateStatus ??
-                            (participant.effective_gate_status === "RESTRICTED"
-                              ? "RESTRICTED"
-                              : "ALLOWED"));
+                          : editedRow?.gateStatus === "RESTRICTED"
+                            ? "RESTRICTED"
+                            : "ALLOWED";
+
+                      const effectiveAttendanceStatus = editedRow?.attendanceStatus ?? null;
 
                       const effectiveAttendanceAllowed =
-                        editedRow?.attendanceStatus === "PRESENT" ||
-                        (editedRow?.attendanceStatus === "ABSENT" &&
+                        effectiveAttendanceStatus === "PRESENT" ||
+                        (effectiveAttendanceStatus === "ABSENT" &&
                           editedRow?.absenceDisposition === "ALLOWED");
 
-                      const effectiveGateAllowed =
-                        editedRow?.restrictionOverride === true ||
-                        editedRow?.gateStatus === "ALLOWED";
+                      const effectiveGateAllowed = effectiveGateStatus !== "RESTRICTED";
 
                       const canProgress = effectiveAttendanceAllowed && effectiveGateAllowed;
 
@@ -503,6 +502,10 @@ export function RecruitmentExecutionWorkspacePage() {
                               <option value="PRESENT">🟢 Present</option>
                               <option value="ABSENT">🟠 Absent</option>
                             </select>
+                            {editedRow?.attendanceStatus === "ABSENT" &&
+                              editedRow?.absenceDisposition === "ALLOWED" && (
+                                <p className="mt-1 text-xs text-green-600">Allowed Absence</p>
+                              )}
                           </td>
 
                           <td className="px-3 py-3">
@@ -705,34 +708,29 @@ export function RecruitmentExecutionWorkspacePage() {
         participants={participants}
         editedRows={editedRows}
         onEditedRowChange={(participantId, changes) => {
-  setEditedRows((prev) => {
-  const current = prev[participantId];
+          setEditedRows((prev) => {
+            const current = prev[participantId];
 
-  const next = {
-    ...current,
-    ...changes,
-  };
+            const next = {
+              ...current,
+              ...changes,
+            };
 
-  const attendanceAllowed =
-    next.attendanceStatus === "PRESENT" ||
-    (
-      next.attendanceStatus === "ABSENT" &&
-      next.absenceDisposition === "ALLOWED"
-    );
+            const attendanceAllowed =
+              next.attendanceStatus === "PRESENT" ||
+              (next.attendanceStatus === "ABSENT" && next.absenceDisposition === "ALLOWED");
 
-  const gateAllowed =
-    next.restrictionOverride === true ||
-    next.gateStatus === "ALLOWED";
+            const gateAllowed = next.restrictionOverride === true || next.gateStatus === "ALLOWED";
 
-  if (!attendanceAllowed || !gateAllowed) {
-    next.progressionStatus = "NONE";
-  }
+            if (!attendanceAllowed || !gateAllowed) {
+              next.progressionStatus = "NONE";
+            }
 
-  return {
-    ...prev,
-    [participantId]: next,
-  };
-});
+            return {
+              ...prev,
+              [participantId]: next,
+            };
+          });
 
           setHasUnsavedChanges(true);
           setRoundDirty(true);
