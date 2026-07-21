@@ -5,6 +5,9 @@ import { recruitmentExecutionService } from "@/services/recruitmentExecutionServ
 import { useNavigate } from "@tanstack/react-router";
 import { getExecutionBootstrapContext } from "@/services/recruitmentExecutionBootstrapService";
 import AttendanceReviewDialog from "@/components/recruitment-workspace/AttendanceReviewDialog";
+import CreateRoundDialog, {
+  type ActiveRoleOption,
+} from "@/components/recruitment-workspace/CreateRoundDialog";
 import type {
   RecruitmentExecutionWorkspace,
   RecruitmentExecutionRoundRow,
@@ -32,6 +35,10 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [attendanceReviewOpen, setAttendanceReviewOpen] = useState(false);
 
+  const [createRoundOpen, setCreateRoundOpen] = useState(false);
+
+  const hasRounds = (workspace?.rounds.length ?? 0) > 0;
+
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
 
   const loadWorkspace = useCallback(async () => {
@@ -41,6 +48,12 @@ export function RecruitmentExecutionWorkspacePage() {
       const data = await recruitmentExecutionService.getExecutionDashboard(executionId);
 
       setWorkspace(data);
+
+      if (data.rounds.length === 0) {
+        setCreateRoundOpen(true);
+      } else {
+        setCreateRoundOpen(false);
+      }
 
       setSelectedRoundId(data.rounds[0]?.execution_round_id ?? "");
 
@@ -97,6 +110,37 @@ export function RecruitmentExecutionWorkspacePage() {
     }),
     [participants, workspace],
   );
+
+  const activeRoleOptions = useMemo<ActiveRoleOption[]>(() => {
+  const roleMap = new Map<
+    string,
+    {
+      driveRoleId: string;
+      roleName: string;
+      candidateCount: number;
+    }
+  >();
+
+  participants.forEach((participant) => {
+    participant.selected_roles.forEach((role) => {
+      const existing = roleMap.get(role.drive_role_id);
+
+      if (existing) {
+        existing.candidateCount += 1;
+      } else {
+        roleMap.set(role.drive_role_id, {
+          driveRoleId: role.drive_role_id,
+          roleName: role.drive_role_name,
+          candidateCount: 1,
+        });
+      }
+    });
+  });
+
+  return [...roleMap.values()].sort((a, b) =>
+    a.roleName.localeCompare(b.roleName),
+  );
+}, [participants]);
 
   const handleSaveRound = async () => {
     setSaving(true);
@@ -255,123 +299,133 @@ export function RecruitmentExecutionWorkspacePage() {
             Back to Admin
           </Link>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-4">
-          <div className="rounded-lg border p-5">
-            <div className="text-sm text-muted-foreground">Participants</div>
 
-            <div className="mt-2 text-3xl font-bold">{metrics.totalParticipants}</div>
-          </div>
 
-          <div className="rounded-lg border p-5">
-            <div className="text-sm text-muted-foreground">Rounds</div>
+      {hasRounds ? (
+        <>
+          {/* existing workspace UI */}
 
-            <div className="mt-2 text-3xl font-bold">{metrics.totalRounds}</div>
-          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-4">
+            <div className="rounded-lg border p-5">
+              <div className="text-sm text-muted-foreground">Participants</div>
 
-          <div className="rounded-lg border p-5">
-            <div className="text-sm text-muted-foreground">Finalized</div>
-
-            <div className="mt-2 text-3xl font-bold">{metrics.finalizedRounds}</div>
-          </div>
-
-          <div className="rounded-lg border p-5">
-            <div className="text-sm text-muted-foreground">Revision</div>
-
-            <div className="mt-2 text-3xl font-bold">{workspace.execution.revision_number}</div>
-          </div>
-        </div>
-
-        <div className="mt-8 rounded-lg border p-5">
-          <div className="flex flex-wrap gap-3">
-            {workspace.rounds.map((round) => (
-              <button
-                key={round.execution_round_id}
-                type="button"
-                onClick={() => setSelectedRoundId(round.execution_round_id)}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
-                  selectedRoundId === round.execution_round_id
-                    ? "bg-primary text-primary-foreground"
-                    : ""
-                }`}
-              >
-                {round.round_order}. {round.round_name}
-                <span className="ml-2 text-xs opacity-70">{round.scope}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-8 rounded-lg border p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">{selectedRound?.round_name ?? "Execution"}</h2>
-
-              <p className="text-sm text-muted-foreground">
-                Manage attendance, gate status and progression.
-              </p>
+              <div className="mt-2 text-3xl font-bold">{metrics.totalParticipants}</div>
             </div>
 
-            <div className="text-sm text-muted-foreground">{participants.length} Participants</div>
+            <div className="rounded-lg border p-5">
+              <div className="text-sm text-muted-foreground">Rounds</div>
+
+              <div className="mt-2 text-3xl font-bold">{metrics.totalRounds}</div>
+            </div>
+
+            <div className="rounded-lg border p-5">
+              <div className="text-sm text-muted-foreground">Finalized</div>
+
+              <div className="mt-2 text-3xl font-bold">{metrics.finalizedRounds}</div>
+            </div>
+
+            <div className="rounded-lg border p-5">
+              <div className="text-sm text-muted-foreground">Revision</div>
+
+              <div className="mt-2 text-3xl font-bold">{workspace.execution.revision_number}</div>
+            </div>
           </div>
-          <div className="mt-6 overflow-x-auto">
-            <table className="min-w-full border-collapse">
-              <thead className="sticky top-0 z-10 bg-background">
-                <tr className="border-b transition-colors hover:bg-muted/30">
-                  <th className="px-3 py-3 text-left text-sm">Student</th>
 
-                  <th className="px-3 py-3 text-left text-sm">Enrollment</th>
+          <div className="mt-8 rounded-lg border p-5">
+            <div className="flex flex-wrap gap-3">
+              {workspace.rounds.map((round) => (
+                <button
+                  key={round.execution_round_id}
+                  type="button"
+                  onClick={() => setSelectedRoundId(round.execution_round_id)}
+                  className={`rounded-full border px-4 py-2 text-sm transition ${
+                    selectedRoundId === round.execution_round_id
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }`}
+                >
+                  {round.round_order}. {round.round_name}
+                  <span className="ml-2 text-xs opacity-70">{round.scope}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
-                  <th className="px-3 py-3 text-left text-sm">Selected Roles</th>
+          <div className="mt-8 rounded-lg border p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {selectedRound?.round_name ?? "Execution"}
+                </h2>
 
-                  <th className="px-3 py-3 text-left text-sm">Attendance</th>
+                <p className="text-sm text-muted-foreground">
+                  Manage attendance, gate status and progression.
+                </p>
+              </div>
 
-                  <th className="px-3 py-3 text-left text-sm">Gate</th>
+              <div className="text-sm text-muted-foreground">
+                {participants.length} Participants
+              </div>
+            </div>
+            <div className="mt-6 overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead className="sticky top-0 z-10 bg-background">
+                  <tr className="border-b transition-colors hover:bg-muted/30">
+                    <th className="px-3 py-3 text-left text-sm">Student</th>
 
-                  <th className="px-3 py-3 text-left text-sm">Progression</th>
-                </tr>
-              </thead>
+                    <th className="px-3 py-3 text-left text-sm">Enrollment</th>
 
-              <tbody>
-                {participants.map((participant) => {
-                  const editedRow = editedRows[participant.execution_participant_id];
+                    <th className="px-3 py-3 text-left text-sm">Selected Roles</th>
 
-                  const isRestricted = participant.effective_gate_status === "RESTRICTED";
+                    <th className="px-3 py-3 text-left text-sm">Attendance</th>
 
-                  const isOverrideApplied = editedRow?.gateStatus === "ALLOWED";
+                    <th className="px-3 py-3 text-left text-sm">Gate</th>
 
-                  const effectiveGateStatus =
-                    isRestricted && !isOverrideApplied ? "RESTRICTED" : "ALLOWED";
+                    <th className="px-3 py-3 text-left text-sm">Progression</th>
+                  </tr>
+                </thead>
 
-                  return (
-                    <tr key={participant.execution_participant_id} className="border-b">
-                      <td className="px-3 py-3">
-                        <div className="font-medium">
-                          {`${participant.student.first_name} ${participant.student.last_name}`}
-                        </div>
+                <tbody>
+                  {participants.map((participant) => {
+                    const editedRow = editedRows[participant.execution_participant_id];
 
-                        <div className="text-xs text-muted-foreground">
-                          {participant.student.institute_email}
-                        </div>
-                      </td>
+                    const isRestricted = participant.effective_gate_status === "RESTRICTED";
 
-                      <td className="px-3 py-3">{participant.student.enrollment_no}</td>
+                    const isOverrideApplied = editedRow?.gateStatus === "ALLOWED";
 
-                      <td className="px-3 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {participant.selected_roles.map((role) => (
-                            <span
-                              key={role.drive_role_id}
-                              className="rounded bg-muted px-2 py-1 text-xs"
-                            >
-                              {role.drive_role_name}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
+                    const effectiveGateStatus =
+                      isRestricted && !isOverrideApplied ? "RESTRICTED" : "ALLOWED";
 
-                      <td className="px-3 py-3">
-                        <select
-                          className={`w-full rounded-lg border px-3 py-2 text-sm font-medium transition-colors
+                    return (
+                      <tr key={participant.execution_participant_id} className="border-b">
+                        <td className="px-3 py-3">
+                          <div className="font-medium">
+                            {`${participant.student.first_name} ${participant.student.last_name}`}
+                          </div>
+
+                          <div className="text-xs text-muted-foreground">
+                            {participant.student.institute_email}
+                          </div>
+                        </td>
+
+                        <td className="px-3 py-3">{participant.student.enrollment_no}</td>
+
+                        <td className="px-3 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {participant.selected_roles.map((role) => (
+                              <span
+                                key={role.drive_role_id}
+                                className="rounded bg-muted px-2 py-1 text-xs"
+                              >
+                                {role.drive_role_name}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+
+                        <td className="px-3 py-3">
+                          <select
+                            className={`w-full rounded-lg border px-3 py-2 text-sm font-medium transition-colors
 
     ${
       editedRow?.attendanceStatus === "PRESENT"
@@ -380,128 +434,156 @@ export function RecruitmentExecutionWorkspacePage() {
           ? "border-amber-300 bg-amber-50 text-amber-700"
           : "border-border bg-background"
     }`}
-                          value={
-                            editedRows[participant.execution_participant_id]?.attendanceStatus ?? ""
-                          }
-                          onChange={(e) => {
-                            setHasUnsavedChanges(true);
+                            value={
+                              editedRows[participant.execution_participant_id]?.attendanceStatus ??
+                              ""
+                            }
+                            onChange={(e) => {
+                              setHasUnsavedChanges(true);
 
-                            setEditedRows((prev) => ({
-                              ...prev,
-                              [participant.execution_participant_id]: {
-                                ...prev[participant.execution_participant_id],
-                                attendanceStatus: (e.target.value ||
-                                  null) as ExecutionAttendanceStatus | null,
-                              },
-                            }));
-                          }}
-                        >
-                          <option value="">—</option>
-                          <option value="PRESENT">🟢 Present</option>
-                          <option value="ABSENT">🟠 Absent</option>
-                        </select>
-                      </td>
+                              setEditedRows((prev) => ({
+                                ...prev,
+                                [participant.execution_participant_id]: {
+                                  ...prev[participant.execution_participant_id],
+                                  attendanceStatus: (e.target.value ||
+                                    null) as ExecutionAttendanceStatus | null,
+                                },
+                              }));
+                            }}
+                          >
+                            <option value="">—</option>
+                            <option value="PRESENT">🟢 Present</option>
+                            <option value="ABSENT">🟠 Absent</option>
+                          </select>
+                        </td>
 
-                      <td className="px-3 py-3">
-                        <div className="space-y-2">
-                          {effectiveGateStatus === "RESTRICTED" ? (
-                            <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                              Restricted
-                            </span>
-                          ) : isOverrideApplied ? (
-                            <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                              Allowed (Override)
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                              Allowed
-                            </span>
-                          )}
+                        <td className="px-3 py-3">
+                          <div className="space-y-2">
+                            {effectiveGateStatus === "RESTRICTED" ? (
+                              <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                                Restricted
+                              </span>
+                            ) : isOverrideApplied ? (
+                              <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                Allowed (Override)
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                                Allowed
+                              </span>
+                            )}
 
-                          {participant.restriction_reason && (
-                            <p className="max-w-xs text-xs text-muted-foreground">
-                              {participant.restriction_reason}
-                            </p>
-                          )}
-                        </div>
-                      </td>
+                            {participant.restriction_reason && (
+                              <p className="max-w-xs text-xs text-muted-foreground">
+                                {participant.restriction_reason}
+                              </p>
+                            )}
+                          </div>
+                        </td>
 
-                      <td className="px-3 py-3">
-                        <select
-                          className="w-full rounded border px-2 py-1 text-sm"
-                          value={
-                            editedRows[participant.execution_participant_id]?.progressionStatus ??
-                            "NONE"
-                          }
-                          onChange={(e) => {
-                            setHasUnsavedChanges(true);
+                        <td className="px-3 py-3">
+                          <select
+                            className="w-full rounded border px-2 py-1 text-sm"
+                            value={
+                              editedRows[participant.execution_participant_id]?.progressionStatus ??
+                              "NONE"
+                            }
+                            onChange={(e) => {
+                              setHasUnsavedChanges(true);
 
-                            setEditedRows((prev) => ({
-                              ...prev,
-                              [participant.execution_participant_id]: {
-                                ...prev[participant.execution_participant_id],
-                                progressionStatus: e.target.value as ExecutionProgressionStatus,
-                              },
-                            }));
-                          }}
-                        >
-                          <option value="NONE">No Progress</option>
+                              setEditedRows((prev) => ({
+                                ...prev,
+                                [participant.execution_participant_id]: {
+                                  ...prev[participant.execution_participant_id],
+                                  progressionStatus: e.target.value as ExecutionProgressionStatus,
+                                },
+                              }));
+                            }}
+                          >
+                            <option value="NONE">No Progress</option>
 
-                          <option value="SHORTLISTED">Shortlisted</option>
+                            <option value="SHORTLISTED">Shortlisted</option>
 
-                          <option value="SELECTED">Selected</option>
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-8 flex items-center justify-between rounded-xl border bg-muted/30 p-4">
-            <div>
-              <div className="font-medium">Attendance Review</div>
-
-              <div className="text-sm text-muted-foreground">
-                Review absentees and restriction overrides before saving.
-              </div>
+                            <option value="SELECTED">Selected</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-            <button
-              type="button"
-              onClick={() => setAttendanceReviewOpen(true)}
-              disabled={saving || !hasUnsavedChanges}
-              className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Save Round
-            </button>
+            <div className="mt-8 flex items-center justify-between rounded-xl border bg-muted/30 p-4">
+              <div>
+                <div className="font-medium">Attendance Review</div>
 
-            <button
-              type="button"
-              onClick={handleProgressToNextRound}
-              disabled={
-                saving ||
-                !workspace ||
-                workspace.rounds.findIndex(
-                  (round) => round.execution_round_id === selectedRoundId,
-                ) ===
-                  workspace.rounds.length - 1
-              }
-              className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Progress to Next Round
-            </button>
+                <div className="text-sm text-muted-foreground">
+                  Review absentees and restriction overrides before saving.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAttendanceReviewOpen(true)}
+                disabled={saving || !hasUnsavedChanges}
+                className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Save Round
+              </button>
 
-            <button
-              type="button"
-              onClick={handleFinalizeExecution}
-              disabled={saving || hasUnsavedChanges}
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Final Save
-            </button>
+              <button
+                type="button"
+                onClick={handleProgressToNextRound}
+                disabled={
+                  saving ||
+                  !workspace ||
+                  workspace.rounds.findIndex(
+                    (round) => round.execution_round_id === selectedRoundId,
+                  ) ===
+                    workspace.rounds.length - 1
+                }
+                className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Progress to Next Round
+              </button>
+
+              <button
+                type="button"
+                onClick={handleFinalizeExecution}
+                disabled={saving || hasUnsavedChanges}
+                className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Final Save
+              </button>
+            </div>
           </div>
+        </>
+      ) : (
+        <div className="mt-10 rounded-xl border border-dashed p-10 text-center">
+          <h2 className="text-2xl font-semibold">Create Your First Round</h2>
+
+          <p className="mt-3 text-muted-foreground">
+            This execution has no rounds yet. Create Round 1 before attendance, attendance review,
+            Save Round, progression, or Final Save become available.
+          </p>
         </div>
+      )}
       </div>
+
+<CreateRoundDialog
+  open={createRoundOpen}
+  mandatory={!hasRounds}
+  nextRoundOrder={(workspace?.rounds.length ?? 0) + 1}
+  activeRoles={activeRoleOptions}
+  loading={saving}
+  onCancel={() => setCreateRoundOpen(false)}
+  onCreate={async (data) => {
+    console.log("Create Round", data);
+
+    toast.info(
+      "Round creation service will be connected in the next step.",
+    );
+  }}
+/>
 
       <AttendanceReviewDialog
         open={attendanceReviewOpen}

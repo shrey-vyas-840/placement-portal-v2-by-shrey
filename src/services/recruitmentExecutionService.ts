@@ -317,6 +317,10 @@ class RecruitmentExecutionService {
 
   private readonly EXECUTION_ROUND_ROLE_MAPPING_TABLE = "recruitment_execution_round_roles";
 
+  private readonly DRIVE_ROLE_TIMELINE_TABLE = "drive_role_timeline";
+
+  private readonly DRIVE_ROLES_TABLE = "drive_roles";
+
   async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -399,6 +403,100 @@ class RecruitmentExecutionService {
     }
 
     return data as RecruitmentExecutionRoundRow | null;
+  }
+
+  private async loadPublishedTimeline(driveId: string): Promise<
+    Array<{
+      drive_role_id: string;
+      stage_name: string;
+      stage_date: string | null;
+      description: string | null;
+      display_order: number;
+    }>
+  > {
+    const { data, error } = await (supabase as any)
+      .from(this.DRIVE_ROLE_TIMELINE_TABLE)
+      .select(
+        `
+        drive_role_id,
+        stage_name,
+        stage_date,
+        description,
+        display_order,
+        drive_roles!inner(
+          drive_id
+        )
+      `,
+      )
+      .eq("drive_roles.drive_id", driveId)
+      .order("display_order", {
+        ascending: true,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []).map((row: any) => ({
+      drive_role_id: row.drive_role_id,
+      stage_name: row.stage_name,
+      stage_date: row.stage_date,
+      description: row.description,
+      display_order: row.display_order,
+    }));
+  }
+
+  private buildExecutionRounds(
+    timeline: Array<{
+      drive_role_id: string;
+      stage_name: string;
+      stage_date: string | null;
+      description: string | null;
+      display_order: number;
+    }>,
+  ): Array<{
+    roundOrder: number;
+    roundName: string;
+    scheduledDate: string | null;
+    remarks: string | null;
+    roleIds: string[];
+  }> {
+    const grouped = new Map<
+      string,
+      {
+        roundOrder: number;
+        roundName: string;
+        scheduledDate: string | null;
+        remarks: string | null;
+        roleIds: Set<string>;
+      }
+    >();
+
+    for (const stage of timeline) {
+      const key = `${stage.display_order}::${stage.stage_name.trim().toLowerCase()}`;
+
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          roundOrder: stage.display_order,
+          roundName: stage.stage_name,
+          scheduledDate: stage.stage_date,
+          remarks: stage.description,
+          roleIds: new Set(),
+        });
+      }
+
+      grouped.get(key)!.roleIds.add(stage.drive_role_id);
+    }
+
+    return [...grouped.values()]
+      .sort((a, b) => a.roundOrder - b.roundOrder)
+      .map((round) => ({
+        roundOrder: round.roundOrder,
+        roundName: round.roundName,
+        scheduledDate: round.scheduledDate,
+        remarks: round.remarks,
+        roleIds: [...round.roleIds],
+      }));
   }
 
   // --------------------------------------------------------------------------
@@ -768,50 +866,41 @@ class RecruitmentExecutionService {
     }));
   }
 
-
   // --------------------------------------------------------------------------
   // Round Save
   // --------------------------------------------------------------------------
 
-async saveRound(input: {
-  executionId: string;
-  executionRoundId: string;
-  executionRevision: number;
-  nextRoundId?: string;
-  changedBy?: string | null;
-  rows: Array<{
-    executionParticipantId: string;
-    attendanceStatus: ExecutionAttendanceStatus | null;
-    gateStatus: ExecutionGateStatus | null;
-    progressionStatus: ExecutionProgressionStatus;
-    remarks?: string | null;
-    absenceDisposition?: "ALLOWED" | "UNALLOWED" | null;
-    absenceReason?: string | null;
-    restrictionOverride?: boolean;
-    restrictionOverrideReason?: string | null;
-  }>;
-}): Promise<{
-  savedEvents: number;
-  progressedParticipants: number;
-}> {
+  async saveRound(input: {
+    executionId: string;
+    executionRoundId: string;
+    executionRevision: number;
+    nextRoundId?: string;
+    changedBy?: string | null;
+    rows: Array<{
+      executionParticipantId: string;
+      attendanceStatus: ExecutionAttendanceStatus | null;
+      gateStatus: ExecutionGateStatus | null;
+      progressionStatus: ExecutionProgressionStatus;
+      remarks?: string | null;
+      absenceDisposition?: "ALLOWED" | "UNALLOWED" | null;
+      absenceReason?: string | null;
+      restrictionOverride?: boolean;
+      restrictionOverrideReason?: string | null;
+    }>;
+  }): Promise<{
+    savedEvents: number;
+    progressedParticipants: number;
+  }> {
+    await this.validateRound(input.executionRoundId);
 
-  await this.validateRound(
-    input.executionRoundId,
-  );
-
-  const latestState =
-    await this.getLatestParticipantState(
+    const latestState = await this.getLatestParticipantState(
       input.executionId,
       input.executionRoundId,
     );
 
-  const historyRevision =
-    await this.getNextHistoryRevision(
-      input.executionId,
-    );
+    const historyRevision = await this.getNextHistoryRevision(input.executionId);
 
-  const historyEvents =
-    this.buildHistoryEvents({
+    const historyEvents = this.buildHistoryEvents({
       executionId: input.executionId,
       executionRoundId: input.executionRoundId,
       executionRevision: input.executionRevision,
@@ -819,95 +908,66 @@ async saveRound(input: {
       changedBy: input.changedBy,
 
       rows: input.rows.map((row) => {
-
-        const previous =
-          latestState.get(
-            row.executionParticipantId,
-          );
+        const previous = latestState.get(row.executionParticipantId);
 
         return {
+          executionParticipantId: row.executionParticipantId,
 
-          executionParticipantId:
-            row.executionParticipantId,
+          attendanceStatus: row.attendanceStatus,
 
-          attendanceStatus:
-            row.attendanceStatus,
+          gateStatus: row.gateStatus,
 
-          gateStatus:
-            row.gateStatus,
+          progressionStatus: row.progressionStatus,
 
-          progressionStatus:
-            row.progressionStatus,
+          remarks: row.remarks,
 
-          remarks:
-            row.remarks,
+          absenceDisposition: row.absenceDisposition,
 
-          absenceDisposition:
-            row.absenceDisposition,
+          absenceReason: row.absenceReason,
 
-          absenceReason:
-            row.absenceReason,
+          restrictionOverride: row.restrictionOverride,
 
-          restrictionOverride:
-            row.restrictionOverride,
+          restrictionOverrideReason: row.restrictionOverrideReason,
 
-          restrictionOverrideReason:
-            row.restrictionOverrideReason,
-
-          previousHistoryId:
-            previous?.execution_history_id ??
-            null,
+          previousHistoryId: previous?.execution_history_id ?? null,
         };
-
       }),
     });
 
- const { data, error } =
-  await (supabase as any).rpc(
-    "save_round_transaction",
-    {
-      p_execution_id:
-        input.executionId,
+    const { data, error } = await (supabase as any).rpc("save_round_transaction", {
+      p_execution_id: input.executionId,
 
-      p_execution_round_id:
-        input.executionRoundId,
+      p_execution_round_id: input.executionRoundId,
 
-      p_execution_revision:
-        input.executionRevision,
+      p_execution_revision: input.executionRevision,
 
-      p_changed_by:
-        input.changedBy ?? null,
+      p_changed_by: input.changedBy ?? null,
 
-      p_history_rows:
-        historyEvents,
+      p_history_rows: historyEvents,
 
-      p_next_round_id:
-        input.nextRoundId ?? null,
-    },
-  );
-
-if (error) {
-  throw error;
-}
-
-let progressedParticipants = 0;
-
-if (input.nextRoundId) {
-  progressedParticipants =
-    await this.populateNextRoundParticipants({
-      executionId: input.executionId,
-      currentRoundId: input.executionRoundId,
-      nextRoundId: input.nextRoundId,
+      p_next_round_id: input.nextRoundId ?? null,
     });
-}
 
-return {
-  savedEvents:
-    data.savedEvents ?? 0,
+    if (error) {
+      throw error;
+    }
 
-  progressedParticipants,
-};
-}
+    let progressedParticipants = 0;
+
+    if (input.nextRoundId) {
+      progressedParticipants = await this.populateNextRoundParticipants({
+        executionId: input.executionId,
+        currentRoundId: input.executionRoundId,
+        nextRoundId: input.nextRoundId,
+      });
+    }
+
+    return {
+      savedEvents: data.savedEvents ?? 0,
+
+      progressedParticipants,
+    };
+  }
 
   // --------------------------------------------------------------------------
   // Progression Engine
