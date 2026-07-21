@@ -367,28 +367,44 @@ class RecruitmentExecutionService {
     return requireData(data as RecruitmentExecutionRoundRow | null, error, "createRound");
   }
 
-  async assignRolesToRound(
-  executionRoundId: string,
-  roleIds: string[],
-): Promise<void> {
+  async assignRolesToRound(executionRoundId: string, roleIds: string[]): Promise<void> {
+    if (roleIds.length === 0) {
+      return;
+    }
 
-  if (roleIds.length === 0) {
-    return;
+    const rows = roleIds.map((roleId) => ({
+      execution_round_id: executionRoundId,
+      drive_role_id: roleId,
+    }));
+
+    const { error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+      .insert(rows);
+
+    if (error) {
+      throw error;
+    }
   }
 
-  const rows = roleIds.map((roleId) => ({
-    execution_round_id: executionRoundId,
-    drive_role_id: roleId,
-  }));
+  async populateRoundParticipants(input: {
+    sourceExecutionId: string;
+    sourceRoundId: string;
+    targetRoundId: string;
+    roleIds: string[];
+  }): Promise<number> {
+    const { data, error } = await supabase.rpc("populate_execution_round_participants", {
+      p_execution_id: input.sourceExecutionId,
+      p_source_round_id: input.sourceRoundId,
+      p_target_round_id: input.targetRoundId,
+      p_role_ids: input.roleIds,
+    });
 
-  const { error } = await (supabase as any)
-    .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-    .insert(rows);
+    if (error) {
+      throw error;
+    }
 
-  if (error) {
-    throw error;
+    return Number(data ?? 0);
   }
-}
 
   async updateRound(input: {
     executionRoundId: string;
@@ -521,7 +537,6 @@ class RecruitmentExecutionService {
         roleIds: [...round.roleIds],
       }));
   }
-
 
   // --------------------------------------------------------------------------
   // Participants
@@ -671,14 +686,19 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_HISTORY_TABLE)
       .select(
         `
-    execution_history_id,
-        execution_participant_id,
-        execution_round_id,
-        attendance_status,
-        gate_status,
-        progression_status,
-        changed_at,
-        history_revision
+execution_history_id,
+execution_participant_id,
+execution_round_id,
+attendance_status,
+gate_status,
+progression_status,
+remarks,
+absence_disposition,
+absence_reason,
+restriction_override,
+restriction_override_reason,
+changed_at,
+history_revision
       `,
       )
       .eq("execution_id", executionId)
@@ -697,21 +717,31 @@ class RecruitmentExecutionService {
         continue;
       }
 
-      latest.set(key, {
-        execution_history_id: row.execution_history_id,
+   latest.set(key, {
+    execution_history_id: row.execution_history_id,
 
-        execution_participant_id: row.execution_participant_id,
+    execution_participant_id: row.execution_participant_id,
 
-        execution_round_id: row.execution_round_id,
+    execution_round_id: row.execution_round_id,
 
-        attendance_status: row.attendance_status,
+    attendance_status: row.attendance_status,
 
-        gate_status: row.gate_status,
+    gate_status: row.gate_status,
 
-        progression_status: row.progression_status,
+    progression_status: row.progression_status,
 
-        changed_at: row.changed_at,
-      });
+    remarks: row.remarks,
+
+    absence_disposition: row.absence_disposition,
+
+    absence_reason: row.absence_reason,
+
+    restriction_override: row.restriction_override,
+
+    restriction_override_reason: row.restriction_override_reason,
+
+    changed_at: row.changed_at,
+});
     }
 
     return [...latest.values()];
@@ -1263,12 +1293,13 @@ class RecruitmentExecutionService {
       throw new Error("Execution series not found.");
     }
 
-    const [rounds, participants, roundRoleMappings, historySummary] = await Promise.all([
-      this.loadRounds(executionId),
-      this.loadParticipants(executionId),
-      this.loadRoundRoleMappings(executionId),
-      this.loadHistorySummary(executionId),
-    ]);
+    const rounds = await this.loadRounds(executionId);
+
+    const participants = await this.loadParticipants(executionId);
+
+    const roundRoleMappings = await this.loadRoundRoleMappings(executionId);
+
+    const historySummary = await this.loadHistorySummary(executionId);
 
     return {
       series,

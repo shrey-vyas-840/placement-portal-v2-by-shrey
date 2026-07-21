@@ -327,9 +327,10 @@ export interface RecruitmentExecutionRoundRoleMapping {
  *
  * Full immutable history remains available separately.
  */
+
 export interface RecruitmentExecutionHistorySummary {
-execution_history_id: string;
-  
+  execution_history_id: string;
+
   execution_participant_id: string;
 
   execution_round_id: string;
@@ -339,6 +340,16 @@ execution_history_id: string;
   gate_status: ExecutionGateStatus | null;
 
   progression_status: ExecutionProgressionStatus;
+
+  remarks: string | null;
+
+  absence_disposition: ExecutionAbsenceDisposition | null;
+
+  absence_reason: string | null;
+
+  restriction_override: boolean;
+
+  restriction_override_reason: string | null;
 
   changed_at: string;
 }

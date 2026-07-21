@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -213,8 +213,6 @@ export default function AttendanceReviewDialog({
 
                         <th className="text-left">Student</th>
 
-                        
-
                         <th className="text-left">Absence Status</th>
                       </tr>
                     </thead>
@@ -231,7 +229,7 @@ export default function AttendanceReviewDialog({
                           const editedRow = editedRows[participant.execution_participant_id];
 
                           return (
-                            <>
+                            <Fragment key={participant.execution_participant_id}>
                               <tr key={participant.execution_participant_id} className="border-b">
                                 <td className="px-2 py-2">{participant.student.enrollment_no}</td>
 
@@ -243,13 +241,17 @@ export default function AttendanceReviewDialog({
                                   <select
                                     className="w-52 rounded-md border bg-background px-3 py-2 text-sm"
                                     value={editedRow.absenceDisposition ?? "UNALLOWED"}
-                                    onChange={(e) => {
-                                      const disposition = e.target.value as "ALLOWED" | "UNALLOWED";
+                                  onChange={(e) => {
+  const disposition = e.target.value as "ALLOWED" | "UNALLOWED";
 
-                                      onEditedRowChange(participant.execution_participant_id, {
-                                        absenceDisposition: disposition,
-                                      });
-                                    }}
+  onEditedRowChange(participant.execution_participant_id, {
+    absenceDisposition: disposition,
+    absenceReason:
+      disposition === "ALLOWED"
+        ? editedRow.absenceReason
+        : "",
+  });
+}}
                                   >
                                     <option value="UNALLOWED">🟠 Unallowed Absence</option>
 
@@ -281,7 +283,7 @@ export default function AttendanceReviewDialog({
                                   </td>
                                 </tr>
                               )}
-                            </>
+                            </Fragment>
                           );
                         })}
                     </tbody>
@@ -329,7 +331,7 @@ export default function AttendanceReviewDialog({
                           const editedRow = editedRows[participant.execution_participant_id];
 
                           return (
-                            <>
+                            <Fragment key={participant.execution_participant_id}>
                               <tr key={participant.execution_participant_id} className="border-b">
                                 <td className="px-2 py-2">{participant.student.enrollment_no}</td>
 
@@ -343,11 +345,17 @@ export default function AttendanceReviewDialog({
                                   <select
                                     className="w-56 rounded-md border bg-background px-3 py-2 text-sm"
                                     value={editedRow.restrictionOverride ? "ALLOW" : "RESTRICT"}
-                                    onChange={(e) =>
-                                      onEditedRowChange(participant.execution_participant_id, {
-                                        restrictionOverride: e.target.value === "ALLOW",
-                                      })
-                                    }
+                               onChange={(e) => {
+  const allowed = e.target.value === "ALLOW";
+
+  onEditedRowChange(participant.execution_participant_id, {
+    restrictionOverride: allowed,
+    overrideReason:
+      allowed
+        ? editedRow.overrideReason
+        : "",
+  });
+}}
                                   >
                                     <option value="RESTRICT">🔴 Restricted</option>
 
@@ -381,7 +389,7 @@ export default function AttendanceReviewDialog({
                                   </td>
                                 </tr>
                               )}
-                            </>
+                            </Fragment>
                           );
                         })}
                     </tbody>

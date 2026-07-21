@@ -55,28 +55,29 @@ class RecruitmentExecutionAttendanceReviewService {
       return;
     }
 
-    const payload = rows.map((row) => ({
-      execution_id: executionId,
+const payload = rows.map((row) => ({
+  execution_id: executionId,
 
-      execution_round_id: executionRoundId,
+  execution_round_id: executionRoundId,
 
-      execution_participant_id:
-        row.execution_participant_id,
+  execution_participant_id: row.execution_participant_id,
 
-      absence_disposition:
-        row.absence_disposition,
+  absence_disposition: row.absence_disposition,
 
-      absence_reason:
-        row.absence_reason || null,
+  absence_reason:
+    row.absence_disposition === "ALLOWED"
+      ? row.absence_reason || null
+      : null,
 
-      restriction_override:
-        row.restriction_override,
+  restriction_override: row.restriction_override,
 
-      override_reason:
-        row.override_reason || null,
+  override_reason:
+    row.restriction_override
+      ? row.override_reason || null
+      : null,
 
-      is_draft: true,
-    }));
+  is_draft: true,
+}));
 
     const { error } = await (supabase as any)
       .from(TABLE)

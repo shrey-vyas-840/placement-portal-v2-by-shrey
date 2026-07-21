@@ -8,6 +8,7 @@ import AttendanceReviewDialog from "@/components/recruitment-workspace/Attendanc
 import CreateRoundDialog, {
   type ActiveRoleOption,
 } from "@/components/recruitment-workspace/CreateRoundDialog";
+import ProgressSummaryDialog from "@/components/recruitment-workspace/ProgressSummaryDialog";
 import type {
   RecruitmentExecutionWorkspace,
   RecruitmentExecutionRoundRow,
@@ -41,6 +42,8 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [createRoundOpen, setCreateRoundOpen] = useState(false);
 
+  const [progressSummaryOpen, setProgressSummaryOpen] = useState(false);
+
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
@@ -61,30 +64,49 @@ export function RecruitmentExecutionWorkspacePage() {
 
       setSelectedRoundId(data.rounds[0]?.execution_round_id ?? "");
 
+      const historyLookup = new Map(
+        data.historySummary.map((item) => [item.execution_participant_id, item]),
+      );
       const initialState: Record<string, RecruitmentExecutionEditedRow> = {};
 
       data.participants.forEach((participant) => {
+        const history = historyLookup.get(participant.execution_participant_id);
+
         initialState[participant.execution_participant_id] = {
-          attendanceStatus: null,
+          attendanceStatus: history?.attendance_status ?? null,
 
-          gateStatus: participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED",
+    gateStatus:
+  history?.restriction_override
+    ? "ALLOWED"
+    : (
+        history?.gate_status ??
+        (participant.effective_gate_status === "RESTRICTED"
+          ? "RESTRICTED"
+          : "ALLOWED")
+      ),
 
-          progressionStatus: "NONE",
+          progressionStatus: history?.progression_status ?? "NONE",
+remarks: history?.remarks ?? "",
 
-          remarks: "",
+absenceDisposition: history?.absence_disposition ?? null,
 
-          absenceDisposition: null,
+absenceReason: history?.absence_reason ?? "",
 
-          absenceReason: "",
+restrictionOverride: history?.restriction_override ?? false,
 
-          restrictionOverride: false,
-
-          overrideReason: "",
+overrideReason: history?.restriction_override_reason ?? "",
         };
       });
 
       setEditedRows(initialState);
+
+      setRoundDirty(false);
+      setRoundSaved(false);
       setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error(error);
+
+      toast.error(error instanceof Error ? error.message : "Unable to load execution workspace.");
     } finally {
       setLoading(false);
     }
@@ -144,6 +166,38 @@ export function RecruitmentExecutionWorkspacePage() {
     return [...roleMap.values()].sort((a, b) => a.roleName.localeCompare(b.roleName));
   }, [participants]);
 
+  const shortlistedParticipants = useMemo(
+    () =>
+      participants.filter((participant) => {
+        const row = editedRows[participant.execution_participant_id];
+
+        return row?.progressionStatus === "SHORTLISTED" && row?.attendanceStatus === "PRESENT";
+      }),
+    [participants, editedRows],
+  );
+
+  const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
+    const roleMap = new Map<string, ActiveRoleOption>();
+
+    shortlistedParticipants.forEach((participant) => {
+      participant.selected_roles.forEach((role) => {
+        const existing = roleMap.get(role.drive_role_id);
+
+        if (existing) {
+          existing.candidateCount += 1;
+        } else {
+          roleMap.set(role.drive_role_id, {
+            driveRoleId: role.drive_role_id,
+            roleName: role.drive_role_name,
+            candidateCount: 1,
+          });
+        }
+      });
+    });
+
+    return [...roleMap.values()].sort((a, b) => a.roleName.localeCompare(b.roleName));
+  }, [shortlistedParticipants]);
+
   const handleSaveRound = async () => {
     setSaving(true);
 
@@ -202,22 +256,22 @@ export function RecruitmentExecutionWorkspacePage() {
     }
   };
 
-const handleProgressToNextRound = async () => {
-  const shortlistedParticipants = participants.filter((participant) => {
-    const row = editedRows[participant.execution_participant_id];
+  const handleProgressToNextRound = async () => {
+    const shortlistedParticipants = participants.filter((participant) => {
+      const row = editedRows[participant.execution_participant_id];
 
-    return row?.progressionStatus === "SHORTLISTED";
-  });
+      return row?.progressionStatus === "SHORTLISTED";
+    });
 
-  if (shortlistedParticipants.length === 0) {
-    toast.info(
-      "No shortlisted participants remain. Please use Final Save to complete this execution.",
-    );
-    return;
-  }
+    if (shortlistedParticipants.length === 0) {
+      toast.info(
+        "No shortlisted participants remain. Please use Final Save to complete this execution.",
+      );
+      return;
+    }
 
-  setCreateRoundOpen(true);
-};
+    setProgressSummaryOpen(true);
+  };
 
   const handleFinalizeExecution = async () => {
     if (!workspace) {
@@ -377,6 +431,19 @@ const handleProgressToNextRound = async () => {
                       const effectiveGateStatus =
                         isRestricted && !isOverrideApplied ? "RESTRICTED" : "ALLOWED";
 
+                        const canProgress =
+  (
+    editedRow?.attendanceStatus === "PRESENT" ||
+    (
+      editedRow?.attendanceStatus === "ABSENT" &&
+      editedRow?.absenceDisposition === "ALLOWED"
+    )
+  ) &&
+  (
+    editedRow?.gateStatus === "ALLOWED" ||
+    editedRow?.restrictionOverride === true
+  );
+
                       return (
                         <tr key={participant.execution_participant_id} className="border-b">
                           <td className="px-3 py-3">
@@ -420,19 +487,22 @@ const handleProgressToNextRound = async () => {
                                   ?.attendanceStatus ?? ""
                               }
                               onChange={(e) => {
-                                setHasUnsavedChanges(true);
+                                setEditedRows((prev) => {
+                                  const next = {
+                                    ...prev,
+                                    [participant.execution_participant_id]: {
+                                      ...prev[participant.execution_participant_id],
+                                      attendanceStatus: (e.target.value ||
+                                        null) as ExecutionAttendanceStatus | null,
+                                    },
+                                  };
+
+                                  return next;
+                                });
 
                                 setRoundDirty(true);
                                 setRoundSaved(false);
-
-                                setEditedRows((prev) => ({
-                                  ...prev,
-                                  [participant.execution_participant_id]: {
-                                    ...prev[participant.execution_participant_id],
-                                    attendanceStatus: (e.target.value ||
-                                      null) as ExecutionAttendanceStatus | null,
-                                  },
-                                }));
+                                setHasUnsavedChanges(true);
                               }}
                             >
                               <option value="">—</option>
@@ -489,11 +559,28 @@ const handleProgressToNextRound = async () => {
                             >
                               <option value="NONE">No Progress</option>
 
-                              <option value="SHORTLISTED">Shortlisted</option>
+                              <option
+  value="SHORTLISTED"
+  disabled={!canProgress}
+>
+  Shortlisted
+</option>
 
-                              <option value="SELECTED">Selected</option>
-                            </select>
-                          </td>
+<option
+  value="SELECTED"
+  disabled={!canProgress}
+>
+  Selected
+</option>
+                           </select>
+
+{!canProgress && (
+  <p className="mt-1 text-xs text-amber-600">
+    Candidate cannot progress until attendance/restriction issues are resolved.
+  </p>
+)}
+
+</td>
                         </tr>
                       );
                     })}
@@ -508,32 +595,33 @@ const handleProgressToNextRound = async () => {
                     Review absentees and restriction overrides before saving.
                   </div>
                 </div>
-               <button
-  type="button"
-  onClick={() => setAttendanceReviewOpen(true)}
-  disabled={saving || !roundDirty}
-  className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
->
-  {roundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
-</button>
 
-               <button
-  type="button"
-  onClick={handleProgressToNextRound}
-  disabled={saving || !roundSaved}
-  className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
->
-  Progress to Next Round
-</button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceReviewOpen(true)}
+                  disabled={saving || !roundDirty}
+                  className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {roundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
+                </button>
 
-               <button
-  type="button"
-  onClick={handleFinalizeExecution}
-  disabled={saving || !roundSaved}
-  className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
->
-  Final Save
-</button>
+                <button
+                  type="button"
+                  onClick={handleProgressToNextRound}
+                  disabled={saving || !roundSaved}
+                  className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Progress to Next Round
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleFinalizeExecution}
+                  disabled={saving || !roundSaved}
+                  className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Final Save
+                </button>
               </div>
             </div>
           </>
@@ -548,6 +636,18 @@ const handleProgressToNextRound = async () => {
           </div>
         )}
       </div>
+
+      <ProgressSummaryDialog
+        open={progressSummaryOpen}
+        shortlistedCount={shortlistedParticipants.length}
+        totalParticipants={participants.length}
+        roleSummary={shortlistedRoleSummary}
+        onCancel={() => setProgressSummaryOpen(false)}
+        onContinue={() => {
+          setProgressSummaryOpen(false);
+          setCreateRoundOpen(true);
+        }}
+      />
 
       <CreateRoundDialog
         open={createRoundOpen}
@@ -581,9 +681,23 @@ const handleProgressToNextRound = async () => {
               );
             }
 
+            if (progressSummaryOpen && selectedRoundId) {
+              const roleIds = data.roundType === "COMMON" ? [] : data.roleIds;
+
+              const inserted = await recruitmentExecutionService.populateRoundParticipants({
+                sourceExecutionId: workspace.execution.execution_id,
+                sourceRoundId: selectedRoundId,
+                targetRoundId: round.execution_round_id,
+                roleIds,
+              });
+
+              toast.success(`${inserted} shortlisted participant(s) moved to the next round.`);
+            }
+
             await loadWorkspace();
 
             setSelectedRoundId(round.execution_round_id);
+            setProgressSummaryOpen(false);
             setCreateRoundOpen(false);
 
             toast.success("Round created successfully.");
