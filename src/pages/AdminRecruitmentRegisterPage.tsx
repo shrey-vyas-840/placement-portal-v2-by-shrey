@@ -126,45 +126,11 @@ export function AdminRecruitmentRegisterPage() {
                   {filteredRecruitments.map((item: any) => {
                     const companyName = item.company?.company_name ?? "—";
 
-                    const roleNames = Array.from(
-                      new Set(
-                        (item.roles ?? [])
-                          .map(
-                            (role: any) => role.drive_role_name ?? role.role_name ?? role.role_type,
-                          )
-                          .filter((value: any): value is string => Boolean(value)),
-                      ),
-                    ) as string[];
+                    const roleNames = item.roleNames ?? [];
 
-                    const branches = Array.from(
-                      new Set(
-                        String(item.eligibility?.allowed_branches ?? "")
-                          .split(",")
-                          .map((branch: string) => branch.trim())
-                          .filter((value: any): value is string => Boolean(value)),
-                      ),
-                    ) as string[];
+                    const branches = item.eligibleBranches ?? [];
 
-                    const opportunityStatus = item.opportunity?.application_status;
-
-                    let status = "Draft";
-
-                    switch (opportunityStatus) {
-                      case "Upcoming":
-                        status = "Upcoming";
-                        break;
-
-                      case "Open":
-                        status = "Registration Open";
-                        break;
-
-                      case "Closed":
-                        status = "Registration Closed";
-                        break;
-
-                      default:
-                        status = item.drive_status ?? opportunityStatus ?? "Unknown";
-                    }
+                    const status = item.lifecycleStatus ?? "Unknown";
 
                     return (
                       <tr
@@ -175,50 +141,70 @@ export function AdminRecruitmentRegisterPage() {
                           // Register feature is completed.
                         }}
                       >
-                        <td className="px-5 py-4">
-                          <div className="font-medium">{companyName}</div>
+                       <td className="w-[24%] px-5 py-4 align-top">
+                         <div className="text-[15px] font-semibold">{companyName}</div>
 
-                          <div className="mt-1 text-xs text-muted-foreground">
+                          <div className="mt-1 text-sm text-muted-foreground">
                             {item.drive_name}
                           </div>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="w-[26%] px-5 py-4 align-top">
                           {roleNames.length === 0 ? (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-sm text-muted-foreground">—</span>
                           ) : (
-                            <div className="flex flex-wrap gap-1">
+                            <div className="space-y-1">
                               {roleNames.map((role: string) => (
-                                <span
-                                  key={role}
-                                  className="rounded-full bg-primary/10 px-2 py-1 text-xs"
-                                >
-                                  {role}
-                                </span>
+                                <div key={role} className="text-sm leading-5">
+                                  • {role}
+                                </div>
                               ))}
                             </div>
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="w-[38%] px-5 py-4 align-top">
                           {branches.length === 0 ? (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-sm text-muted-foreground">—</span>
                           ) : (
-                            <div className="flex flex-wrap gap-1">
+                            <div className="space-y-1">
                               {branches.map((branch: string) => (
-                                <span
+                                <div
                                   key={branch}
-                                  className="rounded-full bg-muted px-2 py-1 text-xs"
+                                  className="text-sm leading-5 text-muted-foreground"
                                 >
-                                  {branch}
-                                </span>
+                                  • {branch}
+                                </div>
                               ))}
                             </div>
                           )}
                         </td>
 
-                        <td className="px-5 py-4">
-                          <span className="rounded-full border px-3 py-1 text-xs font-medium">
+                        <td className="w-[12%] px-5 py-4 align-top">
+                          <span
+    className={`
+        inline-flex
+        rounded-full
+        px-3
+        py-1
+        text-xs
+        font-medium
+        whitespace-nowrap
+
+        ${
+            status === "Registration Open"
+                ? "bg-green-100 text-green-700"
+
+            : status === "Upcoming"
+                ? "bg-blue-100 text-blue-700"
+
+            : status === "Registration Closed"
+                ? "bg-slate-100 text-slate-700"
+
+            : "bg-amber-100 text-amber-700"
+        }
+    `}
+>
                             {status}
                           </span>
                         </td>
