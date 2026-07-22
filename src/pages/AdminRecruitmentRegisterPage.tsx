@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Building2, Download, Loader2, Search } from "lucide-react";
 
 import { recruitmentRegisterService } from "@/services/recruitmentRegisterService";
+import RecruitmentRegisterExportDialog from "@/components/recruitment/RecruitmentRegisterExportDialog";
 
 export function AdminRecruitmentRegisterPage() {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ export function AdminRecruitmentRegisterPage() {
   const [recruitments, setRecruitments] = useState<any[]>([]);
 
   const [search, setSearch] = useState("");
+
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   async function loadRecruitments() {
     try {
@@ -76,6 +79,7 @@ export function AdminRecruitmentRegisterPage() {
 
             <button
               type="button"
+              onClick={() => setExportDialogOpen(true)}
               className="flex items-center justify-center gap-2 rounded-xl border bg-card px-4 py-2 transition hover:bg-muted"
             >
               <Download className="h-4 w-4" />
@@ -141,8 +145,8 @@ export function AdminRecruitmentRegisterPage() {
                           // Register feature is completed.
                         }}
                       >
-                       <td className="w-[24%] px-5 py-4 align-top">
-                         <div className="text-[15px] font-semibold">{companyName}</div>
+                        <td className="w-[24%] px-5 py-4 align-top">
+                          <div className="text-[15px] font-semibold">{companyName}</div>
 
                           <div className="mt-1 text-sm text-muted-foreground">
                             {item.drive_name}
@@ -182,7 +186,7 @@ export function AdminRecruitmentRegisterPage() {
 
                         <td className="w-[12%] px-5 py-4 align-top">
                           <span
-    className={`
+                            className={`
         inline-flex
         rounded-full
         px-3
@@ -192,19 +196,16 @@ export function AdminRecruitmentRegisterPage() {
         whitespace-nowrap
 
         ${
-            status === "Registration Open"
-                ? "bg-green-100 text-green-700"
-
+          status === "Registration Open"
+            ? "bg-green-100 text-green-700"
             : status === "Upcoming"
-                ? "bg-blue-100 text-blue-700"
-
-            : status === "Registration Closed"
+              ? "bg-blue-100 text-blue-700"
+              : status === "Registration Closed"
                 ? "bg-slate-100 text-slate-700"
-
-            : "bg-amber-100 text-amber-700"
+                : "bg-amber-100 text-amber-700"
         }
     `}
->
+                          >
                             {status}
                           </span>
                         </td>
@@ -217,6 +218,8 @@ export function AdminRecruitmentRegisterPage() {
           </div>
         </div>
       </div>
+
+      <RecruitmentRegisterExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} />
     </div>
   );
 }
