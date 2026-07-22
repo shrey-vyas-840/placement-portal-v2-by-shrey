@@ -9,75 +9,46 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as OpportunitiesRouteImport } from './routes/opportunities'
-import { Route as OnboardingSubmittedRouteImport } from './routes/onboarding-submitted'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as MyApplicationsRouteImport } from './routes/my-applications'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as HodIndexRouteImport } from './routes/hod/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MyApplicationsRouteImport } from './routes/my-applications'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as OnboardingSubmittedRouteImport } from './routes/onboarding-submitted'
+import { Route as OpportunitiesRouteImport } from './routes/opportunities'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as WorkspaceRegistryImportRouteImport } from './routes/workspace/registry-import'
-import { Route as WorkspaceCatalogRouteImport } from './routes/workspace/catalog'
-import { Route as StudentNocRouteImport } from './routes/student/noc'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as AdminStudentsRouteImport } from './routes/admin/students'
-import { Route as AdminRecruitmentNewRouteImport } from './routes/admin/recruitment-new'
-import { Route as AdminRecruitmentExecutionRouteImport } from './routes/admin/recruitment-execution'
-import { Route as AdminRecruitmentRouteImport } from './routes/admin/recruitment'
-import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
-import { Route as AdminOnboardingApprovalsRouteImport } from './routes/admin/onboarding-approvals'
-import { Route as AdminNocRouteImport } from './routes/admin/noc'
-import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
-import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
-import { Route as AdminAttendanceRouteImport } from './routes/admin/attendance'
-import { Route as AdminAllOpportunitiesRouteImport } from './routes/admin/all-opportunities'
 import { Route as AdminStudentIdRouteImport } from './routes/admin/$studentId'
-import { Route as AdminRecruitmentIndexRouteImport } from './routes/admin/recruitment.index'
-import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/opportunities.index'
-import { Route as HodReviewTokenRouteImport } from './routes/hod/review.$token'
-import { Route as AdminRecruitmentDraftIdRouteImport } from './routes/admin/recruitment.$draftId'
-import { Route as AdminQuestionsOpportunityIdRouteImport } from './routes/admin/questions.$opportunityId'
-import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
-import { Route as AdminOnboardingReviewDraftIdRouteImport } from './routes/admin/onboarding-review.$draftId'
+import { Route as AdminAllOpportunitiesRouteImport } from './routes/admin/all-opportunities'
+import { Route as AdminAttendanceRouteImport } from './routes/admin/attendance'
+import { Route as AdminCompaniesRouteImport } from './routes/admin/companies'
+import { Route as AdminDrivesRouteImport } from './routes/admin/drives'
+import { Route as AdminNocRouteImport } from './routes/admin/noc'
+import { Route as AdminOnboardingApprovalsRouteImport } from './routes/admin/onboarding-approvals'
+import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
+import { Route as AdminRecruitmentRouteImport } from './routes/admin/recruitment'
+import { Route as AdminRecruitmentExecutionRouteImport } from './routes/admin/recruitment-execution'
+import { Route as AdminRecruitmentNewRouteImport } from './routes/admin/recruitment-new'
+import { Route as AdminRecruitmentRegisterRouteImport } from './routes/admin/recruitment-register'
+import { Route as AdminStudentsRouteImport } from './routes/admin/students'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as HodIndexRouteImport } from './routes/hod/index'
+import { Route as StudentNocRouteImport } from './routes/student/noc'
+import { Route as WorkspaceCatalogRouteImport } from './routes/workspace/catalog'
+import { Route as WorkspaceRegistryImportRouteImport } from './routes/workspace/registry-import'
 import { Route as AdminExportOpportunityIdRouteImport } from './routes/admin/export.$opportunityId'
+import { Route as AdminOnboardingReviewDraftIdRouteImport } from './routes/admin/onboarding-review.$draftId'
+import { Route as AdminOpportunitiesIndexRouteImport } from './routes/admin/opportunities.index'
+import { Route as AdminOpportunitiesOpportunityIdRouteImport } from './routes/admin/opportunities.$opportunityId'
+import { Route as AdminQuestionsOpportunityIdRouteImport } from './routes/admin/questions.$opportunityId'
+import { Route as AdminRecruitmentIndexRouteImport } from './routes/admin/recruitment.index'
+import { Route as AdminRecruitmentDraftIdRouteImport } from './routes/admin/recruitment.$draftId'
+import { Route as HodReviewTokenRouteImport } from './routes/hod/review.$token'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OpportunitiesRoute = OpportunitiesRouteImport.update({
-  id: '/opportunities',
-  path: '/opportunities',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingSubmittedRoute = OnboardingSubmittedRouteImport.update({
-  id: '/onboarding-submitted',
-  path: '/onboarding-submitted',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyApplicationsRoute = MyApplicationsRouteImport.update({
-  id: '/my-applications',
-  path: '/my-applications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -85,14 +56,39 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HodIndexRoute = HodIndexRouteImport.update({
-  id: '/hod/',
-  path: '/hod/',
+const MyApplicationsRoute = MyApplicationsRouteImport.update({
+  id: '/my-applications',
+  path: '/my-applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingSubmittedRoute = OnboardingSubmittedRouteImport.update({
+  id: '/onboarding-submitted',
+  path: '/onboarding-submitted',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpportunitiesRoute = OpportunitiesRouteImport.update({
+  id: '/opportunities',
+  path: '/opportunities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -100,50 +96,34 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceRegistryImportRoute = WorkspaceRegistryImportRouteImport.update({
-  id: '/workspace/registry-import',
-  path: '/workspace/registry-import',
+const AdminStudentIdRoute = AdminStudentIdRouteImport.update({
+  id: '/admin/$studentId',
+  path: '/admin/$studentId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
-  id: '/workspace/catalog',
-  path: '/workspace/catalog',
+const AdminAllOpportunitiesRoute = AdminAllOpportunitiesRouteImport.update({
+  id: '/admin/all-opportunities',
+  path: '/admin/all-opportunities',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StudentNocRoute = StudentNocRouteImport.update({
-  id: '/student/noc',
-  path: '/student/noc',
+const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
+  id: '/admin/attendance',
+  path: '/admin/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
+const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
+  id: '/admin/companies',
+  path: '/admin/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminStudentsRoute = AdminStudentsRouteImport.update({
-  id: '/admin/students',
-  path: '/admin/students',
+const AdminDrivesRoute = AdminDrivesRouteImport.update({
+  id: '/admin/drives',
+  path: '/admin/drives',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRecruitmentNewRoute = AdminRecruitmentNewRouteImport.update({
-  id: '/admin/recruitment-new',
-  path: '/admin/recruitment-new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRecruitmentExecutionRoute =
-  AdminRecruitmentExecutionRouteImport.update({
-    id: '/admin/recruitment-execution',
-    path: '/admin/recruitment-execution',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AdminRecruitmentRoute = AdminRecruitmentRouteImport.update({
-  id: '/admin/recruitment',
-  path: '/admin/recruitment',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminOpportunitiesRoute = AdminOpportunitiesRouteImport.update({
-  id: '/admin/opportunities',
-  path: '/admin/opportunities',
+const AdminNocRoute = AdminNocRouteImport.update({
+  id: '/admin/noc',
+  path: '/admin/noc',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminOnboardingApprovalsRoute =
@@ -152,67 +132,68 @@ const AdminOnboardingApprovalsRoute =
     path: '/admin/onboarding-approvals',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AdminNocRoute = AdminNocRouteImport.update({
-  id: '/admin/noc',
-  path: '/admin/noc',
+const AdminOpportunitiesRoute = AdminOpportunitiesRouteImport.update({
+  id: '/admin/opportunities',
+  path: '/admin/opportunities',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminDrivesRoute = AdminDrivesRouteImport.update({
-  id: '/admin/drives',
-  path: '/admin/drives',
+const AdminRecruitmentRoute = AdminRecruitmentRouteImport.update({
+  id: '/admin/recruitment',
+  path: '/admin/recruitment',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
-  id: '/admin/companies',
-  path: '/admin/companies',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
-  id: '/admin/attendance',
-  path: '/admin/attendance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAllOpportunitiesRoute = AdminAllOpportunitiesRouteImport.update({
-  id: '/admin/all-opportunities',
-  path: '/admin/all-opportunities',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminStudentIdRoute = AdminStudentIdRouteImport.update({
-  id: '/admin/$studentId',
-  path: '/admin/$studentId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRecruitmentIndexRoute = AdminRecruitmentIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRecruitmentRoute,
-} as any)
-const AdminOpportunitiesIndexRoute = AdminOpportunitiesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminOpportunitiesRoute,
-} as any)
-const HodReviewTokenRoute = HodReviewTokenRouteImport.update({
-  id: '/hod/review/$token',
-  path: '/hod/review/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRecruitmentDraftIdRoute = AdminRecruitmentDraftIdRouteImport.update({
-  id: '/$draftId',
-  path: '/$draftId',
-  getParentRoute: () => AdminRecruitmentRoute,
-} as any)
-const AdminQuestionsOpportunityIdRoute =
-  AdminQuestionsOpportunityIdRouteImport.update({
-    id: '/admin/questions/$opportunityId',
-    path: '/admin/questions/$opportunityId',
+const AdminRecruitmentExecutionRoute =
+  AdminRecruitmentExecutionRouteImport.update({
+    id: '/admin/recruitment-execution',
+    path: '/admin/recruitment-execution',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AdminOpportunitiesOpportunityIdRoute =
-  AdminOpportunitiesOpportunityIdRouteImport.update({
-    id: '/$opportunityId',
-    path: '/$opportunityId',
-    getParentRoute: () => AdminOpportunitiesRoute,
+const AdminRecruitmentNewRoute = AdminRecruitmentNewRouteImport.update({
+  id: '/admin/recruitment-new',
+  path: '/admin/recruitment-new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRecruitmentRegisterRoute =
+  AdminRecruitmentRegisterRouteImport.update({
+    id: '/admin/recruitment-register',
+    path: '/admin/recruitment-register',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminStudentsRoute = AdminStudentsRouteImport.update({
+  id: '/admin/students',
+  path: '/admin/students',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HodIndexRoute = HodIndexRouteImport.update({
+  id: '/hod/',
+  path: '/hod/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentNocRoute = StudentNocRouteImport.update({
+  id: '/student/noc',
+  path: '/student/noc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceCatalogRoute = WorkspaceCatalogRouteImport.update({
+  id: '/workspace/catalog',
+  path: '/workspace/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceRegistryImportRoute = WorkspaceRegistryImportRouteImport.update({
+  id: '/workspace/registry-import',
+  path: '/workspace/registry-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminExportOpportunityIdRoute =
+  AdminExportOpportunityIdRouteImport.update({
+    id: '/admin/export/$opportunityId',
+    path: '/admin/export/$opportunityId',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AdminOnboardingReviewDraftIdRoute =
   AdminOnboardingReviewDraftIdRouteImport.update({
@@ -220,12 +201,38 @@ const AdminOnboardingReviewDraftIdRoute =
     path: '/admin/onboarding-review/$draftId',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AdminExportOpportunityIdRoute =
-  AdminExportOpportunityIdRouteImport.update({
-    id: '/admin/export/$opportunityId',
-    path: '/admin/export/$opportunityId',
+const AdminOpportunitiesIndexRoute = AdminOpportunitiesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminOpportunitiesRoute,
+} as any)
+const AdminOpportunitiesOpportunityIdRoute =
+  AdminOpportunitiesOpportunityIdRouteImport.update({
+    id: '/$opportunityId',
+    path: '/$opportunityId',
+    getParentRoute: () => AdminOpportunitiesRoute,
+  } as any)
+const AdminQuestionsOpportunityIdRoute =
+  AdminQuestionsOpportunityIdRouteImport.update({
+    id: '/admin/questions/$opportunityId',
+    path: '/admin/questions/$opportunityId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminRecruitmentIndexRoute = AdminRecruitmentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRecruitmentRoute,
+} as any)
+const AdminRecruitmentDraftIdRoute = AdminRecruitmentDraftIdRouteImport.update({
+  id: '/$draftId',
+  path: '/$draftId',
+  getParentRoute: () => AdminRecruitmentRoute,
+} as any)
+const HodReviewTokenRoute = HodReviewTokenRouteImport.update({
+  id: '/hod/review/$token',
+  path: '/hod/review/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -248,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/recruitment': typeof AdminRecruitmentRouteWithChildren
   '/admin/recruitment-execution': typeof AdminRecruitmentExecutionRoute
   '/admin/recruitment-new': typeof AdminRecruitmentNewRoute
+  '/admin/recruitment-register': typeof AdminRecruitmentRegisterRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
@@ -283,6 +291,7 @@ export interface FileRoutesByTo {
   '/admin/onboarding-approvals': typeof AdminOnboardingApprovalsRoute
   '/admin/recruitment-execution': typeof AdminRecruitmentExecutionRoute
   '/admin/recruitment-new': typeof AdminRecruitmentNewRoute
+  '/admin/recruitment-register': typeof AdminRecruitmentRegisterRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
@@ -321,6 +330,7 @@ export interface FileRoutesById {
   '/admin/recruitment': typeof AdminRecruitmentRouteWithChildren
   '/admin/recruitment-execution': typeof AdminRecruitmentExecutionRoute
   '/admin/recruitment-new': typeof AdminRecruitmentNewRoute
+  '/admin/recruitment-register': typeof AdminRecruitmentRegisterRoute
   '/admin/students': typeof AdminStudentsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/student/noc': typeof StudentNocRoute
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/admin/recruitment'
     | '/admin/recruitment-execution'
     | '/admin/recruitment-new'
+    | '/admin/recruitment-register'
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/admin/onboarding-approvals'
     | '/admin/recruitment-execution'
     | '/admin/recruitment-new'
+    | '/admin/recruitment-register'
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
@@ -432,6 +444,7 @@ export interface FileRouteTypes {
     | '/admin/recruitment'
     | '/admin/recruitment-execution'
     | '/admin/recruitment-new'
+    | '/admin/recruitment-register'
     | '/admin/students'
     | '/auth/callback'
     | '/student/noc'
@@ -470,6 +483,7 @@ export interface RootRouteChildren {
   AdminRecruitmentRoute: typeof AdminRecruitmentRouteWithChildren
   AdminRecruitmentExecutionRoute: typeof AdminRecruitmentExecutionRoute
   AdminRecruitmentNewRoute: typeof AdminRecruitmentNewRoute
+  AdminRecruitmentRegisterRoute: typeof AdminRecruitmentRegisterRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   StudentNocRoute: typeof StudentNocRoute
@@ -485,53 +499,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/opportunities': {
-      id: '/opportunities'
-      path: '/opportunities'
-      fullPath: '/opportunities'
-      preLoaderRoute: typeof OpportunitiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding-submitted': {
-      id: '/onboarding-submitted'
-      path: '/onboarding-submitted'
-      fullPath: '/onboarding-submitted'
-      preLoaderRoute: typeof OnboardingSubmittedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-applications': {
-      id: '/my-applications'
-      path: '/my-applications'
-      fullPath: '/my-applications'
-      preLoaderRoute: typeof MyApplicationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -541,18 +513,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/hod/': {
-      id: '/hod/'
-      path: '/hod'
-      fullPath: '/hod/'
-      preLoaderRoute: typeof HodIndexRouteImport
+    '/my-applications': {
+      id: '/my-applications'
+      path: '/my-applications'
+      fullPath: '/my-applications'
+      preLoaderRoute: typeof MyApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding-submitted': {
+      id: '/onboarding-submitted'
+      path: '/onboarding-submitted'
+      fullPath: '/onboarding-submitted'
+      preLoaderRoute: typeof OnboardingSubmittedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/opportunities': {
+      id: '/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof OpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -562,102 +569,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/workspace/registry-import': {
-      id: '/workspace/registry-import'
-      path: '/workspace/registry-import'
-      fullPath: '/workspace/registry-import'
-      preLoaderRoute: typeof WorkspaceRegistryImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace/catalog': {
-      id: '/workspace/catalog'
-      path: '/workspace/catalog'
-      fullPath: '/workspace/catalog'
-      preLoaderRoute: typeof WorkspaceCatalogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/student/noc': {
-      id: '/student/noc'
-      path: '/student/noc'
-      fullPath: '/student/noc'
-      preLoaderRoute: typeof StudentNocRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/students': {
-      id: '/admin/students'
-      path: '/admin/students'
-      fullPath: '/admin/students'
-      preLoaderRoute: typeof AdminStudentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/recruitment-new': {
-      id: '/admin/recruitment-new'
-      path: '/admin/recruitment-new'
-      fullPath: '/admin/recruitment-new'
-      preLoaderRoute: typeof AdminRecruitmentNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/recruitment-execution': {
-      id: '/admin/recruitment-execution'
-      path: '/admin/recruitment-execution'
-      fullPath: '/admin/recruitment-execution'
-      preLoaderRoute: typeof AdminRecruitmentExecutionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/recruitment': {
-      id: '/admin/recruitment'
-      path: '/admin/recruitment'
-      fullPath: '/admin/recruitment'
-      preLoaderRoute: typeof AdminRecruitmentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/opportunities': {
-      id: '/admin/opportunities'
-      path: '/admin/opportunities'
-      fullPath: '/admin/opportunities'
-      preLoaderRoute: typeof AdminOpportunitiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/onboarding-approvals': {
-      id: '/admin/onboarding-approvals'
-      path: '/admin/onboarding-approvals'
-      fullPath: '/admin/onboarding-approvals'
-      preLoaderRoute: typeof AdminOnboardingApprovalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/noc': {
-      id: '/admin/noc'
-      path: '/admin/noc'
-      fullPath: '/admin/noc'
-      preLoaderRoute: typeof AdminNocRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/drives': {
-      id: '/admin/drives'
-      path: '/admin/drives'
-      fullPath: '/admin/drives'
-      preLoaderRoute: typeof AdminDrivesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/companies': {
-      id: '/admin/companies'
-      path: '/admin/companies'
-      fullPath: '/admin/companies'
-      preLoaderRoute: typeof AdminCompaniesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/attendance': {
-      id: '/admin/attendance'
-      path: '/admin/attendance'
-      fullPath: '/admin/attendance'
-      preLoaderRoute: typeof AdminAttendanceRouteImport
+    '/admin/$studentId': {
+      id: '/admin/$studentId'
+      path: '/admin/$studentId'
+      fullPath: '/admin/$studentId'
+      preLoaderRoute: typeof AdminStudentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/all-opportunities': {
@@ -667,11 +583,151 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAllOpportunitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/$studentId': {
-      id: '/admin/$studentId'
-      path: '/admin/$studentId'
-      fullPath: '/admin/$studentId'
-      preLoaderRoute: typeof AdminStudentIdRouteImport
+    '/admin/attendance': {
+      id: '/admin/attendance'
+      path: '/admin/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AdminAttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/companies': {
+      id: '/admin/companies'
+      path: '/admin/companies'
+      fullPath: '/admin/companies'
+      preLoaderRoute: typeof AdminCompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/drives': {
+      id: '/admin/drives'
+      path: '/admin/drives'
+      fullPath: '/admin/drives'
+      preLoaderRoute: typeof AdminDrivesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/noc': {
+      id: '/admin/noc'
+      path: '/admin/noc'
+      fullPath: '/admin/noc'
+      preLoaderRoute: typeof AdminNocRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/onboarding-approvals': {
+      id: '/admin/onboarding-approvals'
+      path: '/admin/onboarding-approvals'
+      fullPath: '/admin/onboarding-approvals'
+      preLoaderRoute: typeof AdminOnboardingApprovalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/opportunities': {
+      id: '/admin/opportunities'
+      path: '/admin/opportunities'
+      fullPath: '/admin/opportunities'
+      preLoaderRoute: typeof AdminOpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recruitment': {
+      id: '/admin/recruitment'
+      path: '/admin/recruitment'
+      fullPath: '/admin/recruitment'
+      preLoaderRoute: typeof AdminRecruitmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recruitment-execution': {
+      id: '/admin/recruitment-execution'
+      path: '/admin/recruitment-execution'
+      fullPath: '/admin/recruitment-execution'
+      preLoaderRoute: typeof AdminRecruitmentExecutionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recruitment-new': {
+      id: '/admin/recruitment-new'
+      path: '/admin/recruitment-new'
+      fullPath: '/admin/recruitment-new'
+      preLoaderRoute: typeof AdminRecruitmentNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recruitment-register': {
+      id: '/admin/recruitment-register'
+      path: '/admin/recruitment-register'
+      fullPath: '/admin/recruitment-register'
+      preLoaderRoute: typeof AdminRecruitmentRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/students': {
+      id: '/admin/students'
+      path: '/admin/students'
+      fullPath: '/admin/students'
+      preLoaderRoute: typeof AdminStudentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hod/': {
+      id: '/hod/'
+      path: '/hod'
+      fullPath: '/hod/'
+      preLoaderRoute: typeof HodIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/noc': {
+      id: '/student/noc'
+      path: '/student/noc'
+      fullPath: '/student/noc'
+      preLoaderRoute: typeof StudentNocRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/catalog': {
+      id: '/workspace/catalog'
+      path: '/workspace/catalog'
+      fullPath: '/workspace/catalog'
+      preLoaderRoute: typeof WorkspaceCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/registry-import': {
+      id: '/workspace/registry-import'
+      path: '/workspace/registry-import'
+      fullPath: '/workspace/registry-import'
+      preLoaderRoute: typeof WorkspaceRegistryImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/export/$opportunityId': {
+      id: '/admin/export/$opportunityId'
+      path: '/admin/export/$opportunityId'
+      fullPath: '/admin/export/$opportunityId'
+      preLoaderRoute: typeof AdminExportOpportunityIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/onboarding-review/$draftId': {
+      id: '/admin/onboarding-review/$draftId'
+      path: '/admin/onboarding-review/$draftId'
+      fullPath: '/admin/onboarding-review/$draftId'
+      preLoaderRoute: typeof AdminOnboardingReviewDraftIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/opportunities/': {
+      id: '/admin/opportunities/'
+      path: '/'
+      fullPath: '/admin/opportunities/'
+      preLoaderRoute: typeof AdminOpportunitiesIndexRouteImport
+      parentRoute: typeof AdminOpportunitiesRoute
+    }
+    '/admin/opportunities/$opportunityId': {
+      id: '/admin/opportunities/$opportunityId'
+      path: '/$opportunityId'
+      fullPath: '/admin/opportunities/$opportunityId'
+      preLoaderRoute: typeof AdminOpportunitiesOpportunityIdRouteImport
+      parentRoute: typeof AdminOpportunitiesRoute
+    }
+    '/admin/questions/$opportunityId': {
+      id: '/admin/questions/$opportunityId'
+      path: '/admin/questions/$opportunityId'
+      fullPath: '/admin/questions/$opportunityId'
+      preLoaderRoute: typeof AdminQuestionsOpportunityIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/recruitment/': {
@@ -681,20 +737,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRecruitmentIndexRouteImport
       parentRoute: typeof AdminRecruitmentRoute
     }
-    '/admin/opportunities/': {
-      id: '/admin/opportunities/'
-      path: '/'
-      fullPath: '/admin/opportunities/'
-      preLoaderRoute: typeof AdminOpportunitiesIndexRouteImport
-      parentRoute: typeof AdminOpportunitiesRoute
-    }
-    '/hod/review/$token': {
-      id: '/hod/review/$token'
-      path: '/hod/review/$token'
-      fullPath: '/hod/review/$token'
-      preLoaderRoute: typeof HodReviewTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/recruitment/$draftId': {
       id: '/admin/recruitment/$draftId'
       path: '/$draftId'
@@ -702,32 +744,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRecruitmentDraftIdRouteImport
       parentRoute: typeof AdminRecruitmentRoute
     }
-    '/admin/questions/$opportunityId': {
-      id: '/admin/questions/$opportunityId'
-      path: '/admin/questions/$opportunityId'
-      fullPath: '/admin/questions/$opportunityId'
-      preLoaderRoute: typeof AdminQuestionsOpportunityIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/opportunities/$opportunityId': {
-      id: '/admin/opportunities/$opportunityId'
-      path: '/$opportunityId'
-      fullPath: '/admin/opportunities/$opportunityId'
-      preLoaderRoute: typeof AdminOpportunitiesOpportunityIdRouteImport
-      parentRoute: typeof AdminOpportunitiesRoute
-    }
-    '/admin/onboarding-review/$draftId': {
-      id: '/admin/onboarding-review/$draftId'
-      path: '/admin/onboarding-review/$draftId'
-      fullPath: '/admin/onboarding-review/$draftId'
-      preLoaderRoute: typeof AdminOnboardingReviewDraftIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/export/$opportunityId': {
-      id: '/admin/export/$opportunityId'
-      path: '/admin/export/$opportunityId'
-      fullPath: '/admin/export/$opportunityId'
-      preLoaderRoute: typeof AdminExportOpportunityIdRouteImport
+    '/hod/review/$token': {
+      id: '/hod/review/$token'
+      path: '/hod/review/$token'
+      fullPath: '/hod/review/$token'
+      preLoaderRoute: typeof HodReviewTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -780,6 +801,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRecruitmentRoute: AdminRecruitmentRouteWithChildren,
   AdminRecruitmentExecutionRoute: AdminRecruitmentExecutionRoute,
   AdminRecruitmentNewRoute: AdminRecruitmentNewRoute,
+  AdminRecruitmentRegisterRoute: AdminRecruitmentRegisterRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   StudentNocRoute: StudentNocRoute,
@@ -795,13 +817,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

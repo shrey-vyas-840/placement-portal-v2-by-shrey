@@ -132,11 +132,7 @@ export function AdminRecruitmentHubPage() {
   }
 
   async function handlePermanentDelete(draftId: string) {
-   if (
-  !window.confirm(
-    "Delete this recruitment permanently?\n\nThis action cannot be undone."
-  )
-) {
+    if (!window.confirm("Delete this recruitment permanently?\n\nThis action cannot be undone.")) {
       return;
     }
 
