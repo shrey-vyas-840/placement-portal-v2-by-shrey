@@ -35,7 +35,7 @@ export function ExportSummaryCard({
   onExport,
 }: ExportSummaryCardProps) {
   return (
-    <div className="rounded-2xl border bg-card p-6">
+    <div className="flex h-full flex-col rounded-2xl border bg-card p-6">
       <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
 
       <div className="mt-6 space-y-3">
@@ -48,9 +48,9 @@ export function ExportSummaryCard({
         ))}
       </div>
 
-      {children && <div className="mt-6">{children}</div>}
+      {children && <div className="mt-6 shrink-0">{children}</div>}
 
-      <div className="mt-6 border-t pt-6">
+      <div className="mt-auto border-t pt-6">
         <Button className="w-full gap-2" disabled={exporting} onClick={onExport}>
           <FileSpreadsheet className="h-5 w-5" />
 

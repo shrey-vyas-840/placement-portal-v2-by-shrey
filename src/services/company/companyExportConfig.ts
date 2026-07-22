@@ -5,8 +5,13 @@ import type { CompanyExportRow } from "@/services/companyExportService";
 export function buildCompanyExportConfiguration(
   dataset: ExportDataset<CompanyExportRow>,
 ): ExportConfiguration<CompanyExportRow> {
-  return {
+return {
+
     dataset,
+
+    showSearch: false,
+
+    showGlobalSelect: false,
 
     getCellValue(row, column) {
       switch (column) {

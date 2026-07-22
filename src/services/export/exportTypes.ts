@@ -39,6 +39,10 @@ export interface ExportDataset<RowType = Record<string, unknown>> {
 export interface ExportConfiguration<RowType = Record<string, unknown>> {
   dataset: ExportDataset<RowType>;
 
+  showSearch?: boolean;
+
+  showGlobalSelect?: boolean;
+
   getCellValue: (
     row: RowType,
 

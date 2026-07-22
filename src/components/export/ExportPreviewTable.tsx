@@ -28,7 +28,7 @@ export function ExportPreviewTable<RowType>({
   );
 
   return (
-    <div className="rounded-2xl border bg-card">
+    <div className="flex h-full flex-col rounded-2xl border bg-card">
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div>
           <h2 className="text-lg font-semibold">Preview</h2>
@@ -39,8 +39,8 @@ export function ExportPreviewTable<RowType>({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="max-h-[450px] overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-x-auto">
+        <div className="h-full overflow-y-auto">
           <table className="min-w-full text-sm">
             <thead className="sticky top-0 z-20 bg-background shadow-sm">
               <tr>
@@ -65,18 +65,13 @@ export function ExportPreviewTable<RowType>({
                 >
                   {selectedColumns.map((column) => (
                     <td
+                      title={String(
+                        getCellValue(
+                          row,
 
-    title={String(
-
-        getCellValue(
-
-            row,
-
-            column,
-
-        ) ?? "",
-
-    )}
+                          column,
+                        ) ?? "",
+                      )}
                       key={column}
 
                       className="max-w-xs truncate whitespace-nowrap px-4 py-3 align-top"

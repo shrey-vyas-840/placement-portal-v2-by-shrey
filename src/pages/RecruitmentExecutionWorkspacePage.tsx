@@ -50,6 +50,12 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
+  const [pendingStageNumber, setPendingStageNumber] = useState(1);
+
+const [creationMode, setCreationMode] = useState<
+  "PARALLEL_STAGE" | "NEXT_STAGE"
+>("PARALLEL_STAGE");
+
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
 
   const loadWorkspace = useCallback(async () => {
@@ -116,21 +122,19 @@ export function RecruitmentExecutionWorkspacePage() {
   }, [loadWorkspace]);
 
   useEffect(() => {
-  if (!workspace || !pendingRoundId) {
-    return;
-  }
+    if (!workspace || !pendingRoundId) {
+      return;
+    }
 
-  const exists = workspace.rounds.some(
-    (round) => round.execution_round_id === pendingRoundId,
-  );
+    const exists = workspace.rounds.some((round) => round.execution_round_id === pendingRoundId);
 
-  if (!exists) {
-    return;
-  }
+    if (!exists) {
+      return;
+    }
 
-  setSelectedRoundId(pendingRoundId);
-  setPendingRoundId("");
-}, [workspace, pendingRoundId]);
+    setSelectedRoundId(pendingRoundId);
+    setPendingRoundId("");
+  }, [workspace, pendingRoundId]);
 
   const selectedRound = useMemo<RecruitmentExecutionRoundRow | null>(() => {
     if (!workspace) {
@@ -168,34 +172,6 @@ export function RecruitmentExecutionWorkspacePage() {
       }),
     [participants, editedRows],
   );
-
-  
-const activeRoleOptions = useMemo<ActiveRoleOption[]>(() => {
-  const roleMap = new Map<
-    string,
-    ActiveRoleOption
-  >();
-
-  shortlistedParticipants.forEach((participant) => {
-    participant.selected_roles.forEach((role) => {
-      const existing = roleMap.get(role.drive_role_id);
-
-      if (existing) {
-        existing.candidateCount += 1;
-      } else {
-        roleMap.set(role.drive_role_id, {
-          driveRoleId: role.drive_role_id,
-          roleName: role.drive_role_name,
-          candidateCount: 1,
-        });
-      }
-    });
-  });
-
-  return [...roleMap.values()].sort((a, b) =>
-    a.roleName.localeCompare(b.roleName),
-  );
-}, [shortlistedParticipants]);
 
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
@@ -621,11 +597,14 @@ const activeRoleOptions = useMemo<ActiveRoleOption[]>(() => {
                 >
                   {roundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
                 </button>
-
+             
                 <button
                   type="button"
                   onClick={handleProgressToNextRound}
-                  disabled={saving || !roundSaved}
+                disabled={
+  saving ||
+  !roundSaved
+}
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Progress to Next Round
@@ -673,7 +652,11 @@ const activeRoleOptions = useMemo<ActiveRoleOption[]>(() => {
         open={createRoundOpen}
         mandatory={!hasRounds}
         nextRoundOrder={(workspace?.rounds.length ?? 0) + 1}
-        activeRoles={activeRoleOptions}
+        activeRoles={(workspace?.remainingActiveRoles ?? []).map((role) => ({
+          driveRoleId: role.drive_role_id,
+          roleName: role.drive_role_name,
+          candidateCount: role.candidate_count,
+        }))}
         loading={saving}
         onCancel={() => setCreateRoundOpen(false)}
         onCreate={async (data) => {
@@ -685,6 +668,7 @@ const activeRoleOptions = useMemo<ActiveRoleOption[]>(() => {
 
             const round = await recruitmentExecutionService.createRound({
               executionId: workspace.execution.execution_id,
+           stageNumber: pendingStageNumber,
               roundOrder: (workspace.rounds.length ?? 0) + 1,
               roundName: data.roundName,
               scope: data.roundType === "COMMON" ? "COMMON" : "ROLE_SPECIFIC",

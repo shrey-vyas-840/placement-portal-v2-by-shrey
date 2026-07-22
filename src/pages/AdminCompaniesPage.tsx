@@ -5,7 +5,7 @@ import { resolveCompanyWorkspace } from "@/services/recruitmentDraftService";
 import { Building2, Pencil, Search, Users, Globe, Mail, Phone, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CompanyManagementEditor } from "@/components/company/CompanyManagementEditor";
-import { CompanyExportDialog } from "@/components/company/CompanyExportDialog";
+import CompanyExportDialog from "@/components/company/CompanyExportDialog";
 
 export function AdminCompaniesPage() {
   const navigate = useNavigate();
@@ -348,118 +348,116 @@ export function AdminCompaniesPage() {
                   const contact = primaryContacts[company.company_id] ?? recruiters[0] ?? null;
 
                   return (
-                    <>
-                      <tr
-                        key={company.company_id}
-                        onClick={async () => {
-                          try {
-                            const workspace = await resolveCompanyWorkspace(company.company_id);
+                    <tr
+                      key={company.company_id}
+                      onClick={async () => {
+                        try {
+                          const workspace = await resolveCompanyWorkspace(company.company_id);
 
-                            if (!workspace) {
-                              alert("No published recruitment exists for this company yet.");
+                          if (!workspace) {
+                            alert("No published recruitment exists for this company yet.");
 
-                              return;
-                            }
-
-                            navigate({
-                              to: "/admin/recruitment/$draftId",
-                              params: {
-                                draftId: workspace.draftId,
-                              },
-                            });
-                          } catch (error) {
-                            console.error(error);
+                            return;
                           }
-                        }}
-                        className="cursor-pointer border-b transition-all hover:bg-primary/5"
-                      >
-                        <td className="px-5 py-4">
-                          <div className="font-medium">{company.company_name}</div>
 
-                          {company.company_website && (
-                            <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                              <Globe className="h-3.5 w-3.5" />
+                          navigate({
+                            to: "/admin/recruitment/$draftId",
+                            params: {
+                              draftId: workspace.draftId,
+                            },
+                          });
+                        } catch (error) {
+                          console.error(error);
+                        }
+                      }}
+                      className="cursor-pointer border-b transition-all hover:bg-primary/5"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="font-medium">{company.company_name}</div>
 
-                              {company.company_website}
-                            </div>
-                          )}
-                        </td>
+                        {company.company_website && (
+                          <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Globe className="h-3.5 w-3.5" />
 
-                        <td className="px-5 py-4">
-                          {contact ? (
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-muted-foreground" />
+                            {company.company_website}
+                          </div>
+                        )}
+                      </td>
 
-                              <div>
-                                <div className="font-medium">{contact.contact_name}</div>
+                      <td className="px-5 py-4">
+                        {contact ? (
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
 
-                                <div className="text-xs text-muted-foreground">
-                                  {contact.contact_position || "—"}
-                                </div>
+                            <div>
+                              <div className="font-medium">{contact.contact_name}</div>
+
+                              <div className="text-xs text-muted-foreground">
+                                {contact.contact_position || "—"}
                               </div>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {contact ? (
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-muted-foreground" />
-
-                              <span className="text-sm">{contact.contact_email}</span>
-                            </div>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          {contact ? (
-                            <div className="flex items-center gap-2">
-                              <Phone className="h-4 w-4 text-muted-foreground" />
-
-                              <span>{contact.contact_number || "—"}</span>
-                            </div>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">{company.hiring_location}</td>
-
-                        <td className="px-5 py-4">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditDialogOpen(true);
-                                setEditingCompanyId(company.company_id);
-                                setCompanyName(company.company_name || "");
-                                setWebsite(company.company_website || "");
-                                setLocation(company.hiring_location || "");
-                                setIndustry(company.industry_type || "");
-                                setDescription(company.company_description || "");
-                                setCompanySize(company.company_size || "");
-                                setRecruiters(
-                                  (companyContacts[company.company_id] ?? []).map((contact) => ({
-                                    ...contact,
-                                    isNew: false,
-                                    markedForDelete: false,
-                                  })),
-                                );
-                              }}
-                              className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 transition hover:bg-muted"
-                            >
-                              <Pencil className="h-4 w-4" />
-                              Edit
-                            </button>
                           </div>
-                        </td>
-                      </tr>
-                    </>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        {contact ? (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+
+                            <span className="text-sm">{contact.contact_email}</span>
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        {contact ? (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+
+                            <span>{contact.contact_number || "—"}</span>
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      <td className="px-5 py-4">{company.hiring_location}</td>
+
+                      <td className="px-5 py-4">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditDialogOpen(true);
+                              setEditingCompanyId(company.company_id);
+                              setCompanyName(company.company_name || "");
+                              setWebsite(company.company_website || "");
+                              setLocation(company.hiring_location || "");
+                              setIndustry(company.industry_type || "");
+                              setDescription(company.company_description || "");
+                              setCompanySize(company.company_size || "");
+                              setRecruiters(
+                                (companyContacts[company.company_id] ?? []).map((contact) => ({
+                                  ...contact,
+                                  isNew: false,
+                                  markedForDelete: false,
+                                })),
+                              );
+                            }}
+                            className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 transition hover:bg-muted"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
 

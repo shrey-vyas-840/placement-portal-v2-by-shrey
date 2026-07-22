@@ -86,6 +86,16 @@ export default function CreateRoundDialog({
       return;
     }
 
+    if (
+  roundType === "ROLE_SPECIFIC" &&
+  effectiveRoleIds.length !== activeRoles.length
+) {
+  toast.error(
+    "Every active role must be assigned to this stage. Select all active roles or create additional parallel role-specific rounds."
+  );
+  return;
+}
+
     await onCreate({
       roundName: roundName.trim(),
       roundType,

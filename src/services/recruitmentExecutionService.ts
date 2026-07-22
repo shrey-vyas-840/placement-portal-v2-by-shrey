@@ -12,6 +12,7 @@ import type {
   RecruitmentExecutionHistorySummary,
   RecruitmentExecutionHistoryCreateInput,
   RecruitmentExecutionWorkspace,
+  RecruitmentExecutionRemainingRole,
   ExecutionScope,
   ExecutionAttendanceStatus,
   ExecutionGateStatus,
@@ -339,6 +340,7 @@ class RecruitmentExecutionService {
 
   async createRound(input: {
     executionId: string;
+    stageNumber: number;
     roundOrder: number;
     roundName: string;
     scope: ExecutionScope;
@@ -352,6 +354,7 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_ROUNDS_TABLE)
       .insert({
         execution_id: input.executionId,
+        stage_number: input.stageNumber,
         round_order: input.roundOrder,
         round_name: input.roundName,
         scope: input.scope,
@@ -717,31 +720,31 @@ history_revision
         continue;
       }
 
-   latest.set(key, {
-    execution_history_id: row.execution_history_id,
+      latest.set(key, {
+        execution_history_id: row.execution_history_id,
 
-    execution_participant_id: row.execution_participant_id,
+        execution_participant_id: row.execution_participant_id,
 
-    execution_round_id: row.execution_round_id,
+        execution_round_id: row.execution_round_id,
 
-    attendance_status: row.attendance_status,
+        attendance_status: row.attendance_status,
 
-    gate_status: row.gate_status,
+        gate_status: row.gate_status,
 
-    progression_status: row.progression_status,
+        progression_status: row.progression_status,
 
-    remarks: row.remarks,
+        remarks: row.remarks,
 
-    absence_disposition: row.absence_disposition,
+        absence_disposition: row.absence_disposition,
 
-    absence_reason: row.absence_reason,
+        absence_reason: row.absence_reason,
 
-    restriction_override: row.restriction_override,
+        restriction_override: row.restriction_override,
 
-    restriction_override_reason: row.restriction_override_reason,
+        restriction_override_reason: row.restriction_override_reason,
 
-    changed_at: row.changed_at,
-});
+        changed_at: row.changed_at,
+      });
     }
 
     return [...latest.values()];
@@ -1280,6 +1283,66 @@ history_revision
   // Workspace Facade
   // --------------------------------------------------------------------------
 
+  private async calculateRemainingActiveRoles(
+  executionId: string,
+): Promise<RecruitmentExecutionRemainingRole[]> {
+
+  const [
+    participants,
+    historySummary,
+    roundRoleMappings,
+  ] = await Promise.all([
+    this.loadParticipants(executionId),
+    this.loadHistorySummary(executionId),
+    this.loadRoundRoleMappings(executionId),
+  ]);
+
+  const latestHistory = new Map(
+    historySummary.map((row) => [
+      row.execution_participant_id,
+      row,
+    ]),
+  );
+
+  const assignedRoleIds = new Set(
+    roundRoleMappings.map((mapping) => mapping.drive_role_id),
+  );
+
+  const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
+
+  participants.forEach((participant) => {
+    const latest = latestHistory.get(
+      participant.execution_participant_id,
+    );
+
+    if (latest?.progression_status !== "SHORTLISTED") {
+      return;
+    }
+
+    participant.selected_roles.forEach((role) => {
+      if (assignedRoleIds.has(role.drive_role_id)) {
+        return;
+      }
+
+      const existing = remaining.get(role.drive_role_id);
+
+      if (existing) {
+        existing.candidate_count += 1;
+      } else {
+        remaining.set(role.drive_role_id, {
+          drive_role_id: role.drive_role_id,
+          drive_role_name: role.drive_role_name,
+          candidate_count: 1,
+        });
+      }
+    });
+  });
+
+  return [...remaining.values()].sort((a, b) =>
+    a.drive_role_name.localeCompare(b.drive_role_name),
+  );
+}
+
   async loadExecutionWorkspace(executionId: string): Promise<RecruitmentExecutionWorkspace> {
     const execution = await this.getExecutionRevision(executionId);
 
@@ -1301,14 +1364,18 @@ history_revision
 
     const historySummary = await this.loadHistorySummary(executionId);
 
-    return {
-      series,
-      execution,
-      rounds,
-      participants,
-      roundRoleMappings,
-      historySummary,
-    };
+    const remainingActiveRoles =
+  await this.calculateRemainingActiveRoles(executionId);
+
+   return {
+  series,
+  execution,
+  rounds,
+  participants,
+  roundRoleMappings,
+  historySummary,
+  remainingActiveRoles,
+};
   }
 }
 

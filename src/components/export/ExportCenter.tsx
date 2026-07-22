@@ -17,7 +17,9 @@ interface ExportCenterProps<RowType = Record<string, unknown>> {
   children?: React.ReactNode;
 }
 
-type ActiveTab = "columns" | "order";
+type ActiveTab = "configure" | "preview";
+
+type ConfigureTab = "columns" | "order";
 
 export function ExportCenter<RowType>({
   configuration,
@@ -30,7 +32,9 @@ export function ExportCenter<RowType>({
 
   const [exporting, setExporting] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>("columns");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("configure");
+
+  const [configureTab, setConfigureTab] = useState<ConfigureTab>("columns");
 
   const defaultColumns = dataset.columns
 
@@ -79,30 +83,14 @@ export function ExportCenter<RowType>({
   );
 
   function resetToDefaults() {
-
     setSelectedColumns(
+      dataset.columns
 
-        dataset.columns
+        .filter((column) => column.defaultEnabled || column.required)
 
-            .filter(
-
-                (column) =>
-
-                    column.defaultEnabled ||
-
-                    column.required,
-
-            )
-
-            .map(
-
-                (column) => column.key,
-
-            ),
-
+        .map((column) => column.key),
     );
-
-}
+  }
 
   async function handleExport() {
     try {
@@ -119,7 +107,7 @@ export function ExportCenter<RowType>({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-4">
+    <div className="grid h-[82vh] gap-6 lg:grid-cols-4">
       <ExportSummaryCard
         title="Export Summary"
 
@@ -132,99 +120,87 @@ export function ExportCenter<RowType>({
         {children}
       </ExportSummaryCard>
 
-      <div className="lg:col-span-3 rounded-2xl border bg-card">
+      <div className="lg:col-span-3 flex h-full flex-col overflow-hidden rounded-2xl border bg-card">
         <div className="flex items-center justify-between border-b px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold">Export Configuration</h2>
+            <h2 className="text-lg font-semibold">
+              {activeTab === "configure" ? "Export Configuration" : "Preview"}
+            </h2>
 
-            <p className="text-sm text-muted-foreground">Choose columns and arrange their order.</p>
+            <p className="text-sm text-muted-foreground">
+              {activeTab === "configure"
+                ? "Choose columns and arrange their order."
+                : "Review the final exported spreadsheet."}
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={activeTab === "configure" ? "default" : "outline"}
+              onClick={() => setActiveTab("configure")}
+            >
+              Configure
+            </Button>
 
-    <Button
+            <Button
+              size="sm"
+              variant={activeTab === "preview" ? "default" : "outline"}
+              onClick={() => setActiveTab("preview")}
+            >
+              Preview
+            </Button>
 
-        size="sm"
-
-        variant={
-            activeTab === "columns"
-                ? "default"
-                : "outline"
-        }
-
-        onClick={() =>
-            setActiveTab("columns")
-        }
-
-    >
-
-        Select Columns
-
-    </Button>
-
-    <Button
-
-        size="sm"
-
-        variant={
-            activeTab === "order"
-                ? "default"
-                : "outline"
-        }
-
-        onClick={() =>
-            setActiveTab("order")
-        }
-
-    >
-
-        Arrange Order
-
-    </Button>
-
-    <Button
-
-        size="sm"
-
-        variant="secondary"
-
-        onClick={resetToDefaults}
-
-    >
-
-        Reset Defaults
-
-    </Button>
-
-</div>
-
+            <Button size="sm" variant="secondary" onClick={resetToDefaults}>
+              Reset Defaults
+            </Button>
+          </div>
         </div>
 
-        <div className="p-6">
-          {activeTab === "columns" ? (
-            <ExportColumnSelector
-              columns={dataset.columns}
+        {activeTab === "configure" ? (
+          <>
+            <div className="border-b px-6 py-3">
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={configureTab === "columns" ? "default" : "outline"}
+                  onClick={() => setConfigureTab("columns")}
+                >
+                  Select Columns
+                </Button>
 
-              selectedColumns={selectedColumns}
+                <Button
+                  size="sm"
+                  variant={configureTab === "order" ? "default" : "outline"}
+                  onClick={() => setConfigureTab("order")}
+                >
+                  Arrange Order
+                </Button>
+              </div>
+            </div>
 
-              onChange={setSelectedColumns}
-            />
-          ) : (
-            <ExportColumnSorter
-              selectedColumns={selectedColumns}
-
-              onChange={setSelectedColumns}
-            />
-          )}
-        </div>
-
-        <div className="border-t p-6">
-          <ExportPreviewTable
-            configuration={configuration}
-
-            selectedColumns={selectedColumns}
-          />
-        </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">
+              {configureTab === "columns" ? (
+           <ExportColumnSelector
+    columns={dataset.columns}
+    selectedColumns={selectedColumns}
+    onChange={setSelectedColumns}
+    showSearch={configuration.showSearch ?? true}
+    showGlobalSelect={configuration.showGlobalSelect ?? true}
+/>
+              ) : (
+                <ExportColumnSorter
+                  selectedColumns={selectedColumns}
+                  onChange={setSelectedColumns}
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="min-h-0 flex-1 p-6">
+            <ExportPreviewTable configuration={configuration} selectedColumns={selectedColumns} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -83,6 +83,7 @@ export interface RecruitmentExecutionRow {
 export interface RecruitmentExecutionRoundRow {
   execution_round_id: string;
   execution_id: string;
+  stage_number: number;
   round_order: number;
   round_name: string;
   scope: ExecutionScope;
@@ -357,6 +358,13 @@ export interface RecruitmentExecutionHistorySummary {
 /**
  * Root object returned by loadExecutionWorkspace().
  */
+
+export interface RecruitmentExecutionRemainingRole {
+  drive_role_id: string;
+  drive_role_name: string;
+  candidate_count: number;
+}
+
 export interface RecruitmentExecutionWorkspace {
   series: RecruitmentExecutionSeriesRow;
 
@@ -369,4 +377,6 @@ export interface RecruitmentExecutionWorkspace {
   roundRoleMappings: RecruitmentExecutionRoundRoleMapping[];
 
   historySummary: RecruitmentExecutionHistorySummary[];
+
+  remainingActiveRoles: RecruitmentExecutionRemainingRole[];
 }
