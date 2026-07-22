@@ -45,12 +45,6 @@ export default function CompanyExportDialog({
     }
   }
 
-  useEffect(() => {
-    if (!open) return;
-
-    void loadExportData();
-  }, [open, additionalRecruiters]);
-
   const dataset = useMemo<ExportDataset<CompanyExportRow>>(() => {
     const columns: ExportColumn[] = [
       {
@@ -217,36 +211,23 @@ export default function CompanyExportDialog({
         </DialogHeader>
 
         <ExportCenter configuration={configuration}>
-    <div className="space-y-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Additional Recruiters</label>
 
-    <label className="text-sm font-medium">
-        Additional Recruiters
-    </label>
+            <Input
+              type="number"
+              min={0}
+              max={10}
+              value={additionalRecruiters}
+              onChange={(event) =>
+                setAdditionalRecruiters(Math.min(10, Math.max(0, Number(event.target.value) || 0)))
+              }
+            />
 
-    <Input
-        type="number"
-        min={0}
-        max={10}
-        value={additionalRecruiters}
-        onChange={(event) =>
-            setAdditionalRecruiters(
-                Math.min(
-                    10,
-                    Math.max(
-                        0,
-                        Number(event.target.value) || 0,
-                    ),
-                ),
-            )
-        }
-    />
-
-    <p className="text-xs text-muted-foreground">
-        Export up to this many additional recruiters
-        (excluding the Primary HR).
-    </p>
-
-</div>
+            <p className="text-xs text-muted-foreground">
+              Export up to this many additional recruiters (excluding the Primary HR).
+            </p>
+          </div>
         </ExportCenter>
       </DialogContent>
     </Dialog>

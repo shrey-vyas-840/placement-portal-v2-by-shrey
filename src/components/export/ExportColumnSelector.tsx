@@ -216,22 +216,28 @@ export function ExportColumnSelector({
                     return (
                       <div
                         key={column.key}
-
-                        className="flex items-center justify-between rounded-xl border p-4 transition hover:border-primary"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          if (!column.required) {
+                            toggleColumn(column, !checked);
+                          }
+                        }}
+                        onKeyDown={(event) => {
+                          if (!column.required && (event.key === "Enter" || event.key === " ")) {
+                            event.preventDefault();
+                            toggleColumn(column, !checked);
+                          }
+                        }}
+                        className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition
+        ${checked ? "border-primary bg-primary/5" : "hover:border-primary"}`}
                       >
                         <div className="flex items-center gap-3">
                           <Checkbox
                             checked={checked}
-
                             disabled={column.required}
-
-                            onCheckedChange={(value) =>
-                              toggleColumn(
-                                column,
-
-                                Boolean(value),
-                              )
-                            }
+                            onClick={(event) => event.stopPropagation()}
+                            onCheckedChange={(value) => toggleColumn(column, Boolean(value))}
                           />
 
                           <span>{column.label}</span>
