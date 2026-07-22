@@ -135,8 +135,23 @@ export const exportExcelBuilder = {
         pattern: "solid",
 
         fgColor: {
-          argb: "FFDDEBF7",
+          argb: "FFFFE699",
         },
+      };
+
+      cell.font = {
+        bold: true,
+        size: 12,
+        color: {
+          argb: "FF000000",
+        },
+      };
+
+      cell.border = {
+        top: { style: "medium" },
+        bottom: { style: "medium" },
+        left: { style: "thin" },
+        right: { style: "thin" },
       };
     });
 
@@ -183,7 +198,7 @@ export const exportExcelBuilder = {
             pattern: "solid",
 
             fgColor: {
-              argb: "FFF8FAFC",
+              argb: "FFFFF2CC",
             },
           };
         });
@@ -221,7 +236,7 @@ export const exportExcelBuilder = {
         }
       });
 
-      excelRow.height = 24;
+      
     });
 
     sheet.columns.forEach((column) => {
@@ -252,7 +267,10 @@ export const exportExcelBuilder = {
         (item) => item.key === selectedColumns[sheet.columns.indexOf(column)],
       );
 
-      column.width = definition?.width ?? Math.min(Math.max(maxLength + 4, 14), 60);
+      column.width = definition?.width ?? Math.min(
+    Math.max(maxLength + 6, 16),
+    80,
+);
     });
 
     sheet.views = [
@@ -270,16 +288,6 @@ export const exportExcelBuilder = {
     };
 
     sheet.eachRow((row, rowNumber) => {
-      if (rowNumber <= 2) {
-        return;
-      }
-
-      row.alignment = {
-        vertical: "top",
-      };
-    });
-
-    sheet.eachRow((row, rowNumber) => {
       if (rowNumber >= 4 && rowNumber % 2 === 0) {
         row.eachCell((cell) => {
           cell.fill = {
@@ -288,7 +296,7 @@ export const exportExcelBuilder = {
             pattern: "solid",
 
             fgColor: {
-              argb: "FFF8FAFC",
+              argb: "FFFFF2CC",
             },
           };
         });
@@ -314,8 +322,8 @@ export const exportExcelBuilder = {
         };
 
         cell.alignment = {
-          vertical: "top",
-
+          horizontal: "center",
+          vertical: "middle",
           wrapText: true,
         };
       });
