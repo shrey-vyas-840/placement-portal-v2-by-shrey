@@ -33,6 +33,12 @@ export default function CompanyExportDialog({
 
   const [additionalRecruiters, setAdditionalRecruiters] = useState(0);
 
+  useEffect(() => {
+    if (!open) return;
+
+    void loadExportData();
+  }, [open]);
+
   async function loadExportData() {
     try {
       setLoading(true);

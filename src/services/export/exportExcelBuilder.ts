@@ -112,7 +112,7 @@ export const exportExcelBuilder = {
 
     sheet.getRow(2).height = 24;
 
-    sheet.getRow(3).height = 22;
+    sheet.getRow(3).height = 34;
 
     const header = sheet.getRow(3);
 
@@ -125,8 +125,8 @@ export const exportExcelBuilder = {
 
       cell.alignment = {
         horizontal: "center",
-
         vertical: "middle",
+        wrapText: false,
       };
 
       cell.fill = {
@@ -198,7 +198,7 @@ export const exportExcelBuilder = {
             pattern: "solid",
 
             fgColor: {
-              argb: "FFFFF2CC",
+              argb: "FFE3E8EF",
             },
           };
         });
@@ -235,8 +235,6 @@ export const exportExcelBuilder = {
           };
         }
       });
-
-      
     });
 
     sheet.columns.forEach((column) => {
@@ -267,10 +265,7 @@ export const exportExcelBuilder = {
         (item) => item.key === selectedColumns[sheet.columns.indexOf(column)],
       );
 
-      column.width = definition?.width ?? Math.min(
-    Math.max(maxLength + 6, 16),
-    80,
-);
+      column.width = definition?.width ?? Math.min(Math.max(maxLength + 8, 20), 80);
     });
 
     sheet.views = [
@@ -296,7 +291,7 @@ export const exportExcelBuilder = {
             pattern: "solid",
 
             fgColor: {
-              argb: "FFFFF2CC",
+              argb: "FFF3F4F6",
             },
           };
         });
