@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -30,37 +30,80 @@ export function ExportCenter<RowType>({
 
   const storageKey = `export-layout-${dataset.sheetName}`;
 
+  const [layoutReady, setLayoutReady] = useState(false);
+
   const [exporting, setExporting] = useState(false);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("configure");
 
   const [configureTab, setConfigureTab] = useState<ConfigureTab>("columns");
 
-  const defaultColumns = dataset.columns
-
-    .filter((column) => column.defaultEnabled || column.required)
-
-    .map((column) => column.key);
-
-  const [selectedColumns, setSelectedColumns] = useState(defaultColumns);
+const defaultColumns = useMemo(
+  () =>
+    dataset.columns
+      .filter((column) => column.defaultEnabled || column.required)
+      .map((column) => column.key),
+  [dataset.columns],
+);
+const [selectedColumns, setSelectedColumns] = useState<string[]>(() => defaultColumns);
 
   useEffect(() => {
+    console.log("Storage key:", storageKey);
     const saved = localStorage.getItem(storageKey);
 
-    if (!saved) {
-      return;
-    }
+if (!saved) {
+    setLayoutReady(true);
+    return;
+}
+
 
     try {
       const parsed = JSON.parse(saved);
+      console.log("Loaded layout:", parsed);
 
-      if (Array.isArray(parsed) && parsed.length) {
-        setSelectedColumns(parsed);
+      if (Array.isArray(parsed.selectedColumns)) {
+        setSelectedColumns(parsed.selectedColumns);
+      }
+
+      if (parsed.activeTab === "configure" || parsed.activeTab === "preview") {
+        setActiveTab(parsed.activeTab);
+      }
+
+      if (parsed.configureTab === "columns" || parsed.configureTab === "order") {
+
+        setConfigureTab(parsed.configureTab);
       }
     } catch {
       // Ignore corrupted layouts
     }
+    setLayoutReady(true);
   }, [storageKey]);
+
+  const firstSaveSkipped = useRef(false);
+
+useEffect(() => {
+    if (!layoutReady) return;
+
+    if (!firstSaveSkipped.current) {
+        firstSaveSkipped.current = true;
+        return;
+    }
+
+    localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+            selectedColumns,
+            activeTab,
+            configureTab,
+        }),
+    );
+}, [
+    layoutReady,
+    storageKey,
+    selectedColumns,
+    activeTab,
+    configureTab,
+]);
 
   const summary = useMemo(
     () => [
@@ -181,13 +224,13 @@ export function ExportCenter<RowType>({
 
             <div className="min-h-0 flex-1 overflow-y-auto p-6">
               {configureTab === "columns" ? (
-           <ExportColumnSelector
-    columns={dataset.columns}
-    selectedColumns={selectedColumns}
-    onChange={setSelectedColumns}
-    showSearch={configuration.showSearch ?? true}
-    showGlobalSelect={configuration.showGlobalSelect ?? true}
-/>
+                <ExportColumnSelector
+                  columns={dataset.columns}
+                  selectedColumns={selectedColumns}
+                  onChange={setSelectedColumns}
+                  showSearch={configuration.showSearch ?? true}
+                  showGlobalSelect={configuration.showGlobalSelect ?? true}
+                />
               ) : (
                 <ExportColumnSorter
                   selectedColumns={selectedColumns}

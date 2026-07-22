@@ -227,10 +227,10 @@ export const exportExcelBuilder = {
           };
 
           cell.font = {
+            ...(cell.font ?? {}),
             color: {
               argb: "FF0563C1",
             },
-
             underline: true,
           };
         }
