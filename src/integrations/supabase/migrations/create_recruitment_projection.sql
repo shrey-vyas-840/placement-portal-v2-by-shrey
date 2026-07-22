@@ -79,3 +79,12 @@ SELECT drive_id
 FROM drive_master
 ON CONFLICT (drive_id)
 DO NOTHING;
+
+ALTER TABLE recruitment_projection
+ALTER COLUMN eligible_students DROP NOT NULL;
+
+ALTER TABLE recruitment_projection
+ALTER COLUMN eligible_students DROP DEFAULT;
+
+ALTER TABLE recruitment_projection
+ADD COLUMN eligibility_computed_at timestamptz;

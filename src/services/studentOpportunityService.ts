@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { generateUuid } from "@/lib/generateUuid";
+import { recruitmentProjectionService } from "@/services/recruitmentProjectionService";
+
 type AnswerInput = {
   question_id: string;
   answer_value: any;
@@ -661,7 +663,10 @@ placement_status
         throw submissionError;
       }
     }
+    await recruitmentProjectionService.refreshApplicationMetrics(opportunityRecord.drive_id);
+
     onProgress?.("Finalizing application...");
+
     return application;
   },
 };

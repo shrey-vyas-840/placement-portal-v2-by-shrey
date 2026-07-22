@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { adminDriveService } from "@/services/adminDriveService";
 import { adminOpportunityService } from "@/services/adminOpportunityService";
 import { adminQuestionService } from "@/services/adminQuestionService";
+import { recruitmentProjectionService } from "@/services/recruitmentProjectionService";
 import { generateUuid } from "@/lib/generateUuid";
 export interface PublishRecruitmentResult {
   driveId: string;
@@ -837,6 +838,10 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
         },
       })
       .eq("draft_id", draftId);
+
+await recruitmentProjectionService.initializeProjection(
+  driveId
+);
 
     return {
       driveId,

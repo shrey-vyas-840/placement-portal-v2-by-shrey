@@ -13,16 +13,21 @@ interface ProjectionUpdate {
 }
 
 async function ensureProjectionRow(driveId: string) {
-  const { error } = await (supabase as any).from("recruitment_projection").upsert(
-    {
-      drive_id: driveId,
-    },
-    {
-      onConflict: "drive_id",
-    },
-  );
+  const { data, error } = await (supabase as any)
+    .from("recruitment_projection")
+    .select("drive_id")
+    .eq("drive_id", driveId)
+    .maybeSingle();
 
   if (error) throw error;
+
+  if (data) return;
+
+  const { error: insertError } = await (supabase as any).from("recruitment_projection").insert({
+    drive_id: driveId,
+  });
+
+  if (insertError) throw insertError;
 }
 
 async function updateProjection(driveId: string, values: ProjectionUpdate) {
@@ -38,18 +43,128 @@ async function updateProjection(driveId: string, values: ProjectionUpdate) {
 }
 
 export const recruitmentProjectionService = {
-  async afterPublish(driveId: string, eligibleStudents: number) {
+  async initializeProjection(driveId: string) {
+    await ensureProjectionRow(driveId);
+  },
+
+  async getProjection(driveId: string) {
+    const { data, error } = await (supabase as any)
+      .from("recruitment_projection")
+      .select("*")
+      .eq("drive_id", driveId)
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  },
+
+  async ensureProjection(driveId: string) {
+    await ensureProjectionRow(driveId);
+
+    return this.getProjection(driveId);
+  },
+
+  async invalidateEligibility(driveId: string) {
+    const { error } = await (supabase as any)
+      .from("recruitment_projection")
+      .update({
+        eligible_students: null,
+        eligibility_computed_at: null,
+      })
+      .eq("drive_id", driveId)
+      .eq("projection_locked", false);
+
+    if (error) throw error;
+  },
+
+  async updateEligibleStudents(driveId: string, eligibleStudents: number) {
+    const { error } = await (supabase as any)
+      .from("recruitment_projection")
+      .update({
+        eligible_students: eligibleStudents,
+        eligibility_computed_at: new Date().toISOString(),
+      })
+      .eq("drive_id", driveId)
+      .eq("projection_locked", false);
+
+    if (error) throw error;
+  },
+
+  async needsEligibilityRefresh(driveId: string) {
+    const projection = await this.getProjection(driveId);
+
+    return projection.eligible_students == null;
+  },
+
+    async getEligibleStudentCount(
+    driveId: string
+  ): Promise<number> {
+    const projection = await this.ensureProjection(driveId);
+
+    if (projection.eligible_students !== null) {
+      return projection.eligible_students;
+    }
+
+    /**
+     * TODO:
+     * Compute eligible students using the existing
+     * Recruitment Eligibility Engine.
+     *
+     * This intentionally remains the single integration
+     * point so that the eligibility engine is never
+     * duplicated across the project.
+     */
+    throw new Error(
+      "Eligibility projection has not been implemented yet."
+    );
+  },
+  
+  async isProjectionLocked(driveId: string) {
+    const projection = await this.getProjection(driveId);
+
+    return Boolean(projection.projection_locked);
+  },
+
+  async refreshApplicationMetrics(driveId: string) {
+    const { data: opportunities, error: opportunityError } = await (supabase as any)
+      .from("opportunity_master")
+      .select("opportunity_id")
+      .eq("drive_id", driveId);
+
+    if (opportunityError) throw opportunityError;
+
+    const opportunityIds = (opportunities ?? []).map((item: any) => item.opportunity_id);
+
+    if (opportunityIds.length === 0) {
+      return;
+    }
+
+    const { count, error: countError } = await (supabase as any)
+      .from("student_opportunity_applications")
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+      .in("opportunity_id", opportunityIds);
+
+    if (countError) throw countError;
+
     await updateProjection(driveId, {
-      eligible_students: eligibleStudents,
+      registered_students: count ?? 0,
+      total_applications: count ?? 0,
     });
   },
 
-  async afterApplication(driveId: string, registeredStudents: number, totalApplications: number) {
-    await updateProjection(driveId, {
-      registered_students: registeredStudents,
-      total_applications: totalApplications,
-    });
-  },
+  /**
+   * Application metrics are always synchronized from
+   * canonical application tables.
+   *
+   * We intentionally do NOT expose a public
+   * afterApplication() writer because application
+   * counts should never be manually supplied by
+   * calling services.
+   */
 
   async afterWithdrawal(driveId: string, registeredStudents: number, totalApplications: number) {
     await updateProjection(driveId, {
