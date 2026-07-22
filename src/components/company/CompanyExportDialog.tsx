@@ -196,7 +196,7 @@ export default function CompanyExportDialog({
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl">
+        <DialogContent className="max-w-7xl h-[92vh] overflow-hidden p-0">
           <DialogHeader>
             <DialogTitle>Company Export Center</DialogTitle>
           </DialogHeader>
@@ -211,28 +211,42 @@ export default function CompanyExportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl">
+      <DialogContent className="max-w-7xl h-[92vh] overflow-hidden p-0">
         <DialogHeader>
           <DialogTitle>Company Export Center</DialogTitle>
         </DialogHeader>
 
         <ExportCenter configuration={configuration}>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Additional Recruiters</label>
+    <div className="space-y-2">
 
-            <Input
-              type="number"
-              min={0}
-              value={additionalRecruiters}
-              onChange={(event) =>
-                setAdditionalRecruiters(Math.max(0, Number(event.target.value) || 0))
-              }
-            />
+    <label className="text-sm font-medium">
+        Additional Recruiters
+    </label>
 
-            <p className="text-xs text-muted-foreground">
-              Export up to this many additional recruiters (excluding the Primary HR).
-            </p>
-          </div>
+    <Input
+        type="number"
+        min={0}
+        max={10}
+        value={additionalRecruiters}
+        onChange={(event) =>
+            setAdditionalRecruiters(
+                Math.min(
+                    10,
+                    Math.max(
+                        0,
+                        Number(event.target.value) || 0,
+                    ),
+                ),
+            )
+        }
+    />
+
+    <p className="text-xs text-muted-foreground">
+        Export up to this many additional recruiters
+        (excluding the Primary HR).
+    </p>
+
+</div>
         </ExportCenter>
       </DialogContent>
     </Dialog>
