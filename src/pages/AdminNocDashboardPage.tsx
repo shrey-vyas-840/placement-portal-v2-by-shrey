@@ -268,6 +268,14 @@ export function AdminNocDashboardPage() {
 
   const [exporting, setExporting] = useState(false);
 
+  const [activeWorkflowView, setActiveWorkflowView] = useState<
+    "approval" | "print" | "printed" | "completion" | "verification" | "issued"
+  >("approval");
+
+  const [closedWorkflowView, setClosedWorkflowView] = useState<
+    "completed" | "rejected" | "cancelled"
+  >("completed");
+
   async function load() {
     const [
       approval,
@@ -796,33 +804,30 @@ export function AdminNocDashboardPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-8 px-8 py-8">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-    <div>
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Administration
-        </p>
+          </p>
 
-        <h1 className="text-4xl font-bold tracking-tight">
-            NOC Workflow
-        </h1>
+          <h1 className="text-4xl font-bold tracking-tight">NOC Workflow</h1>
 
-        <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-muted-foreground">
             Review, approve, print and manage the complete NOC lifecycle from one place.
-        </p>
-    </div>
+          </p>
+        </div>
 
-    <div className="rounded-2xl border bg-background px-5 py-4 shadow-sm">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">
+        <div className="rounded-2xl border bg-background px-5 py-4 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
             Total Lifecycle Records
-        </div>
+          </div>
 
-        <div className="mt-1 text-3xl font-bold">
-            {lifecycleRequests.length}
+          <div className="mt-1 text-3xl font-bold">{lifecycleRequests.length}</div>
         </div>
-    </div>
-</div>
+      </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -832,13 +837,15 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Total NOCs</div>
 
           <div className="text-3xl font-bold">{lifecycleRequests.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -848,13 +855,15 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Pending Approval</div>
 
           <div className="text-3xl font-bold">{pendingApproval.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -864,13 +873,15 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Pending Print</div>
 
           <div className="text-3xl font-bold">{pendingPrint.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -880,13 +891,15 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Printed</div>
 
           <div className="text-3xl font-bold">{printed.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -896,12 +909,14 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Issued</div>
           <div className="text-3xl font-bold">{issued.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -911,13 +926,15 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Cancelled</div>
 
           <div className="text-3xl font-bold">{cancelled.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -927,13 +944,15 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Completion Pending</div>
 
           <div className="text-3xl font-bold">{completionPending.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -943,13 +962,15 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Tenure Verification</div>
 
           <div className="text-3xl font-bold">{pendingTenureVerification.length}</div>
         </div>
 
-        <div className="
+        <div
+          className="
 rounded-2xl
 border
 bg-background
@@ -959,7 +980,8 @@ transition-all
 duration-200
 hover:-translate-y-1
 hover:shadow-md
-">
+"
+        >
           <div className="text-sm text-muted-foreground">Completed Tenure</div>
 
           <div className="text-3xl font-bold">{completedTenure.length}</div>
@@ -967,7 +989,7 @@ hover:shadow-md
       </div>
 
       <div
-    className="
+        className="
 mt-2
 rounded-3xl
 border
@@ -975,7 +997,7 @@ bg-muted/30
 p-8
 shadow-sm
 "
->
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">NOC Analytics Dashboard</h2>
@@ -989,49 +1011,57 @@ shadow-sm
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="
+          <div
+            className="
 rounded-2xl
 border
 bg-background
 p-5
 shadow-sm
-">
+"
+          >
             <div className="text-sm text-muted-foreground">Open workflow items</div>
 
             <div className="text-3xl font-bold">{openWorkflowCount}</div>
           </div>
 
-          <div className="
+          <div
+            className="
 rounded-2xl
 border
 bg-background
 p-5
 shadow-sm
-">
+"
+          >
             <div className="text-sm text-muted-foreground">Issued / completed</div>
 
             <div className="text-3xl font-bold">{issuedAndCompletedCount}</div>
           </div>
 
-          <div className="
+          <div
+            className="
 rounded-2xl
 border
 bg-background
 p-5
 shadow-sm
-">
+"
+          >
             <div className="text-sm text-muted-foreground">Cancelled rate</div>
 
             <div className="text-3xl font-bold">{cancellationRate}%</div>
           </div>
 
-          <div className="
+          <div
+            className="
 rounded-2xl
 border
 bg-background
 p-5
 shadow-sm
-">
+"
+          >
             <div className="text-sm text-muted-foreground">Avg. approval time</div>
             <div className="text-3xl font-bold">
               {averageApprovalHours ? `${averageApprovalHours.toFixed(1)} hrs` : "-"}
@@ -1048,13 +1078,15 @@ shadow-sm
     xl:grid-cols-2
 "
         >
-          <div className="
+          <div
+            className="
 rounded-2xl
 border
 bg-background
 p-5
 shadow-sm
-">
+"
+          >
             <h3 className="mb-4 text-base font-semibold">NOC Type Mix</h3>
 
             <div className="space-y-3 max-h-[260px] overflow-y-auto">
@@ -1095,13 +1127,15 @@ shadow-sm
             </div>
           </div>
 
-          <div className="
+          <div
+            className="
 rounded-2xl
 border
 bg-background
 p-5
 shadow-sm
-">
+"
+          >
             <h3 className="mb-4 text-base font-semibold">Approval Source Mix</h3>
 
             <div className="space-y-3 max-h-[260px] overflow-y-auto">
@@ -1139,14 +1173,14 @@ shadow-sm
       </div>
 
       <div
-    className="
+        className="
 rounded-3xl
 border
 bg-background
 p-6
 shadow-sm
 "
->
+      >
         <input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -1195,7 +1229,7 @@ focus:ring-primary/20
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowAudit(!showAudit)}
-            className="
+              className="
 rounded-xl
 border
 px-4
@@ -1232,22 +1266,98 @@ hover:bg-muted
         </div>
       </div>
 
-      <div className="mt-10 mb-6">
-        <h1 className="text-2xl font-bold">ACTIVE WORKFLOW</h1>
+      <div className="rounded-3xl border bg-background p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Active Workflow</h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">Select a workflow queue to manage.</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveWorkflowView("approval")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                activeWorkflowView === "approval"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`}
+            >
+              Pending Approval ({pendingApproval.length})
+            </button>
+
+            <button
+              onClick={() => setActiveWorkflowView("print")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                activeWorkflowView === "print"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`}
+            >
+              Pending Print ({pendingPrint.length})
+            </button>
+
+            <button
+              onClick={() => setActiveWorkflowView("printed")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                activeWorkflowView === "printed"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`}
+            >
+              Printed ({printed.length})
+            </button>
+
+            <button
+              onClick={() => setActiveWorkflowView("completion")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                activeWorkflowView === "completion"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`}
+            >
+              Completion Pending ({completionPending.length})
+            </button>
+
+            <button
+              onClick={() => setActiveWorkflowView("verification")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                activeWorkflowView === "verification"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`}
+            >
+              Verification ({pendingTenureVerification.length})
+            </button>
+
+            <button
+              onClick={() => setActiveWorkflowView("issued")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                activeWorkflowView === "issued"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`}
+            >
+              Issued ({issued.length})
+            </button>
+          </div>
+        </div>
       </div>
 
-      <h2 className="mt-8 mb-4 text-xl font-semibold">Pending HOD Approval</h2>
+      {activeWorkflowView === "approval" && (
+        <>
+          <h2 className="mt-8 mb-4 text-xl font-semibold">Pending HOD Approval</h2>
 
-      <div className="rounded-lg border">
-        <div className="overflow-x-auto">
-          <div className="max-h-[420px] overflow-y-auto">
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 bg-white">
-                <tr className="border-b">
-                  <th className="p-3 text-left">Student</th>
+          <div className="rounded-lg border">
+            <div className="overflow-x-auto">
+              <div className="max-h-[420px] overflow-y-auto">
+                <table className="min-w-[1200px] w-full">
+                  <thead className="sticky top-0 z-10 bg-white">
+                    <tr className="border-b">
+                      <th className="p-3 text-left">Student</th>
 
-                  <th
-                    className="
+                      <th
+                        className="
     p-3
     text-left
     sticky
@@ -1255,661 +1365,67 @@ hover:bg-muted
     bg-white
     z-10
 "
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="p-3 text-left">Branch</th>
-
-                  <th className="p-3 text-left">Company</th>
-
-                  <th className="p-3 text-left">Type</th>
-
-                  <th className="p-3 text-left">Status</th>
-
-                  <th className="p-3 text-left">Approval Source</th>
-
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {pendingApproval
-
-                  .slice()
-
-                  .sort(
-                    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                  )
-
-                  .filter(matchesSearch)
-                  .slice(0, 100)
-                  .map((request: any) => (
-                    <tr key={request.noc_request_id} className="border-b">
-                      <td className="p-3">{request.snapshot?.student_name}</td>
-
-                      <td
-                        className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
                       >
-                        {request.snapshot?.enrollment_no}
-                      </td>
+                        Enrollment
+                      </th>
 
-                      <td className="p-3">{request.snapshot?.branch}</td>
+                      <th className="p-3 text-left">Branch</th>
 
-                      <td className="p-3">{request.snapshot?.company_name}</td>
+                      <th className="p-3 text-left">Company</th>
 
-                      <td className="p-3">{request.noc_type}</td>
+                      <th className="p-3 text-left">Type</th>
 
-                      <td className="p-3">
-                        {request.status === "PENDING_HOD_APPROVAL" ? "Pending HOD" : request.status}
-                      </td>
+                      <th className="p-3 text-left">Status</th>
 
-                      <td className="p-3">{request.approval_source || "-"}</td>
+                      <th className="p-3 text-left">Approval Source</th>
 
-                      <td className="p-3 flex gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedRequest(request);
-
-                            setReviewMode("VIEW");
-
-                            setEditableSnapshot(structuredClone(request.snapshot));
-
-                            setCustomFields(request.noc_customization ?? {});
-                          }}
-                          className="rounded border px-3 py-1"
-                        >
-                          View
-                        </button>
-
-                        <button
-                          onClick={async () => {
-                            const confirmed = window.confirm(
-                              "Override HOD approval and move directly to Pending Print?",
-                            );
-
-                            if (!confirmed) return;
-
-                            await adminNocService.moveToPendingPrint(request.noc_request_id);
-
-                            await load();
-                          }}
-                          className="rounded border px-3 py-1"
-                        >
-                          Override
-                        </button>
-
-                        <button
-                          onClick={async () => {
-                            const reason = prompt("Enter rejection reason");
-
-                            if (!reason?.trim()) {
-                              alert("Reason is required");
-                              return;
-                            }
-
-                            await adminNocService.rejectRequest(request.noc_request_id, reason);
-
-                            load();
-                          }}
-                          className="rounded border px-3 py-1"
-                        >
-                          Reject
-                        </button>
-                      </td>
+                      <th className="p-3 text-left">Actions</th>
                     </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+                  </thead>
 
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Pending Print</h2>
+                  <tbody>
+                    {pendingApproval
 
-      <div className="rounded-lg border">
-        <div className="overflow-x-auto">
-          <div className="max-h-[420px] overflow-y-auto">
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 bg-white">
-                <tr className="border-b">
-                  <th className="p-3 text-left">Student</th>
+                      .slice()
 
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-   z-10
-"
-                  >
-                    Enrollment
-                  </th>
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
 
-                  <th className="p-3 text-left">Branch</th>
+                      .filter(matchesSearch)
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr key={request.noc_request_id} className="border-b">
+                          <td className="p-3">{request.snapshot?.student_name}</td>
 
-                  <th className="p-3 text-left">Company</th>
-
-                  <th className="p-3 text-left">Type</th>
-
-                  <th className="p-3 text-left">Approval Source</th>
-
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {pendingPrint
-
-                  .slice()
-
-                  .sort(
-                    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                  )
-
-                  .filter(matchesSearch)
-                  .slice(0, 100)
-                  .map((request: any) => (
-                    <tr key={request.noc_request_id} className="border-b">
-                      <td className="p-3">{request.snapshot?.student_name}</td>
-
-                      <td
-                        className="
+                          <td
+                            className="
     p-3
     sticky
     left-0
     bg-white
     z-10
 "
-                      >
-                        {request.snapshot?.enrollment_no}
-                      </td>
-
-                      <td className="p-3">{request.snapshot?.branch}</td>
-
-                      <td className="p-3">{request.snapshot?.company_name}</td>
-
-                      <td className="p-3">{request.noc_type}</td>
-
-                      <td className="p-3">{request.approval_source || "-"}</td>
-
-                      <td className="p-3">
-                        <button
-                          onClick={() => {
-                            setSelectedRequest(request);
-
-                            setReviewMode("PRINT");
-
-                            setEditableSnapshot(structuredClone(request.snapshot));
-
-                            setCustomFields(request.noc_customization ?? {});
-                          }}
-                          className="rounded border px-3 py-1"
-                        >
-                          Review
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Printed</h2>
-
-      <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-        <div className="rounded-lg border">
-          <div className="overflow-x-auto">
-            <div className="max-h-[420px] overflow-y-auto">
-              <table className="min-w-[1200px] w-full">
-                <thead className="sticky top-0 z-10 bg-white">
-                  <tr className="border-b">
-                    <th className="p-3 text-left">Student</th>
-
-                    <th
-                      className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                    >
-                      Enrollment
-                    </th>
-
-                    <th className="p-3 text-left">Branch</th>
-
-                    <th className="p-3 text-left">Company</th>
-
-                    <th className="p-3 text-left">Type</th>
-
-                    <th className="p-3 text-left">Ref No</th>
-
-                    <th className="p-3 text-left">Printed At</th>
-
-                    <th className="p-3 text-left">Prints</th>
-
-                    <th className="p-3 text-left">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {printed
-
-                    .slice()
-
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr key={request.noc_request_id}>
-                        <td className="p-3">{request.snapshot?.student_name}</td>
-
-                        <td
-                          className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                        >
-                          {request.snapshot?.enrollment_no}
-                        </td>
-
-                        <td className="p-3">{request.snapshot?.branch}</td>
-
-                        <td className="p-3">{request.snapshot?.company_name}</td>
-
-                        <td className="p-3">{request.noc_type}</td>
-
-                        <td className="p-3">
-                          <input
-                            type="number"
-                            min="1"
-                            value={
-                              referenceNumbers[request.noc_request_id] ??
-                              request.reference_number ??
-                              ""
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, "");
-
-                              setReferenceNumbers((prev) => ({
-                                ...prev,
-
-                                [request.noc_request_id]: value,
-                              }));
-                            }}
-                            className="rounded border p-2"
-                          />
-                        </td>
-
-                        <td className="p-3">
-                          {request.printed_at ? new Date(request.printed_at).toLocaleString() : "-"}
-                        </td>
-
-                        <td className="p-3">{request.print_count ?? 0}</td>
-
-                        <td className="p-3 flex gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-
-                              setReviewMode("VIEW");
-
-                              setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
-                            }}
-                            className="rounded border px-3 py-1"
                           >
-                            View
-                          </button>
+                            {request.snapshot?.enrollment_no}
+                          </td>
 
-                          <button
-                            onClick={async () => {
-                              const refNumber = (
-                                referenceNumbers[request.noc_request_id] ??
-                                request.reference_number ??
-                                ""
-                              ).trim();
+                          <td className="p-3">{request.snapshot?.branch}</td>
 
-                              if (!refNumber) {
-                                alert("Save Reference Number before reprint.");
+                          <td className="p-3">{request.snapshot?.company_name}</td>
 
-                                return;
-                              }
+                          <td className="p-3">{request.noc_type}</td>
 
-                              if (refNumber !== request.reference_number) {
-                                await adminNocService.saveReferenceNumber(
-                                  request.noc_request_id,
-                                  refNumber,
-                                );
-                              }
+                          <td className="p-3">
+                            {request.status === "PENDING_HOD_APPROVAL"
+                              ? "Pending HOD"
+                              : request.status}
+                          </td>
 
-                              const reason = window.prompt("Enter reason for reprint");
+                          <td className="p-3">{request.approval_source || "-"}</td>
 
-                              if (!reason || !reason.trim()) {
-                                return;
-                              }
-
-                              await adminNocService.reprintNoc(request.noc_request_id, reason);
-
-                              setReferenceNumbers((prev) => {
-                                const next = {
-                                  ...prev,
-                                };
-
-                                delete next[request.noc_request_id];
-
-                                return next;
-                              });
-
-                              await load();
-
-                              alert("Moved back to Pending Print");
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Reprint
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const refNumber = referenceNumbers[request.noc_request_id]?.trim();
-
-                              if (!refNumber || !refNumber.trim()) {
-                                alert("Reference Number is required.");
-                                return;
-                              }
-
-                              if (request.reference_number) {
-                                alert("Reference Number already saved and cannot be modified.");
-
-                                return;
-                              }
-
-                              await adminNocService.saveReferenceNumber(
-                                request.noc_request_id,
-
-                                refNumber,
-                              );
-
-                              await load();
-
-                              alert("Reference Number Saved");
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Save Ref
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const refNumber = (
-                                referenceNumbers[request.noc_request_id] ??
-                                request.reference_number ??
-                                ""
-                              ).trim();
-
-                              if (!refNumber) {
-                                alert("Save Reference Number First");
-
-                                return;
-                              }
-
-                              if (refNumber !== request.reference_number) {
-                                await adminNocService.saveReferenceNumber(
-                                  request.noc_request_id,
-                                  refNumber,
-                                );
-                              }
-
-                              await adminNocService.issueRequest(request.noc_request_id);
-
-                              await load();
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Issue
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const refNumber = (
-                                referenceNumbers[request.noc_request_id] ??
-                                request.reference_number ??
-                                ""
-                              ).trim();
-
-                              if (!refNumber) {
-                                alert("Save Reference Number First");
-
-                                return;
-                              }
-
-                              if (refNumber !== request.reference_number) {
-                                await adminNocService.saveReferenceNumber(
-                                  request.noc_request_id,
-                                  refNumber,
-                                );
-                              }
-
-                              const reason = prompt("Enter cancellation reason");
-
-                              if (!reason?.trim()) {
-                                alert("Reason is required");
-                                return;
-                              }
-
-                              await adminNocService.cancelRequest(request.noc_request_id, reason);
-
-                              await load();
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Completion Pending</h2>
-
-      <div className="rounded-lg border">
-        <div className="overflow-x-auto">
-          <div className="max-h-[420px] overflow-y-auto">
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 bg-white">
-                <tr className="border-b">
-                  <th className="p-3 text-left">Student</th>
-
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-   z-10
-"
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="p-3 text-left">Company</th>
-
-                  <th className="p-3 text-left">End Date</th>
-
-                  <th className="p-3 text-left">Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {completionPending.slice(0, 100).map((request: any) => (
-                  <tr key={request.noc_request_id} className="border-b">
-                    <td className="p-3">{request.snapshot?.student_name}</td>
-
-                    <td
-                      className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                    >
-                      {request.snapshot?.enrollment_no}
-                    </td>
-
-                    <td className="p-3">{request.snapshot?.company_name}</td>
-
-                    <td className="p-3">{request.snapshot?.end_date}</td>
-
-                    <td className="p-3 text-red-600 font-medium">
-                      Waiting For Student Completion Submission
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Tenure Verification Pending</h2>
-
-      <div className="rounded-lg border">
-        <div className="overflow-x-auto">
-          <div className="max-h-[420px] overflow-y-auto">
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 bg-white">
-                <tr className="border-b">
-                  <th className="p-3 text-left">Student</th>
-
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="p-3 text-left">Company</th>
-
-                  <th className="p-3 text-left">End Date</th>
-
-                  <th className="p-3 text-left">Completion Details</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {pendingTenureVerification
-
-                  .slice()
-
-                  .sort(
-                    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                  )
-
-                  .filter(matchesSearch)
-
-                  .slice(0, 100)
-                  .map((request: any) => (
-                    <tr key={request.noc_request_id} className="border-b">
-                      <td className="p-3 align-top">{request.snapshot?.student_name}</td>
-
-                      <td
-                        className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
- align-top"
-                      >
-                        {request.snapshot?.enrollment_no}
-                      </td>
-
-                      <td className="p-3 align-top">{request.snapshot?.company_name}</td>
-
-                      <td className="p-3 align-top">{request.snapshot?.end_date}</td>
-
-                      <td className="p-3">
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <strong>Email:</strong> {request.completion_hr_email ?? "-"}
-                          </div>
-
-                          <div>
-                            <strong>Contact:</strong> {request.completion_hr_contact ?? "-"}
-                          </div>
-
-                          <div>
-                            <strong>HR:</strong>{" "}
-                            {request.completion_same_hr
-                              ? (request.snapshot?.hr_name ?? "Same HR")
-                              : (request.completion_hr_name ?? "-")}
-                          </div>
-
-                          <div>
-                            <strong>Designation:</strong>{" "}
-                            {request.completion_same_hr
-                              ? (request.snapshot?.hr_position ?? "-")
-                              : (request.completion_hr_designation ?? "-")}
-                          </div>
-
-                          <div>
-                            <strong>Certificate:</strong>{" "}
-                            {request.completion_certificate_url ? (
-                              <button
-                                onClick={async () => {
-                                  const url = await adminNocService.getCertificateUrl(
-                                    request.completion_certificate_url,
-                                  );
-
-                                  window.open(url, "_blank");
-                                }}
-                                className="
-text-blue-600
-underline
-"
-                              >
-                                View Certificate
-                              </button>
-                            ) : (
-                              "-"
-                            )}
-                          </div>
-
-                          <div className="pt-3 flex flex-wrap gap-2">
+                          <td className="p-3 flex gap-2">
                             <button
                               onClick={() => {
                                 setSelectedRequest(request);
@@ -1927,73 +1443,162 @@ underline
 
                             <button
                               onClick={async () => {
-                                if (
-                                  !request.completion_submitted_at ||
-                                  !request.completion_certificate_url ||
-                                  !request.completion_hr_email ||
-                                  !request.completion_hr_contact
-                                ) {
-                                  alert("Student has not submitted completion details.");
-
-                                  return;
-                                }
-
-                                await adminNocService.approveTenureCompletion(
-                                  request.noc_request_id,
+                                const confirmed = window.confirm(
+                                  "Override HOD approval and move directly to Pending Print?",
                                 );
+
+                                if (!confirmed) return;
+
+                                await adminNocService.moveToPendingPrint(request.noc_request_id);
 
                                 await load();
                               }}
                               className="rounded border px-3 py-1"
                             >
-                              Approve
+                              Override
                             </button>
 
                             <button
                               onClick={async () => {
-                                const reason = prompt("Enter tenure rejection reason");
+                                const reason = prompt("Enter rejection reason");
 
                                 if (!reason?.trim()) {
                                   alert("Reason is required");
-
                                   return;
                                 }
 
-                                await adminNocService.rejectTenureCompletion(
-                                  request.noc_request_id,
-                                  reason,
-                                );
+                                await adminNocService.rejectRequest(request.noc_request_id, reason);
 
-                                await load();
+                                load();
                               }}
                               className="rounded border px-3 py-1"
                             >
                               Reject
                             </button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
+      {activeWorkflowView === "print" && (
+        <>
+          <h2 className="mt-10 mb-4 text-xl font-semibold">Pending Print</h2>
 
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Issued</h2>
+          <div className="rounded-lg border">
+            <div className="overflow-x-auto">
+              <div className="max-h-[420px] overflow-y-auto">
+                <table className="min-w-[1200px] w-full">
+                  <thead className="sticky top-0 z-10 bg-white">
+                    <tr className="border-b">
+                      <th className="p-3 text-left">Student</th>
 
-      <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-        <div className="rounded-lg border">
-          <div className="overflow-x-auto">
-            <div className="max-h-[420px] overflow-y-auto">
-              <table className="min-w-[1200px] w-full">
-                <thead className="sticky top-0 z-10 bg-white">
-                  <tr>
-                    <th className="p-3 text-left">Student</th>
+                      <th
+                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+   z-10
+"
+                      >
+                        Enrollment
+                      </th>
 
-                    <th
-                      className="
+                      <th className="p-3 text-left">Branch</th>
+
+                      <th className="p-3 text-left">Company</th>
+
+                      <th className="p-3 text-left">Type</th>
+
+                      <th className="p-3 text-left">Approval Source</th>
+
+                      <th className="p-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {pendingPrint
+
+                      .slice()
+
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
+
+                      .filter(matchesSearch)
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr key={request.noc_request_id} className="border-b">
+                          <td className="p-3">{request.snapshot?.student_name}</td>
+
+                          <td
+                            className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                          >
+                            {request.snapshot?.enrollment_no}
+                          </td>
+
+                          <td className="p-3">{request.snapshot?.branch}</td>
+
+                          <td className="p-3">{request.snapshot?.company_name}</td>
+
+                          <td className="p-3">{request.noc_type}</td>
+
+                          <td className="p-3">{request.approval_source || "-"}</td>
+
+                          <td className="p-3">
+                            <button
+                              onClick={() => {
+                                setSelectedRequest(request);
+
+                                setReviewMode("PRINT");
+
+                                setEditableSnapshot(structuredClone(request.snapshot));
+
+                                setCustomFields(request.noc_customization ?? {});
+                              }}
+                              className="rounded border px-3 py-1"
+                            >
+                              Review
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeWorkflowView === "printed" && (
+        <>
+          <h2 className="mt-10 mb-4 text-xl font-semibold">Printed</h2>
+
+          <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+            <div className="rounded-lg border">
+              <div className="overflow-x-auto">
+                <div className="max-h-[420px] overflow-y-auto">
+                  <table className="min-w-[1200px] w-full">
+                    <thead className="sticky top-0 z-10 bg-white">
+                      <tr className="border-b">
+                        <th className="p-3 text-left">Student</th>
+
+                        <th
+                          className="
     p-3
     text-left
     sticky
@@ -2001,37 +1606,302 @@ underline
     bg-white
     z-10
 "
-                    >
-                      Enrollment
-                    </th>
+                        >
+                          Enrollment
+                        </th>
 
-                    <th className="p-3 text-left">Company</th>
+                        <th className="p-3 text-left">Branch</th>
 
-                    <th className="p-3 text-left">Duration</th>
+                        <th className="p-3 text-left">Company</th>
 
-                    <th className="p-3 text-left">Type</th>
+                        <th className="p-3 text-left">Type</th>
 
-                    <th className="p-3 text-left">Ref No</th>
+                        <th className="p-3 text-left">Ref No</th>
 
-                    <th className="p-3 text-left">Issued At</th>
+                        <th className="p-3 text-left">Printed At</th>
 
-                    <th className="p-3 text-left">Actions</th>
-                  </tr>
-                </thead>
+                        <th className="p-3 text-left">Prints</th>
 
-                <tbody>
-                  {issued
+                        <th className="p-3 text-left">Actions</th>
+                      </tr>
+                    </thead>
 
-                    .slice()
+                    <tbody>
+                      {printed
 
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
+                        .slice()
 
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr key={request.noc_request_id}>
+                        .sort(
+                          (a, b) =>
+                            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                        )
+
+                        .filter(matchesSearch)
+                        .slice(0, 100)
+                        .map((request: any) => (
+                          <tr key={request.noc_request_id}>
+                            <td className="p-3">{request.snapshot?.student_name}</td>
+
+                            <td
+                              className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                            >
+                              {request.snapshot?.enrollment_no}
+                            </td>
+
+                            <td className="p-3">{request.snapshot?.branch}</td>
+
+                            <td className="p-3">{request.snapshot?.company_name}</td>
+
+                            <td className="p-3">{request.noc_type}</td>
+
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                min="1"
+                                value={
+                                  referenceNumbers[request.noc_request_id] ??
+                                  request.reference_number ??
+                                  ""
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, "");
+
+                                  setReferenceNumbers((prev) => ({
+                                    ...prev,
+
+                                    [request.noc_request_id]: value,
+                                  }));
+                                }}
+                                className="rounded border p-2"
+                              />
+                            </td>
+
+                            <td className="p-3">
+                              {request.printed_at
+                                ? new Date(request.printed_at).toLocaleString()
+                                : "-"}
+                            </td>
+
+                            <td className="p-3">{request.print_count ?? 0}</td>
+
+                            <td className="p-3 flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedRequest(request);
+
+                                  setReviewMode("VIEW");
+
+                                  setEditableSnapshot(structuredClone(request.snapshot));
+
+                                  setCustomFields(request.noc_customization ?? {});
+                                }}
+                                className="rounded border px-3 py-1"
+                              >
+                                View
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  const refNumber = (
+                                    referenceNumbers[request.noc_request_id] ??
+                                    request.reference_number ??
+                                    ""
+                                  ).trim();
+
+                                  if (!refNumber) {
+                                    alert("Save Reference Number before reprint.");
+
+                                    return;
+                                  }
+
+                                  if (refNumber !== request.reference_number) {
+                                    await adminNocService.saveReferenceNumber(
+                                      request.noc_request_id,
+                                      refNumber,
+                                    );
+                                  }
+
+                                  const reason = window.prompt("Enter reason for reprint");
+
+                                  if (!reason || !reason.trim()) {
+                                    return;
+                                  }
+
+                                  await adminNocService.reprintNoc(request.noc_request_id, reason);
+
+                                  setReferenceNumbers((prev) => {
+                                    const next = {
+                                      ...prev,
+                                    };
+
+                                    delete next[request.noc_request_id];
+
+                                    return next;
+                                  });
+
+                                  await load();
+
+                                  alert("Moved back to Pending Print");
+                                }}
+                                className="rounded border px-3 py-1"
+                              >
+                                Reprint
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  const refNumber =
+                                    referenceNumbers[request.noc_request_id]?.trim();
+
+                                  if (!refNumber || !refNumber.trim()) {
+                                    alert("Reference Number is required.");
+                                    return;
+                                  }
+
+                                  if (request.reference_number) {
+                                    alert("Reference Number already saved and cannot be modified.");
+
+                                    return;
+                                  }
+
+                                  await adminNocService.saveReferenceNumber(
+                                    request.noc_request_id,
+
+                                    refNumber,
+                                  );
+
+                                  await load();
+
+                                  alert("Reference Number Saved");
+                                }}
+                                className="rounded border px-3 py-1"
+                              >
+                                Save Ref
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  const refNumber = (
+                                    referenceNumbers[request.noc_request_id] ??
+                                    request.reference_number ??
+                                    ""
+                                  ).trim();
+
+                                  if (!refNumber) {
+                                    alert("Save Reference Number First");
+
+                                    return;
+                                  }
+
+                                  if (refNumber !== request.reference_number) {
+                                    await adminNocService.saveReferenceNumber(
+                                      request.noc_request_id,
+                                      refNumber,
+                                    );
+                                  }
+
+                                  await adminNocService.issueRequest(request.noc_request_id);
+
+                                  await load();
+                                }}
+                                className="rounded border px-3 py-1"
+                              >
+                                Issue
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  const refNumber = (
+                                    referenceNumbers[request.noc_request_id] ??
+                                    request.reference_number ??
+                                    ""
+                                  ).trim();
+
+                                  if (!refNumber) {
+                                    alert("Save Reference Number First");
+
+                                    return;
+                                  }
+
+                                  if (refNumber !== request.reference_number) {
+                                    await adminNocService.saveReferenceNumber(
+                                      request.noc_request_id,
+                                      refNumber,
+                                    );
+                                  }
+
+                                  const reason = prompt("Enter cancellation reason");
+
+                                  if (!reason?.trim()) {
+                                    alert("Reason is required");
+                                    return;
+                                  }
+
+                                  await adminNocService.cancelRequest(
+                                    request.noc_request_id,
+                                    reason,
+                                  );
+
+                                  await load();
+                                }}
+                                className="rounded border px-3 py-1"
+                              >
+                                Cancel
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeWorkflowView === "completion" && (
+        <>
+          <h2 className="mt-10 mb-4 text-xl font-semibold">Completion Pending</h2>
+
+          <div className="rounded-lg border">
+            <div className="overflow-x-auto">
+              <div className="max-h-[420px] overflow-y-auto">
+                <table className="min-w-[1200px] w-full">
+                  <thead className="sticky top-0 z-10 bg-white">
+                    <tr className="border-b">
+                      <th className="p-3 text-left">Student</th>
+
+                      <th
+                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+   z-10
+"
+                      >
+                        Enrollment
+                      </th>
+
+                      <th className="p-3 text-left">Company</th>
+
+                      <th className="p-3 text-left">End Date</th>
+
+                      <th className="p-3 text-left">Status</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {completionPending.slice(0, 100).map((request: any) => (
+                      <tr key={request.noc_request_id} className="border-b">
                         <td className="p-3">{request.snapshot?.student_name}</td>
 
                         <td
@@ -2048,52 +1918,376 @@ underline
 
                         <td className="p-3">{request.snapshot?.company_name}</td>
 
-                        <td className="p-3">
-                          {getDurationMonths(
-                            request.snapshot?.start_date,
-                            request.snapshot?.end_date,
-                          )}
-                          Month(s)
-                        </td>
+                        <td className="p-3">{request.snapshot?.end_date}</td>
 
-                        <td className="p-3">{request.noc_type}</td>
-
-                        <td className="p-3">{request.reference_number}</td>
-
-                        <td className="p-3">
-                          {request.issued_at ? new Date(request.issued_at).toLocaleString() : "-"}
-                        </td>
-
-                        <td className="p-3">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-
-                              setReviewMode("VIEW");
-
-                              setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            View
-                          </button>
+                        <td className="p-3 text-red-600 font-medium">
+                          Waiting For Student Completion Submission
                         </td>
                       </tr>
                     ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        </>
+      )}
+
+      {activeWorkflowView === "verification" && (
+        <>
+          <h2 className="mt-10 mb-4 text-xl font-semibold">Tenure Verification Pending</h2>
+
+          <div className="rounded-lg border">
+            <div className="overflow-x-auto">
+              <div className="max-h-[420px] overflow-y-auto">
+                <table className="min-w-[1200px] w-full">
+                  <thead className="sticky top-0 z-10 bg-white">
+                    <tr className="border-b">
+                      <th className="p-3 text-left">Student</th>
+
+                      <th
+                        className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                      >
+                        Enrollment
+                      </th>
+
+                      <th className="p-3 text-left">Company</th>
+
+                      <th className="p-3 text-left">End Date</th>
+
+                      <th className="p-3 text-left">Completion Details</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {pendingTenureVerification
+
+                      .slice()
+
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
+
+                      .filter(matchesSearch)
+
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr key={request.noc_request_id} className="border-b">
+                          <td className="p-3 align-top">{request.snapshot?.student_name}</td>
+
+                          <td
+                            className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+ align-top"
+                          >
+                            {request.snapshot?.enrollment_no}
+                          </td>
+
+                          <td className="p-3 align-top">{request.snapshot?.company_name}</td>
+
+                          <td className="p-3 align-top">{request.snapshot?.end_date}</td>
+
+                          <td className="p-3">
+                            <div className="space-y-2 text-sm">
+                              <div>
+                                <strong>Email:</strong> {request.completion_hr_email ?? "-"}
+                              </div>
+
+                              <div>
+                                <strong>Contact:</strong> {request.completion_hr_contact ?? "-"}
+                              </div>
+
+                              <div>
+                                <strong>HR:</strong>{" "}
+                                {request.completion_same_hr
+                                  ? (request.snapshot?.hr_name ?? "Same HR")
+                                  : (request.completion_hr_name ?? "-")}
+                              </div>
+
+                              <div>
+                                <strong>Designation:</strong>{" "}
+                                {request.completion_same_hr
+                                  ? (request.snapshot?.hr_position ?? "-")
+                                  : (request.completion_hr_designation ?? "-")}
+                              </div>
+
+                              <div>
+                                <strong>Certificate:</strong>{" "}
+                                {request.completion_certificate_url ? (
+                                  <button
+                                    onClick={async () => {
+                                      const url = await adminNocService.getCertificateUrl(
+                                        request.completion_certificate_url,
+                                      );
+
+                                      window.open(url, "_blank");
+                                    }}
+                                    className="
+text-blue-600
+underline
+"
+                                  >
+                                    View Certificate
+                                  </button>
+                                ) : (
+                                  "-"
+                                )}
+                              </div>
+
+                              <div className="pt-3 flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => {
+                                    setSelectedRequest(request);
+
+                                    setReviewMode("VIEW");
+
+                                    setEditableSnapshot(structuredClone(request.snapshot));
+
+                                    setCustomFields(request.noc_customization ?? {});
+                                  }}
+                                  className="rounded border px-3 py-1"
+                                >
+                                  View
+                                </button>
+
+                                <button
+                                  onClick={async () => {
+                                    if (
+                                      !request.completion_submitted_at ||
+                                      !request.completion_certificate_url ||
+                                      !request.completion_hr_email ||
+                                      !request.completion_hr_contact
+                                    ) {
+                                      alert("Student has not submitted completion details.");
+
+                                      return;
+                                    }
+
+                                    await adminNocService.approveTenureCompletion(
+                                      request.noc_request_id,
+                                    );
+
+                                    await load();
+                                  }}
+                                  className="rounded border px-3 py-1"
+                                >
+                                  Approve
+                                </button>
+
+                                <button
+                                  onClick={async () => {
+                                    const reason = prompt("Enter tenure rejection reason");
+
+                                    if (!reason?.trim()) {
+                                      alert("Reason is required");
+
+                                      return;
+                                    }
+
+                                    await adminNocService.rejectTenureCompletion(
+                                      request.noc_request_id,
+                                      reason,
+                                    );
+
+                                    await load();
+                                  }}
+                                  className="rounded border px-3 py-1"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeWorkflowView === "issued" && (
+        <>
+          <h2 className="mt-10 mb-4 text-xl font-semibold">Issued</h2>
+
+          <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+            <div className="rounded-lg border">
+              <div className="overflow-x-auto">
+                <div className="max-h-[420px] overflow-y-auto">
+                  <table className="min-w-[1200px] w-full">
+                    <thead className="sticky top-0 z-10 bg-white">
+                      <tr>
+                        <th className="p-3 text-left">Student</th>
+
+                        <th
+                          className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                        >
+                          Enrollment
+                        </th>
+
+                        <th className="p-3 text-left">Company</th>
+
+                        <th className="p-3 text-left">Duration</th>
+
+                        <th className="p-3 text-left">Type</th>
+
+                        <th className="p-3 text-left">Ref No</th>
+
+                        <th className="p-3 text-left">Issued At</th>
+
+                        <th className="p-3 text-left">Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {issued
+
+                        .slice()
+
+                        .sort(
+                          (a, b) =>
+                            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                        )
+
+                        .filter(matchesSearch)
+                        .slice(0, 100)
+                        .map((request: any) => (
+                          <tr key={request.noc_request_id}>
+                            <td className="p-3">{request.snapshot?.student_name}</td>
+
+                            <td
+                              className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                            >
+                              {request.snapshot?.enrollment_no}
+                            </td>
+
+                            <td className="p-3">{request.snapshot?.company_name}</td>
+
+                            <td className="p-3">
+                              {getDurationMonths(
+                                request.snapshot?.start_date,
+                                request.snapshot?.end_date,
+                              )}
+                              Month(s)
+                            </td>
+
+                            <td className="p-3">{request.noc_type}</td>
+
+                            <td className="p-3">{request.reference_number}</td>
+
+                            <td className="p-3">
+                              {request.issued_at
+                                ? new Date(request.issued_at).toLocaleString()
+                                : "-"}
+                            </td>
+
+                            <td className="p-3">
+                              <button
+                                onClick={() => {
+                                  setSelectedRequest(request);
+
+                                  setReviewMode("VIEW");
+
+                                  setEditableSnapshot(structuredClone(request.snapshot));
+
+                                  setCustomFields(request.noc_customization ?? {});
+                                }}
+                                className="rounded border px-3 py-1"
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+<div className="mt-16 rounded-3xl border bg-background p-6 shadow-sm">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+                Closed Workflow
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+                View completed and terminated NOC workflows.
+            </p>
         </div>
-      </div>
 
-      <div className="mt-16 mb-6">
-        <h1 className="text-2xl font-bold">CLOSED WORKFLOW</h1>
-      </div>
+        <div className="flex flex-wrap gap-2">
+            <button
+                onClick={() => setClosedWorkflowView("completed")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    closedWorkflowView === "completed"
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                }`}
+            >
+                Completed ({completedTenure.length})
+            </button>
 
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Completed Tenure</h2>
+            <button
+                onClick={() => setClosedWorkflowView("rejected")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    closedWorkflowView === "rejected"
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                }`}
+            >
+                Rejected ({rejected.length})
+            </button>
+
+            <button
+                onClick={() => setClosedWorkflowView("cancelled")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    closedWorkflowView === "cancelled"
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                }`}
+            >
+                Cancelled ({cancelled.length})
+            </button>
+        </div>
+    </div>
+</div>
+
+{closedWorkflowView === "completed" && (
+<>
+<h2 className="mt-10 mb-4 text-xl font-semibold">
+    Completed Tenure
+</h2>
 
       <div className="rounded-lg border">
         <div className="overflow-x-auto">
@@ -2209,8 +2403,15 @@ underline
           </div>
         </div>
       </div>
+</>
+)}
 
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Rejected</h2>
+
+{closedWorkflowView === "rejected" && (
+<>
+<h2 className="mt-10 mb-4 text-xl font-semibold">
+    Rejected
+</h2>
 
       <div className="rounded-lg border">
         <div className="overflow-x-auto">
@@ -2291,8 +2492,14 @@ underline
           </div>
         </div>
       </div>
+</>
+)}
 
-      <h2 className="mt-10 mb-4 text-xl font-semibold">Cancelled</h2>
+{closedWorkflowView === "cancelled" && (
+<>
+<h2 className="mt-10 mb-4 text-xl font-semibold">
+    Cancelled
+</h2>
 
       <div className="rounded-lg border p-6 text-sm text-muted-foreground">
         <div className="rounded-lg border">
@@ -2412,7 +2619,8 @@ underline
           </div>
         </div>
       </div>
-
+</>
+)}
       {showAudit && (
         <>
           <div className="mt-16 mb-6">
