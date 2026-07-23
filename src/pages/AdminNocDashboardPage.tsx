@@ -846,199 +846,303 @@ export function AdminNocDashboardPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-8 px-8 py-8">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Administration
-          </p>
+      <div className="relative overflow-hidden rounded-[32px] border border-blue-200 bg-gradient-to-r from-sky-700 via-blue-700 to-cyan-600 p-8 text-white shadow-xl">
+        <div className="absolute -right-16 -top-16 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-cyan-300/10 blur-3xl" />
 
-          <h1 className="text-4xl font-bold tracking-tight">NOC Workflow</h1>
+        <div className="relative z-10 flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-100">
+              Administration Workspace
+            </div>
 
-          <p className="mt-2 text-muted-foreground">
-            Review, approve, print and manage the complete NOC lifecycle from one place.
-          </p>
-        </div>
+            <h1 className="mt-3 text-5xl font-bold tracking-tight">NOC Workflow</h1>
 
-        <div className="rounded-2xl border bg-background px-5 py-4 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            Total Lifecycle Records
+            <p className="mt-5 max-w-2xl text-base leading-7 text-blue-100">
+              Review, approve, print, verify and manage the complete No Objection Certificate
+              lifecycle from one centralized workspace.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <div className="rounded-full border border-white/20 bg-white/10 px-5 py-2 backdrop-blur">
+                Pending Approval : <strong>{pendingApproval.length}</strong>
+              </div>
+
+              <div className="rounded-full border border-white/20 bg-white/10 px-5 py-2 backdrop-blur">
+                Open Workflow : <strong>{openWorkflowCount}</strong>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-1 text-3xl font-bold">{lifecycleRequests.length}</div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
+              <div className="text-sm uppercase tracking-wide text-cyan-100">Total Records</div>
+
+              <div className="mt-2 text-5xl font-bold">{lifecycleRequests.length}</div>
+
+              <div className="mt-2 text-sm text-cyan-100">Across every workflow stage</div>
+            </div>
+
+            <div className="rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
+              <div className="text-sm uppercase tracking-wide text-cyan-100">Avg Approval</div>
+
+              <div className="mt-2 text-5xl font-bold">
+                {averageApprovalHours ? averageApprovalHours.toFixed(1) : "-"}
+              </div>
+
+              <div className="mt-2 text-sm text-cyan-100">Hours</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Total NOCs</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Total NOCs
+          </div>
 
-          <div className="text-3xl font-bold">{lifecycleRequests.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">{lifecycleRequests.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Live workflow count</div>
         </div>
 
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Pending Approval</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Pending Approval
+          </div>
 
-          <div className="text-3xl font-bold">{pendingApproval.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">{pendingApproval.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Awaiting HOD approval</div>
         </div>
 
         <div
           className="
-rounded-2xl
-border
-bg-background
-p-5
-shadow-sm
-transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
-"
+    group
+    relative
+    overflow-hidden
+    rounded-3xl
+    border
+    border-slate-200
+    bg-white
+    p-6
+    shadow-md
+    transition-all
+    duration-300
+    hover:-translate-y-2
+    hover:shadow-xl
+  "
         >
-          <div className="text-sm text-muted-foreground">Pending Print</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Pending Print
+          </div>
 
-          <div className="text-3xl font-bold">{pendingPrint.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">{pendingPrint.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Ready for printing</div>
         </div>
 
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Printed</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Printed
+          </div>
 
-          <div className="text-3xl font-bold">{printed.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">{printed.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Waiting to be issued</div>
         </div>
 
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Issued</div>
-          <div className="text-3xl font-bold">{issued.length}</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Issued
+          </div>
+
+          <div className="mt-4 text-5xl font-bold tracking-tight">{issued.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Successfully issued</div>
         </div>
 
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Cancelled</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Cancelled
+          </div>
 
-          <div className="text-3xl font-bold">{cancelled.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">{cancelled.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Cancelled requests</div>
         </div>
 
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Completion Pending</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Completion Pending
+          </div>
 
-          <div className="text-3xl font-bold">{completionPending.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">{completionPending.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Awaiting completion</div>
         </div>
 
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Tenure Verification</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Tenure Verification
+          </div>
 
-          <div className="text-3xl font-bold">{pendingTenureVerification.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">
+            {pendingTenureVerification.length}
+          </div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Verification required</div>
         </div>
 
         <div
           className="
-rounded-2xl
+group
+relative
+overflow-hidden
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 transition-all
-duration-200
-hover:-translate-y-1
-hover:shadow-md
+duration-300
+hover:-translate-y-2
+hover:shadow-xl
 "
         >
-          <div className="text-sm text-muted-foreground">Completed Tenure</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Completed Tenure
+          </div>
 
-          <div className="text-3xl font-bold">{completedTenure.length}</div>
+          <div className="mt-4 text-5xl font-bold tracking-tight">{completedTenure.length}</div>
+
+          <div className="mt-3 text-sm text-muted-foreground">Successfully verified</div>
         </div>
       </div>
 
       <div
         className="
 mt-2
-rounded-3xl
+rounded-[32px]
 border
-bg-muted/30
+border-slate-200
+bg-white
 p-8
-shadow-sm
+shadow-md
 "
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1050,63 +1154,97 @@ shadow-sm
             </p>
           </div>
 
-          <div className="text-sm text-muted-foreground">Last refreshed: Client Time</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Last refreshed: Client Time
+          </div>
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div
             className="
+group
 rounded-2xl
 border
-bg-background
+border-slate-200
+bg-white
 p-5
 shadow-sm
+transition-all
+duration-300
+hover:-translate-y-1
+hover:shadow-lg
 "
           >
-            <div className="text-sm text-muted-foreground">Open workflow items</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Open workflow items
+            </div>
 
-            <div className="text-3xl font-bold">{openWorkflowCount}</div>
+            <div className="mt-4 text-5xl font-bold tracking-tight">{openWorkflowCount}</div>
           </div>
 
           <div
             className="
+group
 rounded-2xl
 border
-bg-background
+border-slate-200
+bg-white
 p-5
 shadow-sm
+transition-all
+duration-300
+hover:-translate-y-1
+hover:shadow-lg
 "
           >
-            <div className="text-sm text-muted-foreground">Issued / completed</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Issued / completed
+            </div>
 
-            <div className="text-3xl font-bold">{issuedAndCompletedCount}</div>
+            <div className="mt-4 text-5xl font-bold tracking-tight">{issuedAndCompletedCount}</div>
           </div>
 
           <div
             className="
+group
 rounded-2xl
 border
-bg-background
+border-slate-200
+bg-white
 p-5
 shadow-sm
+transition-all
+duration-300
+hover:-translate-y-1
+hover:shadow-lg
 "
           >
-            <div className="text-sm text-muted-foreground">Cancelled rate</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Cancelled rate
+            </div>
 
-            <div className="text-3xl font-bold">{cancellationRate}%</div>
+            <div className="mt-4 text-5xl font-bold tracking-tight">{cancellationRate}%</div>
           </div>
 
           <div
             className="
+group
 rounded-2xl
 border
-bg-background
+border-slate-200
+bg-white
 p-5
 shadow-sm
+transition-all
+duration-300
+hover:-translate-y-1
+hover:shadow-lg
 "
           >
-            <div className="text-sm text-muted-foreground">Avg. approval time</div>
-            <div className="text-3xl font-bold">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Avg. approval time
+            </div>
+            <div className="mt-4 text-5xl font-bold tracking-tight">
               {averageApprovalHours ? `${averageApprovalHours.toFixed(1)} hrs` : "-"}
             </div>
           </div>
@@ -1123,11 +1261,12 @@ shadow-sm
         >
           <div
             className="
-rounded-2xl
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 "
           >
             <h3 className="mb-4 text-base font-semibold">NOC Type Mix</h3>
@@ -1172,11 +1311,12 @@ shadow-sm
 
           <div
             className="
-rounded-2xl
+rounded-3xl
 border
-bg-background
-p-5
-shadow-sm
+border-slate-200
+bg-white
+p-6
+shadow-md
 "
           >
             <h3 className="mb-4 text-base font-semibold">Approval Source Mix</h3>
@@ -1208,7 +1348,9 @@ shadow-sm
                   );
                 })
               ) : (
-                <div className="text-sm text-muted-foreground">No approval source data yet.</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  No approval source data yet.
+                </div>
               )}
             </div>
           </div>
@@ -1217,11 +1359,12 @@ shadow-sm
 
       <div
         className="
-rounded-3xl
+rounded-[30px]
 border
-bg-background
+border-slate-200
+bg-white
 p-6
-shadow-sm
+shadow-md
 "
       >
         <input
