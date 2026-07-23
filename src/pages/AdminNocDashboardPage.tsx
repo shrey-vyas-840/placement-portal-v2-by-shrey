@@ -794,65 +794,188 @@ export function AdminNocDashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <h1 className="text-3xl font-bold">NOC Dashboard</h1>
+    <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-8 px-8 py-8">
+      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <div>
+        <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            Administration
+        </p>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-5">
-        <div className="rounded-lg border p-4">
+        <h1 className="text-4xl font-bold tracking-tight">
+            NOC Workflow
+        </h1>
+
+        <p className="mt-2 text-muted-foreground">
+            Review, approve, print and manage the complete NOC lifecycle from one place.
+        </p>
+    </div>
+
+    <div className="rounded-2xl border bg-background px-5 py-4 shadow-sm">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            Total Lifecycle Records
+        </div>
+
+        <div className="mt-1 text-3xl font-bold">
+            {lifecycleRequests.length}
+        </div>
+    </div>
+</div>
+
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Total NOCs</div>
 
           <div className="text-3xl font-bold">{lifecycleRequests.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Pending Approval</div>
 
           <div className="text-3xl font-bold">{pendingApproval.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Pending Print</div>
 
           <div className="text-3xl font-bold">{pendingPrint.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Printed</div>
 
           <div className="text-3xl font-bold">{printed.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Issued</div>
           <div className="text-3xl font-bold">{issued.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Cancelled</div>
 
           <div className="text-3xl font-bold">{cancelled.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Completion Pending</div>
 
           <div className="text-3xl font-bold">{completionPending.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Tenure Verification</div>
 
           <div className="text-3xl font-bold">{pendingTenureVerification.length}</div>
         </div>
 
-        <div className="rounded-lg border p-4">
+        <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+transition-all
+duration-200
+hover:-translate-y-1
+hover:shadow-md
+">
           <div className="text-sm text-muted-foreground">Completed Tenure</div>
 
           <div className="text-3xl font-bold">{completedTenure.length}</div>
         </div>
       </div>
 
-      <div className="mt-10 rounded-lg border bg-slate-50 p-6">
+      <div
+    className="
+mt-2
+rounded-3xl
+border
+bg-muted/30
+p-8
+shadow-sm
+"
+>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">NOC Analytics Dashboard</h2>
@@ -866,25 +989,49 @@ export function AdminNocDashboardPage() {
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-lg border bg-white p-4">
+          <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+">
             <div className="text-sm text-muted-foreground">Open workflow items</div>
 
             <div className="text-3xl font-bold">{openWorkflowCount}</div>
           </div>
 
-          <div className="rounded-lg border bg-white p-4">
+          <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+">
             <div className="text-sm text-muted-foreground">Issued / completed</div>
 
             <div className="text-3xl font-bold">{issuedAndCompletedCount}</div>
           </div>
 
-          <div className="rounded-lg border bg-white p-4">
+          <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+">
             <div className="text-sm text-muted-foreground">Cancelled rate</div>
 
             <div className="text-3xl font-bold">{cancellationRate}%</div>
           </div>
 
-          <div className="rounded-lg border bg-white p-4">
+          <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+">
             <div className="text-sm text-muted-foreground">Avg. approval time</div>
             <div className="text-3xl font-bold">
               {averageApprovalHours ? `${averageApprovalHours.toFixed(1)} hrs` : "-"}
@@ -901,7 +1048,13 @@ export function AdminNocDashboardPage() {
     xl:grid-cols-2
 "
         >
-          <div className="rounded-lg border bg-white p-4">
+          <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+">
             <h3 className="mb-4 text-base font-semibold">NOC Type Mix</h3>
 
             <div className="space-y-3 max-h-[260px] overflow-y-auto">
@@ -942,7 +1095,13 @@ export function AdminNocDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border bg-white p-4">
+          <div className="
+rounded-2xl
+border
+bg-background
+p-5
+shadow-sm
+">
             <h3 className="mb-4 text-base font-semibold">Approval Source Mix</h3>
 
             <div className="space-y-3 max-h-[260px] overflow-y-auto">
@@ -979,7 +1138,15 @@ export function AdminNocDashboardPage() {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div
+    className="
+rounded-3xl
+border
+bg-background
+p-6
+shadow-sm
+"
+>
         <input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -988,9 +1155,15 @@ Search Name / Enrollment / Company / Ref No
 "
           className="
 w-full
-rounded-lg
+rounded-xl
 border
-p-3
+bg-background
+px-4
+py-3
+text-sm
+shadow-sm
+focus:ring-2
+focus:ring-primary/20
 "
         />
 
@@ -1022,13 +1195,16 @@ p-3
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowAudit(!showAudit)}
-              className="
-                rounded
-                border
-                px-3
-                py-1
-                text-sm
-            "
+            className="
+rounded-xl
+border
+px-4
+py-2
+text-sm
+font-medium
+transition-colors
+hover:bg-muted
+"
             >
               {showAudit ? "Hide Audit" : "Show Audit"}
             </button>
