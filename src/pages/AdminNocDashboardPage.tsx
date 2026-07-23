@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-
+import ReactECharts from "echarts-for-react";
 import { adminNocService } from "@/services/adminNocService";
 
 import * as ExcelJS from "exceljs";
@@ -610,6 +610,76 @@ export function AdminNocDashboardPage() {
 
     "Off Campus Placement",
   ];
+
+  const nocTypeChartData = analyticsNocTypes
+    .map((type) => ({
+      name: type,
+      value: lifecycleRequests.filter(
+        (request: any) => (request.noc_type ?? request.snapshot?.noc_type) === type,
+      ).length,
+    }))
+    .filter((item) => item.value > 0);
+
+  const nocTypeColors = [
+    "#2563EB", // Blue
+    "#10B981", // Emerald
+    "#F59E0B", // Amber
+    "#8B5CF6", // Violet
+    "#EF4444", // Red
+    "#06B6D4", // Cyan
+  ];
+
+  const nocTypePieOption = {
+    color: nocTypeColors,
+
+    tooltip: {
+      trigger: "item",
+      formatter: "{b}<br/><b>{c}</b> Records",
+    },
+
+    legend: {
+      bottom: 0,
+      icon: "circle",
+      itemWidth: 10,
+      itemHeight: 10,
+      textStyle: {
+        fontSize: 12,
+      },
+    },
+
+    series: [
+      {
+        type: "pie",
+
+        radius: ["42%", "72%"],
+
+        center: ["50%", "42%"],
+
+        avoidLabelOverlap: true,
+
+        minAngle: 5,
+
+        label: {
+          show: true,
+          formatter: "{b}\n{c}",
+          fontSize: 11,
+          fontWeight: 600,
+        },
+
+        labelLine: {
+          length: 10,
+          length2: 12,
+        },
+
+        emphasis: {
+          scale: true,
+          scaleSize: 8,
+        },
+
+        data: nocTypeChartData,
+      },
+    ],
+  };
 
   function getAverageApprovalHours(records: any[]) {
     const values = records
@@ -1424,44 +1494,36 @@ p-6
 shadow-md
 "
           >
-            <h3 className="mb-4 text-base font-semibold">NOC Type Mix</h3>
+            <h3 className="text-base font-semibold">NOC Type Mix</h3>
 
-            <div className="space-y-3 max-h-[260px] overflow-y-auto">
-              {analyticsNocTypes.map((type) => {
-                const count = lifecycleRequests.filter(
-                  (request: any) => (request.noc_type ?? request.snapshot?.noc_type) === type,
-                ).length;
+            <p className="mt-1 text-sm text-muted-foreground">
+              Distribution of NOC request categories.
+            </p>
 
-                const percent = totalLifecycleRequests
-                  ? Math.round((count / totalLifecycleRequests) * 100)
-                  : 0;
-
-                return (
-                  <div key={type}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span>{type}</span>
-
-                      <span>{count}</span>
-                    </div>
-
-                    <div className="h-2 rounded bg-slate-200">
-                      <div
-                        className="h-2 rounded bg-slate-900"
-                        style={{
-                          width: `${percent}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-
-              {mostCommonType && (
-                <div className="pt-2 text-sm text-muted-foreground">
-                  Most common: <strong>{mostCommonType.type}</strong> ({mostCommonType.count})
-                </div>
-              )}
+            <div className="mt-4 h-[300px] w-full">
+              <ReactECharts
+                option={nocTypePieOption}
+                style={{
+                  height: "100%",
+                  width: "100%",
+                }}
+                opts={{
+                  renderer: "svg",
+                }}
+              />
             </div>
+
+            {mostCommonType && (
+              <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                <span className="text-muted-foreground">Most Common</span>
+
+                <span className="ml-2 font-semibold">{mostCommonType.type}</span>
+
+                <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+                  {mostCommonType.count}
+                </span>
+              </div>
+            )}
           </div>
 
           <div
