@@ -1734,19 +1734,15 @@ hover:shadow-md
 
       <div
         className="
-sticky
-top-4
-z-20
-overflow-hidden
 rounded-[30px]
 border
 border-emerald-200
-bg-gradient-to-r
+bg-linear-to-r
 from-emerald-50
 via-white
 to-sky-50
-p-8
-shadow-lg
+p-6
+shadow-md
 "
       >
         <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-emerald-200/20 blur-3xl" />
@@ -1849,12 +1845,8 @@ shadow-lg
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
 border-b
-bg-muted/70 
-backdrop-blur
+bg-muted/70
 "
                 >
                   <tr
@@ -1878,14 +1870,8 @@ text-muted-foreground"
 
                     <th
                       className="
-    p-3
-    text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+  p-3
+text-left
 "
                     >
                       Enrollment
@@ -1986,12 +1972,8 @@ text-muted-foreground"
                           <td
                             className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+ 
+ 
 "
                           >
                             {request.snapshot?.enrollment_no}
@@ -2077,9 +2059,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -2108,10 +2088,7 @@ text-muted-foreground"
                       className="
     p-3
     text-left
-    sticky
-    left-0
     bg-white
-   z-10
 "
                     >
                       Enrollment
@@ -2203,12 +2180,8 @@ text-muted-foreground"
                           <td
                             className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+ 
+ 
 "
                           >
                             {request.snapshot?.enrollment_no}
@@ -2265,9 +2238,7 @@ hover:shadow-md"
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -2295,13 +2266,6 @@ text-muted-foreground"
                     <th
                       className="
     p-3
-    text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                     >
                       Enrollment
@@ -2408,12 +2372,8 @@ text-muted-foreground"
                           <td
                             className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+ 
+ 
 "
                           >
                             {request.snapshot?.enrollment_no}
@@ -2634,9 +2594,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -2665,10 +2623,7 @@ text-muted-foreground"
                       className="
     p-3
     text-left
-    sticky
-    left-0
     bg-white
-   z-10
 "
                     >
                       Enrollment
@@ -2731,12 +2686,8 @@ text-muted-foreground"
                         <td
                           className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+ 
+ 
 "
                         >
                           {request.snapshot?.enrollment_no}
@@ -2764,9 +2715,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -2794,13 +2743,6 @@ text-muted-foreground"
                     <th
                       className="
     p-3
-    text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                     >
                       Enrollment
@@ -2875,12 +2817,6 @@ text-muted-foreground"
                           <td
                             className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
  align-top"
                           >
                             {request.snapshot?.enrollment_no}
@@ -3021,12 +2957,8 @@ hover:shadow-md"
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
 border-b
-bg-muted/70 
-backdrop-blur
+bg-muted/70
 "
                 >
                   <tr>
@@ -3043,13 +2975,6 @@ text-muted-foreground"
                     <th
                       className="
     p-3
-    text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                     >
                       Enrollment
@@ -3146,12 +3071,8 @@ text-muted-foreground"
                           <td
                             className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+ 
+ 
 "
                           >
                             {request.snapshot?.enrollment_no}
@@ -3280,9 +3201,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
                 <table className="min-w-[1200px] w-full">
                   <thead
                     className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -3310,13 +3229,6 @@ text-muted-foreground"
                       <th
                         className="
     p-3
-    text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                       >
                         Enrollment
@@ -3411,12 +3323,8 @@ text-muted-foreground"
                             <td
                               className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+ 
+ 
 "
                             >
                               {request.snapshot?.enrollment_no}
@@ -3480,9 +3388,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -3511,12 +3417,6 @@ text-muted-foreground"
                       className="
     p-3
     text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                     >
                       Enrollment
@@ -3599,12 +3499,6 @@ text-muted-foreground"
                         <td
                           className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                         >
                           {request.snapshot?.enrollment_no}
@@ -3648,9 +3542,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -3670,13 +3562,6 @@ text-muted-foreground"
                     <th
                       className="
     p-3
-    text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                     >
                       Enrollment
@@ -3794,12 +3679,6 @@ text-muted-foreground"
                           <td
                             className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                           >
                             {request.snapshot?.enrollment_no}
@@ -3907,9 +3786,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
@@ -3937,13 +3814,6 @@ text-muted-foreground"
                     <th
                       className="
     p-3
-    text-left
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                     >
                       Enrollment
@@ -3998,12 +3868,6 @@ text-muted-foreground"
                       <td
                         className="
     p-3
-sticky
-left-0
-z-20
-bg-inherit
-backdrop-blur
-shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                       >
                         {request.snapshot?.enrollment_no}
@@ -4055,9 +3919,7 @@ shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
               <table className="min-w-[1200px] w-full">
                 <thead
                   className="
-sticky
-top-0
-z-30
+ 
 border-b
 bg-muted/70  
 backdrop-blur
