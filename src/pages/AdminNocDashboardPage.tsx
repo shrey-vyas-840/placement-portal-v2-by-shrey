@@ -681,6 +681,101 @@ export function AdminNocDashboardPage() {
     ],
   };
 
+  const workflowStageOption = {
+    grid: {
+      left: 125,
+      right: 45,
+      top: 20,
+      bottom: 20,
+      containLabel: true,
+    },
+
+    tooltip: {
+      trigger: "axis",
+      axisPointer: {
+        type: "shadow",
+      },
+      formatter: "{b}<br/><b>{c}</b> Requests",
+    },
+
+    xAxis: {
+      type: "value",
+      splitLine: {
+        lineStyle: {
+          color: "#EEF2F7",
+        },
+      },
+      axisLabel: {
+        fontSize: 11,
+      },
+    },
+
+    yAxis: {
+      type: "category",
+      inverse: true,
+
+      axisTick: {
+        show: false,
+      },
+
+      axisLine: {
+        show: false,
+      },
+
+      axisLabel: {
+        fontSize: 12,
+        fontWeight: 600,
+      },
+
+      data: ["Pending Approval", "Issued", "Completed", "Rejected", "Cancelled"],
+    },
+
+    series: [
+      {
+        type: "bar",
+
+        barWidth: 22,
+
+        showBackground: true,
+
+        backgroundStyle: {
+          color: "#F1F5F9",
+        },
+
+        label: {
+          show: true,
+          position: "right",
+          fontWeight: 700,
+          color: "#0F172A",
+        },
+
+        itemStyle: {
+          borderRadius: [0, 8, 8, 0],
+
+          color: (params: any) => {
+            const colors = [
+              "#F59E0B", // Pending Approval
+              "#10B981", // Issued
+              "#2563EB", // Completed
+              "#EF4444", // Rejected
+              "#64748B", // Cancelled
+            ];
+
+            return colors[params.dataIndex];
+          },
+        },
+
+        data: [
+          pendingApproval.length,
+          issued.length,
+          completedTenure.length,
+          rejected.length,
+          cancelled.length,
+        ],
+      },
+    ],
+  };
+
   function getAverageApprovalHours(records: any[]) {
     const values = records
       .map((request) => {
@@ -724,16 +819,6 @@ export function AdminNocDashboardPage() {
       ).length,
     }))
     .sort((a, b) => b.count - a.count)[0];
-
-  const approvalSourceBuckets = Object.entries(
-    lifecycleRequests.reduce((acc: Record<string, number>, request: any) => {
-      const key = request.approval_source ?? "UNSET";
-
-      acc[key] = (acc[key] ?? 0) + 1;
-
-      return acc;
-    }, {}),
-  ).sort((a, b) => b[1] - a[1]);
 
   function getBranchShortCode(branch?: string) {
     if (!branch) return "-";
@@ -1536,39 +1621,23 @@ p-6
 shadow-md
 "
           >
-            <h3 className="mb-4 text-base font-semibold">Approval Source Mix</h3>
+            <h3 className="text-base font-semibold">Workflow Status Distribution</h3>
 
-            <div className="space-y-3 max-h-[260px] overflow-y-auto">
-              {approvalSourceBuckets.length ? (
-                approvalSourceBuckets.map(([label, count]) => {
-                  const percent = totalLifecycleRequests
-                    ? Math.round((count / totalLifecycleRequests) * 100)
-                    : 0;
+            <p className="mt-1 text-sm text-muted-foreground">
+              Current request count across major workflow stages.
+            </p>
 
-                  return (
-                    <div key={label}>
-                      <div className="mb-1 flex items-center justify-between text-sm">
-                        <span>{label === "UNSET" ? "Not set yet" : label}</span>
-
-                        <span>{count}</span>
-                      </div>
-
-                      <div className="h-2 rounded bg-slate-200">
-                        <div
-                          className="h-2 rounded bg-slate-900"
-                          style={{
-                            width: `${percent}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  No approval source data yet.
-                </div>
-              )}
+            <div className="mt-5 h-[300px] w-full">
+              <ReactECharts
+                option={workflowStageOption}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+                opts={{
+                  renderer: "svg",
+                }}
+              />
             </div>
           </div>
         </div>
