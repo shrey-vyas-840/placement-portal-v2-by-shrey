@@ -261,10 +261,147 @@ function WorkflowTableCard({ children }: WorkflowTableCardProps) {
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-md">
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
-          <div className="max-h-[420px] overflow-y-auto">{children}</div>
+          <div className="max-h-[560px] overflow-y-auto">{children}</div>
         </div>
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    PENDING_HOD_APPROVAL: "bg-amber-100 text-amber-800 border-amber-200",
+
+    PENDING_PRINT: "bg-blue-100 text-blue-800 border-blue-200",
+
+    PRINTED: "bg-indigo-100 text-indigo-800 border-indigo-200",
+
+    ISSUED: "bg-green-100 text-green-800 border-green-200",
+
+    COMPLETED_TENURE_PENDING_VERIFICATION: "bg-violet-100 text-violet-800 border-violet-200",
+
+    TENURE_COMPLETED: "bg-emerald-100 text-emerald-800 border-emerald-200",
+
+    ADMIN_REJECTED: "bg-red-100 text-red-700 border-red-200",
+
+    HOD_REJECTED: "bg-red-100 text-red-700 border-red-200",
+
+    TENURE_REJECTED: "bg-red-100 text-red-700 border-red-200",
+
+    CANCELLED: "bg-slate-200 text-slate-700 border-slate-300",
+  };
+
+  const labels: Record<string, string> = {
+    PENDING_HOD_APPROVAL: "Pending HOD",
+    PENDING_PRINT: "Pending Print",
+    PRINTED: "Printed",
+    ISSUED: "Issued",
+    COMPLETED_TENURE_PENDING_VERIFICATION: "Pending Verification",
+    TENURE_COMPLETED: "Completed",
+    ADMIN_REJECTED: "Rejected",
+    HOD_REJECTED: "Rejected",
+    TENURE_REJECTED: "Rejected",
+    CANCELLED: "Cancelled",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+        styles[status] ?? "bg-slate-100 text-slate-700 border-slate-200"
+      }`}
+    >
+      {labels[status] ?? status}
+    </span>
+  );
+}
+
+type ActionButtonProps = {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: "view" | "primary" | "success" | "warning" | "secondary" | "purple" | "danger";
+};
+
+function ActionButton({ children, onClick, variant = "view" }: ActionButtonProps) {
+  const styles = {
+    view: `
+    border-slate-300
+    bg-white
+    text-slate-700
+    hover:bg-slate-100
+    hover:border-slate-400
+  `,
+
+    primary: `
+    bg-blue-600
+    border-blue-600
+    text-white
+    hover:bg-blue-700
+    hover:border-blue-700
+    shadow-sm
+  `,
+
+    success: `
+    bg-emerald-600
+    border-emerald-600
+    text-white
+    hover:bg-emerald-700
+    hover:border-emerald-700
+    shadow-sm
+  `,
+
+    warning: `
+    bg-amber-500
+    border-amber-500
+    text-white
+    hover:bg-amber-600
+    hover:border-amber-600
+    shadow-sm
+  `,
+
+    secondary: `
+    bg-slate-100
+    border-slate-300
+    text-slate-700
+    hover:bg-slate-200
+  `,
+
+    purple: `
+    bg-violet-600
+    border-violet-600
+    text-white
+    hover:bg-violet-700
+  `,
+
+    danger: `
+    bg-red-50
+    border-red-200
+    text-red-700
+    hover:bg-red-100
+    hover:border-red-300
+  `,
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`
+inline-flex
+items-center
+justify-center
+h-9
+min-w-[90px]
+rounded-lg
+border
+px-4
+text-sm
+font-medium
+transition-all
+duration-200
+${styles[variant]}
+`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -915,7 +1052,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Total NOCs
+            <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+              Total NOCs
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{lifecycleRequests.length}</div>
@@ -941,7 +1080,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Pending Approval
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              Pending Approval
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{pendingApproval.length}</div>
@@ -967,7 +1108,9 @@ hover:shadow-xl
   "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Pending Print
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              Pending Print
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{pendingPrint.length}</div>
@@ -993,7 +1136,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Printed
+            <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+              Printed
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{printed.length}</div>
@@ -1019,7 +1164,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Issued
+            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+              Issued
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{issued.length}</div>
@@ -1045,7 +1192,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Cancelled
+            <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+              Cancelled
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{cancelled.length}</div>
@@ -1071,7 +1220,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Completion Pending
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+              Tenure Completion
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{completionPending.length}</div>
@@ -1097,7 +1248,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Tenure Verification
+            <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+              Verification
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">
@@ -1125,7 +1278,9 @@ hover:shadow-xl
 "
         >
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Completed Tenure
+            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+              Completed Tenure
+            </span>
           </div>
 
           <div className="mt-4 text-5xl font-bold tracking-tight">{completedTenure.length}</div>
@@ -1413,33 +1568,27 @@ focus:ring-primary/20
           </button>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setShowAudit(!showAudit)}
-              className="
-rounded-xl
-border
-px-4
-py-2
-text-sm
-font-medium
-transition-colors
-bg-background hover:bg-muted hover:border-primary/40
-"
-            >
+            <ActionButton variant="secondary" onClick={() => setShowAudit(!showAudit)}>
               {showAudit ? "Hide Audit" : "Show Audit"}
-            </button>
+            </ActionButton>
 
             <button
               onClick={handleExportNocExcel}
               disabled={exporting}
               className="
-                rounded
-                border
-                px-3
-                py-1
-                text-sm
-                disabled:cursor-not-allowed
-                disabled:opacity-50
+         rounded-xl
+border
+border-slate-200
+bg-white
+px-4
+py-2
+text-sm
+font-medium
+transition-all
+hover:-translate-y-0.5
+hover:border-blue-300
+hover:bg-blue-50
+hover:shadow-md
             "
             >
               {exporting ? "Exporting..." : "Export Excel"}
@@ -1452,1102 +1601,375 @@ bg-background hover:bg-muted hover:border-primary/40
         </div>
       </div>
 
-      <div className="sticky top-4 z-20 rounded-3xl border bg-background/95 p-6 shadow-sm backdrop-blur">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Active Workflow</h2>
+      <div
+        className="
+sticky
+top-4
+z-20
+overflow-hidden
+rounded-[30px]
+border
+border-emerald-200
+bg-gradient-to-r
+from-emerald-50
+via-white
+to-sky-50
+p-8
+shadow-lg
+"
+      >
+        <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-emerald-200/20 blur-3xl" />
+        <div className="absolute left-1/3 bottom-0 h-40 w-40 rounded-full bg-sky-200/20 blur-3xl" />
 
-            <p className="mt-1 text-sm text-muted-foreground">Select a workflow queue to manage.</p>
-          </div>
+        <div className="relative z-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 mb-10 items-center justify-center rounded-2xl bg-emerald-100 text-2xl">
+                  🟢
+                </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setActiveWorkflowView("approval")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                activeWorkflowView === "approval"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Pending Approval ({pendingApproval.length})
-            </button>
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight text-emerald-900">
+                    Active Workflow
+                  </h2>
 
-            <button
-              onClick={() => setActiveWorkflowView("print")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                activeWorkflowView === "print"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Pending Print ({pendingPrint.length})
-            </button>
+                  <p className="mt-1 mb-8 text-sm text-emerald-700">
+                    NOC Requests currently moving through the approval, printing and verification
+                    pipeline.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            <button
-              onClick={() => setActiveWorkflowView("printed")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                activeWorkflowView === "printed"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Printed ({printed.length})
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setActiveWorkflowView("approval")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  activeWorkflowView === "approval"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Pending Approval ({pendingApproval.length})
+              </button>
 
-            <button
-              onClick={() => setActiveWorkflowView("completion")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                activeWorkflowView === "completion"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Completion Pending ({completionPending.length})
-            </button>
+              <button
+                onClick={() => setActiveWorkflowView("print")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  activeWorkflowView === "print"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Pending Print ({pendingPrint.length})
+              </button>
 
-            <button
-              onClick={() => setActiveWorkflowView("verification")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                activeWorkflowView === "verification"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Verification ({pendingTenureVerification.length})
-            </button>
+              <button
+                onClick={() => setActiveWorkflowView("printed")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  activeWorkflowView === "printed"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Printed ({printed.length})
+              </button>
 
-            <button
-              onClick={() => setActiveWorkflowView("issued")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                activeWorkflowView === "issued"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Issued ({issued.length})
-            </button>
+              <button
+                onClick={() => setActiveWorkflowView("completion")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  activeWorkflowView === "completion"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Completion Pending ({completionPending.length})
+              </button>
+
+              <button
+                onClick={() => setActiveWorkflowView("verification")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  activeWorkflowView === "verification"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Verification ({pendingTenureVerification.length})
+              </button>
+
+              <button
+                onClick={() => setActiveWorkflowView("issued")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  activeWorkflowView === "issued"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Issued ({issued.length})
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {activeWorkflowView === "approval" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th
+        {activeWorkflowView === "approval" && (
+          <>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70 
+backdrop-blur
+"
+                >
+                  <tr
                     className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                  >
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="
     p-3
     text-left
-    sticky
-    left-0
-    bg-white
-    z-10
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
-                  >
-                    Enrollment
-                  </th>
+                    >
+                      Enrollment
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Branch
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Branch
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Type
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Type
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Status
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Status
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Approval Source
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Approval Source
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
 
-              <tbody className="bg-background">
-                {pendingApproval.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={8}
-                    icon="📋"
-                    title="No Pending Approval Requests"
-                    description="New requests awaiting HOD approval will automatically appear here."
-                  />
-                ) : (
-                  pendingApproval
-                    .slice()
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr key={request.noc_request_id} className="border-b">
-                        <td className="px-4 py-4">{request.snapshot?.student_name}</td>
-
-                        <td
+                <tbody className="bg-background">
+                  {pendingApproval.filter(matchesSearch).length === 0 ? (
+                    <TableEmptyState
+                      colSpan={8}
+                      icon="📋"
+                      title="No Pending Approval Requests"
+                      description="New requests awaiting HOD approval will automatically appear here."
+                    />
+                  ) : (
+                    pendingApproval
+                      .slice()
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
+                      .filter(matchesSearch)
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr
+                          key={request.noc_request_id}
                           className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
+        border-b
+        odd:bg-white
+        even:bg-slate-50/60
+        hover:bg-blue-50
+        transition-colors
+    "
                         >
-                          {request.snapshot?.enrollment_no}
-                        </td>
+                          <td className="px-4 py-5">{request.snapshot?.student_name}</td>
 
-                        <td className="px-4 py-4">{request.snapshot?.branch}</td>
-
-                        <td className="px-4 py-4">{request.snapshot?.company_name}</td>
-
-                        <td className="px-4 py-4">{request.noc_type}</td>
-
-                        <td className="px-4 py-4">
-                          {request.status === "PENDING_HOD_APPROVAL"
-                            ? "Pending HOD"
-                            : request.status}
-                        </td>
-
-                        <td className="px-4 py-4">{request.approval_source || "-"}</td>
-
-                        <td className="p-3 flex gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-
-                              setReviewMode("VIEW");
-
-                              setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            View
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const confirmed = window.confirm(
-                                "Override HOD approval and move directly to Pending Print?",
-                              );
-
-                              if (!confirmed) return;
-
-                              await adminNocService.moveToPendingPrint(request.noc_request_id);
-
-                              await load();
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Override
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const reason = prompt("Enter rejection reason");
-
-                              if (!reason?.trim()) {
-                                alert("Reason is required");
-                                return;
-                              }
-
-                              await adminNocService.rejectRequest(request.noc_request_id, reason);
-
-                              load();
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Reject
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
-
-      {activeWorkflowView === "print" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th
-                    className="
+                          <td
+                            className="
     p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-   z-10
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Branch
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Type
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Approval Source
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {pendingPrint.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={7}
-                    icon="🖨️"
-                    title="Nothing Waiting For Print"
-                    description="Approved NOCs waiting for printing will appear here."
-                  />
-                ) : (
-                  pendingPrint
-                    .slice()
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr key={request.noc_request_id} className="border-b">
-                        <td className="px-4 py-4">{request.snapshot?.student_name}</td>
-
-                        <td
-                          className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                        >
-                          {request.snapshot?.enrollment_no}
-                        </td>
-
-                        <td className="px-4 py-4">{request.snapshot?.branch}</td>
-
-                        <td className="px-4 py-4">{request.snapshot?.company_name}</td>
-
-                        <td className="px-4 py-4">{request.noc_type}</td>
-
-                        <td className="px-4 py-4">{request.approval_source || "-"}</td>
-
-                        <td className="px-4 py-4">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-
-                              setReviewMode("PRINT");
-
-                              setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
-                            }}
-                            className="rounded border px-3 py-1"
                           >
-                            Review
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
+                            {request.snapshot?.enrollment_no}
+                          </td>
 
-      {activeWorkflowView === "printed" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
+                          <td className="px-4 py-5">{request.snapshot?.branch}</td>
 
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                  >
-                    Enrollment
-                  </th>
+                          <td className="px-4 py-5">{request.snapshot?.company_name}</td>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Branch
-                  </th>
+                          <td className="px-4 py-5">{request.noc_type}</td>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
+                          <td className="px-4 py-5">
+                            <StatusBadge status={request.status} />
+                          </td>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Type
-                  </th>
+                          <td className="px-4 py-5">{request.approval_source || "-"}</td>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Ref No
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Printed At
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Prints
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {printed.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={9}
-                    icon="🖨️"
-                    title="No Printed NOCs"
-                    description="Printed NOCs awaiting issue will appear here."
-                  />
-                ) : (
-                  printed
-                    .slice()
-
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr
-                        key={request.noc_request_id}
-                        className="border-b odd:bg-background even:bg-muted/20 hover:bg-primary/5 transition-colors"
-                      >
-                        <td className="px-4 py-4">{request.snapshot?.student_name}</td>
-
-                        <td
-                          className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                        >
-                          {request.snapshot?.enrollment_no}
-                        </td>
-
-                        <td className="px-4 py-4">{request.snapshot?.branch}</td>
-
-                        <td className="px-4 py-4">{request.snapshot?.company_name}</td>
-
-                        <td className="px-4 py-4">{request.noc_type}</td>
-
-                        <td className="px-4 py-4">
-                          <input
-                            type="number"
-                            min="1"
-                            value={
-                              referenceNumbers[request.noc_request_id] ??
-                              request.reference_number ??
-                              ""
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, "");
-
-                              setReferenceNumbers((prev) => ({
-                                ...prev,
-
-                                [request.noc_request_id]: value,
-                              }));
-                            }}
-                            className="rounded border p-2"
-                          />
-                        </td>
-
-                        <td className="px-4 py-4">
-                          {request.printed_at ? new Date(request.printed_at).toLocaleString() : "-"}
-                        </td>
-
-                        <td className="px-4 py-4">{request.print_count ?? 0}</td>
-
-                        <td className="p-3 flex gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-
-                              setReviewMode("VIEW");
-
-                              setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            View
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const refNumber = (
-                                referenceNumbers[request.noc_request_id] ??
-                                request.reference_number ??
-                                ""
-                              ).trim();
-
-                              if (!refNumber) {
-                                alert("Save Reference Number before reprint.");
-
-                                return;
-                              }
-
-                              if (refNumber !== request.reference_number) {
-                                await adminNocService.saveReferenceNumber(
-                                  request.noc_request_id,
-                                  refNumber,
-                                );
-                              }
-
-                              const reason = window.prompt("Enter reason for reprint");
-
-                              if (!reason || !reason.trim()) {
-                                return;
-                              }
-
-                              await adminNocService.reprintNoc(request.noc_request_id, reason);
-
-                              setReferenceNumbers((prev) => {
-                                const next = {
-                                  ...prev,
-                                };
-
-                                delete next[request.noc_request_id];
-
-                                return next;
-                              });
-
-                              await load();
-
-                              alert("Moved back to Pending Print");
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Reprint
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const refNumber = referenceNumbers[request.noc_request_id]?.trim();
-
-                              if (!refNumber || !refNumber.trim()) {
-                                alert("Reference Number is required.");
-                                return;
-                              }
-
-                              if (request.reference_number) {
-                                alert("Reference Number already saved and cannot be modified.");
-
-                                return;
-                              }
-
-                              await adminNocService.saveReferenceNumber(
-                                request.noc_request_id,
-
-                                refNumber,
-                              );
-
-                              await load();
-
-                              alert("Reference Number Saved");
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Save Ref
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const refNumber = (
-                                referenceNumbers[request.noc_request_id] ??
-                                request.reference_number ??
-                                ""
-                              ).trim();
-
-                              if (!refNumber) {
-                                alert("Save Reference Number First");
-
-                                return;
-                              }
-
-                              if (refNumber !== request.reference_number) {
-                                await adminNocService.saveReferenceNumber(
-                                  request.noc_request_id,
-                                  refNumber,
-                                );
-                              }
-
-                              await adminNocService.issueRequest(request.noc_request_id);
-
-                              await load();
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Issue
-                          </button>
-
-                          <button
-                            onClick={async () => {
-                              const refNumber = (
-                                referenceNumbers[request.noc_request_id] ??
-                                request.reference_number ??
-                                ""
-                              ).trim();
-
-                              if (!refNumber) {
-                                alert("Save Reference Number First");
-
-                                return;
-                              }
-
-                              if (refNumber !== request.reference_number) {
-                                await adminNocService.saveReferenceNumber(
-                                  request.noc_request_id,
-                                  refNumber,
-                                );
-                              }
-
-                              const reason = prompt("Enter cancellation reason");
-
-                              if (!reason?.trim()) {
-                                alert("Reason is required");
-                                return;
-                              }
-
-                              await adminNocService.cancelRequest(request.noc_request_id, reason);
-
-                              await load();
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
-
-      {activeWorkflowView === "completion" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-   z-10
-"
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    End Date
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {completionPending.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={5}
-                    icon="⏳"
-                    title="No Completion Pending"
-                    description="Students awaiting completion verification will appear here."
-                  />
-                ) : (
-                  completionPending.slice(0, 100).map((request: any) => (
-                    <tr key={request.noc_request_id} className="border-b">
-                      <td className="px-4 py-4">{request.snapshot?.student_name}</td>
-
-                      <td
-                        className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                      >
-                        {request.snapshot?.enrollment_no}
-                      </td>
-
-                      <td className="px-4 py-4">{request.snapshot?.company_name}</td>
-
-                      <td className="px-4 py-4">{request.snapshot?.end_date}</td>
-
-                      <td className="p-3 text-red-600 font-medium">
-                        Waiting For Student Completion Submission
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
-
-      {activeWorkflowView === "verification" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    End Date
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Completion Details
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {pendingTenureVerification.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={5}
-                    icon="✅"
-                    title="No Verification Pending"
-                    description="Tenure verification requests will appear here."
-                  />
-                ) : (
-                  pendingTenureVerification
-
-                    .slice()
-
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-
-                    .filter(matchesSearch)
-
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr key={request.noc_request_id} className="border-b">
-                        <td className="p-3 align-top">{request.snapshot?.student_name}</td>
-
-                        <td
-                          className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
- align-top"
-                        >
-                          {request.snapshot?.enrollment_no}
-                        </td>
-
-                        <td className="p-3 align-top">{request.snapshot?.company_name}</td>
-
-                        <td className="p-3 align-top">{request.snapshot?.end_date}</td>
-
-                        <td className="px-4 py-4">
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <strong>Email:</strong> {request.completion_hr_email ?? "-"}
-                            </div>
-
-                            <div>
-                              <strong>Contact:</strong> {request.completion_hr_contact ?? "-"}
-                            </div>
-
-                            <div>
-                              <strong>HR:</strong>{" "}
-                              {request.completion_same_hr
-                                ? (request.snapshot?.hr_name ?? "Same HR")
-                                : (request.completion_hr_name ?? "-")}
-                            </div>
-
-                            <div>
-                              <strong>Designation:</strong>{" "}
-                              {request.completion_same_hr
-                                ? (request.snapshot?.hr_position ?? "-")
-                                : (request.completion_hr_designation ?? "-")}
-                            </div>
-
-                            <div>
-                              <strong>Certificate:</strong>{" "}
-                              {request.completion_certificate_url ? (
-                                <button
-                                  onClick={async () => {
-                                    const url = await adminNocService.getCertificateUrl(
-                                      request.completion_certificate_url,
-                                    );
-
-                                    window.open(url, "_blank");
-                                  }}
-                                  className="
-text-blue-600
-underline
-"
-                                >
-                                  View Certificate
-                                </button>
-                              ) : (
-                                "-"
-                              )}
-                            </div>
-
-                            <div className="pt-3 flex flex-wrap gap-2">
-                              <button
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <ActionButton
+                                variant="view"
                                 onClick={() => {
                                   setSelectedRequest(request);
-
                                   setReviewMode("VIEW");
-
                                   setEditableSnapshot(structuredClone(request.snapshot));
-
                                   setCustomFields(request.noc_customization ?? {});
                                 }}
-                                className="rounded border px-3 py-1"
                               >
                                 View
-                              </button>
+                              </ActionButton>
 
-                              <button
+                              <ActionButton
+                                variant="primary"
                                 onClick={async () => {
-                                  if (
-                                    !request.completion_submitted_at ||
-                                    !request.completion_certificate_url ||
-                                    !request.completion_hr_email ||
-                                    !request.completion_hr_contact
-                                  ) {
-                                    alert("Student has not submitted completion details.");
-
-                                    return;
-                                  }
-
-                                  await adminNocService.approveTenureCompletion(
-                                    request.noc_request_id,
+                                  const confirmed = window.confirm(
+                                    "Override HOD approval and move directly to Pending Print?",
                                   );
+
+                                  if (!confirmed) return;
+
+                                  await adminNocService.moveToPendingPrint(request.noc_request_id);
 
                                   await load();
                                 }}
-                                className="rounded border px-3 py-1"
                               >
-                                Approve
-                              </button>
+                                Override
+                              </ActionButton>
 
-                              <button
+                              <ActionButton
+                                variant="danger"
                                 onClick={async () => {
-                                  const reason = prompt("Enter tenure rejection reason");
+                                  const reason = prompt("Enter rejection reason");
 
                                   if (!reason?.trim()) {
                                     alert("Reason is required");
-
                                     return;
                                   }
 
-                                  await adminNocService.rejectTenureCompletion(
+                                  await adminNocService.rejectRequest(
                                     request.noc_request_id,
                                     reason,
                                   );
 
-                                  await load();
+                                  load();
                                 }}
-                                className="rounded border px-3 py-1"
                               >
                                 Reject
-                              </button>
+                              </ActionButton>
                             </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+          </>
+        )}
 
-      {activeWorkflowView === "issued" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Duration
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Type
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Ref No
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Issued At
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {issued.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={8}
-                    icon="📄"
-                    title="No Issued NOCs"
-                    description="Issued NOC records will appear here."
-                  />
-                ) : (
-                  issued
-                    .slice()
-
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr
-                        key={request.noc_request_id}
-                        className="border-b odd:bg-background even:bg-muted/20 hover:bg-primary/5 transition-colors"
-                      >
-                        <td className="px-4 py-4">{request.snapshot?.student_name}</td>
-
-                        <td
-                          className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                        >
-                          {request.snapshot?.enrollment_no}
-                        </td>
-
-                        <td className="px-4 py-4">{request.snapshot?.company_name}</td>
-
-                        <td className="px-4 py-4">
-                          {getDurationMonths(
-                            request.snapshot?.start_date,
-                            request.snapshot?.end_date,
-                          )}
-                          Month(s)
-                        </td>
-
-                        <td className="px-4 py-4">{request.noc_type}</td>
-
-                        <td className="px-4 py-4">{request.reference_number}</td>
-
-                        <td className="px-4 py-4">
-                          {request.issued_at ? new Date(request.issued_at).toLocaleString() : "-"}
-                        </td>
-
-                        <td className="px-4 py-4">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-
-                              setReviewMode("VIEW");
-
-                              setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
-      <div className="mt-16 rounded-3xl border bg-background p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Closed Workflow</h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              View completed and terminated NOC workflows.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setClosedWorkflowView("completed")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                closedWorkflowView === "completed"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Completed Tenure ({completedTenure.length})
-            </button>
-
-            <button
-              onClick={() => setClosedWorkflowView("rejected")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                closedWorkflowView === "rejected"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Rejected ({rejected.length})
-            </button>
-
-            <button
-              onClick={() => setClosedWorkflowView("cancelled")}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                closedWorkflowView === "cancelled"
-                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
-                  : "bg-background hover:bg-muted hover:border-primary/40"
-              }`}
-            >
-              Cancelled ({cancelled.length})
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {closedWorkflowView === "completed" && (
-        <>
-          <div className="overflow-hidden rounded-2xl border bg-background shadow-sm">
-            <div className="overflow-x-auto">
+        {activeWorkflowView === "print" && (
+          <>
+            <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                  <tr className="border-b">
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr
+                    className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                  >
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
                       Student
                     </th>
 
@@ -2558,114 +1980,143 @@ underline
     sticky
     left-0
     bg-white
-    z-10
+   z-10
 "
                     >
                       Enrollment
                     </th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Branch
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
                       Company
                     </th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Verified At
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Type
                     </th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Certificate
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Approval Source
                     </th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      HR Email
-                    </th>
-
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
                       Actions
                     </th>
                   </tr>
                 </thead>
 
                 <tbody className="bg-background">
-                  {completedTenure.filter(matchesSearch).length === 0 ? (
+                  {pendingPrint.filter(matchesSearch).length === 0 ? (
                     <TableEmptyState
                       colSpan={7}
-                      icon="🎉"
-                      title="No Completed Tenure Records"
-                      description="Verified tenure completion records will appear here."
+                      icon="🖨️"
+                      title="Nothing Waiting For Print"
+                      description="Approved NOCs waiting for printing will appear here."
                     />
                   ) : (
-                    completedTenure
-
+                    pendingPrint
                       .slice()
-
                       .sort(
                         (a, b) =>
-                          new Date(b.completion_verified_at).getTime() -
-                          new Date(a.completion_verified_at).getTime(),
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
                       )
 
                       .filter(matchesSearch)
                       .slice(0, 100)
                       .map((request: any) => (
-                        <tr key={request.noc_request_id} className="border-b">
-                          <td className="px-4 py-4">{request.snapshot?.student_name}</td>
+                        <tr
+                          key={request.noc_request_id}
+                          className="
+        border-b
+        odd:bg-white
+        even:bg-slate-50/60
+        hover:bg-blue-50
+        transition-colors
+    "
+                        >
+                          <td className="px-4 py-5">{request.snapshot?.student_name}</td>
 
                           <td
                             className="
     p-3
-    sticky
-    left-0
-    bg-white
-    z-10
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                           >
                             {request.snapshot?.enrollment_no}
                           </td>
 
-                          <td className="px-4 py-4">{request.snapshot?.company_name}</td>
+                          <td className="px-4 py-5">{request.snapshot?.branch}</td>
 
-                          <td className="px-4 py-4">
-                            {request.completion_verified_at
-                              ? new Date(request.completion_verified_at).toLocaleString()
-                              : "-"}
-                          </td>
+                          <td className="px-4 py-5">{request.snapshot?.company_name}</td>
 
-                          <td className="px-4 py-4">
-                            {request.completion_certificate_url ? (
-                              <button
-                                onClick={async () => {
-                                  const url = await adminNocService.getCertificateUrl(
-                                    request.completion_certificate_url,
-                                  );
+                          <td className="px-4 py-5">{request.noc_type}</td>
 
-                                  window.open(url, "_blank");
-                                }}
-                                className="text-blue-600 underline"
-                              >
-                                View
-                              </button>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
+                          <td className="px-4 py-5">{request.approval_source || "-"}</td>
 
-                          <td className="px-4 py-4">{request.completion_hr_email ?? "-"}</td>
-
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-5">
                             <button
                               onClick={() => {
                                 setSelectedRequest(request);
 
-                                setReviewMode("VIEW");
+                                setReviewMode("PRINT");
 
                                 setEditableSnapshot(structuredClone(request.snapshot));
 
                                 setCustomFields(request.noc_customization ?? {});
                               }}
-                              className="rounded border px-3 py-1"
+                              className="rounded-xl
+border
+border-slate-200
+bg-white
+px-4
+py-2
+text-sm
+font-medium
+transition-all
+hover:-translate-y-0.5
+hover:border-blue-300
+hover:bg-blue-50
+hover:shadow-md"
                             >
-                              View
+                              Review
                             </button>
                           </td>
                         </tr>
@@ -2673,216 +2124,1913 @@ underline
                   )}
                 </tbody>
               </table>
-            </div>
-          </div>
-        </>
-      )}
+            </WorkflowTableCard>
+          </>
+        )}
 
-      {closedWorkflowView === "rejected" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th
+        {activeWorkflowView === "printed" && (
+          <>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr
                     className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                  >
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="
     p-3
     text-left
-    sticky
-    left-0
-    bg-white
-    z-10
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
-                  >
-                    Enrollment
-                  </th>
+                    >
+                      Enrollment
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Branch
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Type
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Rejected By
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Type
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Reason
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Ref No
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Printed At
+                    </th>
 
-              <tbody className="bg-background">
-                {rejected.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={7}
-                    icon="❌"
-                    title="No Rejected Requests"
-                    description="Rejected NOC requests will appear here."
-                  />
-                ) : (
-                  rejected.map((request: any) => (
-                    <tr key={request.noc_request_id} className="border-b">
-                      <td className="px-4 py-4">{request.snapshot?.student_name}</td>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Prints
+                    </th>
 
-                      <td
-                        className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                      >
-                        {request.snapshot?.enrollment_no}
-                      </td>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
 
-                      <td className="px-4 py-4">{request.snapshot?.company_name}</td>
+                <tbody className="bg-background">
+                  {printed.filter(matchesSearch).length === 0 ? (
+                    <TableEmptyState
+                      colSpan={9}
+                      icon="🖨️"
+                      title="No Printed NOCs"
+                      description="Printed NOCs awaiting issue will appear here."
+                    />
+                  ) : (
+                    printed
+                      .slice()
 
-                      <td className="px-4 py-4">{request.noc_type}</td>
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
 
-                      <td>{request.rejected_by ?? request.tenure_rejected_by ?? "-"}</td>
-
-                      <td>{request.rejection_reason ?? request.tenure_rejection_reason ?? "-"}</td>
-
-                      <td className="px-4 py-4">
-                        <button
-                          onClick={() => {
-                            setSelectedRequest(request);
-
-                            setReviewMode("VIEW");
-
-                            setEditableSnapshot(structuredClone(request.snapshot));
-                          }}
-                          className="rounded border px-3 py-1"
+                      .filter(matchesSearch)
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr
+                          key={request.noc_request_id}
+                          className="border-b odd:bg-background even:bg-muted/20 hover:bg-primary/5 transition-colors"
                         >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
+                          <td className="px-4 py-5">{request.snapshot?.student_name}</td>
 
-      {closedWorkflowView === "cancelled" && (
-        <>
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
+                          <td
+                            className="
+    p-3
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                          >
+                            {request.snapshot?.enrollment_no}
+                          </td>
 
-                  <th
+                          <td className="px-4 py-5">{request.snapshot?.branch}</td>
+
+                          <td className="px-4 py-5">{request.snapshot?.company_name}</td>
+
+                          <td className="px-4 py-5">{request.noc_type}</td>
+
+                          <td className="px-4 py-5">
+                            <input
+                              type="number"
+                              min="1"
+                              value={
+                                referenceNumbers[request.noc_request_id] ??
+                                request.reference_number ??
+                                ""
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, "");
+
+                                setReferenceNumbers((prev) => ({
+                                  ...prev,
+
+                                  [request.noc_request_id]: value,
+                                }));
+                              }}
+                              className="rounded border p-2"
+                            />
+                          </td>
+
+                          <td className="px-4 py-5">
+                            {request.printed_at
+                              ? new Date(request.printed_at).toLocaleString()
+                              : "-"}
+                          </td>
+
+                          <td className="px-4 py-5">{request.print_count ?? 0}</td>
+
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <ActionButton
+                                variant="view"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setReviewMode("VIEW");
+                                  setEditableSnapshot(structuredClone(request.snapshot));
+                                  setCustomFields(request.noc_customization ?? {});
+                                }}
+                              >
+                                View
+                              </ActionButton>
+
+                              <ActionButton
+                                variant="warning"
+                                onClick={async () => {
+                                  const refNumber = (
+                                    referenceNumbers[request.noc_request_id] ??
+                                    request.reference_number ??
+                                    ""
+                                  ).trim();
+
+                                  if (!refNumber) {
+                                    alert("Save Reference Number before reprint.");
+
+                                    return;
+                                  }
+
+                                  if (refNumber !== request.reference_number) {
+                                    await adminNocService.saveReferenceNumber(
+                                      request.noc_request_id,
+                                      refNumber,
+                                    );
+                                  }
+
+                                  const reason = window.prompt("Enter reason for reprint");
+
+                                  if (!reason || !reason.trim()) {
+                                    return;
+                                  }
+
+                                  await adminNocService.reprintNoc(request.noc_request_id, reason);
+
+                                  setReferenceNumbers((prev) => {
+                                    const next = {
+                                      ...prev,
+                                    };
+
+                                    delete next[request.noc_request_id];
+
+                                    return next;
+                                  });
+
+                                  await load();
+
+                                  alert("Moved back to Pending Print");
+                                }}
+                              >
+                                Reprint
+                              </ActionButton>
+
+                              <ActionButton
+                                variant="success"
+                                onClick={async () => {
+                                  const refNumber =
+                                    referenceNumbers[request.noc_request_id]?.trim();
+
+                                  if (!refNumber || !refNumber.trim()) {
+                                    alert("Reference Number is required.");
+                                    return;
+                                  }
+
+                                  if (request.reference_number) {
+                                    alert("Reference Number already saved and cannot be modified.");
+
+                                    return;
+                                  }
+
+                                  await adminNocService.saveReferenceNumber(
+                                    request.noc_request_id,
+
+                                    refNumber,
+                                  );
+
+                                  await load();
+
+                                  alert("Reference Number Saved");
+                                }}
+                              >
+                                Save Ref
+                              </ActionButton>
+
+                              <ActionButton
+                                variant="success"
+                                onClick={async () => {
+                                  const refNumber = (
+                                    referenceNumbers[request.noc_request_id] ??
+                                    request.reference_number ??
+                                    ""
+                                  ).trim();
+
+                                  if (!refNumber) {
+                                    alert("Save Reference Number First");
+
+                                    return;
+                                  }
+
+                                  if (refNumber !== request.reference_number) {
+                                    await adminNocService.saveReferenceNumber(
+                                      request.noc_request_id,
+                                      refNumber,
+                                    );
+                                  }
+
+                                  await adminNocService.issueRequest(request.noc_request_id);
+
+                                  await load();
+                                }}
+                              >
+                                Issue
+                              </ActionButton>
+
+                              <ActionButton
+                                variant="danger"
+                                onClick={async () => {
+                                  const refNumber = (
+                                    referenceNumbers[request.noc_request_id] ??
+                                    request.reference_number ??
+                                    ""
+                                  ).trim();
+
+                                  if (!refNumber) {
+                                    alert("Save Reference Number First");
+
+                                    return;
+                                  }
+
+                                  if (refNumber !== request.reference_number) {
+                                    await adminNocService.saveReferenceNumber(
+                                      request.noc_request_id,
+                                      refNumber,
+                                    );
+                                  }
+
+                                  const reason = prompt("Enter cancellation reason");
+
+                                  if (!reason?.trim()) {
+                                    alert("Reason is required");
+                                    return;
+                                  }
+
+                                  await adminNocService.cancelRequest(
+                                    request.noc_request_id,
+                                    reason,
+                                  );
+
+                                  await load();
+                                }}
+                              >
+                                Cancel
+                              </ActionButton>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+          </>
+        )}
+
+        {activeWorkflowView === "completion" && (
+          <>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr
                     className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                  >
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="
     p-3
     text-left
     sticky
     left-0
     bg-white
-    z-10
+   z-10
 "
-                  >
-                    Enrollment
-                  </th>
+                    >
+                      Enrollment
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Type
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      End Date
+                    </th>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Ref No
-                  </th>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Status
+                    </th>
+                  </tr>
+                </thead>
 
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Cancelled By
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Print Version
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Reason
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Cancelled At
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {cancelled.filter(matchesSearch).length === 0 ? (
-                  <TableEmptyState
-                    colSpan={9}
-                    icon="🚫"
-                    title="No Cancelled Requests"
-                    description="Cancelled NOC requests will appear here."
-                  />
-                ) : (
-                  cancelled
-
-                    .slice()
-
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
+                <tbody className="bg-background">
+                  {completionPending.filter(matchesSearch).length === 0 ? (
+                    <TableEmptyState
+                      colSpan={5}
+                      icon="⏳"
+                      title="No Completion Pending"
+                      description="Students awaiting completion verification will appear here."
+                    />
+                  ) : (
+                    completionPending.slice(0, 100).map((request: any) => (
                       <tr
                         key={request.noc_request_id}
-                        className="border-b odd:bg-background even:bg-muted/20 hover:bg-primary/5 transition-colors"
+                        className="
+        border-b
+        odd:bg-white
+        even:bg-slate-50/60
+        hover:bg-blue-50
+        transition-colors
+    "
                       >
-                        <td className="px-4 py-4">{request.snapshot?.student_name}</td>
+                        <td className="px-4 py-5">{request.snapshot?.student_name}</td>
 
                         <td
                           className="
     p-3
-    sticky
-    left-0
-    bg-white
-    z-10
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
 "
                         >
                           {request.snapshot?.enrollment_no}
                         </td>
 
-                        <td className="px-4 py-4">{request.snapshot?.company_name}</td>
+                        <td className="px-4 py-5">{request.snapshot?.company_name}</td>
 
-                        <td className="px-4 py-4">{request.noc_type}</td>
+                        <td className="px-4 py-5">{request.snapshot?.end_date}</td>
 
-                        <td className="px-4 py-4">{request.reference_number ?? "-"}</td>
+                        <td className="p-3 text-red-600 font-medium">
+                          Waiting For Student Completion Submission
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+          </>
+        )}
 
-                        <td className="px-4 py-4">{request.cancelled_by ?? "ADMIN"}</td>
+        {activeWorkflowView === "verification" && (
+          <>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr
+                    className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                  >
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
 
-                        <td className="px-4 py-4">{request.print_count ?? 1}</td>
+                    <th
+                      className="
+    p-3
+    text-left
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                    >
+                      Enrollment
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      End Date
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Completion Details
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-background">
+                  {pendingTenureVerification.filter(matchesSearch).length === 0 ? (
+                    <TableEmptyState
+                      colSpan={5}
+                      icon="✅"
+                      title="No Verification Pending"
+                      description="Tenure verification requests will appear here."
+                    />
+                  ) : (
+                    pendingTenureVerification
+
+                      .slice()
+
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
+
+                      .filter(matchesSearch)
+
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr
+                          key={request.noc_request_id}
+                          className="
+        border-b
+        odd:bg-white
+        even:bg-slate-50/60
+        hover:bg-blue-50
+        transition-colors
+    "
+                        >
+                          <td className="p-3 align-top">{request.snapshot?.student_name}</td>
+
+                          <td
+                            className="
+    p-3
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+ align-top"
+                          >
+                            {request.snapshot?.enrollment_no}
+                          </td>
+
+                          <td className="p-3 align-top">{request.snapshot?.company_name}</td>
+
+                          <td className="p-3 align-top">{request.snapshot?.end_date}</td>
+
+                          <td className="px-4 py-5">
+                            <div className="space-y-2 text-sm">
+                              <div>
+                                <strong>Email:</strong> {request.completion_hr_email ?? "-"}
+                              </div>
+
+                              <div>
+                                <strong>Contact:</strong> {request.completion_hr_contact ?? "-"}
+                              </div>
+
+                              <div>
+                                <strong>HR:</strong>{" "}
+                                {request.completion_same_hr
+                                  ? (request.snapshot?.hr_name ?? "Same HR")
+                                  : (request.completion_hr_name ?? "-")}
+                              </div>
+
+                              <div>
+                                <strong>Designation:</strong>{" "}
+                                {request.completion_same_hr
+                                  ? (request.snapshot?.hr_position ?? "-")
+                                  : (request.completion_hr_designation ?? "-")}
+                              </div>
+
+                              <div>
+                                <strong>Certificate:</strong>{" "}
+                                {request.completion_certificate_url ? (
+                                  <ActionButton
+                                    variant="primary"
+                                    onClick={async () => {
+                                      const url = await adminNocService.getCertificateUrl(
+                                        request.completion_certificate_url,
+                                      );
+
+                                      window.open(url, "_blank");
+                                    }}
+                                  >
+                                    View Certificate
+                                  </ActionButton>
+                                ) : (
+                                  "-"
+                                )}
+                              </div>
+
+                              <div className="pt-3 flex flex-wrap gap-2">
+                                <ActionButton
+                                  variant="view"
+                                  onClick={() => {
+                                    setSelectedRequest(request);
+                                    setReviewMode("VIEW");
+                                    setEditableSnapshot(structuredClone(request.snapshot));
+                                    setCustomFields(request.noc_customization ?? {});
+                                  }}
+                                >
+                                  View
+                                </ActionButton>
+
+                                <button
+                                  onClick={async () => {
+                                    if (
+                                      !request.completion_submitted_at ||
+                                      !request.completion_certificate_url ||
+                                      !request.completion_hr_email ||
+                                      !request.completion_hr_contact
+                                    ) {
+                                      alert("Student has not submitted completion details.");
+
+                                      return;
+                                    }
+
+                                    await adminNocService.approveTenureCompletion(
+                                      request.noc_request_id,
+                                    );
+
+                                    await load();
+                                  }}
+                                  className="rounded-xl
+border
+border-slate-200
+bg-white
+px-4
+py-2
+text-sm
+font-medium
+transition-all
+hover:-translate-y-0.5
+hover:border-blue-300
+hover:bg-blue-50
+hover:shadow-md"
+                                >
+                                  Approve
+                                </button>
+
+                                <ActionButton
+                                  variant="danger"
+                                  onClick={async () => {
+                                    const reason = prompt("Enter rejection reason");
+
+                                    if (!reason?.trim()) {
+                                      alert("Reason is required");
+                                      return;
+                                    }
+
+                                    await adminNocService.rejectRequest(
+                                      request.noc_request_id,
+                                      reason,
+                                    );
+
+                                    load();
+                                  }}
+                                >
+                                  Reject
+                                </ActionButton>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+          </>
+        )}
+
+        {activeWorkflowView === "issued" && (
+          <>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70 
+backdrop-blur
+"
+                >
+                  <tr>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="
+    p-3
+    text-left
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                    >
+                      Enrollment
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Duration
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Type
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Ref No
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Issued At
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-background">
+                  {issued.filter(matchesSearch).length === 0 ? (
+                    <TableEmptyState
+                      colSpan={8}
+                      icon="📄"
+                      title="No Issued NOCs"
+                      description="Issued NOC records will appear here."
+                    />
+                  ) : (
+                    issued
+                      .slice()
+
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
+
+                      .filter(matchesSearch)
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr
+                          key={request.noc_request_id}
+                          className="border-b odd:bg-background even:bg-muted/20 hover:bg-primary/5 transition-colors"
+                        >
+                          <td className="px-4 py-5">{request.snapshot?.student_name}</td>
+
+                          <td
+                            className="
+    p-3
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                          >
+                            {request.snapshot?.enrollment_no}
+                          </td>
+
+                          <td className="px-4 py-5">{request.snapshot?.company_name}</td>
+
+                          <td className="px-4 py-5">
+                            {getDurationMonths(
+                              request.snapshot?.start_date,
+                              request.snapshot?.end_date,
+                            )}
+                            Month(s)
+                          </td>
+
+                          <td className="px-4 py-5">{request.noc_type}</td>
+
+                          <td className="px-4 py-5">{request.reference_number}</td>
+
+                          <td className="px-4 py-5">
+                            {request.issued_at ? new Date(request.issued_at).toLocaleString() : "-"}
+                          </td>
+
+                          <td className="px-4 py-5">
+                            <ActionButton
+                              variant="view"
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setReviewMode("VIEW");
+                                setEditableSnapshot(structuredClone(request.snapshot));
+                                setCustomFields(request.noc_customization ?? {});
+                              }}
+                            >
+                              View
+                            </ActionButton>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+          </>
+        )}
+      </div>
+
+      <div
+        className="
+    mt-10
+    overflow-hidden
+    rounded-[30px]
+    border
+    border-rose-200
+    bg-gradient-to-r
+    from-rose-50
+    via-white
+    to-orange-50
+    p-8
+    shadow-lg
+"
+      >
+        <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-rose-200/20 blur-3xl" />
+        <div className="absolute left-1/4 bottom-0 h-40 w-40 rounded-full bg-orange-200/20 blur-3xl" />
+
+        <div className="relative z-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 mb-10 items-center justify-center rounded-2xl bg-rose-100 text-2xl">
+                  📦
+                </div>
+
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight text-rose-900">
+                    Closed Workflow
+                  </h2>
+
+                  <p className="mt-1 text-sm mb-8 text-rose-700">
+                    Completed, cancelled and rejected NOC requests archived for future reference.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => setClosedWorkflowView("completed")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  closedWorkflowView === "completed"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Completed Tenure ({completedTenure.length})
+              </button>
+
+              <button
+                onClick={() => setClosedWorkflowView("rejected")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  closedWorkflowView === "rejected"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Rejected ({rejected.length})
+              </button>
+
+              <button
+                onClick={() => setClosedWorkflowView("cancelled")}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                  closedWorkflowView === "cancelled"
+                    ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                    : "bg-background hover:bg-muted hover:border-primary/40"
+                }`}
+              >
+                Cancelled ({cancelled.length})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {closedWorkflowView === "completed" && (
+          <>
+            <div className="overflow-hidden rounded-2xl border bg-background shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-[1200px] w-full">
+                  <thead
+                    className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                  >
+                    <tr
+                      className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                    >
+                      <th
+                        className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                      >
+                        Student
+                      </th>
+
+                      <th
+                        className="
+    p-3
+    text-left
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                      >
+                        Enrollment
+                      </th>
+
+                      <th
+                        className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                      >
+                        Company
+                      </th>
+
+                      <th
+                        className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                      >
+                        Verified At
+                      </th>
+
+                      <th
+                        className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                      >
+                        Certificate
+                      </th>
+
+                      <th
+                        className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                      >
+                        HR Email
+                      </th>
+
+                      <th
+                        className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                      >
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="bg-background">
+                    {completedTenure.filter(matchesSearch).length === 0 ? (
+                      <TableEmptyState
+                        colSpan={7}
+                        icon="🎉"
+                        title="No Completed Tenure Records"
+                        description="Verified tenure completion records will appear here."
+                      />
+                    ) : (
+                      completedTenure
+
+                        .slice()
+
+                        .sort(
+                          (a, b) =>
+                            new Date(b.completion_verified_at).getTime() -
+                            new Date(a.completion_verified_at).getTime(),
+                        )
+
+                        .filter(matchesSearch)
+                        .slice(0, 100)
+                        .map((request: any) => (
+                          <tr
+                            key={request.noc_request_id}
+                            className="
+        border-b
+        odd:bg-white
+        even:bg-slate-50/60
+        hover:bg-blue-50
+        transition-colors
+    "
+                          >
+                            <td className="px-4 py-5">{request.snapshot?.student_name}</td>
+
+                            <td
+                              className="
+    p-3
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                            >
+                              {request.snapshot?.enrollment_no}
+                            </td>
+
+                            <td className="px-4 py-5">{request.snapshot?.company_name}</td>
+
+                            <td className="px-4 py-5">
+                              {request.completion_verified_at
+                                ? new Date(request.completion_verified_at).toLocaleString()
+                                : "-"}
+                            </td>
+
+                            <td className="px-4 py-5">
+                              {request.completion_certificate_url ? (
+                                <ActionButton
+                                  variant="primary"
+                                  onClick={async () => {
+                                    const url = await adminNocService.getCertificateUrl(
+                                      request.completion_certificate_url,
+                                    );
+
+                                    window.open(url, "_blank");
+                                  }}
+                                >
+                                  View
+                                </ActionButton>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+
+                            <td className="px-4 py-5">{request.completion_hr_email ?? "-"}</td>
+
+                            <td className="px-4 py-5">
+                              <ActionButton
+                                variant="view"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setReviewMode("VIEW");
+                                  setEditableSnapshot(structuredClone(request.snapshot));
+                                  setCustomFields(request.noc_customization ?? {});
+                                }}
+                              >
+                                View
+                              </ActionButton>
+                            </td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {closedWorkflowView === "rejected" && (
+          <>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr
+                    className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                  >
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="
+    p-3
+    text-left
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                    >
+                      Enrollment
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Type
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Rejected By
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Reason
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-background">
+                  {rejected.filter(matchesSearch).length === 0 ? (
+                    <TableEmptyState
+                      colSpan={7}
+                      icon="❌"
+                      title="No Rejected Requests"
+                      description="Rejected NOC requests will appear here."
+                    />
+                  ) : (
+                    rejected.map((request: any) => (
+                      <tr
+                        key={request.noc_request_id}
+                        className="
+        border-b
+        odd:bg-white
+        even:bg-slate-50/60
+        hover:bg-blue-50
+        transition-colors
+    "
+                      >
+                        <td className="px-4 py-5">{request.snapshot?.student_name}</td>
+
+                        <td
+                          className="
+    p-3
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                        >
+                          {request.snapshot?.enrollment_no}
+                        </td>
+
+                        <td className="px-4 py-5">{request.snapshot?.company_name}</td>
+
+                        <td className="px-4 py-5">{request.noc_type}</td>
+
+                        <td>{request.rejected_by ?? request.tenure_rejected_by ?? "-"}</td>
+
+                        <td>
+                          {request.rejection_reason ?? request.tenure_rejection_reason ?? "-"}
+                        </td>
+
+                        <td className="px-4 py-5">
+                          <ActionButton
+                            variant="view"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setReviewMode("VIEW");
+                              setEditableSnapshot(structuredClone(request.snapshot));
+                              setCustomFields(request.noc_customization ?? {});
+                            }}
+                          >
+                            View
+                          </ActionButton>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+          </>
+        )}
+
+        {closedWorkflowView === "cancelled" && (
+          <>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr>
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="
+    p-3
+    text-left
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                    >
+                      Enrollment
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Type
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Ref No
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Cancelled By
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Print Version
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Reason
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Cancelled At
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-background">
+                  {cancelled.filter(matchesSearch).length === 0 ? (
+                    <TableEmptyState
+                      colSpan={9}
+                      icon="🚫"
+                      title="No Cancelled Requests"
+                      description="Cancelled NOC requests will appear here."
+                    />
+                  ) : (
+                    cancelled
+
+                      .slice()
+
+                      .sort(
+                        (a, b) =>
+                          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                      )
+
+                      .filter(matchesSearch)
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr
+                          key={request.noc_request_id}
+                          className="border-b odd:bg-background even:bg-muted/20 hover:bg-primary/5 transition-colors"
+                        >
+                          <td className="px-4 py-5">{request.snapshot?.student_name}</td>
+
+                          <td
+                            className="
+    p-3
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                          >
+                            {request.snapshot?.enrollment_no}
+                          </td>
+
+                          <td className="px-4 py-5">{request.snapshot?.company_name}</td>
+
+                          <td className="px-4 py-5">{request.noc_type}</td>
+
+                          <td className="px-4 py-5">{request.reference_number ?? "-"}</td>
+
+                          <td className="px-4 py-5">{request.cancelled_by ?? "ADMIN"}</td>
+
+                          <td className="px-4 py-5">{request.print_count ?? 1}</td>
+
+                          <td
+                            className="
+        p-3
+        max-w-[300px]
+        truncate
+    "
+                            title={request.cancellation_reason ?? ""}
+                          >
+                            {request.cancellation_reason ?? "-"}
+                          </td>
+
+                          <td className="px-4 py-5">
+                            {request.cancelled_at
+                              ? new Date(request.cancelled_at).toLocaleString()
+                              : "-"}
+                          </td>
+
+                          <td className="px-4 py-5">
+                            <ActionButton
+                              variant="view"
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setReviewMode("VIEW");
+                                setEditableSnapshot(structuredClone(request.snapshot));
+                                setCustomFields(request.noc_customization ?? {});
+                              }}
+                            >
+                              View
+                            </ActionButton>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+          </>
+        )}
+      </div>
+
+      {showAudit && (
+        <div
+          className="
+    mt-8
+    rounded-[30px]
+    border
+    border-slate-200
+    bg-white
+    p-8
+    shadow-md
+    animate-in
+    fade-in
+    duration-300
+  "
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+                Audit Workspace
+              </div>
+
+              <h2 className="mt-2 text-3xl font-bold tracking-tight">Audit & Reports</h2>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                Review workflow history, print logs and reprint activities from a single audit
+                workspace.
+              </p>
+            </div>
+
+            <ActionButton variant="secondary" onClick={() => setShowAudit(false)}>
+              Hide Audit
+            </ActionButton>
+          </div>
+
+          <div className="mt-8 space-y-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-xl font-semibold">📋 Workflow History</h3>
+
+                <p className="text-sm text-muted-foreground">
+                  Complete lifecycle history of every NOC request.
+                </p>
+              </div>
+
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium">
+                {history.length} Records
+              </div>
+            </div>
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr
+                    className="
+    border-b
+    odd:bg-white
+    even:bg-slate-50/60
+    hover:bg-blue-50
+    transition-colors
+  "
+                  >
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="
+    p-3
+    text-left
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                    >
+                      Enrollment
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Status
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Created
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-background">
+                  {history.slice(0, 100).map((request: any) => (
+                    <tr
+                      key={request.noc_request_id}
+                      className="
+        border-b
+        odd:bg-white
+        even:bg-slate-50/60
+        hover:bg-blue-50
+        transition-colors
+    "
+                    >
+                      <td className="px-4 py-5">{request.snapshot?.student_name}</td>
+
+                      <td
+                        className="
+    p-3
+sticky
+left-0
+z-20
+bg-inherit
+backdrop-blur
+shadow-[8px_0_10px_-10px_rgba(0,0,0,0.18)]
+"
+                      >
+                        {request.snapshot?.enrollment_no}
+                      </td>
+
+                      <td className="px-4 py-5">{request.snapshot?.company_name}</td>
+
+                      <td className="px-4 py-5">{request.status}</td>
+
+                      <td className="px-4 py-5">
+                        {new Date(request.created_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
+
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-xl font-semibold">🖨 Print & Reprint History</h3>
+
+                <p className="text-sm text-muted-foreground">
+                  Every print and reprint action is recorded here.
+                </p>
+              </div>
+
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium">
+                {printHistory.length} Records
+              </div>
+            </div>
+
+            <div className="mb-5 flex items-center justify-between">
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={showOnlyReprints}
+                  onChange={(e) => setShowOnlyReprints(e.target.checked)}
+                />
+                Show Reprints Only
+              </label>
+
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm">
+                Total Logs : {printHistory.length}
+              </div>
+            </div>
+
+            <WorkflowTableCard>
+              <table className="min-w-[1200px] w-full">
+                <thead
+                  className="
+sticky
+top-0
+z-30
+border-b
+bg-muted/70  
+backdrop-blur
+"
+                >
+                  <tr className="border-b bg-muted/30">
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Student
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Company
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Version
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Action
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Ref No
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Reason
+                    </th>
+
+                    <th
+                      className="px-4 py-3 text-left text-[11px]
+font-bold
+uppercase
+tracking-[0.22em]
+text-muted-foreground"
+                    >
+                      Date
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-background">
+                  {printHistory
+
+                    .slice(0, 100)
+
+                    .filter((row: any) => !showOnlyReprints || row.action_type === "REPRINT")
+
+                    .map((row: any) => (
+                      <tr key={row.history_id} className="border-b">
+                        <td className="px-4 py-5">{row.snapshot?.student_name ?? "-"}</td>
+
+                        <td className="px-4 py-5">{row.snapshot?.company_name ?? "-"}</td>
+
+                        <td className="px-4 py-5">{row.print_version}</td>
+
+                        <td className="px-4 py-5">
+                          <span
+                            className={
+                              row.action_type === "REPRINT" ? "font-semibold text-amber-600" : ""
+                            }
+                          >
+                            {row.action_type}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-5">{row.reference_number ?? "-"}</td>
 
                         <td
                           className="
@@ -2890,245 +4038,21 @@ underline
         max-w-[300px]
         truncate
     "
-                          title={request.cancellation_reason ?? ""}
+                          title={row.reason ?? ""}
                         >
-                          {request.cancellation_reason ?? "-"}
+                          {row.reason ?? "-"}
                         </td>
 
-                        <td className="px-4 py-4">
-                          {request.cancelled_at
-                            ? new Date(request.cancelled_at).toLocaleString()
-                            : "-"}
-                        </td>
-
-                        <td className="px-4 py-4">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request);
-
-                              setReviewMode("VIEW");
-
-                              setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
-                            }}
-                            className="rounded border px-3 py-1"
-                          >
-                            View
-                          </button>
+                        <td className="px-4 py-5">
+                          {row.created_at ? new Date(row.created_at).toLocaleString() : "-"}
                         </td>
                       </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
-      )}
-      {showAudit && (
-        <>
-          <div className="mt-16 mb-6">
-            <div
-              className="
-        mt-6
-        flex
-        items-center
-        justify-between
-    "
-            >
-              <h2
-                className="
-            text-xl
-            font-semibold
-        "
-              >
-                AUDIT & REPORTS
-              </h2>
-
-              <button
-                onClick={() => setShowAudit(!showAudit)}
-                className="
-            rounded
-            border
-            px-3
-            py-1
-        "
-              >
-                {showAudit ? "Hide" : "Show"}
-              </button>
-            </div>
+                    ))}
+                </tbody>
+              </table>
+            </WorkflowTableCard>
           </div>
-
-          <h3 className="font-semibold">
-            Workflow History
-            {" ("}
-            {history.length}
-            {" Records)"}
-          </h3>
-
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Status
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Created
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {history.slice(0, 100).map((request: any) => (
-                  <tr key={request.noc_request_id} className="border-b">
-                    <td className="px-4 py-4">{request.snapshot?.student_name}</td>
-
-                    <td
-                      className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                    >
-                      {request.snapshot?.enrollment_no}
-                    </td>
-
-                    <td className="px-4 py-4">{request.snapshot?.company_name}</td>
-
-                    <td className="px-4 py-4">{request.status}</td>
-
-                    <td className="px-4 py-4">
-                      {new Date(request.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-
-          <h3 className="mt-8 mb-3 font-semibold">
-            Print & Reprint History
-            {" ("}
-            {printHistory.length}
-            {" Records)"}
-          </h3>
-
-          <div className="mb-3 flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={showOnlyReprints}
-              onChange={(e) => setShowOnlyReprints(e.target.checked)}
-            />
-
-            <span className="text-sm">Show Reprints Only</span>
-          </div>
-
-          <WorkflowTableCard>
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 border-b bg-slate-50">
-                <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Student
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Company
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Version
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Action
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Ref No
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Reason
-                  </th>
-
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="bg-background">
-                {printHistory
-
-                  .slice(0, 100)
-
-                  .filter((row: any) => !showOnlyReprints || row.action_type === "REPRINT")
-
-                  .map((row: any) => (
-                    <tr key={row.history_id} className="border-b">
-                      <td className="px-4 py-4">{row.snapshot?.student_name ?? "-"}</td>
-
-                      <td className="px-4 py-4">{row.snapshot?.company_name ?? "-"}</td>
-
-                      <td className="px-4 py-4">{row.print_version}</td>
-
-                      <td className="px-4 py-4">
-                        <span
-                          className={
-                            row.action_type === "REPRINT" ? "font-semibold text-amber-600" : ""
-                          }
-                        >
-                          {row.action_type}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-4">{row.reference_number ?? "-"}</td>
-
-                      <td
-                        className="
-        p-3
-        max-w-[300px]
-        truncate
-    "
-                        title={row.reason ?? ""}
-                      >
-                        {row.reason ?? "-"}
-                      </td>
-
-                      <td className="px-4 py-4">
-                        {row.created_at ? new Date(row.created_at).toLocaleString() : "-"}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </WorkflowTableCard>
-        </>
+        </div>
       )}
 
       {selectedRequest && (
@@ -3177,7 +4101,8 @@ underline
                   <div>
                     <strong>Completion Certificate:</strong>{" "}
                     {selectedRequest?.completion_certificate_url ? (
-                      <button
+                      <ActionButton
+                        variant="purple"
                         onClick={async () => {
                           const url = await adminNocService.getCertificateUrl(
                             selectedRequest.completion_certificate_url,
@@ -3185,13 +4110,9 @@ underline
 
                           window.open(url, "_blank");
                         }}
-                        className="
-text-blue-600
-underline
-"
                       >
                         Download Certificate
-                      </button>
+                      </ActionButton>
                     ) : (
                       "-"
                     )}
@@ -3277,22 +4198,34 @@ underline
                         setPrinting(false);
                       }
                     }}
-                    className="rounded border px-4 py-2"
+                    className="rounded-xl
+border
+border-slate-200
+bg-white
+px-4
+py-2
+text-sm
+font-medium
+transition-all
+hover:-translate-y-0.5
+hover:border-blue-300
+hover:bg-blue-50
+hover:shadow-md"
                   >
                     Print &amp; Move To Printed
                   </button>
                 )}
 
-                <button
+                <ActionButton
+                  variant="danger"
                   onClick={() => {
                     setCustomFields({});
                     setEditableSnapshot(null);
                     setSelectedRequest(null);
                   }}
-                  className="rounded border px-4 py-2"
                 >
                   Close
-                </button>
+                </ActionButton>
               </div>
             </div>
           </div>
