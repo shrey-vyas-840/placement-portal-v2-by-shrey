@@ -1237,7 +1237,7 @@ py-2
 text-sm
 font-medium
 transition-colors
-hover:bg-muted
+bg-background hover:bg-muted hover:border-primary/40
 "
             >
               {showAudit ? "Hide Audit" : "Show Audit"}
@@ -1266,7 +1266,7 @@ hover:bg-muted
         </div>
       </div>
 
-      <div className="rounded-3xl border bg-background p-6 shadow-sm">
+      <div className="sticky top-4 z-20 rounded-3xl border bg-background/95 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Active Workflow</h2>
@@ -1274,13 +1274,13 @@ hover:bg-muted
             <p className="mt-1 text-sm text-muted-foreground">Select a workflow queue to manage.</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setActiveWorkflowView("approval")}
               className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                 activeWorkflowView === "approval"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
               }`}
             >
               Pending Approval ({pendingApproval.length})
@@ -1290,8 +1290,8 @@ hover:bg-muted
               onClick={() => setActiveWorkflowView("print")}
               className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                 activeWorkflowView === "print"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
               }`}
             >
               Pending Print ({pendingPrint.length})
@@ -1301,8 +1301,8 @@ hover:bg-muted
               onClick={() => setActiveWorkflowView("printed")}
               className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                 activeWorkflowView === "printed"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
               }`}
             >
               Printed ({printed.length})
@@ -1312,8 +1312,8 @@ hover:bg-muted
               onClick={() => setActiveWorkflowView("completion")}
               className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                 activeWorkflowView === "completion"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
               }`}
             >
               Completion Pending ({completionPending.length})
@@ -1323,8 +1323,8 @@ hover:bg-muted
               onClick={() => setActiveWorkflowView("verification")}
               className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                 activeWorkflowView === "verification"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
               }`}
             >
               Verification ({pendingTenureVerification.length})
@@ -1334,8 +1334,8 @@ hover:bg-muted
               onClick={() => setActiveWorkflowView("issued")}
               className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
                 activeWorkflowView === "issued"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
               }`}
             >
               Issued ({issued.length})
@@ -1346,8 +1346,7 @@ hover:bg-muted
 
       {activeWorkflowView === "approval" && (
         <>
-          <h2 className="mt-8 mb-4 text-xl font-semibold">Pending HOD Approval</h2>
-
+    
           <div className="rounded-lg border">
             <div className="overflow-x-auto">
               <div className="max-h-[420px] overflow-y-auto">
@@ -1487,7 +1486,7 @@ hover:bg-muted
       )}
       {activeWorkflowView === "print" && (
         <>
-          <h2 className="mt-10 mb-4 text-xl font-semibold">Pending Print</h2>
+
 
           <div className="rounded-lg border">
             <div className="overflow-x-auto">
@@ -1586,7 +1585,7 @@ hover:bg-muted
 
       {activeWorkflowView === "printed" && (
         <>
-          <h2 className="mt-10 mb-4 text-xl font-semibold">Printed</h2>
+ 
 
           <div className="rounded-lg border p-6 text-sm text-muted-foreground">
             <div className="rounded-lg border">
@@ -1868,8 +1867,6 @@ hover:bg-muted
 
       {activeWorkflowView === "completion" && (
         <>
-          <h2 className="mt-10 mb-4 text-xl font-semibold">Completion Pending</h2>
-
           <div className="rounded-lg border">
             <div className="overflow-x-auto">
               <div className="max-h-[420px] overflow-y-auto">
@@ -1935,8 +1932,6 @@ hover:bg-muted
 
       {activeWorkflowView === "verification" && (
         <>
-          <h2 className="mt-10 mb-4 text-xl font-semibold">Tenure Verification Pending</h2>
-
           <div className="rounded-lg border">
             <div className="overflow-x-auto">
               <div className="max-h-[420px] overflow-y-auto">
@@ -2122,7 +2117,6 @@ underline
 
       {activeWorkflowView === "issued" && (
         <>
-          <h2 className="mt-10 mb-4 text-xl font-semibold">Issued</h2>
 
           <div className="rounded-lg border p-6 text-sm text-muted-foreground">
             <div className="rounded-lg border">
@@ -2234,195 +2228,186 @@ underline
           </div>
         </>
       )}
-<div className="mt-16 rounded-3xl border bg-background p-6 shadow-sm">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-                Closed Workflow
-            </h2>
+      <div className="mt-16 rounded-3xl border bg-background p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Closed Workflow</h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-                View completed and terminated NOC workflows.
+              View completed and terminated NOC workflows.
             </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setClosedWorkflowView("completed")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                closedWorkflowView === "completed"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
+              }`}
+            >
+              Completed Tenure ({completedTenure.length})
+            </button>
+
+            <button
+              onClick={() => setClosedWorkflowView("rejected")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                closedWorkflowView === "rejected"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
+              }`}
+            >
+              Rejected ({rejected.length})
+            </button>
+
+            <button
+              onClick={() => setClosedWorkflowView("cancelled")}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                closedWorkflowView === "cancelled"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20"
+                  : "bg-background hover:bg-muted hover:border-primary/40"
+              }`}
+            >
+              Cancelled ({cancelled.length})
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-            <button
-                onClick={() => setClosedWorkflowView("completed")}
-                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                    closedWorkflowView === "completed"
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                }`}
-            >
-                Completed ({completedTenure.length})
-            </button>
+      {closedWorkflowView === "completed" && (
+        <>
 
-            <button
-                onClick={() => setClosedWorkflowView("rejected")}
-                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                    closedWorkflowView === "rejected"
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                }`}
-            >
-                Rejected ({rejected.length})
-            </button>
+          <div className="rounded-lg border">
+            <div className="overflow-x-auto">
+              <div className="max-h-[420px] overflow-y-auto">
+                <table className="min-w-[1200px] w-full">
+                  <thead className="sticky top-0 z-10 bg-white">
+                    <tr className="border-b">
+                      <th className="p-3 text-left">Student</th>
 
-            <button
-                onClick={() => setClosedWorkflowView("cancelled")}
-                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                    closedWorkflowView === "cancelled"
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                }`}
-            >
-                Cancelled ({cancelled.length})
-            </button>
-        </div>
-    </div>
-</div>
-
-{closedWorkflowView === "completed" && (
-<>
-<h2 className="mt-10 mb-4 text-xl font-semibold">
-    Completed Tenure
-</h2>
-
-      <div className="rounded-lg border">
-        <div className="overflow-x-auto">
-          <div className="max-h-[420px] overflow-y-auto">
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 bg-white">
-                <tr className="border-b">
-                  <th className="p-3 text-left">Student</th>
-
-                  <th
-                    className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="p-3 text-left">Company</th>
-
-                  <th className="p-3 text-left">Verified At</th>
-
-                  <th className="p-3 text-left">Certificate</th>
-
-                  <th className="p-3 text-left">HR Email</th>
-
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {completedTenure
-
-                  .slice()
-
-                  .sort(
-                    (a, b) =>
-                      new Date(b.completion_verified_at).getTime() -
-                      new Date(a.completion_verified_at).getTime(),
-                  )
-
-                  .filter(matchesSearch)
-                  .slice(0, 100)
-                  .map((request: any) => (
-                    <tr key={request.noc_request_id} className="border-b">
-                      <td className="p-3">{request.snapshot?.student_name}</td>
-
-                      <td
+                      <th
                         className="
     p-3
+    text-left
     sticky
     left-0
     bg-white
     z-10
 "
                       >
-                        {request.snapshot?.enrollment_no}
-                      </td>
+                        Enrollment
+                      </th>
 
-                      <td className="p-3">{request.snapshot?.company_name}</td>
+                      <th className="p-3 text-left">Company</th>
 
-                      <td className="p-3">
-                        {request.completion_verified_at
-                          ? new Date(request.completion_verified_at).toLocaleString()
-                          : "-"}
-                      </td>
+                      <th className="p-3 text-left">Verified At</th>
 
-                      <td className="p-3">
-                        {request.completion_certificate_url ? (
-                          <button
-                            onClick={async () => {
-                              const url = await adminNocService.getCertificateUrl(
-                                request.completion_certificate_url,
-                              );
+                      <th className="p-3 text-left">Certificate</th>
 
-                              window.open(url, "_blank");
-                            }}
-                            className="text-blue-600 underline"
-                          >
-                            View
-                          </button>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
+                      <th className="p-3 text-left">HR Email</th>
 
-                      <td className="p-3">{request.completion_hr_email ?? "-"}</td>
-
-                      <td className="p-3">
-                        <button
-                          onClick={() => {
-                            setSelectedRequest(request);
-
-                            setReviewMode("VIEW");
-
-                            setEditableSnapshot(structuredClone(request.snapshot));
-
-                            setCustomFields(request.noc_customization ?? {});
-                          }}
-                          className="rounded border px-3 py-1"
-                        >
-                          View
-                        </button>
-                      </td>
+                      <th className="p-3 text-left">Actions</th>
                     </tr>
-                  ))}
-              </tbody>
-            </table>
+                  </thead>
+
+                  <tbody>
+                    {completedTenure
+
+                      .slice()
+
+                      .sort(
+                        (a, b) =>
+                          new Date(b.completion_verified_at).getTime() -
+                          new Date(a.completion_verified_at).getTime(),
+                      )
+
+                      .filter(matchesSearch)
+                      .slice(0, 100)
+                      .map((request: any) => (
+                        <tr key={request.noc_request_id} className="border-b">
+                          <td className="p-3">{request.snapshot?.student_name}</td>
+
+                          <td
+                            className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                          >
+                            {request.snapshot?.enrollment_no}
+                          </td>
+
+                          <td className="p-3">{request.snapshot?.company_name}</td>
+
+                          <td className="p-3">
+                            {request.completion_verified_at
+                              ? new Date(request.completion_verified_at).toLocaleString()
+                              : "-"}
+                          </td>
+
+                          <td className="p-3">
+                            {request.completion_certificate_url ? (
+                              <button
+                                onClick={async () => {
+                                  const url = await adminNocService.getCertificateUrl(
+                                    request.completion_certificate_url,
+                                  );
+
+                                  window.open(url, "_blank");
+                                }}
+                                className="text-blue-600 underline"
+                              >
+                                View
+                              </button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+
+                          <td className="p-3">{request.completion_hr_email ?? "-"}</td>
+
+                          <td className="p-3">
+                            <button
+                              onClick={() => {
+                                setSelectedRequest(request);
+
+                                setReviewMode("VIEW");
+
+                                setEditableSnapshot(structuredClone(request.snapshot));
+
+                                setCustomFields(request.noc_customization ?? {});
+                              }}
+                              className="rounded border px-3 py-1"
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-</>
-)}
+        </>
+      )}
 
+      {closedWorkflowView === "rejected" && (
+        <>
 
-{closedWorkflowView === "rejected" && (
-<>
-<h2 className="mt-10 mb-4 text-xl font-semibold">
-    Rejected
-</h2>
+          <div className="rounded-lg border">
+            <div className="overflow-x-auto">
+              <div className="max-h-[420px] overflow-y-auto">
+                <table className="min-w-[1200px] w-full">
+                  <thead className="sticky top-0 z-10 bg-white">
+                    <tr className="border-b">
+                      <th className="p-3 text-left">Student</th>
 
-      <div className="rounded-lg border">
-        <div className="overflow-x-auto">
-          <div className="max-h-[420px] overflow-y-auto">
-            <table className="min-w-[1200px] w-full">
-              <thead className="sticky top-0 z-10 bg-white">
-                <tr className="border-b">
-                  <th className="p-3 text-left">Student</th>
-
-                  <th
-                    className="
+                      <th
+                        className="
     p-3
     text-left
     sticky
@@ -2430,130 +2415,25 @@ underline
     bg-white
     z-10
 "
-                  >
-                    Enrollment
-                  </th>
-
-                  <th className="p-3 text-left">Company</th>
-
-                  <th className="p-3 text-left">Type</th>
-
-                  <th className="p-3 text-left">Rejected By</th>
-
-                  <th className="p-3 text-left">Reason</th>
-
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {rejected.map((request: any) => (
-                  <tr key={request.noc_request_id} className="border-b">
-                    <td className="p-3">{request.snapshot?.student_name}</td>
-
-                    <td
-                      className="
-    p-3
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                    >
-                      {request.snapshot?.enrollment_no}
-                    </td>
-
-                    <td className="p-3">{request.snapshot?.company_name}</td>
-
-                    <td className="p-3">{request.noc_type}</td>
-
-                    <td>{request.rejected_by ?? request.tenure_rejected_by ?? "-"}</td>
-
-                    <td>{request.rejection_reason ?? request.tenure_rejection_reason ?? "-"}</td>
-
-                    <td className="p-3">
-                      <button
-                        onClick={() => {
-                          setSelectedRequest(request);
-
-                          setReviewMode("VIEW");
-
-                          setEditableSnapshot(structuredClone(request.snapshot));
-                        }}
-                        className="rounded border px-3 py-1"
                       >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-</>
-)}
+                        Enrollment
+                      </th>
 
-{closedWorkflowView === "cancelled" && (
-<>
-<h2 className="mt-10 mb-4 text-xl font-semibold">
-    Cancelled
-</h2>
+                      <th className="p-3 text-left">Company</th>
 
-      <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-        <div className="rounded-lg border">
-          <div className="overflow-x-auto">
-            <div className="max-h-[420px] overflow-y-auto">
-              <table className="min-w-[1200px] w-full">
-                <thead className="sticky top-0 z-10 bg-white">
-                  <tr>
-                    <th className="p-3 text-left">Student</th>
+                      <th className="p-3 text-left">Type</th>
 
-                    <th
-                      className="
-    p-3
-    text-left
-    sticky
-    left-0
-    bg-white
-    z-10
-"
-                    >
-                      Enrollment
-                    </th>
+                      <th className="p-3 text-left">Rejected By</th>
 
-                    <th className="p-3 text-left">Company</th>
+                      <th className="p-3 text-left">Reason</th>
 
-                    <th className="p-3 text-left">Type</th>
+                      <th className="p-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
 
-                    <th className="p-3 text-left">Ref No</th>
-
-                    <th className="p-3 text-left">Cancelled By</th>
-
-                    <th className="p-3 text-left">Print Version</th>
-
-                    <th className="p-3 text-left">Reason</th>
-
-                    <th className="p-3 text-left">Cancelled At</th>
-
-                    <th className="p-3 text-left">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {cancelled
-
-                    .slice()
-
-                    .sort(
-                      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                    )
-
-                    .filter(matchesSearch)
-                    .slice(0, 100)
-                    .map((request: any) => (
-                      <tr key={request.noc_request_id}>
+                  <tbody>
+                    {rejected.map((request: any) => (
+                      <tr key={request.noc_request_id} className="border-b">
                         <td className="p-3">{request.snapshot?.student_name}</td>
 
                         <td
@@ -2572,27 +2452,10 @@ underline
 
                         <td className="p-3">{request.noc_type}</td>
 
-                        <td className="p-3">{request.reference_number ?? "-"}</td>
+                        <td>{request.rejected_by ?? request.tenure_rejected_by ?? "-"}</td>
 
-                        <td className="p-3">{request.cancelled_by ?? "ADMIN"}</td>
-
-                        <td className="p-3">{request.print_count ?? 1}</td>
-
-                        <td
-                          className="
-        p-3
-        max-w-[300px]
-        truncate
-    "
-                          title={request.cancellation_reason ?? ""}
-                        >
-                          {request.cancellation_reason ?? "-"}
-                        </td>
-
-                        <td className="p-3">
-                          {request.cancelled_at
-                            ? new Date(request.cancelled_at).toLocaleString()
-                            : "-"}
+                        <td>
+                          {request.rejection_reason ?? request.tenure_rejection_reason ?? "-"}
                         </td>
 
                         <td className="p-3">
@@ -2603,8 +2466,6 @@ underline
                               setReviewMode("VIEW");
 
                               setEditableSnapshot(structuredClone(request.snapshot));
-
-                              setCustomFields(request.noc_customization ?? {});
                             }}
                             className="rounded border px-3 py-1"
                           >
@@ -2613,20 +2474,144 @@ underline
                         </td>
                       </tr>
                     ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-</>
-)}
+        </>
+      )}
+
+      {closedWorkflowView === "cancelled" && (
+        <>
+
+          <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+            <div className="rounded-lg border">
+              <div className="overflow-x-auto">
+                <div className="max-h-[420px] overflow-y-auto">
+                  <table className="min-w-[1200px] w-full">
+                    <thead className="sticky top-0 z-10 bg-white">
+                      <tr>
+                        <th className="p-3 text-left">Student</th>
+
+                        <th
+                          className="
+    p-3
+    text-left
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                        >
+                          Enrollment
+                        </th>
+
+                        <th className="p-3 text-left">Company</th>
+
+                        <th className="p-3 text-left">Type</th>
+
+                        <th className="p-3 text-left">Ref No</th>
+
+                        <th className="p-3 text-left">Cancelled By</th>
+
+                        <th className="p-3 text-left">Print Version</th>
+
+                        <th className="p-3 text-left">Reason</th>
+
+                        <th className="p-3 text-left">Cancelled At</th>
+
+                        <th className="p-3 text-left">Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {cancelled
+
+                        .slice()
+
+                        .sort(
+                          (a, b) =>
+                            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+                        )
+
+                        .filter(matchesSearch)
+                        .slice(0, 100)
+                        .map((request: any) => (
+                          <tr key={request.noc_request_id}>
+                            <td className="p-3">{request.snapshot?.student_name}</td>
+
+                            <td
+                              className="
+    p-3
+    sticky
+    left-0
+    bg-white
+    z-10
+"
+                            >
+                              {request.snapshot?.enrollment_no}
+                            </td>
+
+                            <td className="p-3">{request.snapshot?.company_name}</td>
+
+                            <td className="p-3">{request.noc_type}</td>
+
+                            <td className="p-3">{request.reference_number ?? "-"}</td>
+
+                            <td className="p-3">{request.cancelled_by ?? "ADMIN"}</td>
+
+                            <td className="p-3">{request.print_count ?? 1}</td>
+
+                            <td
+                              className="
+        p-3
+        max-w-[300px]
+        truncate
+    "
+                              title={request.cancellation_reason ?? ""}
+                            >
+                              {request.cancellation_reason ?? "-"}
+                            </td>
+
+                            <td className="p-3">
+                              {request.cancelled_at
+                                ? new Date(request.cancelled_at).toLocaleString()
+                                : "-"}
+                            </td>
+
+                            <td className="p-3">
+                              <button
+                                onClick={() => {
+                                  setSelectedRequest(request);
+
+                                  setReviewMode("VIEW");
+
+                                  setEditableSnapshot(structuredClone(request.snapshot));
+
+                                  setCustomFields(request.noc_customization ?? {});
+                                }}
+                                className="rounded border px-3 py-1"
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       {showAudit && (
         <>
           <div className="mt-16 mb-6">
             <div
               className="
-        mt-10
+        mt-6
         flex
         items-center
         justify-between
