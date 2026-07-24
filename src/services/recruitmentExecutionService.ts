@@ -339,10 +339,19 @@ class RecruitmentExecutionService {
     return (data ?? []) as RecruitmentExecutionRoundRow[];
   }
 
+  private async getCurrentStageNumber(executionId: string): Promise<number> {
+    const rounds = await this.loadRounds(executionId);
+
+    if (rounds.length === 0) {
+      return 1;
+    }
+
+    return Math.max(...rounds.map((round) => round.stage_number));
+  }
+
   async createRound(input: {
     executionId: string;
     creationMode: ExecutionRoundCreationMode;
-    currentStageNumber: number;
     roundOrder: number;
     roundName: string;
     scope: ExecutionScope;
@@ -352,10 +361,10 @@ class RecruitmentExecutionService {
     remarks?: string | null;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
+    const currentStageNumber = await this.getCurrentStageNumber(input.executionId);
+
     const stageNumber =
-      input.creationMode === "PARALLEL_STAGE"
-        ? input.currentStageNumber
-        : input.currentStageNumber + 1;
+      input.creationMode === "PARALLEL_STAGE" ? currentStageNumber : currentStageNumber + 1;
 
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -380,6 +389,41 @@ class RecruitmentExecutionService {
   async assignRolesToRound(executionRoundId: string, roleIds: string[]): Promise<void> {
     if (roleIds.length === 0) {
       return;
+    }
+
+    const round = await this.getRound(executionRoundId);
+
+    if (!round) {
+      throw new Error("Execution round not found.");
+    }
+
+    const rounds = await this.loadRounds(round.execution_id);
+
+    const sameStageRoundIds = rounds
+      .filter(
+        (r) => r.stage_number === round.stage_number && r.execution_round_id !== executionRoundId,
+      )
+      .map((r) => r.execution_round_id);
+
+    if (sameStageRoundIds.length > 0) {
+      const { data, error } = await (supabase as any)
+        .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+        .select("drive_role_id")
+        .in("execution_round_id", sameStageRoundIds);
+
+      if (error) {
+        throw error;
+      }
+
+      const alreadyAssigned = new Set((data ?? []).map((row: any) => row.drive_role_id));
+
+      const duplicateRole = roleIds.find((id) => alreadyAssigned.has(id));
+
+      if (duplicateRole) {
+        throw new Error(
+          "One or more selected roles are already assigned to another round in this stage.",
+        );
+      }
     }
 
     const rows = roleIds.map((roleId) => ({

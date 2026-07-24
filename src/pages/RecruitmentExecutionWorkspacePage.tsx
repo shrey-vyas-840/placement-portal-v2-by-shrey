@@ -668,10 +668,6 @@ export function RecruitmentExecutionWorkspacePage() {
 
               creationMode,
 
-              currentStageNumber:
-                workspace.rounds.find((r) => r.execution_round_id === selectedRoundId)
-                  ?.stage_number ?? 1,
-
               roundOrder: (workspace.rounds.length ?? 0) + 1,
 
               roundName: data.roundName,
