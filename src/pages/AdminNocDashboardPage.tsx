@@ -1202,9 +1202,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-purple-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1230,9 +1230,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-yellow-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1257,10 +1257,10 @@ hover:shadow-xl
     relative
     overflow-hidden
     rounded-3xl
-    border
-    border-slate-200
-    bg-white
-    p-6
+border
+border-yellow-400
+bg-white 
+p-5
     shadow-md
     transition-all
     duration-300
@@ -1286,9 +1286,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-blue-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1314,9 +1314,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-green-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1342,9 +1342,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-red-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1370,9 +1370,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-yellow-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1398,9 +1398,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-purple-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1428,9 +1428,9 @@ relative
 overflow-hidden
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-green-400
+bg-white 
+p-5
 shadow-md
 transition-all
 duration-300
@@ -1579,9 +1579,9 @@ hover:shadow-lg
             className="
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-green-400
+bg-white 
+p-5
 shadow-md
 "
           >
@@ -1625,9 +1625,9 @@ shadow-md
             className="
 rounded-3xl
 border
-border-slate-200
-bg-white
-p-6
+border-green-400
+bg-white 
+p-5
 shadow-md
 "
           >
@@ -1661,9 +1661,9 @@ shadow-md
         className="
 rounded-[30px]
 border
-border-slate-200
-bg-white
-p-6
+border-green-400
+bg-white 
+p-5
 shadow-md
 "
       >
@@ -1855,7 +1855,7 @@ bg-muted/70
   "
                   >
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -1880,7 +1880,7 @@ text-left
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -1896,7 +1896,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -1912,7 +1912,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -1928,7 +1928,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -1944,7 +1944,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -1960,7 +1960,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2095,8 +2095,8 @@ whitespace-nowrap
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -2105,7 +2105,7 @@ whitespace-nowrap
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr
                     className="
     border-b
@@ -2116,7 +2116,7 @@ whitespace-nowrap
   "
                   >
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2142,7 +2142,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2158,7 +2158,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2174,7 +2174,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2190,7 +2190,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2206,7 +2206,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2313,8 +2313,8 @@ hover:shadow-md"
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -2323,7 +2323,7 @@ hover:shadow-md"
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr
                     className="
     border-b
@@ -2334,7 +2334,7 @@ hover:shadow-md"
   "
                   >
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2358,7 +2358,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2374,7 +2374,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2390,7 +2390,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2406,7 +2406,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2422,7 +2422,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2438,7 +2438,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2454,7 +2454,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2720,8 +2720,8 @@ whitespace-nowrap
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -2730,7 +2730,7 @@ whitespace-nowrap
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr
                     className="
     border-b
@@ -2741,7 +2741,7 @@ whitespace-nowrap
   "
                   >
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2767,7 +2767,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2783,7 +2783,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2799,7 +2799,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2868,8 +2868,8 @@ whitespace-nowrap
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -2878,7 +2878,7 @@ whitespace-nowrap
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr
                     className="
     border-b
@@ -2889,7 +2889,7 @@ whitespace-nowrap
   "
                   >
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2913,7 +2913,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2929,7 +2929,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -2945,7 +2945,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3145,7 +3145,7 @@ bg-muted/70
                 >
                   <tr>
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3169,7 +3169,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3185,7 +3185,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3201,7 +3201,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3217,7 +3217,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3233,7 +3233,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3249,7 +3249,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3441,7 +3441,7 @@ backdrop-blur
   "
                     >
                       <th
-                       className="
+                        className="
 px-6
 py-4
 text-left
@@ -3465,7 +3465,7 @@ whitespace-nowrap
                       </th>
 
                       <th
-                       className="
+                        className="
 px-6
 py-4
 text-left
@@ -3481,7 +3481,7 @@ whitespace-nowrap
                       </th>
 
                       <th
-                       className="
+                        className="
 px-6
 py-4
 text-left
@@ -3497,7 +3497,7 @@ whitespace-nowrap
                       </th>
 
                       <th
-                       className="
+                        className="
 px-6
 py-4
 text-left
@@ -3513,7 +3513,7 @@ whitespace-nowrap
                       </th>
 
                       <th
-                       className="
+                        className="
 px-6
 py-4
 text-left
@@ -3529,7 +3529,7 @@ whitespace-nowrap
                       </th>
 
                       <th
-                       className="
+                        className="
 px-6
 py-4
 text-left
@@ -3646,8 +3646,8 @@ whitespace-nowrap
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -3656,7 +3656,7 @@ whitespace-nowrap
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr
                     className="
     border-b
@@ -3667,7 +3667,7 @@ whitespace-nowrap
   "
                   >
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3692,7 +3692,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3708,7 +3708,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3724,7 +3724,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3740,7 +3740,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3756,7 +3756,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3839,8 +3839,8 @@ whitespace-nowrap
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -3849,10 +3849,10 @@ whitespace-nowrap
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr>
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3876,7 +3876,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3892,7 +3892,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3908,7 +3908,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3924,7 +3924,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3940,7 +3940,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3956,7 +3956,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3972,7 +3972,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -3988,7 +3988,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4140,8 +4140,8 @@ whitespace-nowrap
             </div>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -4150,7 +4150,7 @@ whitespace-nowrap
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr
                     className="
     border-b
@@ -4161,7 +4161,7 @@ whitespace-nowrap
   "
                   >
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4185,7 +4185,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4201,7 +4201,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4217,7 +4217,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4284,8 +4284,8 @@ whitespace-nowrap
             </div>
 
             <div className="mb-5 flex items-center justify-between">
-            <label
-    className="
+              <label
+                className="
     inline-flex
     items-center
     gap-3
@@ -4299,12 +4299,12 @@ whitespace-nowrap
     hover:bg-slate-100
     transition
 "
->
-    <input
-        type="checkbox"
-        checked={showOnlyReprints}
-        onChange={(e) => setShowOnlyReprints(e.target.checked)}
-        className="
+              >
+                <input
+                  type="checkbox"
+                  checked={showOnlyReprints}
+                  onChange={(e) => setShowOnlyReprints(e.target.checked)}
+                  className="
         h-4
         w-4
         rounded
@@ -4312,18 +4312,14 @@ whitespace-nowrap
         text-blue-600
         focus:ring-blue-500
         "
-    />
+                />
 
-    <div>
-        <div className="text-sm font-semibold">
-            Show Reprints Only
-        </div>
+                <div>
+                  <div className="text-sm font-semibold">Show Reprints Only</div>
 
-        <div className="text-xs text-muted-foreground">
-            Hide first-time print records
-        </div>
-    </div>
-</label>
+                  <div className="text-xs text-muted-foreground">Hide first-time print records</div>
+                </div>
+              </label>
 
               <div className="rounded-full bg-slate-100 px-4 py-2 text-sm">
                 Total Logs : {printHistory.length}
@@ -4332,8 +4328,8 @@ whitespace-nowrap
 
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-       <thead
-    className="
+                <thead
+                  className="
     sticky
     top-0
     z-10
@@ -4342,10 +4338,10 @@ whitespace-nowrap
     bg-slate-100
     shadow-sm
 "
->
+                >
                   <tr className="border-b bg-muted/30">
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4361,7 +4357,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4377,7 +4373,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4393,7 +4389,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4409,7 +4405,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4425,7 +4421,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left
@@ -4441,7 +4437,7 @@ whitespace-nowrap
                     </th>
 
                     <th
-                     className="
+                      className="
 px-6
 py-4
 text-left

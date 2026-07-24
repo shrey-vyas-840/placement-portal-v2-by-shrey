@@ -127,40 +127,65 @@ export function AdminOnboardingApprovalsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <div className="rounded-xl border bg-background p-4">
-          <div className="text-sm text-muted-foreground">Pending Review</div>
+        <div className="rounded-3xl border border-violet-400 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-600">
+            Pending Review
+          </div>
 
-          <div className="mt-2 text-3xl font-bold">{activeRows.length}</div>
+          <div className="mt-3 text-5xl font-bold tracking-tight">{activeRows.length}</div>
+
+          <div className="mt-2 text-sm text-slate-500">Awaiting administrator review</div>
         </div>
 
-        <div className="rounded-xl border bg-background p-4">
-          <div className="text-sm text-muted-foreground">Interested</div>
+        <div className="rounded-2xl border border-emerald-400 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
+            Opted - IN
+          </div>
 
-          <div className="mt-2 text-3xl font-bold">{interestedStudents.length}</div>
+          <div className="mt-3 text-5xl font-bold tracking-tight">{interestedStudents.length}</div>
+
+          <div className="mt-2 text-sm text-slate-500">Ready for approval</div>
         </div>
 
-        <div className="rounded-xl border bg-background p-4">
-          <div className="text-sm text-muted-foreground">Preference Changed</div>
+        <div className="rounded-2xl border border-amber-400 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-600">
+            Preference Changed
+          </div>
 
-          <div className="mt-2 text-3xl font-bold">{changedPreferenceStudents.length}</div>
+          <div className="mt-3 text-5xl font-bold tracking-tight">
+            {changedPreferenceStudents.length}
+          </div>
+
+          <div className="mt-2 text-sm text-slate-500">Requires administrator review</div>
         </div>
 
-        <div className="rounded-xl border bg-background p-4">
-          <div className="text-sm text-muted-foreground">Opted-Out</div>
+        <div className="rounded-2xl border border-orange-400 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-600">
+            Opted-Out
+          </div>
 
-          <div className="mt-2 text-3xl font-bold">{optedOutStudents.length}</div>
+          <div className="mt-3 text-5xl font-bold tracking-tight">{optedOutStudents.length}</div>
+
+          <div className="mt-2 text-sm text-slate-500">Students not seeking placements</div>
+        </div>
+        <div className="rounded-2xl border border-green-400 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-600">
+            Approved
+          </div>
+
+          <div className="mt-3 text-5xl font-bold tracking-tight">{approvedStudents.length}</div>
+
+          <div className="mt-2 text-sm text-slate-500">Successfully approved</div>
         </div>
 
-        <div className="rounded-xl border bg-background p-4">
-          <div className="text-sm text-muted-foreground">Approved</div>
+        <div className="rounded-2xl border border-red-400 bg-white p-5 shadow-sm transition hover:shadow-md">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-600">
+            Rejected
+          </div>
 
-          <div className="mt-2 text-3xl font-bold">{approvedStudents.length}</div>
-        </div>
+          <div className="mt-3 text-5xl font-bold tracking-tight">{rejectedStudents.length}</div>
 
-        <div className="rounded-xl border bg-background p-4">
-          <div className="text-sm text-muted-foreground">Rejected</div>
-
-          <div className="mt-2 text-3xl font-bold">{rejectedStudents.length}</div>
+          <div className="mt-2 text-sm text-slate-500">Approval declined</div>
         </div>
       </div>
 
@@ -197,7 +222,35 @@ export function AdminOnboardingApprovalsPage() {
 
                     <td className="p-3">{row.email_address}</td>
 
-                    <td className="p-3">{formatApprovalStatus(row.approval_status)}</td>
+                    <td className="px-5 py-4">
+                      {row.approval_status === "PROFILE_APPROVED" && (
+                        <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                          Approved
+                        </span>
+                      )}
+
+                      {row.approval_status === "PROFILE_REJECTED" && (
+                        <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                          Rejected
+                        </span>
+                      )}
+
+                      {row.approval_status === "PENDING_PROFILE_VERIFICATION" && (
+                        <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                          Pending Review
+                        </span>
+                      )}
+
+                      {![
+                        "PROFILE_APPROVED",
+                        "PROFILE_REJECTED",
+                        "PENDING_PROFILE_VERIFICATION",
+                      ].includes(row.approval_status ?? "") && (
+                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                          Pending
+                        </span>
+                      )}
+                    </td>
 
                     <td className="p-3">
                       <div className="flex gap-2">
@@ -259,8 +312,8 @@ export function AdminOnboardingApprovalsPage() {
                   onClick={() => setCurrentView("interested")}
                   className={
                     currentView === "interested"
-                      ? "rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow"
-                      : "rounded-full border bg-white px-4 py-2 text-sm"
+                      ? "rounded-full bg-gradient-to-r from-blue-600 to-blue-700 shadow-md px-4 py-2 text-sm font-semibold text-white"
+                      : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm transition hover:bg-slate-100"
                   }
                 >
                   Interested ({interestedStudents.length})
@@ -270,8 +323,8 @@ export function AdminOnboardingApprovalsPage() {
                   onClick={() => setCurrentView("changed")}
                   className={
                     currentView === "changed"
-                      ? "rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow"
-                      : "rounded-full border bg-white px-4 py-2 text-sm"
+                      ? "rounded-full bg-gradient-to-r from-blue-600 to-blue-700 shadow-md px-4 py-2 text-sm font-semibold text-white"
+                      : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm transition hover:bg-slate-100"
                   }
                 >
                   Preference Changed ({changedPreferenceStudents.length})
@@ -281,8 +334,8 @@ export function AdminOnboardingApprovalsPage() {
                   onClick={() => setCurrentView("optedout")}
                   className={
                     currentView === "optedout"
-                      ? "rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow"
-                      : "rounded-full border bg-white px-4 py-2 text-sm"
+                      ? "rounded-full bg-gradient-to-r from-blue-600 to-blue-700 shadow-md px-4 py-2 text-sm font-semibold text-white"
+                      : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm transition hover:bg-slate-100"
                   }
                 >
                   Opted-Out ({optedOutStudents.length})
@@ -292,8 +345,8 @@ export function AdminOnboardingApprovalsPage() {
                   onClick={() => setCurrentView("approved")}
                   className={
                     currentView === "approved"
-                      ? "rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow"
-                      : "rounded-full border bg-white px-4 py-2 text-sm"
+                      ? "rounded-full bg-gradient-to-r from-blue-600 to-blue-700 shadow-md px-4 py-2 text-sm font-semibold text-white"
+                      : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm transition hover:bg-slate-100"
                   }
                 >
                   Approved ({approvedStudents.length})
@@ -303,8 +356,8 @@ export function AdminOnboardingApprovalsPage() {
                   onClick={() => setCurrentView("rejected")}
                   className={
                     currentView === "rejected"
-                      ? "rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow"
-                      : "rounded-full border bg-white px-4 py-2 text-sm"
+                      ? "rounded-full bg-gradient-to-r from-blue-600 to-blue-700 shadow-md px-4 py-2 text-sm font-semibold text-white"
+                      : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm transition hover:bg-slate-100"
                   }
                 >
                   Rejected ({rejectedStudents.length})
@@ -503,7 +556,10 @@ function SectionTable({
                   setProcessing(false);
                 }
               }}
-              className="inline-flex h-11 items-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow transition hover:bg-emerald-700 disabled:opacity-40"
+              className="inline-flex h-11 items-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow transition hover:bg-emerald-700 disabled:bg-slate-300
+disabled:text-slate-500
+disabled:shadow-none
+disabled:cursor-not-allowed"
             >
               Approve Selected ({selectedDrafts.length})
             </button>
@@ -605,7 +661,25 @@ function SectionTable({
                     params={{
                       draftId: row.draft_id,
                     }}
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-100"
+                    className="
+inline-flex
+items-center
+justify-center
+rounded-xl
+border
+border-slate-300
+bg-white
+px-4
+py-2
+text-sm
+font-medium
+text-slate-700
+transition-all
+duration-200
+hover:border-blue-400
+hover:bg-blue-50
+hover:text-blue-700
+"
                   >
                     Review
                   </Link>
