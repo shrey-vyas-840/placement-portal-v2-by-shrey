@@ -122,8 +122,49 @@ export function AdminOnboardingApprovalsPage() {
 
   return (
     <div className="mx-auto max-w-[1900px] space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Onboarding Approvals</h1>
+      <div
+        className="
+        relative
+        overflow-hidden
+        rounded-3xl
+        bg-gradient-to-r
+        from-blue-800
+        via-blue-700
+        to-cyan-600
+        p-8
+        text-white
+        shadow-xl
+    "
+      >
+        <div className="relative z-10">
+          <p className="text-xs uppercase tracking-widest text-white/70">
+            Administration Workspace
+          </p>
+
+          <h1 className="mt-2 text-4xl font-bold">Onboarding Approvals</h1>
+
+          <p className="mt-2 text-sm text-white/80">
+            Review, approve and manage every student onboarding request from one centralized
+            workspace.
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <div className="rounded-full bg-white/20 px-4 py-2 text-sm font-medium">
+              Pending Review : {activeRows.length}
+            </div>
+
+            <div className="rounded-full bg-white/20 px-4 py-2 text-sm font-medium">
+              Approved : {approvedStudents.length}
+            </div>
+
+            <div className="rounded-full bg-white/20 px-4 py-2 text-sm font-medium">
+              Rejected : {rejectedStudents.length}
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/10" />
+        <div className="absolute bottom-0 right-10 h-24 w-24 rounded-full bg-white/10" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
@@ -189,29 +230,81 @@ export function AdminOnboardingApprovalsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">Global Student Search</h2>
+      <div
+        className="
+rounded-[30px]
+border
+border-blue-200
+bg-white
+p-6
+shadow-md
+"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
+            🔎
+          </div>
 
-        <p className="mt-1 text-sm text-muted-foreground">Search entire onboarding database.</p>
+          <div>
+            <h2 className="text-2xl font-bold">Global Student Search</h2>
 
-        <input
-          value={globalSearch}
-          onChange={(e) => setGlobalSearch(e.target.value)}
-          placeholder="Search enrollment number or email..."
-          className="mt-4 w-full rounded-xl border px-3 py-2"
-        />
+            <p className="text-sm text-muted-foreground">
+              Search every onboarding draft regardless of workflow status.
+            </p>
+          </div>
+        </div>
 
-        {globalLoading ? <div className="mt-4 text-sm">Searching...</div> : null}
+        <div className="relative mt-6">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-200">🔍</span>
+
+          <input
+            value={globalSearch}
+            onChange={(e) => setGlobalSearch(e.target.value)}
+            placeholder="Search by Enrollment Number or Email..."
+            className="
+w-full
+rounded-2xl
+border
+border-slate-300
+bg-slate-50
+pl-12
+pr-4
+py-3
+text-sm
+shadow-sm
+transition-all
+focus:border-blue-300
+focus:bg-white
+focus:ring-4
+focus:ring-blue-100
+"
+          />
+        </div>
+
+        {globalLoading ? (
+          <div className="mt-4 flex items-center gap-2 text-sm text-blue-600">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+            Searching students...
+          </div>
+        ) : null}
 
         {globalResults.length > 0 ? (
-          <div className="mt-4 overflow-auto">
-            <table className="w-full text-sm">
+          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-300">
+            <table className="min-w-225 w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="p-3 text-left">Enrollment</th>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Action</th>
+                <tr className="border-b bg-slate-50">
+                  <th className="px-6 py-4 text-left text-[14px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Enrollment
+                  </th>
+                  <th className="px-6 py-4 text-left text-[14px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-left text-[14px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-[14px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Action
+                  </th>
                 </tr>
               </thead>
 
@@ -568,100 +661,200 @@ disabled:cursor-not-allowed"
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-362.5">
-          <thead className="border-b bg-white">
-            <tr>
-              <th className="w-12 px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                <input
-                  type="checkbox"
-                  checked={
-                    filteredRows.length > 0 &&
-                    filteredRows.every((row) => selectedDrafts.includes(row.draft_id))
-                  }
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedDrafts(filteredRows.map((row) => row.draft_id));
-                    } else {
-                      setSelectedDrafts([]);
-                    }
-                  }}
-                />
-              </th>
-
-              <th className="min-w-[170px] px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Enrollment
-              </th>
-
-              <th className="min-w-[250px] px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Email
-              </th>
-
-              <th className="min-w-[180px] px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Student Preference
-              </th>
-
-              <th className="min-w-[150px] px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Status
-              </th>
-
-              <th className="min-w-[220px] px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Reviewed At
-              </th>
-
-              <th className="min-w-[250px] px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Admin
-              </th>
-
-              <th className="min-w-[320px] px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Reason
-              </th>
-
-              <th className="min-w-[130px] px-5 py-4 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                Actions
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredRows.map((row) => (
-              <tr key={row.draft_id} className="border-b transition hover:bg-slate-50">
-                <td className="px-5 py-4">
+        <div className="min-w-[1650px]">
+          <table className="min-w-[1850px] w-full table-auto">
+            <thead className="border-b bg-slate-100">
+              <tr>
+                <th className="w-12 px-5 py-4 text-left text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">
                   <input
                     type="checkbox"
-                    checked={selectedDrafts.includes(row.draft_id)}
+                    checked={
+                      filteredRows.length > 0 &&
+                      filteredRows.every((row) => selectedDrafts.includes(row.draft_id))
+                    }
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedDrafts((current) => [...current, row.draft_id]);
+                        setSelectedDrafts(filteredRows.map((row) => row.draft_id));
                       } else {
-                        setSelectedDrafts((current) => current.filter((id) => id !== row.draft_id));
+                        setSelectedDrafts([]);
                       }
                     }}
                   />
-                </td>
+                </th>
 
-                <td className="px-5 py-4 font-medium">{row.enrollment_no}</td>
+                <th
+                  className="
+px-6
+py-5
+text-left
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Enrollment
+                </th>
 
-                <td className="px-5 py-4">{row.email_address}</td>
+                <th
+                  className="
+px-6
+py-5
+text-left
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Email
+                </th>
 
-                <td className="px-5 py-4">{row.edited_profile?.placement_preference ?? "-"}</td>
+                <th
+                  className="
+px-6
+py-5
+text-left
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Student Preference
+                </th>
 
-                <td className="px-5 py-4">{formatApprovalStatus(row.approval_status)}</td>
+                <th
+                  className="
+px-6
+py-5
+text-left
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Status
+                </th>
 
-                <td className="px-5 py-4">
-                  {row.reviewed_at ? new Date(row.reviewed_at).toLocaleString() : "-"}
-                </td>
+                <th
+                  className="
+px-6
+py-5
+text-left
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Reviewed At
+                </th>
 
-                <td className="px-5 py-4">{row.reviewed_by ?? "-"}</td>
+                <th
+                  className="
+px-6
+py-5
+text-left
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Admin
+                </th>
 
-                <td className="px-5 py-4">{row.rejection_reason ?? "-"}</td>
+                <th
+                  className="
+px-6
+py-5
+text-left
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Reason
+                </th>
 
-                <td className="px-5 py-4 text-center">
-                  <Link
-                    to="/admin/onboarding-review/$draftId"
-                    params={{
-                      draftId: row.draft_id,
-                    }}
-                    className="
+                <th
+                  className="
+min-w-[150px]
+px-6
+py-5
+text-center
+text-[13px]
+font-bold
+uppercase
+tracking-[0.20em]
+text-slate-700
+whitespace-nowrap
+"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredRows.map((row) => (
+                <tr key={row.draft_id} className="border-b transition hover:bg-slate-50">
+                  <td className="px-5 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedDrafts.includes(row.draft_id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedDrafts((current) => [...current, row.draft_id]);
+                        } else {
+                          setSelectedDrafts((current) =>
+                            current.filter((id) => id !== row.draft_id),
+                          );
+                        }
+                      }}
+                    />
+                  </td>
+
+                  <td className="px-5 py-4 font-medium">{row.enrollment_no}</td>
+
+                  <td className="px-5 py-4">{row.email_address}</td>
+
+                  <td className="px-5 py-4">{row.edited_profile?.placement_preference ?? "-"}</td>
+
+                  <td className="px-5 py-4">{formatApprovalStatus(row.approval_status)}</td>
+
+                  <td className="px-5 py-4">
+                    {row.reviewed_at ? new Date(row.reviewed_at).toLocaleString() : "-"}
+                  </td>
+
+                  <td className="px-5 py-4">{row.reviewed_by ?? "-"}</td>
+
+                  <td className="px-5 py-4">{row.rejection_reason ?? "-"}</td>
+
+                  <td className="px-5 py-4 text-center">
+                    <Link
+                      to="/admin/onboarding-review/$draftId"
+                      params={{
+                        draftId: row.draft_id,
+                      }}
+                      className="
 inline-flex
 items-center
 justify-center
@@ -680,14 +873,15 @@ hover:border-blue-400
 hover:bg-blue-50
 hover:text-blue-700
 "
-                  >
-                    Review
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    >
+                      Review
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
