@@ -33,10 +33,11 @@ export class RecruitmentExecutionRestrictionService {
       .from("student_restrictions")
       .select(
         `
-          student_id,
-          restriction_reason
-        `,
+      student_id,
+      restriction_reason
+  `,
       )
+      .eq("is_active", true)
       .in("student_id", participantStudentIds);
 
     if (restrictionError) {
@@ -68,26 +69,19 @@ export class RecruitmentExecutionRestrictionService {
       }
     >();
 
-(restrictions ?? []).forEach(
-  (restriction: {
-    student_id: string;
-    restriction_reason: string | null;
-  }) => {
-    restrictedMap.set(restriction.student_id, {
-      reason: restriction.restriction_reason,
-    });
-  },
-);
+    (restrictions ?? []).forEach(
+      (restriction: { student_id: string; restriction_reason: string | null }) => {
+        restrictedMap.set(restriction.student_id, {
+          reason: restriction.restriction_reason,
+        });
+      },
+    );
 
     const overrideSet = new Set<string>();
 
-(overrides ?? []).forEach(
-  (override: {
-    student_id: string;
-  }) => {
-    overrideSet.add(override.student_id);
-  },
-);
+    (overrides ?? []).forEach((override: { student_id: string }) => {
+      overrideSet.add(override.student_id);
+    });
     // ------------------------------------------------------------
     // Build execution restriction model
     // ------------------------------------------------------------
@@ -108,10 +102,7 @@ export class RecruitmentExecutionRestrictionService {
 
         hasOpportunityOverride: hasOverride,
 
-        effectiveGateStatus:
-          isRestricted && !hasOverride
-            ? "RESTRICTED"
-            : "ALLOWED",
+        effectiveGateStatus: isRestricted && !hasOverride ? "RESTRICTED" : "ALLOWED",
 
         canOverride: isRestricted && !hasOverride,
       });
@@ -121,5 +112,4 @@ export class RecruitmentExecutionRestrictionService {
   }
 }
 
-export const recruitmentExecutionRestrictionService =
-  RecruitmentExecutionRestrictionService;
+export const recruitmentExecutionRestrictionService = RecruitmentExecutionRestrictionService;

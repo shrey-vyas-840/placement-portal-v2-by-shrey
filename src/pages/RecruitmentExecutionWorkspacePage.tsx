@@ -28,8 +28,6 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [saving, setSaving] = useState(false);
 
-  const [roundSaved, setRoundSaved] = useState(false);
-
   const [roundDirty, setRoundDirty] = useState(false);
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -103,8 +101,17 @@ export function RecruitmentExecutionWorkspacePage() {
 
       setEditedRows(initialState);
 
+      const selectedRound = data.rounds.find(
+        (r) => r.execution_round_id === (data.rounds[0]?.execution_round_id ?? ""),
+      );
+
+      const hasSavedHistory =
+        !!selectedRound &&
+        data.historySummary.some(
+          (history) => history.execution_round_id === selectedRound.execution_round_id,
+        );
+
       setRoundDirty(false);
-      setRoundSaved(false);
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error(error);
@@ -141,6 +148,16 @@ export function RecruitmentExecutionWorkspacePage() {
 
     return workspace.rounds.find((round) => round.execution_round_id === selectedRoundId) ?? null;
   }, [workspace, selectedRoundId]);
+
+  const isCurrentRoundSaved = useMemo(() => {
+    if (!workspace || !selectedRound) {
+      return false;
+    }
+
+    return workspace.historySummary.some(
+      (history) => history.execution_round_id === selectedRound.execution_round_id,
+    );
+  }, [workspace, selectedRound]);
 
   const participants = useMemo<RecruitmentExecutionParticipantWithStudent[]>(() => {
     return workspace?.participants ?? [];
@@ -268,7 +285,6 @@ export function RecruitmentExecutionWorkspacePage() {
 
       await loadWorkspace();
 
-      setRoundSaved(true);
       setRoundDirty(false);
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -549,7 +565,7 @@ ${
                                 });
 
                                 setRoundDirty(true);
-                                setRoundSaved(false);
+
                                 setHasUnsavedChanges(true);
                               }}
                             >
@@ -598,7 +614,6 @@ ${
                                 setHasUnsavedChanges(true);
 
                                 setRoundDirty(true);
-                                setRoundSaved(false);
 
                                 setEditedRows((prev) => ({
                                   ...prev,
@@ -648,7 +663,7 @@ ${
                   disabled={saving || !roundDirty}
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {roundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
+                  {isCurrentRoundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
                 </button>
 
                 {(workspace?.remainingActiveRoles.length ?? 0) > 0 && (
@@ -675,7 +690,9 @@ ${
                   type="button"
                   onClick={handleProgressToNextRound}
                   disabled={
-                    saving || !roundSaved || (workspace?.remainingActiveRoles.length ?? 0) > 0
+                    saving ||
+                    !isCurrentRoundSaved ||
+                    (workspace?.remainingActiveRoles.length ?? 0) > 0
                   }
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -685,7 +702,7 @@ ${
                 <button
                   type="button"
                   onClick={handleFinalizeExecution}
-                  disabled={saving || !roundSaved}
+                  disabled={saving || !isCurrentRoundSaved}
                   className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Final Save
@@ -724,15 +741,15 @@ ${
         open={createRoundOpen}
         mandatory={!hasRounds}
         nextRoundOrder={(workspace?.rounds.length ?? 0) + 1}
-activeRoles={
-  progressToNextRound
-    ? shortlistedRoleSummary
-    : workspace.remainingActiveRoles.map((role) => ({
-        driveRoleId: role.drive_role_id,
-        roleName: role.drive_role_name,
-        candidateCount: role.candidate_count,
-      }))
-}
+        activeRoles={
+          progressToNextRound
+            ? shortlistedRoleSummary
+            : workspace.remainingActiveRoles.map((role) => ({
+                driveRoleId: role.drive_role_id,
+                roleName: role.drive_role_name,
+                candidateCount: role.candidate_count,
+              }))
+        }
         loading={saving}
         onCancel={() => setCreateRoundOpen(false)}
         onCreate={async (data) => {
@@ -827,7 +844,6 @@ activeRoles={
 
           setHasUnsavedChanges(true);
           setRoundDirty(true);
-          setRoundSaved(false);
         }}
         saving={saving}
         onSave={() => {
