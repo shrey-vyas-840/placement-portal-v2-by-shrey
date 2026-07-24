@@ -17,6 +17,7 @@ import type {
   ExecutionAttendanceStatus,
   ExecutionGateStatus,
   ExecutionProgressionStatus,
+  ExecutionRoundCreationMode,
 } from "@/types/recruitmentExecution";
 
 /**
@@ -340,7 +341,8 @@ class RecruitmentExecutionService {
 
   async createRound(input: {
     executionId: string;
-    stageNumber: number;
+    creationMode: ExecutionRoundCreationMode;
+    currentStageNumber: number;
     roundOrder: number;
     roundName: string;
     scope: ExecutionScope;
@@ -350,11 +352,16 @@ class RecruitmentExecutionService {
     remarks?: string | null;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
+    const stageNumber =
+      input.creationMode === "PARALLEL_STAGE"
+        ? input.currentStageNumber
+        : input.currentStageNumber + 1;
+
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
       .insert({
         execution_id: input.executionId,
-        stage_number: input.stageNumber,
+        stage_number: stageNumber,
         round_order: input.roundOrder,
         round_name: input.roundName,
         scope: input.scope,
@@ -1284,64 +1291,50 @@ history_revision
   // --------------------------------------------------------------------------
 
   private async calculateRemainingActiveRoles(
-  executionId: string,
-): Promise<RecruitmentExecutionRemainingRole[]> {
+    executionId: string,
+  ): Promise<RecruitmentExecutionRemainingRole[]> {
+    const [participants, historySummary, roundRoleMappings] = await Promise.all([
+      this.loadParticipants(executionId),
+      this.loadHistorySummary(executionId),
+      this.loadRoundRoleMappings(executionId),
+    ]);
 
-  const [
-    participants,
-    historySummary,
-    roundRoleMappings,
-  ] = await Promise.all([
-    this.loadParticipants(executionId),
-    this.loadHistorySummary(executionId),
-    this.loadRoundRoleMappings(executionId),
-  ]);
+    const latestHistory = new Map(historySummary.map((row) => [row.execution_participant_id, row]));
 
-  const latestHistory = new Map(
-    historySummary.map((row) => [
-      row.execution_participant_id,
-      row,
-    ]),
-  );
+    const assignedRoleIds = new Set(roundRoleMappings.map((mapping) => mapping.drive_role_id));
 
-  const assignedRoleIds = new Set(
-    roundRoleMappings.map((mapping) => mapping.drive_role_id),
-  );
+    const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
 
-  const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
+    participants.forEach((participant) => {
+      const latest = latestHistory.get(participant.execution_participant_id);
 
-  participants.forEach((participant) => {
-    const latest = latestHistory.get(
-      participant.execution_participant_id,
-    );
-
-    if (latest?.progression_status !== "SHORTLISTED") {
-      return;
-    }
-
-    participant.selected_roles.forEach((role) => {
-      if (assignedRoleIds.has(role.drive_role_id)) {
+      if (latest?.progression_status !== "SHORTLISTED") {
         return;
       }
 
-      const existing = remaining.get(role.drive_role_id);
+      participant.selected_roles.forEach((role) => {
+        if (assignedRoleIds.has(role.drive_role_id)) {
+          return;
+        }
 
-      if (existing) {
-        existing.candidate_count += 1;
-      } else {
-        remaining.set(role.drive_role_id, {
-          drive_role_id: role.drive_role_id,
-          drive_role_name: role.drive_role_name,
-          candidate_count: 1,
-        });
-      }
+        const existing = remaining.get(role.drive_role_id);
+
+        if (existing) {
+          existing.candidate_count += 1;
+        } else {
+          remaining.set(role.drive_role_id, {
+            drive_role_id: role.drive_role_id,
+            drive_role_name: role.drive_role_name,
+            candidate_count: 1,
+          });
+        }
+      });
     });
-  });
 
-  return [...remaining.values()].sort((a, b) =>
-    a.drive_role_name.localeCompare(b.drive_role_name),
-  );
-}
+    return [...remaining.values()].sort((a, b) =>
+      a.drive_role_name.localeCompare(b.drive_role_name),
+    );
+  }
 
   async loadExecutionWorkspace(executionId: string): Promise<RecruitmentExecutionWorkspace> {
     const execution = await this.getExecutionRevision(executionId);
@@ -1364,18 +1357,17 @@ history_revision
 
     const historySummary = await this.loadHistorySummary(executionId);
 
-    const remainingActiveRoles =
-  await this.calculateRemainingActiveRoles(executionId);
+    const remainingActiveRoles = await this.calculateRemainingActiveRoles(executionId);
 
-   return {
-  series,
-  execution,
-  rounds,
-  participants,
-  roundRoleMappings,
-  historySummary,
-  remainingActiveRoles,
-};
+    return {
+      series,
+      execution,
+      rounds,
+      participants,
+      roundRoleMappings,
+      historySummary,
+      remainingActiveRoles,
+    };
   }
 }
 

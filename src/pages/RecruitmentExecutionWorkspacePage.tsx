@@ -50,11 +50,11 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
-  const [pendingStageNumber, setPendingStageNumber] = useState(1);
+   
 
-const [creationMode, setCreationMode] = useState<
-  "PARALLEL_STAGE" | "NEXT_STAGE"
->("PARALLEL_STAGE");
+  const [creationMode, setCreationMode] = useState<"PARALLEL_STAGE" | "NEXT_STAGE">(
+    "PARALLEL_STAGE",
+  );
 
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
 
@@ -597,14 +597,11 @@ const [creationMode, setCreationMode] = useState<
                 >
                   {roundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
                 </button>
-             
+
                 <button
                   type="button"
                   onClick={handleProgressToNextRound}
-                disabled={
-  saving ||
-  !roundSaved
-}
+                  disabled={saving || !roundSaved}
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Progress to Next Round
@@ -668,8 +665,15 @@ const [creationMode, setCreationMode] = useState<
 
             const round = await recruitmentExecutionService.createRound({
               executionId: workspace.execution.execution_id,
-           stageNumber: pendingStageNumber,
+
+              creationMode,
+
+              currentStageNumber:
+                workspace.rounds.find((r) => r.execution_round_id === selectedRoundId)
+                  ?.stage_number ?? 1,
+
               roundOrder: (workspace.rounds.length ?? 0) + 1,
+
               roundName: data.roundName,
               scope: data.roundType === "COMMON" ? "COMMON" : "ROLE_SPECIFIC",
               scheduledDate: data.scheduledDate,

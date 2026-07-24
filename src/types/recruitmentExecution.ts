@@ -7,6 +7,9 @@ export interface JsonObject {
 export type ExecutionSeriesStatus = "ACTIVE" | "FINALIZED" | "ARCHIVED";
 export type ExecutionStatus = "ACTIVE" | "FINALIZED" | "SUPERSEDED";
 export type ExecutionScope = "COMMON" | "ROLE_SPECIFIC";
+export type ExecutionRoundCreationMode =
+  | "PARALLEL_STAGE"
+  | "NEXT_STAGE";
 export type ExecutionRoundStatus =
   "DRAFT" | "READY" | "IN_PROGRESS" | "COMPLETED" | "STALE" | "LOCKED";
 export type ExecutionAttendanceStatus = "PRESENT" | "ABSENT";
