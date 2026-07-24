@@ -1424,17 +1424,33 @@ history_revision
         return;
       }
 
+      const currentRound = rounds.find((r) => r.execution_round_id === history.execution_round_id);
+
+      if (!currentRound) {
+        return;
+      }
+
+      //
+      // COMMON round automatically covers every selected role.
+      //
+      if (currentRound.scope === "COMMON") {
+        participant.selected_roles.forEach((role) => {
+          assignedRoleIds.add(role.drive_role_id);
+        });
+
+        return;
+      }
+
+      //
+      // ROLE SPECIFIC rounds only cover mapped roles.
+      //
       participant.selected_roles.forEach((role) => {
         const hasFutureRound = rounds.some((round) => {
           if (round.execution_round_id === history.execution_round_id) {
             return false;
           }
 
-          if (
-            round.stage_number <=
-            (rounds.find((r) => r.execution_round_id === history.execution_round_id)
-              ?.stage_number ?? 0)
-          ) {
+          if (round.stage_number <= currentRound.stage_number) {
             return false;
           }
 
@@ -1506,8 +1522,12 @@ history_revision
       throw new Error("Execution series not found.");
     }
 
-    const rounds = await this.loadRounds(executionId);
+    // Always synchronize newly applied students.
+    // Existing participants are ignored because initializeParticipants()
+    // only inserts missing application_ids.
+    await this.initializeParticipants(executionId);
 
+    const rounds = await this.loadRounds(executionId);
     const participants = await this.loadParticipants(executionId);
 
     const roundRoleMappings = await this.loadRoundRoleMappings(executionId);
