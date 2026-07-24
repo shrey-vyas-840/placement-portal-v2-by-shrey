@@ -48,10 +48,6 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
-  const [creationMode, setCreationMode] = useState<"PARALLEL_STAGE" | "NEXT_STAGE">(
-    "PARALLEL_STAGE",
-  );
-
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
 
   const loadWorkspace = useCallback(async () => {
@@ -304,7 +300,7 @@ export function RecruitmentExecutionWorkspacePage() {
       }
 
       await loadWorkspace();
-
+      setProgressToNextRound(false);
       setRoundDirty(false);
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -315,6 +311,11 @@ export function RecruitmentExecutionWorkspacePage() {
       setSaving(false);
     }
   };
+
+  if (roundDirty) {
+    toast.error("Save the current round before creating another round.");
+    return;
+  }
 
   const handleProgressToNextRound = async () => {
     const shortlistedParticipants = participants.filter((participant) => {
@@ -356,6 +357,7 @@ export function RecruitmentExecutionWorkspacePage() {
       toast.success("Recruitment execution finalized successfully.");
 
       await loadWorkspace();
+      setProgressToNextRound(false);
     } catch (error) {
       console.error(error);
 
@@ -711,6 +713,8 @@ ${
                   onClick={handleProgressToNextRound}
                   disabled={
                     saving ||
+                    roundDirty ||
+                    hasUnsavedChanges ||
                     !isCurrentRoundSaved ||
                     (workspace?.remainingActiveRoles.length ?? 0) > 0
                   }
@@ -722,7 +726,7 @@ ${
                 <button
                   type="button"
                   onClick={handleFinalizeExecution}
-                  disabled={saving || !isCurrentRoundSaved}
+                  disabled={saving || !isCurrentRoundSaved || roundDirty || hasUnsavedChanges}
                   className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Final Save
@@ -771,7 +775,10 @@ ${
               }))
         }
         loading={saving}
-        onCancel={() => setCreateRoundOpen(false)}
+        onCancel={() => {
+          setCreateRoundOpen(false);
+          setProgressToNextRound(false);
+        }}
         onCreate={async (data) => {
           if (!workspace) {
             return;
@@ -781,11 +788,8 @@ ${
 
             const round = await recruitmentExecutionService.createRound({
               executionId: workspace.execution.execution_id,
-
-              creationMode,
-
-              roundOrder: (workspace.rounds.length ?? 0) + 1,
-
+              creationMode: progressToNextRound ? "NEXT_STAGE" : "PARALLEL_STAGE",
+              roundOrder: Math.max(...workspace.rounds.map((r) => r.round_order), 0) + 1,
               roundName: data.roundName,
               scope: data.roundType === "COMMON" ? "COMMON" : "ROLE_SPECIFIC",
               scheduledDate: data.scheduledDate,
@@ -794,32 +798,40 @@ ${
               remarks: data.remarks,
             });
 
-            if (data.roundType === "ROLE_SPECIFIC") {
-              await recruitmentExecutionService.assignRolesToRound(
-                round.execution_round_id,
-                data.roleIds,
-              );
-            }
+            try {
+              if (data.roundType === "ROLE_SPECIFIC") {
+                await recruitmentExecutionService.assignRolesToRound(
+                  round.execution_round_id,
+                  data.roleIds,
+                );
+              }
 
-            if (progressToNextRound && selectedRoundId) {
-              const roleIds = data.roundType === "COMMON" ? [] : data.roleIds;
+              if (progressToNextRound && selectedRoundId) {
+                const roleIds = data.roundType === "COMMON" ? [] : data.roleIds;
 
-              const inserted = await recruitmentExecutionService.populateRoundParticipants({
-                sourceExecutionId: workspace.execution.execution_id,
-                sourceRoundId: selectedRoundId,
-                targetRoundId: round.execution_round_id,
-                roleIds,
-              });
+                if (data.roundType === "ROLE_SPECIFIC" && roleIds.length === 0) {
+                  throw new Error("Select at least one role.");
+                }
 
-              toast.success(`${inserted} shortlisted participant(s) moved to the next round.`);
-              setProgressToNextRound(false);
-            }
-
-            await loadWorkspace();
+                await recruitmentExecutionService.populateRoundParticipants({
+                  sourceExecutionId: workspace.execution.execution_id,
+                  sourceRoundId: selectedRoundId,
+                  targetRoundId: round.execution_round_id,
+                  roleIds,
+                });
+              }
+            } catch (error) {
+  console.error(error);
+  throw error;
+}
 
             setPendingRoundId(round.execution_round_id);
+
             setProgressSummaryOpen(false);
             setCreateRoundOpen(false);
+            setProgressToNextRound(false);
+
+            await loadWorkspace();
 
             toast.success("Round created successfully.");
           } catch (error) {

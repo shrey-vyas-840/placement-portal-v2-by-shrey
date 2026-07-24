@@ -81,20 +81,10 @@ export default function CreateRoundDialog({
       return;
     }
 
-    if (roundType === "ROLE_SPECIFIC" && effectiveRoleIds.length === 0) {
+    if (roundType === "ROLE_SPECIFIC" && selectedRoles.length === 0) {
       toast.error("Select at least one active role.");
       return;
     }
-
-    if (
-  roundType === "ROLE_SPECIFIC" &&
-  effectiveRoleIds.length !== activeRoles.length
-) {
-  toast.error(
-    "Every active role must be assigned to this stage. Select all active roles or create additional parallel role-specific rounds."
-  );
-  return;
-}
 
     await onCreate({
       roundName: roundName.trim(),
@@ -103,7 +93,7 @@ export default function CreateRoundDialog({
       scheduledTime: scheduledTime || null,
       venue: venue.trim(),
       remarks: remarks.trim(),
-      roleIds: effectiveRoleIds,
+      roleIds: roundType === "COMMON" ? commonRoleIds : selectedRoles,
     });
   };
 
