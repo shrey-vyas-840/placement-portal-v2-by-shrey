@@ -239,6 +239,29 @@ export function RecruitmentExecutionWorkspacePage() {
     return [...roleMap.values()].sort((a, b) => a.roleName.localeCompare(b.roleName));
   }, [shortlistedParticipants]);
 
+  const currentRoundRoleIds = useMemo(() => {
+  if (!selectedRound || selectedRound.scope === "COMMON") {
+    return null;
+  }
+
+  return workspace?.roundRoleMappings
+    .filter(
+      (mapping) =>
+        mapping.execution_round_id === selectedRound.execution_round_id,
+    )
+    .map((mapping) => mapping.drive_role_id) ?? [];
+}, [workspace, selectedRound]);
+
+const currentRoundRoleSummary = useMemo(() => {
+  if (!currentRoundRoleIds) {
+    return shortlistedRoleSummary;
+  }
+
+  return shortlistedRoleSummary.filter((role) =>
+    currentRoundRoleIds.includes(role.driveRoleId),
+  );
+}, [currentRoundRoleIds, shortlistedRoleSummary]);
+
   const handleSaveRound = async () => {
     setSaving(true);
 
@@ -741,15 +764,15 @@ ${
         open={createRoundOpen}
         mandatory={!hasRounds}
         nextRoundOrder={(workspace?.rounds.length ?? 0) + 1}
-        activeRoles={
-          progressToNextRound
-            ? shortlistedRoleSummary
-            : workspace.remainingActiveRoles.map((role) => ({
-                driveRoleId: role.drive_role_id,
-                roleName: role.drive_role_name,
-                candidateCount: role.candidate_count,
-              }))
-        }
+activeRoles={
+    progressToNextRound
+        ? currentRoundRoleSummary
+        : workspace.remainingActiveRoles.map((role) => ({
+            driveRoleId: role.drive_role_id,
+            roleName: role.drive_role_name,
+            candidateCount: role.candidate_count,
+        }))
+}
         loading={saving}
         onCancel={() => setCreateRoundOpen(false)}
         onCreate={async (data) => {
