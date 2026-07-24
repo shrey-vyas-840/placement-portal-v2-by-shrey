@@ -743,6 +743,7 @@ class RecruitmentExecutionService {
 execution_history_id,
 execution_participant_id,
 execution_round_id,
+drive_role_id,
 attendance_status,
 gate_status,
 progression_status,
@@ -777,6 +778,8 @@ history_revision
         execution_participant_id: row.execution_participant_id,
 
         execution_round_id: row.execution_round_id,
+
+        drive_role_id: row.drive_role_id,
 
         attendance_status: row.attendance_status,
 
@@ -900,14 +903,19 @@ history_revision
     return (data?.history_revision ?? 0) + 1;
   }
 
-  private async getLatestParticipantState(executionId: string, executionRoundId: string) {
+  private async getLatestParticipantState(
+    executionId: string,
+    executionRoundId: string,
+  ): Promise<Map<string, RecruitmentExecutionHistorySummary>> {
     const history = await this.loadHistorySummary(executionId);
 
-    const lookup = new Map(
-      history
-        .filter((item) => item.execution_round_id === executionRoundId)
-        .map((item) => [item.execution_participant_id, item]),
-    );
+    const lookup = new Map<string, RecruitmentExecutionHistorySummary>();
+
+    history
+      .filter((item) => item.execution_round_id === executionRoundId)
+      .forEach((item) => {
+        lookup.set(item.execution_participant_id, item);
+      });
 
     return lookup;
   }
@@ -945,6 +953,8 @@ history_revision
       execution_id: input.executionId,
 
       execution_round_id: input.executionRoundId,
+
+      drive_role_id: null,
 
       execution_participant_id: row.executionParticipantId,
 
@@ -1099,13 +1109,18 @@ history_revision
     history: RecruitmentExecutionHistorySummary[];
     allowedRoleIds: string[];
     scope: ExecutionScope;
+    currentRoundId: string;
   }): RecruitmentExecutionParticipantWithStudent[] {
-    const historyLookup = new Map(
-      input.history.map((item) => [item.execution_participant_id, item]),
-    );
+    const latestCurrentRound = new Map<string, RecruitmentExecutionHistorySummary>();
+
+    input.history
+      .filter((history) => history.execution_round_id === input.currentRoundId)
+      .forEach((history) => {
+        latestCurrentRound.set(history.execution_participant_id, history);
+      });
 
     return input.participants.filter((participant) => {
-      const latest = historyLookup.get(participant.execution_participant_id);
+      const latest = latestCurrentRound.get(participant.execution_participant_id);
 
       if (latest?.progression_status !== "SHORTLISTED") {
         return false;
@@ -1144,6 +1159,7 @@ history_revision
       history,
       allowedRoleIds,
       scope: nextRound.scope,
+      currentRoundId: input.currentRoundId,
     });
   }
 
@@ -1166,19 +1182,65 @@ history_revision
   }
 
   private async getSelectedParticipants(executionId: string) {
-    const history = await this.loadHistorySummary(executionId);
+    const [history, participants] = await Promise.all([
+      this.loadHistorySummary(executionId),
+      this.loadParticipants(executionId),
+    ]);
 
-    const selectedIds = new Set(
-      history
-        .filter((row) => row.progression_status === "SELECTED")
-        .map((row) => row.execution_participant_id),
-    );
+    const selectedIds = new Set<string>();
 
-    const participants = await this.loadParticipants(executionId);
+    history.forEach((row) => {
+      if (row.progression_status === "SELECTED") {
+        selectedIds.add(row.execution_participant_id);
+      }
+    });
 
     return participants.filter((participant) =>
       selectedIds.has(participant.execution_participant_id),
     );
+  }
+
+  private async validateExecutionCompletion(executionId: string): Promise<void> {
+    const [participants, history] = await Promise.all([
+      this.loadParticipants(executionId),
+      this.loadHistorySummary(executionId),
+    ]);
+
+    const latestHistory = new Map<string, RecruitmentExecutionHistorySummary>();
+
+    history.forEach((row) => {
+      latestHistory.set(row.execution_participant_id, row);
+    });
+
+    const pending = participants.filter((participant) => {
+      const latest = latestHistory.get(participant.execution_participant_id);
+
+      if (!latest) {
+        // Participant never entered any round.
+        // Treat as pending.
+        return true;
+      }
+
+      if (latest.progression_status === "SHORTLISTED") {
+        // Still moving through the recruitment pipeline.
+        return true;
+      }
+
+      // SELECTED and every other persisted state are treated as
+      // terminal for the current pipeline.
+      return false;
+      // NO_PROGRESS
+      // Present / Absent / Allowed Absent
+      // means this participant's pipeline has ended for now.
+
+      return false;
+    });
+
+    if (pending.length > 0) {
+      throw new Error(
+        "Recruitment execution cannot be finalized because one or more participant pipelines are still active.",
+      );
+    }
   }
 
   private async buildFinalSelectionRows(executionId: string) {
@@ -1246,7 +1308,9 @@ history_revision
 
   private async buildStudentPlacementUpdates(executionId: string) {
     const participants = await this.getSelectedParticipants(executionId);
-
+    if (participants.length === 0) {
+      return [];
+    }
     return participants.map((participant) => participant.student_id);
   }
 
@@ -1280,6 +1344,7 @@ history_revision
     finalizedBy?: string | null;
     finalizationNotes?: string | null;
   }) {
+    await this.validateExecutionCompletion(input.executionId);
     const finalSelectionRows = await this.buildFinalSelectionRows(input.executionId);
     const placementHistoryRows = await this.buildPlacementHistoryRows(input.executionId);
     const studentIds = await this.buildStudentPlacementUpdates(input.executionId);
@@ -1344,40 +1409,62 @@ history_revision
       this.loadRounds(executionId),
     ]);
 
-    const currentStage = rounds.length === 0 ? 1 : Math.max(...rounds.map((r) => r.stage_number));
-
-    const currentStageRoundIds = new Set(
-      rounds.filter((r) => r.stage_number === currentStage).map((r) => r.execution_round_id),
-    );
-
     const assignedRoleIds = new Set<string>();
 
-    const currentStageRounds = rounds.filter((round) => round.stage_number === currentStage);
-
-    for (const round of currentStageRounds) {
-      if (round.scope === "COMMON") {
-        participants.forEach((participant) => {
-          participant.selected_roles.forEach((role) => {
-            assignedRoleIds.add(role.drive_role_id);
-          });
-        });
-
-        break;
+    historySummary.forEach((history) => {
+      if (history.progression_status !== "SHORTLISTED") {
+        return;
       }
 
-      roundRoleMappings
-        .filter((mapping) => mapping.execution_round_id === round.execution_round_id)
-        .forEach((mapping) => {
-          assignedRoleIds.add(mapping.drive_role_id);
-        });
-    }
+      const participant = participants.find(
+        (p) => p.execution_participant_id === history.execution_participant_id,
+      );
 
-    const latestHistory = new Map(historySummary.map((row) => [row.execution_participant_id, row]));
+      if (!participant) {
+        return;
+      }
+
+      participant.selected_roles.forEach((role) => {
+        const hasFutureRound = rounds.some((round) => {
+          if (round.execution_round_id === history.execution_round_id) {
+            return false;
+          }
+
+          if (
+            round.stage_number <=
+            (rounds.find((r) => r.execution_round_id === history.execution_round_id)
+              ?.stage_number ?? 0)
+          ) {
+            return false;
+          }
+
+          if (round.scope === "COMMON") {
+            return true;
+          }
+
+          return roundRoleMappings.some(
+            (mapping) =>
+              mapping.execution_round_id === round.execution_round_id &&
+              mapping.drive_role_id === role.drive_role_id,
+          );
+        });
+
+        if (hasFutureRound) {
+          assignedRoleIds.add(role.drive_role_id);
+        }
+      });
+    });
 
     const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
 
+    const latestParticipantHistory = new Map<string, RecruitmentExecutionHistorySummary>();
+
+    historySummary.forEach((history) => {
+      latestParticipantHistory.set(history.execution_participant_id, history);
+    });
+
     participants.forEach((participant) => {
-      const latest = latestHistory.get(participant.execution_participant_id);
+      const latest = latestParticipantHistory.get(participant.execution_participant_id);
 
       if (latest?.progression_status !== "SHORTLISTED") {
         return;

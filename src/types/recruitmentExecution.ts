@@ -7,18 +7,14 @@ export interface JsonObject {
 export type ExecutionSeriesStatus = "ACTIVE" | "FINALIZED" | "ARCHIVED";
 export type ExecutionStatus = "ACTIVE" | "FINALIZED" | "SUPERSEDED";
 export type ExecutionScope = "COMMON" | "ROLE_SPECIFIC";
-export type ExecutionRoundCreationMode =
-  | "PARALLEL_STAGE"
-  | "NEXT_STAGE";
+export type ExecutionRoundCreationMode = "PARALLEL_STAGE" | "NEXT_STAGE";
 export type ExecutionRoundStatus =
   "DRAFT" | "READY" | "IN_PROGRESS" | "COMPLETED" | "STALE" | "LOCKED";
 export type ExecutionAttendanceStatus = "PRESENT" | "ABSENT";
 export type ExecutionGateStatus = "ALLOWED" | "RESTRICTED";
 export type ExecutionProgressionStatus = "NONE" | "SHORTLISTED" | "SELECTED";
-export type ExecutionAbsenceDisposition =
-  | "UNALLOWED"
-  | "ALLOWED";
-  export interface RecruitmentExecutionEditedRow {
+export type ExecutionAbsenceDisposition = "UNALLOWED" | "ALLOWED";
+export interface RecruitmentExecutionEditedRow {
   attendanceStatus: ExecutionAttendanceStatus | null;
 
   gateStatus: ExecutionGateStatus | null;
@@ -165,7 +161,6 @@ export interface RecruitmentExecutionAttendanceReviewSummary {
   totalOverrides: number;
 }
 
-
 /**
  * Participant returned by the execution service.
  *
@@ -194,13 +189,13 @@ export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentE
 
   is_globally_restricted: boolean;
 
-restriction_reason: string | null;
+  restriction_reason: string | null;
 
-effective_gate_status: "ALLOWED" | "RESTRICTED";
+  effective_gate_status: "ALLOWED" | "RESTRICTED";
 
-can_override_gate: boolean;
+  can_override_gate: boolean;
 
-has_opportunity_override: boolean;
+  has_opportunity_override: boolean;
 }
 
 export interface ParticipantRoleSelection {
@@ -294,6 +289,7 @@ export interface RecruitmentExecutionRoundParticipantState {
 export interface RecruitmentExecutionHistoryCreateInput {
   execution_id: string;
   execution_round_id: string;
+  drive_role_id: string | null;
   execution_participant_id: string;
   execution_revision: number;
   history_revision: number;
@@ -338,6 +334,8 @@ export interface RecruitmentExecutionHistorySummary {
   execution_participant_id: string;
 
   execution_round_id: string;
+
+  drive_role_id: string | null;
 
   attendance_status: ExecutionAttendanceStatus | null;
 
