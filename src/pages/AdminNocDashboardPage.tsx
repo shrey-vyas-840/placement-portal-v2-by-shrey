@@ -456,6 +456,12 @@ export function AdminNocDashboardPage() {
     "completed" | "rejected" | "cancelled"
   >("completed");
 
+  const [chartsReady, setChartsReady] = useState(false);
+
+  useEffect(() => {
+    setChartsReady(true);
+  }, []);
+
   async function load() {
     const [
       approval,
@@ -1586,20 +1592,24 @@ shadow-md
             </p>
 
             <div className="mt-4 h-[300px] w-full">
-              <ReactECharts
-                option={nocTypePieOption}
-                style={{
-                  height: "100%",
-                  width: "100%",
-                }}
-                opts={{
-                  renderer: "svg",
-                }}
-              />
+              {chartsReady ? (
+                <ReactECharts
+                  option={nocTypePieOption}
+                  style={{
+                    height: "100%",
+                    width: "100%",
+                  }}
+                  opts={{
+                    renderer: "svg",
+                  }}
+                />
+              ) : (
+                <div className="h-full w-full" />
+              )}
             </div>
 
             {mostCommonType && (
-              <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-4 text-sm">
                 <span className="text-muted-foreground">Most Common</span>
 
                 <span className="ml-2 font-semibold">{mostCommonType.type}</span>
@@ -1628,16 +1638,20 @@ shadow-md
             </p>
 
             <div className="mt-5 h-[300px] w-full">
-              <ReactECharts
-                option={workflowStageOption}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
-                opts={{
-                  renderer: "svg",
-                }}
-              />
+              {chartsReady ? (
+                <ReactECharts
+                  option={workflowStageOption}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  opts={{
+                    renderer: "svg",
+                  }}
+                />
+              ) : (
+                <div className="h-full w-full" />
+              )}
             </div>
           </div>
         </div>
@@ -1653,29 +1667,37 @@ p-6
 shadow-md
 "
       >
-        <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="
-Search Name / Enrollment / Company / Ref No
-"
-          className="
-w-full
-rounded-xl
-border
-bg-background
-px-4
-py-3
-text-sm
-shadow-sm
-focus:ring-2
-focus:ring-primary/20
-"
-        />
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by Student • Enrollment • Company • Reference Number"
+            className="
+        w-full
+        rounded-2xl
+        border
+        border-slate-200
+        bg-slate-50
+        pl-12
+        pr-4
+        py-3
+        text-sm
+        shadow-sm
+        transition-all
+        focus:border-blue-400
+        focus:bg-white
+        focus:ring-4
+        focus:ring-blue-100
+        "
+          />
+        </div>
 
         <div
           className="
         mt-2
+        mb-4
         flex
         flex-wrap
         items-center
@@ -1683,51 +1705,25 @@ focus:ring-primary/20
         gap-2
     "
         >
-          <button
-            onClick={() => {
-              setSearchTerm("");
-            }}
-            className="
-            rounded
-            border
-            px-3
-            py-1
-            text-sm
-        "
-          >
+          <ActionButton variant="secondary" onClick={() => setSearchTerm("")}>
             Clear Search
-          </button>
+          </ActionButton>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <ActionButton variant="secondary" onClick={() => setShowAudit(!showAudit)}>
+          <div className="flex mt-5 mb-2 flex-wrap items-center gap-2">
+            <ActionButton
+              variant={showAudit ? "primary" : "secondary"}
+              onClick={() => setShowAudit(!showAudit)}
+            >
               {showAudit ? "Hide Audit" : "Show Audit"}
             </ActionButton>
 
-            <button
-              onClick={handleExportNocExcel}
-              disabled={exporting}
-              className="
-         rounded-xl
-border
-border-slate-200
-bg-white
-px-4
-py-2
-text-sm
-font-medium
-transition-all
-hover:-translate-y-0.5
-hover:border-blue-300
-hover:bg-blue-50
-hover:shadow-md
-            "
-            >
+            <ActionButton variant="success" onClick={handleExportNocExcel}>
               {exporting ? "Exporting..." : "Export Excel"}
-            </button>
+            </ActionButton>
           </div>
         </div>
 
-        <div className="mb-4 text-sm text-muted-foreground">
+        <div className="mt-2 text-sm text-muted-foreground">
           Search Result: <strong>{searchTerm ? searchTerm : "All Records"}</strong>
         </div>
       </div>
@@ -1859,11 +1855,17 @@ bg-muted/70
   "
                   >
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -1878,61 +1880,97 @@ text-left
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Branch
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Type
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Status
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Approval Source
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Actions
                     </th>
@@ -2057,14 +2095,17 @@ text-muted-foreground"
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr
                     className="
     border-b
@@ -2075,11 +2116,17 @@ backdrop-blur
   "
                   >
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -2095,51 +2142,81 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Branch
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Type
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Approval Source
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Actions
                     </th>
@@ -2236,14 +2313,17 @@ hover:shadow-md"
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr
                     className="
     border-b
@@ -2254,11 +2334,17 @@ backdrop-blur
   "
                   >
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -2272,71 +2358,113 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Branch
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Type
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Ref No
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Printed At
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Prints
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Actions
                     </th>
@@ -2592,14 +2720,17 @@ text-muted-foreground"
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr
                     className="
     border-b
@@ -2610,11 +2741,17 @@ backdrop-blur
   "
                   >
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -2630,31 +2767,49 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       End Date
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Status
                     </th>
@@ -2713,14 +2868,17 @@ text-muted-foreground"
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr
                     className="
     border-b
@@ -2731,11 +2889,17 @@ backdrop-blur
   "
                   >
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -2749,31 +2913,49 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       End Date
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Completion Details
                     </th>
@@ -2963,11 +3145,17 @@ bg-muted/70
                 >
                   <tr>
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -2981,61 +3169,97 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Duration
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Type
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Ref No
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Issued At
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Actions
                     </th>
@@ -3217,11 +3441,17 @@ backdrop-blur
   "
                     >
                       <th
-                        className="px-4 py-3 text-left text-[11px]
+                       className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                       >
                         Student
                       </th>
@@ -3235,51 +3465,81 @@ text-muted-foreground"
                       </th>
 
                       <th
-                        className="px-4 py-3 text-left text-[11px]
+                       className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                       >
                         Company
                       </th>
 
                       <th
-                        className="px-4 py-3 text-left text-[11px]
+                       className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                       >
                         Verified At
                       </th>
 
                       <th
-                        className="px-4 py-3 text-left text-[11px]
+                       className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                       >
                         Certificate
                       </th>
 
                       <th
-                        className="px-4 py-3 text-left text-[11px]
+                       className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                       >
                         HR Email
                       </th>
 
                       <th
-                        className="px-4 py-3 text-left text-[11px]
+                       className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                       >
                         Actions
                       </th>
@@ -3386,14 +3646,17 @@ text-muted-foreground"
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr
                     className="
     border-b
@@ -3404,11 +3667,17 @@ backdrop-blur
   "
                   >
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -3423,51 +3692,81 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Type
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Rejected By
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Reason
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Actions
                     </th>
@@ -3540,21 +3839,30 @@ text-muted-foreground"
           <>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr>
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -3568,81 +3876,129 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Type
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Ref No
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Cancelled By
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Print Version
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Reason
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Cancelled At
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Actions
                     </th>
@@ -3784,14 +4140,17 @@ text-muted-foreground"
             </div>
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr
                     className="
     border-b
@@ -3802,11 +4161,17 @@ backdrop-blur
   "
                   >
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
@@ -3820,31 +4185,49 @@ text-muted-foreground"
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Status
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Created
                     </th>
@@ -3901,14 +4284,46 @@ text-muted-foreground"
             </div>
 
             <div className="mb-5 flex items-center justify-between">
-              <label className="flex items-center gap-3 text-sm font-medium">
-                <input
-                  type="checkbox"
-                  checked={showOnlyReprints}
-                  onChange={(e) => setShowOnlyReprints(e.target.checked)}
-                />
-                Show Reprints Only
-              </label>
+            <label
+    className="
+    inline-flex
+    items-center
+    gap-3
+    rounded-xl
+    border
+    border-slate-200
+    bg-slate-50
+    px-4
+    py-2
+    cursor-pointer
+    hover:bg-slate-100
+    transition
+"
+>
+    <input
+        type="checkbox"
+        checked={showOnlyReprints}
+        onChange={(e) => setShowOnlyReprints(e.target.checked)}
+        className="
+        h-4
+        w-4
+        rounded
+        border-slate-300
+        text-blue-600
+        focus:ring-blue-500
+        "
+    />
+
+    <div>
+        <div className="text-sm font-semibold">
+            Show Reprints Only
+        </div>
+
+        <div className="text-xs text-muted-foreground">
+            Hide first-time print records
+        </div>
+    </div>
+</label>
 
               <div className="rounded-full bg-slate-100 px-4 py-2 text-sm">
                 Total Logs : {printHistory.length}
@@ -3917,81 +4332,126 @@ text-muted-foreground"
 
             <WorkflowTableCard>
               <table className="min-w-[1200px] w-full">
-                <thead
-                  className="
- 
-border-b
-bg-muted/70  
-backdrop-blur
+       <thead
+    className="
+    sticky
+    top-0
+    z-10
+    border-b-2
+    border-slate-200
+    bg-slate-100
+    shadow-sm
 "
-                >
+>
                   <tr className="border-b bg-muted/30">
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Student
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Company
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Version
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Action
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Ref No
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Reason
                     </th>
 
                     <th
-                      className="px-4 py-3 text-left text-[11px]
+                     className="
+px-6
+py-4
+text-left
+text-[12px]
 font-bold
 uppercase
-tracking-[0.22em]
-text-muted-foreground"
+tracking-[0.16em]
+text-slate-700
+whitespace-nowrap
+"
                     >
                       Date
                     </th>
