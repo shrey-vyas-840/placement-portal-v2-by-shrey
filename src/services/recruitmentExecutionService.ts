@@ -366,6 +366,10 @@ class RecruitmentExecutionService {
     const stageNumber =
       input.creationMode === "PARALLEL_STAGE" ? currentStageNumber : currentStageNumber + 1;
 
+    if (input.creationMode === "NEXT_STAGE") {
+      await this.validateStageCompletion(input.executionId, currentStageNumber);
+    }
+
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
       .insert({
@@ -437,6 +441,16 @@ class RecruitmentExecutionService {
 
     if (error) {
       throw error;
+    }
+  }
+
+  private async validateStageCompletion(executionId: string, stageNumber: number): Promise<void> {
+    const remainingRoles = await this.calculateRemainingActiveRoles(executionId);
+
+    if (remainingRoles.length > 0) {
+      throw new Error(
+        "Cannot progress to the next stage until every active role has been assigned to a round in the current stage.",
+      );
     }
   }
 
@@ -1334,52 +1348,89 @@ history_revision
   // Workspace Facade
   // --------------------------------------------------------------------------
 
-  private async calculateRemainingActiveRoles(
-    executionId: string,
-  ): Promise<RecruitmentExecutionRemainingRole[]> {
-    const [participants, historySummary, roundRoleMappings] = await Promise.all([
-      this.loadParticipants(executionId),
-      this.loadHistorySummary(executionId),
-      this.loadRoundRoleMappings(executionId),
-    ]);
+private async calculateRemainingActiveRoles(
+  executionId: string,
+): Promise<RecruitmentExecutionRemainingRole[]> {
 
-    const latestHistory = new Map(historySummary.map((row) => [row.execution_participant_id, row]));
+  const [
+    participants,
+    historySummary,
+    roundRoleMappings,
+    rounds,
+  ] = await Promise.all([
+    this.loadParticipants(executionId),
+    this.loadHistorySummary(executionId),
+    this.loadRoundRoleMappings(executionId),
+    this.loadRounds(executionId),
+  ]);
 
-    const assignedRoleIds = new Set(roundRoleMappings.map((mapping) => mapping.drive_role_id));
+  const currentStage =
+    rounds.length === 0
+      ? 1
+      : Math.max(...rounds.map((r) => r.stage_number));
 
-    const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
+  const currentStageRoundIds = new Set(
+    rounds
+      .filter((r) => r.stage_number === currentStage)
+      .map((r) => r.execution_round_id),
+  );
 
-    participants.forEach((participant) => {
-      const latest = latestHistory.get(participant.execution_participant_id);
+  const assignedRoleIds = new Set(
+    roundRoleMappings
+      .filter((mapping) =>
+        currentStageRoundIds.has(mapping.execution_round_id),
+      )
+      .map((mapping) => mapping.drive_role_id),
+  );
 
-      if (latest?.progression_status !== "SHORTLISTED") {
+  const latestHistory = new Map(
+    historySummary.map((row) => [
+      row.execution_participant_id,
+      row,
+    ]),
+  );
+
+  const remaining = new Map<
+    string,
+    RecruitmentExecutionRemainingRole
+  >();
+
+  participants.forEach((participant) => {
+
+    const latest = latestHistory.get(
+      participant.execution_participant_id,
+    );
+
+    if (latest?.progression_status !== "SHORTLISTED") {
+      return;
+    }
+
+    participant.selected_roles.forEach((role) => {
+
+      if (assignedRoleIds.has(role.drive_role_id)) {
         return;
       }
 
-      participant.selected_roles.forEach((role) => {
-        if (assignedRoleIds.has(role.drive_role_id)) {
-          return;
-        }
+      const existing = remaining.get(role.drive_role_id);
 
-        const existing = remaining.get(role.drive_role_id);
+      if (existing) {
+        existing.candidate_count += 1;
+      } else {
+        remaining.set(role.drive_role_id, {
+          drive_role_id: role.drive_role_id,
+          drive_role_name: role.drive_role_name,
+          candidate_count: 1,
+        });
+      }
 
-        if (existing) {
-          existing.candidate_count += 1;
-        } else {
-          remaining.set(role.drive_role_id, {
-            drive_role_id: role.drive_role_id,
-            drive_role_name: role.drive_role_name,
-            candidate_count: 1,
-          });
-        }
-      });
     });
 
-    return [...remaining.values()].sort((a, b) =>
-      a.drive_role_name.localeCompare(b.drive_role_name),
-    );
-  }
+  });
 
+  return [...remaining.values()].sort((a, b) =>
+    a.drive_role_name.localeCompare(b.drive_role_name),
+  );
+}
   async loadExecutionWorkspace(executionId: string): Promise<RecruitmentExecutionWorkspace> {
     const execution = await this.getExecutionRevision(executionId);
 

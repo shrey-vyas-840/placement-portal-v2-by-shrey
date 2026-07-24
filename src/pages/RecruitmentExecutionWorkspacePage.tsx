@@ -50,8 +50,6 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
-   
-
   const [creationMode, setCreationMode] = useState<"PARALLEL_STAGE" | "NEXT_STAGE">(
     "PARALLEL_STAGE",
   );
@@ -598,13 +596,35 @@ export function RecruitmentExecutionWorkspacePage() {
                   {roundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
                 </button>
 
+                {(workspace?.remainingActiveRoles.length ?? 0) > 0 && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                    <div className="font-medium text-amber-800">Current stage is not complete.</div>
+
+                    <div className="mt-1 text-sm text-amber-700">
+                      {workspace?.remainingActiveRoles.length} active role(s) still need to be
+                      assigned to a round before the next stage can begin.
+                    </div>
+
+                    <ul className="mt-3 list-disc pl-5 text-sm text-amber-700">
+                      {workspace?.remainingActiveRoles.map((role) => (
+                        <li key={role.drive_role_id}>
+                          {role.drive_role_name} ({role.candidate_count} candidate
+                          {role.candidate_count !== 1 ? "s" : ""})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleProgressToNextRound}
-                  disabled={saving || !roundSaved}
+                  disabled={
+                    saving || !roundSaved || (workspace?.remainingActiveRoles.length ?? 0) > 0
+                  }
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Progress to Next Round
+                  Progress to Next Stage
                 </button>
 
                 <button
