@@ -155,6 +155,35 @@ export function RecruitmentExecutionWorkspacePage() {
     [participants, workspace],
   );
 
+  const stageGroups = useMemo(() => {
+    if (!workspace) {
+      return [];
+    }
+
+    const groups = new Map<
+      number,
+      {
+        stageNumber: number;
+        rounds: RecruitmentExecutionRoundRow[];
+      }
+    >();
+
+    workspace.rounds.forEach((round) => {
+      const existing = groups.get(round.stage_number);
+
+      if (existing) {
+        existing.rounds.push(round);
+      } else {
+        groups.set(round.stage_number, {
+          stageNumber: round.stage_number,
+          rounds: [round],
+        });
+      }
+    });
+
+    return [...groups.values()].sort((a, b) => a.stageNumber - b.stageNumber);
+  }, [workspace]);
+
   const shortlistedParticipants = useMemo(
     () =>
       participants.filter((participant) => {
@@ -361,22 +390,48 @@ export function RecruitmentExecutionWorkspacePage() {
               </div>
             </div>
 
-            <div className="mt-8 rounded-lg border p-5">
-              <div className="flex flex-wrap gap-3">
-                {workspace.rounds.map((round) => (
-                  <button
-                    key={round.execution_round_id}
-                    type="button"
-                    onClick={() => setSelectedRoundId(round.execution_round_id)}
-                    className={`rounded-full border px-4 py-2 text-sm transition ${
-                      selectedRoundId === round.execution_round_id
-                        ? "bg-primary text-primary-foreground"
-                        : ""
-                    }`}
-                  >
-                    {round.round_order}. {round.round_name}
-                    <span className="ml-2 text-xs opacity-70">{round.scope}</span>
-                  </button>
+            <div className="mt-8 rounded-xl border p-5">
+              <h2 className="mb-5 text-lg font-semibold">Recruitment Stages</h2>
+
+              <div className="space-y-6">
+                {stageGroups.map((stage) => (
+                  <div key={stage.stageNumber} className="rounded-xl border bg-muted/20 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">Stage {stage.stageNumber}</h3>
+
+                        <p className="text-xs text-muted-foreground">
+                          {stage.rounds.length} Round
+                          {stage.rounds.length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      {stage.rounds.map((round) => (
+                        <button
+                          key={round.execution_round_id}
+                          type="button"
+                          onClick={() => setSelectedRoundId(round.execution_round_id)}
+                          className={`rounded-lg border px-4 py-3 text-left transition
+
+${
+  selectedRoundId === round.execution_round_id
+    ? "border-primary bg-primary text-primary-foreground"
+    : "hover:bg-muted"
+}`}
+                        >
+                          <div className="font-medium">{round.round_name}</div>
+
+                          <div className="mt-1 text-xs opacity-80">
+                            Round {round.round_order}
+                            {" • "}
+                            {round.scope}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -669,11 +724,15 @@ export function RecruitmentExecutionWorkspacePage() {
         open={createRoundOpen}
         mandatory={!hasRounds}
         nextRoundOrder={(workspace?.rounds.length ?? 0) + 1}
-        activeRoles={(workspace?.remainingActiveRoles ?? []).map((role) => ({
-          driveRoleId: role.drive_role_id,
-          roleName: role.drive_role_name,
-          candidateCount: role.candidate_count,
-        }))}
+activeRoles={
+  progressToNextRound
+    ? shortlistedRoleSummary
+    : workspace.remainingActiveRoles.map((role) => ({
+        driveRoleId: role.drive_role_id,
+        roleName: role.drive_role_name,
+        candidateCount: role.candidate_count,
+      }))
+}
         loading={saving}
         onCancel={() => setCreateRoundOpen(false)}
         onCreate={async (data) => {

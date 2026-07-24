@@ -1375,13 +1375,36 @@ private async calculateRemainingActiveRoles(
       .map((r) => r.execution_round_id),
   );
 
-  const assignedRoleIds = new Set(
-    roundRoleMappings
-      .filter((mapping) =>
-        currentStageRoundIds.has(mapping.execution_round_id),
-      )
-      .map((mapping) => mapping.drive_role_id),
-  );
+const assignedRoleIds = new Set<string>();
+
+const currentStageRounds = rounds.filter(
+  (round) => round.stage_number === currentStage,
+);
+
+for (const round of currentStageRounds) {
+
+  if (round.scope === "COMMON") {
+
+    participants.forEach((participant) => {
+      participant.selected_roles.forEach((role) => {
+        assignedRoleIds.add(role.drive_role_id);
+      });
+    });
+
+    break;
+  }
+
+  roundRoleMappings
+    .filter(
+      (mapping) =>
+        mapping.execution_round_id ===
+        round.execution_round_id,
+    )
+    .forEach((mapping) => {
+      assignedRoleIds.add(mapping.drive_role_id);
+    });
+
+}
 
   const latestHistory = new Map(
     historySummary.map((row) => [
