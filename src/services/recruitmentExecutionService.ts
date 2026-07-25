@@ -321,8 +321,7 @@ class RecruitmentExecutionService {
 
   private readonly DRIVE_ROLE_TIMELINE_TABLE = "drive_role_timeline";
 
-  private readonly EXECUTION_ROUND_PARTICIPANTS_TABLE =
-  "recruitment_execution_round_participants";
+  private readonly EXECUTION_ROUND_PARTICIPANTS_TABLE = "recruitment_execution_round_participants";
 
   private readonly DRIVE_ROLES_TABLE = "drive_roles";
 
@@ -479,6 +478,19 @@ class RecruitmentExecutionService {
       nextRoundId: input.targetRoundId,
     });
 
+    //
+    // Persist batch membership.
+    // Every participant should belong to this execution batch exactly once.
+    //
+    await this.removeRoundParticipants(input.targetRoundId);
+
+    await this.assignParticipantsToRound({
+      executionRoundId: input.targetRoundId,
+      executionParticipantIds: participants.map(
+        (participant) => participant.execution_participant_id,
+      ),
+    });
+
     return participants.length;
   }
 
@@ -614,59 +626,51 @@ class RecruitmentExecutionService {
       }));
   }
 
-  private async loadRoundParticipants(
-  executionRoundId: string,
-): Promise<string[]> {
-  const { data, error } = await (supabase as any)
-    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-    .select("execution_participant_id")
-    .eq("execution_round_id", executionRoundId);
+  private async loadRoundParticipantIds(executionRoundId: string): Promise<string[]> {
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+      .select("execution_participant_id")
+      .eq("execution_round_id", executionRoundId);
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []).map((row: any) => row.execution_participant_id as string);
   }
 
-  return (data ?? []).map(
-    (row: any) => row.execution_participant_id as string,
-  );
-}
+  private async assignParticipantsToRound(input: {
+    executionRoundId: string;
+    executionParticipantIds: string[];
+  }): Promise<void> {
+    if (input.executionParticipantIds.length === 0) {
+      return;
+    }
 
-private async assignParticipantsToRound(input: {
-  executionRoundId: string;
-  executionParticipantIds: string[];
-}): Promise<void> {
-  if (input.executionParticipantIds.length === 0) {
-    return;
-  }
-
-  const rows = input.executionParticipantIds.map(
-    (executionParticipantId) => ({
+    const rows = input.executionParticipantIds.map((executionParticipantId) => ({
       execution_round_id: input.executionRoundId,
       execution_participant_id: executionParticipantId,
-    }),
-  );
+    }));
 
-  const { error } = await (supabase as any)
-    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-    .insert(rows);
+    const { error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+      .insert(rows);
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
   }
-}
 
-private async removeRoundParticipants(
-  executionRoundId: string,
-): Promise<void> {
-  const { error } = await (supabase as any)
-    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-    .delete()
-    .eq("execution_round_id", executionRoundId);
+  private async removeRoundParticipants(executionRoundId: string): Promise<void> {
+    const { error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+      .delete()
+      .eq("execution_round_id", executionRoundId);
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
   }
-}
 
   // --------------------------------------------------------------------------
   // Participants
@@ -767,6 +771,30 @@ private async removeRoundParticipants(
         has_opportunity_override: restriction?.hasOpportunityOverride ?? false,
       };
     });
+  }
+
+  async loadRoundParticipants(
+    executionRoundId: string,
+  ): Promise<RecruitmentExecutionParticipantWithStudent[]> {
+    const participantIds = await this.loadRoundParticipantIds(executionRoundId);
+
+    if (participantIds.length === 0) {
+      return [];
+    }
+
+    const round = await this.getRound(executionRoundId);
+
+    if (!round) {
+      throw new Error("Execution round not found.");
+    }
+
+    const participants = await this.loadParticipants(round.execution_id);
+
+    const participantIdSet = new Set(participantIds);
+
+    return participants.filter((participant) =>
+      participantIdSet.has(participant.execution_participant_id),
+    );
   }
 
   async loadRoundRoleMappings(
