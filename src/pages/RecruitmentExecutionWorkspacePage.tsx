@@ -544,6 +544,23 @@ export function RecruitmentExecutionWorkspacePage() {
                 ))}
               </div>
 
+              <div className="mb-5 flex flex-wrap gap-2">
+                {executionTimelines.map((timeline) => (
+                  <button
+                    key={timeline.id}
+                    type="button"
+                    onClick={() => setSelectedTimeline(timeline.id)}
+                    className={`rounded-full border px-4 py-2 text-sm transition ${
+                      selectedTimeline === timeline.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    {timeline.name}
+                  </button>
+                ))}
+              </div>
+
               <div className="space-y-6">
                 {stageGroups.map((stage) => (
                   <div key={stage.stageNumber} className="rounded-xl border bg-muted/20 p-4">
@@ -564,19 +581,17 @@ export function RecruitmentExecutionWorkspacePage() {
                           key={round.execution_round_id}
                           type="button"
                           onClick={() => {
-  setSelectedTimeline(
-    round.scope === "COMMON"
-      ? "COMMON"
-      : (
-          workspace.roundRoleMappings.find(
-            (mapping) =>
-              mapping.execution_round_id === round.execution_round_id,
-          )?.drive_role_id ?? "COMMON"
-        ),
-  );
+                            setSelectedTimeline(
+                              round.scope === "COMMON"
+                                ? "COMMON"
+                                : (workspace.roundRoleMappings.find(
+                                    (mapping) =>
+                                      mapping.execution_round_id === round.execution_round_id,
+                                  )?.drive_role_id ?? "COMMON"),
+                            );
 
-  setSelectedRoundId(round.execution_round_id);
-}}
+                            setSelectedRoundId(round.execution_round_id);
+                          }}
                           className={`rounded-lg border px-4 py-3 text-left transition
 
 ${
