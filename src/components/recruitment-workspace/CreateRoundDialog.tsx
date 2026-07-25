@@ -279,8 +279,8 @@ export default function CreateRoundDialog({
             className="rounded-md bg-primary px-5 py-2 text-primary-foreground disabled:opacity-50"
           >
             {remainingRoles.length > 0
-  ? "Create & Configure Next Role"
-  : "Finish Stage Configuration"}
+              ? "Create & Configure Next Role"
+              : "Finish Stage Configuration"}
           </button>
         </div>
       </div>

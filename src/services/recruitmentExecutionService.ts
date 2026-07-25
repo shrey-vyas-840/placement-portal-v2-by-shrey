@@ -321,6 +321,9 @@ class RecruitmentExecutionService {
 
   private readonly DRIVE_ROLE_TIMELINE_TABLE = "drive_role_timeline";
 
+  private readonly EXECUTION_ROUND_PARTICIPANTS_TABLE =
+  "recruitment_execution_round_participants";
+
   private readonly DRIVE_ROLES_TABLE = "drive_roles";
 
   async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
@@ -610,6 +613,60 @@ class RecruitmentExecutionService {
         roleIds: [...round.roleIds],
       }));
   }
+
+  private async loadRoundParticipants(
+  executionRoundId: string,
+): Promise<string[]> {
+  const { data, error } = await (supabase as any)
+    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+    .select("execution_participant_id")
+    .eq("execution_round_id", executionRoundId);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map(
+    (row: any) => row.execution_participant_id as string,
+  );
+}
+
+private async assignParticipantsToRound(input: {
+  executionRoundId: string;
+  executionParticipantIds: string[];
+}): Promise<void> {
+  if (input.executionParticipantIds.length === 0) {
+    return;
+  }
+
+  const rows = input.executionParticipantIds.map(
+    (executionParticipantId) => ({
+      execution_round_id: input.executionRoundId,
+      execution_participant_id: executionParticipantId,
+    }),
+  );
+
+  const { error } = await (supabase as any)
+    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+    .insert(rows);
+
+  if (error) {
+    throw error;
+  }
+}
+
+private async removeRoundParticipants(
+  executionRoundId: string,
+): Promise<void> {
+  const { error } = await (supabase as any)
+    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+    .delete()
+    .eq("execution_round_id", executionRoundId);
+
+  if (error) {
+    throw error;
+  }
+}
 
   // --------------------------------------------------------------------------
   // Participants

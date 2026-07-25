@@ -158,6 +158,16 @@ export function RecruitmentExecutionWorkspacePage() {
     return workspace.rounds.find((round) => round.execution_round_id === selectedRoundId) ?? null;
   }, [workspace, selectedRoundId]);
 
+  const selectedStageRounds = useMemo(() => {
+    if (!workspace || selectedStage === null) {
+      return [];
+    }
+
+    return workspace.rounds
+      .filter((round) => round.stage_number === selectedStage)
+      .sort((a, b) => a.round_order - b.round_order);
+  }, [workspace, selectedStage]);
+
   const executionTimelines = useMemo(() => {
     if (!workspace) {
       return [];
@@ -569,10 +579,14 @@ export function RecruitmentExecutionWorkspacePage() {
             <div className="mt-8 rounded-lg border p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">
-                    {selectedRound?.round_name ?? "Execution"}
-                  </h2>
+                  <div>
+                    <h2 className="text-xl font-semibold">Stage {selectedStage}</h2>
 
+                    <p className="text-sm text-muted-foreground">
+                      {selectedStageRounds.length} Round
+                      {selectedStageRounds.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Manage attendance, gate status and progression.
                   </p>
@@ -582,6 +596,39 @@ export function RecruitmentExecutionWorkspacePage() {
                   {participants.length} Participants
                 </div>
               </div>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                {selectedStageRounds.map((round) => (
+                  <button
+                    key={round.execution_round_id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedRoundId(round.execution_round_id);
+
+                      if (round.scope === "COMMON") {
+                        setSelectedTimeline("COMMON");
+                        return;
+                      }
+
+                      const mapping = workspace?.roundRoleMappings.find(
+                        (m) => m.execution_round_id === round.execution_round_id,
+                      );
+
+                      if (mapping) {
+                        setSelectedTimeline(mapping.drive_role_id);
+                      }
+                    }}
+                    className={`rounded-lg border px-4 py-2 text-sm transition ${
+                      selectedRoundId === round.execution_round_id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    {round.round_name}
+                  </button>
+                ))}
+              </div>
+
               <div className="mt-6 overflow-x-auto">
                 <table className="min-w-full border-collapse">
                   <thead className="sticky top-0 z-10 bg-background">

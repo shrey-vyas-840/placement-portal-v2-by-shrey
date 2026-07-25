@@ -133,13 +133,10 @@ export default function ExecutionProgressBar({
     return [...stageMap.values()].sort((a, b) => a.stageNumber - b.stageNumber);
   }, [rounds, roundRoleMappings, timelines, remainingActiveRoles]);
 
-const selectedStageNode = useMemo(
-  () =>
-    stages.find(
-      (stage) => stage.stageNumber === selectedStage,
-    ) ?? null,
-  [stages, selectedStage],
-);
+  const selectedStageNode = useMemo(
+    () => stages.find((stage) => stage.stageNumber === selectedStage) ?? null,
+    [stages, selectedStage],
+  );
 
   return (
     <div className="rounded-xl border bg-background p-5">
@@ -167,79 +164,72 @@ const selectedStageNode = useMemo(
         ))}
       </div>
 
-<div className="mt-6">
-  {selectedStageNode && (
-    <div className="rounded-lg border p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="font-semibold">
-            Stage {selectedStageNode.stageNumber}
-          </h4>
+      <div className="mt-6">
+        {selectedStageNode && (
+          <div className="rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold">Stage {selectedStageNode.stageNumber}</h4>
 
-          <p className="text-xs text-muted-foreground">
-            {selectedStageNode.rounds.length} round
-            {selectedStageNode.rounds.length === 1 ? "" : "s"}
-          </p>
-        </div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedStageNode.rounds.length} round
+                  {selectedStageNode.rounds.length === 1 ? "" : "s"}
+                </p>
+              </div>
 
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            statusClasses[selectedStageNode.status]
-          }`}
-        >
-          {selectedStageNode.status.replaceAll("_", " ")}
-        </span>
-      </div>
-
-      {selectedStageNode.status === "COMPLETED" ? (
-        <div className="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3">
-          <p className="text-sm font-medium text-green-800">
-            ✓ This stage has been completed successfully.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {selectedStageNode.configuredRoles.map((role) => (
-              <div
-                key={role.roleId}
-                className={`rounded-full border px-3 py-1 text-xs ${
-                  role.configured
-                    ? role.pendingConfiguration
-                      ? "border-yellow-500 bg-yellow-50 text-yellow-800"
-                      : "border-green-500 bg-green-50 text-green-800"
-                    : "border-gray-300 bg-gray-100 text-gray-500"
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  statusClasses[selectedStageNode.status]
                 }`}
               >
-                {role.configured ? "✓" : "+"} {role.roleName}
-
-                {role.candidateCount > 0 && (
-                  <span className="ml-1">
-                    ({role.candidateCount})
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {selectedStageNode.warnings.length > 0 && (
-            <div className="mt-4 rounded-md border border-yellow-300 bg-yellow-50 p-3">
-              <p className="mb-2 text-sm font-medium text-yellow-900">
-                Attention Required
-              </p>
-
-              <ul className="list-disc space-y-1 pl-5 text-sm text-yellow-800">
-                {selectedStageNode.warnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
+                {selectedStageNode.status.replaceAll("_", " ")}
+              </span>
             </div>
-          )}
-        </>
-      )}
-    </div>
-  )}
-</div>
+
+            {selectedStageNode.status === "COMPLETED" ? (
+              <div className="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3">
+                <p className="text-sm font-medium text-green-800">
+                  ✓ This stage has been completed successfully.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {selectedStageNode.configuredRoles.map((role) => (
+                    <div
+                      key={role.roleId}
+                      className={`rounded-full border px-3 py-1 text-xs ${
+                        role.configured
+                          ? role.pendingConfiguration
+                            ? "border-yellow-500 bg-yellow-50 text-yellow-800"
+                            : "border-green-500 bg-green-50 text-green-800"
+                          : "border-gray-300 bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {role.configured ? "✓" : "+"} {role.roleName}
+                      {role.candidateCount > 0 && (
+                        <span className="ml-1">({role.candidateCount})</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {selectedStageNode.warnings.length > 0 && (
+                  <div className="mt-4 rounded-md border border-yellow-300 bg-yellow-50 p-3">
+                    <p className="mb-2 text-sm font-medium text-yellow-900">Attention Required</p>
+
+                    <ul className="list-disc space-y-1 pl-5 text-sm text-yellow-800">
+                      {selectedStageNode.warnings.map((warning, index) => (
+                        <li key={index}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="mt-6 rounded-lg border bg-muted/30 p-4">
         <p className="text-sm font-medium">Stage Status Legend</p>
