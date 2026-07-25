@@ -647,6 +647,54 @@ class RecruitmentExecutionService {
       return;
     }
 
+    const round = await this.getRound(input.executionRoundId);
+
+    if (!round) {
+      throw new Error("Execution round not found.");
+    }
+
+    //
+    // A participant may belong to only ONE execution batch
+    // within the same stage.
+    //
+    const siblingRounds = (await this.loadRounds(round.execution_id)).filter(
+      (candidate) =>
+        candidate.stage_number === round.stage_number &&
+        candidate.execution_round_id !== input.executionRoundId,
+    );
+
+    if (siblingRounds.length > 0) {
+      const siblingRoundIds = siblingRounds.map((candidate) => candidate.execution_round_id);
+
+      const { data, error } = await (supabase as any)
+        .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+        .select(
+          `
+          execution_round_id,
+          execution_participant_id
+        `,
+        )
+        .in("execution_round_id", siblingRoundIds);
+
+      if (error) {
+        throw error;
+      }
+
+      const alreadyAssigned = new Set<string>(
+        (data ?? []).map((row: any) => row.execution_participant_id),
+      );
+
+      const duplicateParticipant = input.executionParticipantIds.find((participantId) =>
+        alreadyAssigned.has(participantId),
+      );
+
+      if (duplicateParticipant) {
+        throw new Error(
+          "One or more selected students are already assigned to another execution batch in this stage.",
+        );
+      }
+    }
+
     const rows = input.executionParticipantIds.map((executionParticipantId) => ({
       execution_round_id: input.executionRoundId,
       execution_participant_id: executionParticipantId,
@@ -1024,17 +1072,17 @@ history_revision
     return lookup;
   }
 
-private buildHistoryEvents(input: {
-  executionId: string;
-  executionRoundId: string;
-  executionRevision: number;
-  historyRevision: number;
+  private buildHistoryEvents(input: {
+    executionId: string;
+    executionRoundId: string;
+    executionRevision: number;
+    historyRevision: number;
 
-  driveRoleId?: string | null;
+    driveRoleId?: string | null;
 
-  changedBy?: string | null;
+    changedBy?: string | null;
 
-  rows: Array<{
+    rows: Array<{
       executionParticipantId: string;
 
       attendanceStatus: ExecutionAttendanceStatus | null;
@@ -1096,114 +1144,100 @@ private buildHistoryEvents(input: {
   // --------------------------------------------------------------------------
 
   async saveRound(input: {
-  executionId: string;
-  executionRoundId: string;
-  executionRevision: number;
-  nextRoundId?: string;
-  changedBy?: string | null;
-  rows: Array<{
-    executionParticipantId: string;
-    attendanceStatus: ExecutionAttendanceStatus | null;
-    gateStatus: ExecutionGateStatus | null;
-    progressionStatus: ExecutionProgressionStatus;
-    remarks?: string | null;
-    absenceDisposition?: "ALLOWED" | "UNALLOWED" | null;
-    absenceReason?: string | null;
-    restrictionOverride?: boolean;
-    restrictionOverrideReason?: string | null;
-  }>;
-}): Promise<{
-  savedEvents: number;
-  progressedParticipants: number;
-}> {
-  const round = await this.validateRound(input.executionRoundId);
+    executionId: string;
+    executionRoundId: string;
+    executionRevision: number;
+    nextRoundId?: string;
+    changedBy?: string | null;
+    rows: Array<{
+      executionParticipantId: string;
+      attendanceStatus: ExecutionAttendanceStatus | null;
+      gateStatus: ExecutionGateStatus | null;
+      progressionStatus: ExecutionProgressionStatus;
+      remarks?: string | null;
+      absenceDisposition?: "ALLOWED" | "UNALLOWED" | null;
+      absenceReason?: string | null;
+      restrictionOverride?: boolean;
+      restrictionOverrideReason?: string | null;
+    }>;
+  }): Promise<{
+    savedEvents: number;
+    progressedParticipants: number;
+  }> {
+    const round = await this.validateRound(input.executionRoundId);
 
-  const latestState = await this.getLatestParticipantState(
-    input.executionId,
-    input.executionRoundId,
-  );
-
-  const historyRevision = await this.getNextHistoryRevision(
-    input.executionId,
-  );
-
-  let driveRoleId: string | null = null;
-
-  if (round.scope === "ROLE_SPECIFIC") {
-    const roleIds = await this.getRoundRoleIds(
+    const latestState = await this.getLatestParticipantState(
+      input.executionId,
       input.executionRoundId,
     );
 
-    if (roleIds.length > 1) {
-      throw new Error(
-        "A role-specific execution batch cannot be mapped to multiple roles.",
-      );
+    const historyRevision = await this.getNextHistoryRevision(input.executionId);
+
+    let driveRoleId: string | null = null;
+
+    if (round.scope === "ROLE_SPECIFIC") {
+      const roleIds = await this.getRoundRoleIds(input.executionRoundId);
+
+      if (roleIds.length > 1) {
+        throw new Error("A role-specific execution batch cannot be mapped to multiple roles.");
+      }
+
+      driveRoleId = roleIds.length === 1 ? roleIds[0] : null;
     }
 
-    driveRoleId = roleIds.length === 1 ? roleIds[0] : null;
-  }
+    const historyEvents = this.buildHistoryEvents({
+      executionId: input.executionId,
+      executionRoundId: input.executionRoundId,
+      executionRevision: input.executionRevision,
+      historyRevision,
+      driveRoleId,
+      changedBy: input.changedBy,
+      rows: input.rows.map((row) => {
+        const previous = latestState.get(row.executionParticipantId);
 
-  const historyEvents = this.buildHistoryEvents({
-    executionId: input.executionId,
-    executionRoundId: input.executionRoundId,
-    executionRevision: input.executionRevision,
-    historyRevision,
-    driveRoleId,
-    changedBy: input.changedBy,
-    rows: input.rows.map((row) => {
-      const previous = latestState.get(
-        row.executionParticipantId,
-      );
+        return {
+          executionParticipantId: row.executionParticipantId,
+          attendanceStatus: row.attendanceStatus,
+          gateStatus: row.gateStatus,
+          progressionStatus: row.progressionStatus,
+          remarks: row.remarks,
+          absenceDisposition: row.absenceDisposition,
+          absenceReason: row.absenceReason,
+          restrictionOverride: row.restrictionOverride,
+          restrictionOverrideReason: row.restrictionOverrideReason,
+          previousHistoryId: previous?.execution_history_id ?? null,
+        };
+      }),
+    });
 
-      return {
-        executionParticipantId: row.executionParticipantId,
-        attendanceStatus: row.attendanceStatus,
-        gateStatus: row.gateStatus,
-        progressionStatus: row.progressionStatus,
-        remarks: row.remarks,
-        absenceDisposition: row.absenceDisposition,
-        absenceReason: row.absenceReason,
-        restrictionOverride: row.restrictionOverride,
-        restrictionOverrideReason:
-          row.restrictionOverrideReason,
-        previousHistoryId:
-          previous?.execution_history_id ?? null,
-      };
-    }),
-  });
-
-  const { data, error } = await (supabase as any).rpc(
-    "save_round_transaction",
-    {
+    const { data, error } = await (supabase as any).rpc("save_round_transaction", {
       p_execution_id: input.executionId,
       p_execution_round_id: input.executionRoundId,
       p_execution_revision: input.executionRevision,
       p_changed_by: input.changedBy ?? null,
       p_history_rows: historyEvents,
       p_next_round_id: input.nextRoundId ?? null,
-    },
-  );
+    });
 
-  if (error) {
-    throw error;
-  }
+    if (error) {
+      throw error;
+    }
 
-  let progressedParticipants = 0;
+    let progressedParticipants = 0;
 
-  if (input.nextRoundId) {
-    progressedParticipants =
-      await this.populateNextRoundParticipants({
+    if (input.nextRoundId) {
+      progressedParticipants = await this.populateNextRoundParticipants({
         executionId: input.executionId,
         currentRoundId: input.executionRoundId,
         nextRoundId: input.nextRoundId,
       });
-  }
+    }
 
-  return {
-    savedEvents: data.savedEvents ?? 0,
-    progressedParticipants,
-  };
-}
+    return {
+      savedEvents: data.savedEvents ?? 0,
+      progressedParticipants,
+    };
+  }
 
   // --------------------------------------------------------------------------
   // Progression Engine
@@ -1254,64 +1288,62 @@ private buildHistoryEvents(input: {
     });
   }
 
- private async deriveNextRoundParticipants(input: {
-  executionId: string;
-  currentRoundId: string;
-  nextRoundId: string;
-}): Promise<RecruitmentExecutionParticipantWithStudent[]> {
-  const [nextRound, history] = await Promise.all([
-    this.getRound(input.nextRoundId),
-    this.loadHistorySummary(input.executionId),
-  ]);
+  private async deriveNextRoundParticipants(input: {
+    executionId: string;
+    currentRoundId: string;
+    nextRoundId: string;
+  }): Promise<RecruitmentExecutionParticipantWithStudent[]> {
+    const [nextRound, history] = await Promise.all([
+      this.getRound(input.nextRoundId),
+      this.loadHistorySummary(input.executionId),
+    ]);
 
-  if (!nextRound) {
-    throw new Error("Next round not found.");
+    if (!nextRound) {
+      throw new Error("Next round not found.");
+    }
+
+    //
+    // IMPORTANT
+    //
+    // Progression must originate from the current execution batch,
+    // not from every participant in the execution.
+    //
+    const participants = await this.loadRoundParticipants(input.currentRoundId);
+
+    const allowedRoleIds =
+      nextRound.scope === "ROLE_SPECIFIC" ? await this.getRoundRoleIds(input.nextRoundId) : [];
+
+    return this.filterParticipantsForNextRound({
+      participants,
+      history,
+      allowedRoleIds,
+      scope: nextRound.scope,
+      currentRoundId: input.currentRoundId,
+    });
   }
 
-  //
-  // IMPORTANT
-  //
-  // Progression must originate from the current execution batch,
-  // not from every participant in the execution.
-  //
-  const participants = await this.loadRoundParticipants(input.currentRoundId);
+  private async populateNextRoundParticipants(input: {
+    executionId: string;
+    currentRoundId: string;
+    nextRoundId: string;
+  }): Promise<number> {
+    const participants = await this.deriveNextRoundParticipants({
+      executionId: input.executionId,
+      currentRoundId: input.currentRoundId,
+      nextRoundId: input.nextRoundId,
+    });
 
-  const allowedRoleIds =
-    nextRound.scope === "ROLE_SPECIFIC"
-      ? await this.getRoundRoleIds(input.nextRoundId)
-      : [];
+    await this.removeRoundParticipants(input.nextRoundId);
 
-  return this.filterParticipantsForNextRound({
-    participants,
-    history,
-    allowedRoleIds,
-    scope: nextRound.scope,
-    currentRoundId: input.currentRoundId,
-  });
-}
+    await this.assignParticipantsToRound({
+      executionRoundId: input.nextRoundId,
+      executionParticipantIds: participants.map(
+        (participant) => participant.execution_participant_id,
+      ),
+    });
 
-private async populateNextRoundParticipants(input: {
-  executionId: string;
-  currentRoundId: string;
-  nextRoundId: string;
-}): Promise<number> {
-  const participants = await this.deriveNextRoundParticipants({
-    executionId: input.executionId,
-    currentRoundId: input.currentRoundId,
-    nextRoundId: input.nextRoundId,
-  });
-
-  await this.removeRoundParticipants(input.nextRoundId);
-
-  await this.assignParticipantsToRound({
-    executionRoundId: input.nextRoundId,
-    executionParticipantIds: participants.map(
-      (participant) => participant.execution_participant_id,
-    ),
-  });
-
-  return participants.length;
-}
+    return participants.length;
+  }
 
   private async getSelectedParticipants(executionId: string) {
     const [history, participants] = await Promise.all([
