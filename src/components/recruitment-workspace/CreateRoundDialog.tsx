@@ -55,6 +55,8 @@ export default function CreateRoundDialog({
 
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
+  const [configuredRoleIds, setConfiguredRoleIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -70,6 +72,10 @@ export default function CreateRoundDialog({
   }, [open]);
 
   const commonRoleIds = useMemo(() => activeRoles.map((role) => role.driveRoleId), [activeRoles]);
+
+  const remainingRoles = useMemo(() => {
+    return activeRoles.filter((role) => !configuredRoleIds.includes(role.driveRoleId));
+  }, [activeRoles, configuredRoleIds]);
 
   const effectiveRoleIds = useMemo(() => {
     return roundType === "COMMON" ? commonRoleIds : selectedRoles;
@@ -95,6 +101,24 @@ export default function CreateRoundDialog({
       remarks: remarks.trim(),
       roleIds: roundType === "COMMON" ? commonRoleIds : selectedRoles,
     });
+
+    if (roundType === "ROLE_SPECIFIC") {
+      setConfiguredRoleIds((previous) => [...new Set([...previous, ...selectedRoles])]);
+
+      setRoundName("");
+      setScheduledDate("");
+      setScheduledTime("");
+      setVenue("");
+      setRemarks("");
+      setSelectedRoles([]);
+
+      if (remainingRoles.length > selectedRoles.length) {
+        toast.success(
+          "Role configured. Continue configuring the remaining active roles for this stage.",
+        );
+        return;
+      }
+    }
   };
 
   if (!open) {
@@ -150,10 +174,16 @@ export default function CreateRoundDialog({
 
           {roundType === "ROLE_SPECIFIC" && (
             <div>
-              <label className="mb-2 block text-sm font-medium">Active Roles</label>
+              <div className="mb-3 flex items-center justify-between">
+                <label className="block text-sm font-medium">Remaining Active Roles</label>
+
+                <span className="text-xs text-muted-foreground">
+                  {remainingRoles.length} Remaining
+                </span>
+              </div>
 
               <div className="max-h-52 space-y-2 overflow-auto rounded-lg border p-3">
-                {activeRoles.map((role) => {
+                {remainingRoles.map((role) => {
                   const checked = selectedRoles.includes(role.driveRoleId);
 
                   return (
@@ -248,7 +278,9 @@ export default function CreateRoundDialog({
             onClick={() => void handleCreate()}
             className="rounded-md bg-primary px-5 py-2 text-primary-foreground disabled:opacity-50"
           >
-            Create Round
+            {remainingRoles.length > 0
+  ? "Create & Configure Next Role"
+  : "Finish Stage Configuration"}
           </button>
         </div>
       </div>
