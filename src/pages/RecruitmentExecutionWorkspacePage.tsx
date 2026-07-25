@@ -10,6 +10,7 @@ import CreateRoundDialog, {
   type ActiveRoleOption,
 } from "@/components/recruitment-workspace/CreateRoundDialog";
 import ProgressSummaryDialog from "@/components/recruitment-workspace/ProgressSummaryDialog";
+import ExecutionBatchParticipantDialog from "@/components/recruitment-workspace/ExecutionBatchParticipantDialog";
 import type {
   RecruitmentExecutionWorkspace,
   RecruitmentExecutionRoundRow,
@@ -48,6 +49,10 @@ export function RecruitmentExecutionWorkspacePage() {
   const [createRoundOpen, setCreateRoundOpen] = useState(false);
 
   const [progressSummaryOpen, setProgressSummaryOpen] = useState(false);
+
+  const [batchParticipantDialogOpen, setBatchParticipantDialogOpen] = useState(false);
+
+  const [selectedBatchParticipants, setSelectedBatchParticipants] = useState<string[]>([]);
 
   const [progressToNextRound, setProgressToNextRound] = useState(false);
 
@@ -892,11 +897,8 @@ export function RecruitmentExecutionWorkspacePage() {
         roleSummary={shortlistedRoleSummary}
         onCancel={() => setProgressSummaryOpen(false)}
         onContinue={() => {
-          setProgressToNextRound(true);
-
           setProgressSummaryOpen(false);
-
-          setCreateRoundOpen(true);
+          setBatchParticipantDialogOpen(true);
         }}
       />
 
@@ -932,44 +934,27 @@ export function RecruitmentExecutionWorkspacePage() {
           try {
             setSaving(true);
 
-            const round = await recruitmentExecutionService.createRound({
+            const round = await recruitmentExecutionService.createExecutionBatch({
               executionId: workspace.execution.execution_id,
+
               creationMode: progressToNextRound ? "NEXT_STAGE" : "PARALLEL_STAGE",
+
               roundOrder: Math.max(...workspace.rounds.map((r) => r.round_order), 0) + 1,
+
               roundName: data.roundName,
+
               scope: data.roundType === "COMMON" ? "COMMON" : "ROLE_SPECIFIC",
+
+              roleIds: data.roundType === "COMMON" ? [] : data.roleIds,
+
+              executionParticipantIds: progressToNextRound ? selectedBatchParticipants : [],
+
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
               venue: data.venue,
               remarks: data.remarks,
             });
-
-            try {
-              if (data.roundType === "ROLE_SPECIFIC") {
-                await recruitmentExecutionService.assignRolesToRound(
-                  round.execution_round_id,
-                  data.roleIds,
-                );
-              }
-
-              if (progressToNextRound && selectedRoundId) {
-                const roleIds = data.roundType === "COMMON" ? [] : data.roleIds;
-
-                if (data.roundType === "ROLE_SPECIFIC" && roleIds.length === 0) {
-                  throw new Error("Select at least one role.");
-                }
-
-                await recruitmentExecutionService.populateRoundParticipants({
-                  sourceExecutionId: workspace.execution.execution_id,
-                  sourceRoundId: selectedRoundId,
-                  targetRoundId: round.execution_round_id,
-                  roleIds,
-                });
-              }
-            } catch (error) {
-              console.error(error);
-              throw error;
-            }
+            
             setPendingRoundId(round.execution_round_id);
 
             setCurrentConfigurationStage(round.stage_number);
@@ -1031,6 +1016,32 @@ export function RecruitmentExecutionWorkspacePage() {
           } finally {
             setSaving(false);
           }
+        }}
+      />
+
+      <ExecutionBatchParticipantDialog
+        open={batchParticipantDialogOpen}
+        participants={shortlistedParticipants}
+        roleName={
+          selectedTimeline === "COMMON"
+            ? "Common"
+            : (executionTimelines.find((timeline) => timeline.id === selectedTimeline)?.name ??
+              "Role")
+        }
+        stageNumber={(selectedStage ?? 0) + 1}
+        alreadyAssignedParticipantIds={[]}
+        loading={saving}
+        onCancel={() => {
+          setBatchParticipantDialogOpen(false);
+        }}
+        onContinue={(participantIds) => {
+          setSelectedBatchParticipants(participantIds);
+
+          setBatchParticipantDialogOpen(false);
+
+          setProgressToNextRound(true);
+
+          setCreateRoundOpen(true);
         }}
       />
 

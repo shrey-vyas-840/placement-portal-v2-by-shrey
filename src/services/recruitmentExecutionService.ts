@@ -341,6 +341,49 @@ class RecruitmentExecutionService {
     return (data ?? []) as RecruitmentExecutionRoundRow[];
   }
 
+  async createExecutionBatch(input: {
+    executionId: string;
+    creationMode: ExecutionRoundCreationMode;
+    roundOrder: number;
+    roundName: string;
+    scope: ExecutionScope;
+    roleIds: string[];
+    executionParticipantIds: string[];
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    const rounds = await this.loadRounds(input.executionId);
+
+    let stageNumber = 1;
+
+    if (rounds.length > 0) {
+      const highestStage = Math.max(...rounds.map((r) => r.stage_number));
+
+      stageNumber = input.creationMode === "NEXT_STAGE" ? highestStage + 1 : highestStage;
+    }
+
+    const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
+      p_execution_id: input.executionId,
+      p_creation_mode: input.creationMode,
+      p_round_order: input.roundOrder,
+      p_round_name: input.roundName,
+      p_scope: input.scope,
+      p_stage_number: stageNumber,
+      p_scheduled_date: input.scheduledDate ?? null,
+      p_scheduled_time: input.scheduledTime ?? null,
+      p_venue: input.venue ?? null,
+      p_remarks: input.remarks ?? null,
+      p_created_by: input.createdBy ?? null,
+      p_role_ids: input.roleIds,
+      p_execution_participant_ids: input.executionParticipantIds,
+    });
+
+    return requireData(data as RecruitmentExecutionRoundRow | null, error, "createExecutionBatch");
+  }
+
   async createRound(input: {
     executionId: string;
     creationMode: ExecutionRoundCreationMode;
@@ -637,6 +680,13 @@ class RecruitmentExecutionService {
     }
 
     return (data ?? []).map((row: any) => row.execution_participant_id as string);
+  }
+
+  async assignExecutionBatchParticipants(input: {
+    executionRoundId: string;
+    executionParticipantIds: string[];
+  }): Promise<void> {
+    await this.assignParticipantsToRound(input);
   }
 
   private async assignParticipantsToRound(input: {
