@@ -46,6 +46,8 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [progressToNextRound, setProgressToNextRound] = useState(false);
 
+  const [stageConfigurationMode, setStageConfigurationMode] = useState(false);
+
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
@@ -331,6 +333,7 @@ export function RecruitmentExecutionWorkspacePage() {
       return;
     }
 
+    setStageConfigurationMode(true);
     setProgressSummaryOpen(true);
   };
 
@@ -776,6 +779,11 @@ ${
         }
         loading={saving}
         onCancel={() => {
+          if (stageConfigurationMode) {
+            toast.error("Finish configuring all remaining active roles before leaving this stage.");
+            return;
+          }
+
           setCreateRoundOpen(false);
           setProgressToNextRound(false);
         }}
@@ -821,17 +829,43 @@ ${
                 });
               }
             } catch (error) {
-  console.error(error);
-  throw error;
-}
-
+              console.error(error);
+              throw error;
+            }
             setPendingRoundId(round.execution_round_id);
+
+            await loadWorkspace();
+
+            const latestWorkspace = await recruitmentExecutionService.getExecutionDashboard(
+              workspace.execution.execution_id,
+            );
+
+            const remainingRoles = latestWorkspace.remainingActiveRoles;
+
+            if (data.roundType === "ROLE_SPECIFIC" && remainingRoles.length > 0) {
+              setWorkspace(latestWorkspace);
+
+              setProgressSummaryOpen(false);
+
+              setCreateRoundOpen(true);
+
+              setProgressToNextRound(false);
+
+              setStageConfigurationMode(true);
+
+              toast.success(
+                "Round created successfully. Configure the remaining active roles for this stage.",
+              );
+
+              return;
+            }
+
+            setWorkspace(latestWorkspace);
 
             setProgressSummaryOpen(false);
             setCreateRoundOpen(false);
             setProgressToNextRound(false);
-
-            await loadWorkspace();
+            setStageConfigurationMode(false);
 
             toast.success("Round created successfully.");
           } catch (error) {

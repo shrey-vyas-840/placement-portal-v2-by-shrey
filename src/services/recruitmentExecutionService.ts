@@ -339,166 +339,145 @@ class RecruitmentExecutionService {
     return (data ?? []) as RecruitmentExecutionRoundRow[];
   }
 
+  async createRound(input: {
+    executionId: string;
+    creationMode: ExecutionRoundCreationMode;
+    roundOrder: number;
+    roundName: string;
+    scope: ExecutionScope;
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    const rounds = await this.loadRounds(input.executionId);
 
- async createRound(input: {
-  executionId: string;
-  creationMode: ExecutionRoundCreationMode;
-  roundOrder: number;
-  roundName: string;
-  scope: ExecutionScope;
-  scheduledDate?: string | null;
-  scheduledTime?: string | null;
-  venue?: string | null;
-  remarks?: string | null;
-  createdBy?: string | null;
-}): Promise<RecruitmentExecutionRoundRow> {
-  const rounds = await this.loadRounds(input.executionId);
+    let stageNumber = 1;
 
-  let stageNumber = 1;
+    if (rounds.length > 0) {
+      const highestStage = Math.max(...rounds.map((r) => r.stage_number));
 
-  if (rounds.length > 0) {
-    const highestStage = Math.max(...rounds.map((r) => r.stage_number));
-
-    if (input.creationMode === "NEXT_STAGE") {
-      stageNumber = highestStage + 1;
-    } else {
-      stageNumber = highestStage;
+      if (input.creationMode === "NEXT_STAGE") {
+        stageNumber = highestStage + 1;
+      } else {
+        stageNumber = highestStage;
+      }
     }
+
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUNDS_TABLE)
+      .insert({
+        execution_id: input.executionId,
+        stage_number: stageNumber,
+        round_order: input.roundOrder,
+        round_name: input.roundName,
+        scope: input.scope,
+        scheduled_date: input.scheduledDate ?? null,
+        scheduled_time: input.scheduledTime ?? null,
+        venue: input.venue ?? null,
+        remarks: input.remarks ?? null,
+        created_by: input.createdBy ?? null,
+      })
+      .select()
+      .single();
+
+    return requireData(data as RecruitmentExecutionRoundRow | null, error, "createRound");
   }
 
-  const { data, error } = await (supabase as any)
-    .from(this.EXECUTION_ROUNDS_TABLE)
-    .insert({
-      execution_id: input.executionId,
-      stage_number: stageNumber,
-      round_order: input.roundOrder,
-      round_name: input.roundName,
-      scope: input.scope,
-      scheduled_date: input.scheduledDate ?? null,
-      scheduled_time: input.scheduledTime ?? null,
-      venue: input.venue ?? null,
-      remarks: input.remarks ?? null,
-      created_by: input.createdBy ?? null,
-    })
-    .select()
-    .single();
+  async assignRolesToRound(executionRoundId: string, roleIds: string[]): Promise<void> {
+    if (roleIds.length === 0) {
+      return;
+    }
 
-  return requireData(
-    data as RecruitmentExecutionRoundRow | null,
-    error,
-    "createRound",
-  );
-}
+    const round = await this.getRound(executionRoundId);
 
-async assignRolesToRound(
-  executionRoundId: string,
-  roleIds: string[],
-): Promise<void> {
-  if (roleIds.length === 0) {
-    return;
-  }
+    if (!round) {
+      throw new Error("Execution round not found.");
+    }
 
-  const round = await this.getRound(executionRoundId);
+    const rounds = await this.loadRounds(round.execution_id);
 
-  if (!round) {
-    throw new Error("Execution round not found.");
-  }
+    const siblingRounds = rounds.filter(
+      (r) => r.stage_number === round.stage_number && r.execution_round_id !== executionRoundId,
+    );
 
-  const rounds = await this.loadRounds(round.execution_id);
+    if (siblingRounds.length === 0) {
+      const rows = roleIds.map((roleId) => ({
+        execution_round_id: executionRoundId,
+        drive_role_id: roleId,
+      }));
 
-  const siblingRounds = rounds.filter(
-    (r) =>
-      r.stage_number === round.stage_number &&
-      r.execution_round_id !== executionRoundId,
-  );
+      const { error } = await (supabase as any)
+        .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+        .insert(rows);
 
-  if (siblingRounds.length === 0) {
-    const rows = roleIds.map((roleId) => ({
-      execution_round_id: executionRoundId,
-      drive_role_id: roleId,
-    }));
+      if (error) {
+        throw error;
+      }
 
-    const { error } = await (supabase as any)
+      return;
+    }
+
+    const siblingRoundIds = siblingRounds.map((r) => r.execution_round_id);
+
+    const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-      .insert(rows);
+      .select("drive_role_id")
+      .in("execution_round_id", siblingRoundIds);
 
     if (error) {
       throw error;
     }
 
-    return;
+    const assignedRoleIds = new Set((data ?? []).map((row: any) => row.drive_role_id));
+
+    const duplicateRole = roleIds.find((id) => assignedRoleIds.has(id));
+
+    if (duplicateRole) {
+      throw new Error(
+        "One or more selected roles are already assigned to another round in this stage.",
+      );
+    }
+
+    const rows = roleIds.map((roleId) => ({
+      execution_round_id: executionRoundId,
+      drive_role_id: roleId,
+    }));
+
+    const { error: insertError } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+      .insert(rows);
+
+    if (insertError) {
+      throw insertError;
+    }
   }
 
-  const siblingRoundIds = siblingRounds.map(
-    (r) => r.execution_round_id,
-  );
+  async populateRoundParticipants(input: {
+    sourceExecutionId: string;
+    sourceRoundId: string;
+    targetRoundId: string;
+    roleIds: string[];
+  }): Promise<number> {
+    const targetRound = await this.getRound(input.targetRoundId);
 
-  const { data, error } = await (supabase as any)
-    .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-    .select("drive_role_id")
-    .in("execution_round_id", siblingRoundIds);
+    if (!targetRound) {
+      throw new Error("Target round not found.");
+    }
 
-  if (error) {
-    throw error;
+    if (targetRound.scope === "ROLE_SPECIFIC" && input.roleIds.length === 0) {
+      throw new Error("Role-specific rounds require at least one assigned role.");
+    }
+
+    const participants = await this.deriveNextRoundParticipants({
+      executionId: input.sourceExecutionId,
+      currentRoundId: input.sourceRoundId,
+      nextRoundId: input.targetRoundId,
+    });
+
+    return participants.length;
   }
-
-  const assignedRoleIds = new Set(
-    (data ?? []).map((row: any) => row.drive_role_id),
-  );
-
-  const duplicateRole = roleIds.find((id) =>
-    assignedRoleIds.has(id),
-  );
-
-  if (duplicateRole) {
-    throw new Error(
-      "One or more selected roles are already assigned to another round in this stage.",
-    );
-  }
-
-  const rows = roleIds.map((roleId) => ({
-    execution_round_id: executionRoundId,
-    drive_role_id: roleId,
-  }));
-
-  const { error: insertError } = await (supabase as any)
-    .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-    .insert(rows);
-
-  if (insertError) {
-    throw insertError;
-  }
-}
-
-async populateRoundParticipants(input: {
-  sourceExecutionId: string;
-  sourceRoundId: string;
-  targetRoundId: string;
-  roleIds: string[];
-}): Promise<number> {
-  const targetRound = await this.getRound(input.targetRoundId);
-
-  if (!targetRound) {
-    throw new Error("Target round not found.");
-  }
-
-  if (
-    targetRound.scope === "ROLE_SPECIFIC" &&
-    input.roleIds.length === 0
-  ) {
-    throw new Error(
-      "Role-specific rounds require at least one assigned role.",
-    );
-  }
-
-  const participants = await this.deriveNextRoundParticipants({
-    executionId: input.sourceExecutionId,
-    currentRoundId: input.sourceRoundId,
-    nextRoundId: input.targetRoundId,
-  });
-
-  return participants.length;
-}
 
   async updateRound(input: {
     executionRoundId: string;
@@ -1358,26 +1337,26 @@ history_revision
   // Round Progression
   // --------------------------------------------------------------------------
 
-async progressToNextRound(input: {
-  executionId: string;
-  currentRoundId: string;
-  nextRoundId: string;
-}): Promise<{
-  progressedParticipants: number;
-}> {
-  await this.validateRound(input.currentRoundId);
-  await this.validateRound(input.nextRoundId);
+  async progressToNextRound(input: {
+    executionId: string;
+    currentRoundId: string;
+    nextRoundId: string;
+  }): Promise<{
+    progressedParticipants: number;
+  }> {
+    await this.validateRound(input.currentRoundId);
+    await this.validateRound(input.nextRoundId);
 
-  const participants = await this.deriveNextRoundParticipants({
-    executionId: input.executionId,
-    currentRoundId: input.currentRoundId,
-    nextRoundId: input.nextRoundId,
-  });
+    const participants = await this.deriveNextRoundParticipants({
+      executionId: input.executionId,
+      currentRoundId: input.currentRoundId,
+      nextRoundId: input.nextRoundId,
+    });
 
-  return {
-    progressedParticipants: participants.length,
-  };
-}
+    return {
+      progressedParticipants: participants.length,
+    };
+  }
 
   async finalizeExecutionWorkflow(input: {
     executionId: string;
@@ -1439,86 +1418,76 @@ async progressToNextRound(input: {
   // Workspace Facade
   // --------------------------------------------------------------------------
 
-private async calculatePendingRoles(
-  executionId: string,
-): Promise<RecruitmentExecutionRemainingRole[]> {
-  const [participants, historySummary, roundRoleMappings, rounds] =
-    await Promise.all([
+  private async calculatePendingRoles(
+    executionId: string,
+  ): Promise<RecruitmentExecutionRemainingRole[]> {
+    const [participants, historySummary, roundRoleMappings, rounds] = await Promise.all([
       this.loadParticipants(executionId),
       this.loadHistorySummary(executionId),
       this.loadRoundRoleMappings(executionId),
       this.loadRounds(executionId),
     ]);
 
-  const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
+    const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
 
-  historySummary.forEach((history) => {
-    if (history.progression_status !== "SHORTLISTED") {
-      return;
-    }
-
-    const participant = participants.find(
-      (p) =>
-        p.execution_participant_id ===
-        history.execution_participant_id,
-    );
-
-    if (!participant) {
-      return;
-    }
-
-    const currentRound = rounds.find(
-      (r) =>
-        r.execution_round_id === history.execution_round_id,
-    );
-
-    if (!currentRound) {
-      return;
-    }
-
-    //
-    // COMMON rounds consume every selected role.
-    //
-    if (currentRound.scope === "COMMON") {
-      return;
-    }
-
-    //
-    // ROLE SPECIFIC rounds consume only mapped roles.
-    //
-    const consumedRoleIds = new Set(
-      roundRoleMappings
-        .filter(
-          (mapping) =>
-            mapping.execution_round_id ===
-            currentRound.execution_round_id,
-        )
-        .map((mapping) => mapping.drive_role_id),
-    );
-
-    participant.selected_roles.forEach((role) => {
-      if (consumedRoleIds.has(role.drive_role_id)) {
+    historySummary.forEach((history) => {
+      if (history.progression_status !== "SHORTLISTED") {
         return;
       }
 
-      const existing = remaining.get(role.drive_role_id);
+      const participant = participants.find(
+        (p) => p.execution_participant_id === history.execution_participant_id,
+      );
 
-      if (existing) {
-        existing.candidate_count += 1;
-      } else {
-        remaining.set(role.drive_role_id, {
-          drive_role_id: role.drive_role_id,
-          drive_role_name: role.drive_role_name,
-          candidate_count: 1,
-        });
+      if (!participant) {
+        return;
       }
-    });
-  });
 
-  return [...remaining.values()].sort((a, b) =>
-    a.drive_role_name.localeCompare(b.drive_role_name),
-  );
-}
+      const currentRound = rounds.find((r) => r.execution_round_id === history.execution_round_id);
+
+      if (!currentRound) {
+        return;
+      }
+
+      //
+      // A COMMON round never consumes roles.
+      //
+      // After a common screening every shortlisted role is still active
+      // until it is explicitly assigned to a ROLE_SPECIFIC round.
+      //
+      let consumedRoleIds = new Set<string>();
+
+      if (currentRound.scope === "ROLE_SPECIFIC") {
+        consumedRoleIds = new Set(
+          roundRoleMappings
+            .filter((mapping) => mapping.execution_round_id === currentRound.execution_round_id)
+            .map((mapping) => mapping.drive_role_id),
+        );
+      }
+
+      participant.selected_roles.forEach((role) => {
+        if (consumedRoleIds.has(role.drive_role_id)) {
+          return;
+        }
+
+        const existing = remaining.get(role.drive_role_id);
+
+        if (existing) {
+          existing.candidate_count += 1;
+        } else {
+          remaining.set(role.drive_role_id, {
+            drive_role_id: role.drive_role_id,
+            drive_role_name: role.drive_role_name,
+            candidate_count: 1,
+          });
+        }
+      });
+    });
+
+    return [...remaining.values()].sort((a, b) =>
+      a.drive_role_name.localeCompare(b.drive_role_name),
+    );
+  }
 
   async loadExecutionWorkspace(executionId: string): Promise<RecruitmentExecutionWorkspace> {
     const execution = await this.getExecutionRevision(executionId);
