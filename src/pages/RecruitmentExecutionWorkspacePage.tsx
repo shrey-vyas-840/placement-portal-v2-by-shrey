@@ -5,6 +5,7 @@ import { recruitmentExecutionService } from "@/services/recruitmentExecutionServ
 import { useNavigate } from "@tanstack/react-router";
 import { getExecutionBootstrapContext } from "@/services/recruitmentExecutionBootstrapService";
 import AttendanceReviewDialog from "@/components/recruitment-workspace/AttendanceReviewDialog";
+import ExecutionProgressBar from "@/components/recruitment-workspace/ExecutionProgressBar";
 import CreateRoundDialog, {
   type ActiveRoleOption,
 } from "@/components/recruitment-workspace/CreateRoundDialog";
@@ -37,6 +38,8 @@ export function RecruitmentExecutionWorkspacePage() {
   const [selectedRoundId, setSelectedRoundId] = useState("");
 
   const [selectedTimeline, setSelectedTimeline] = useState<"COMMON" | string>("COMMON");
+
+  const [selectedStage, setSelectedStage] = useState<number | null>(null);
 
   const [pendingRoundId, setPendingRoundId] = useState("");
 
@@ -73,6 +76,8 @@ export function RecruitmentExecutionWorkspacePage() {
       }
 
       setSelectedRoundId(data.rounds[0]?.execution_round_id ?? "");
+
+      setSelectedStage(data.rounds[0]?.stage_number ?? null);
 
       const historyLookup = new Map(
         data.historySummary.map((item) => [item.execution_participant_id, item]),
@@ -289,8 +294,10 @@ export function RecruitmentExecutionWorkspacePage() {
       }
     });
 
-    return [...groups.values()].sort((a, b) => a.stageNumber - b.stageNumber);
-  }, [workspace, selectedTimeline]);
+    return [...groups.values()]
+      .sort((a, b) => a.stageNumber - b.stageNumber)
+      .filter((stage) => (selectedStage === null ? true : stage.stageNumber === selectedStage));
+  }, [workspace, selectedTimeline, selectedStage]);
 
   const shortlistedParticipants = useMemo(
     () =>
@@ -525,94 +532,38 @@ export function RecruitmentExecutionWorkspacePage() {
             </div>
 
             <div className="mt-8 rounded-xl border p-5">
-              <h2 className="mb-5 text-lg font-semibold">Recruitment Stages</h2>
+              <ExecutionProgressBar
+                rounds={workspace.rounds}
+                roundRoleMappings={workspace.roundRoleMappings}
+                timelines={executionTimelines}
+                remainingActiveRoles={workspace.remainingActiveRoles}
+                selectedStage={selectedStage}
+                onStageSelect={(stageNumber) => {
+                  setSelectedStage(stageNumber);
 
-              <div className="mb-5 flex flex-wrap gap-2">
-                {executionTimelines.map((timeline) => (
-                  <button
-                    key={timeline.id}
-                    type="button"
-                    onClick={() => setSelectedTimeline(timeline.id)}
-                    className={`rounded-full border px-4 py-2 text-sm transition ${
-                      selectedTimeline === timeline.id
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                    }`}
-                  >
-                    {timeline.name}
-                  </button>
-                ))}
-              </div>
+                  const firstRound = stageGroups.find((stage) => stage.stageNumber === stageNumber)
+                    ?.rounds[0];
 
-              <div className="mb-5 flex flex-wrap gap-2">
-                {executionTimelines.map((timeline) => (
-                  <button
-                    key={timeline.id}
-                    type="button"
-                    onClick={() => setSelectedTimeline(timeline.id)}
-                    className={`rounded-full border px-4 py-2 text-sm transition ${
-                      selectedTimeline === timeline.id
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                    }`}
-                  >
-                    {timeline.name}
-                  </button>
-                ))}
-              </div>
+                  if (!firstRound) {
+                    return;
+                  }
 
-              <div className="space-y-6">
-                {stageGroups.map((stage) => (
-                  <div key={stage.stageNumber} className="rounded-xl border bg-muted/20 p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">Stage {stage.stageNumber}</h3>
+                  setSelectedRoundId(firstRound.execution_round_id);
 
-                        <p className="text-xs text-muted-foreground">
-                          {stage.rounds.length} Round
-                          {stage.rounds.length !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                    </div>
+                  if (firstRound.scope === "COMMON") {
+                    setSelectedTimeline("COMMON");
+                    return;
+                  }
 
-                    <div className="flex flex-wrap gap-3">
-                      {stage.rounds.map((round) => (
-                        <button
-                          key={round.execution_round_id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedTimeline(
-                              round.scope === "COMMON"
-                                ? "COMMON"
-                                : (workspace.roundRoleMappings.find(
-                                    (mapping) =>
-                                      mapping.execution_round_id === round.execution_round_id,
-                                  )?.drive_role_id ?? "COMMON"),
-                            );
+                  const mapping = workspace.roundRoleMappings.find(
+                    (m) => m.execution_round_id === firstRound.execution_round_id,
+                  );
 
-                            setSelectedRoundId(round.execution_round_id);
-                          }}
-                          className={`rounded-lg border px-4 py-3 text-left transition
-
-${
-  selectedRoundId === round.execution_round_id
-    ? "border-primary bg-primary text-primary-foreground"
-    : "hover:bg-muted"
-}`}
-                        >
-                          <div className="font-medium">{round.round_name}</div>
-
-                          <div className="mt-1 text-xs opacity-80">
-                            Round {round.round_order}
-                            {" • "}
-                            {round.scope}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  if (mapping) {
+                    setSelectedTimeline(mapping.drive_role_id);
+                  }
+                }}
+              />
             </div>
 
             <div className="mt-8 rounded-lg border p-5">
