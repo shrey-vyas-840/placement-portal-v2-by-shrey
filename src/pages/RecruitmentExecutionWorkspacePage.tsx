@@ -36,6 +36,8 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [selectedRoundId, setSelectedRoundId] = useState("");
 
+  const [selectedTimeline, setSelectedTimeline] = useState<"COMMON" | string>("COMMON");
+
   const [pendingRoundId, setPendingRoundId] = useState("");
 
   const [attendanceReviewOpen, setAttendanceReviewOpen] = useState(false);
@@ -47,6 +49,10 @@ export function RecruitmentExecutionWorkspacePage() {
   const [progressToNextRound, setProgressToNextRound] = useState(false);
 
   const [stageConfigurationMode, setStageConfigurationMode] = useState(false);
+
+  const [currentConfigurationStage, setCurrentConfigurationStage] = useState<number | null>(null);
+
+  const [currentConfigurationRoleId, setCurrentConfigurationRoleId] = useState<string | null>(null);
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
@@ -147,6 +153,49 @@ export function RecruitmentExecutionWorkspacePage() {
     return workspace.rounds.find((round) => round.execution_round_id === selectedRoundId) ?? null;
   }, [workspace, selectedRoundId]);
 
+  const executionTimelines = useMemo(() => {
+    if (!workspace) {
+      return [];
+    }
+
+    const timelines: Array<{
+      id: string;
+      name: string;
+      scope: "COMMON" | "ROLE_SPECIFIC";
+    }> = [
+      {
+        id: "COMMON",
+        name: "Common",
+        scope: "COMMON",
+      },
+    ];
+
+    const added = new Set<string>();
+
+    workspace.participants.forEach((participant) => {
+      participant.selected_roles.forEach((role) => {
+        if (added.has(role.drive_role_id)) {
+          return;
+        }
+
+        added.add(role.drive_role_id);
+
+        timelines.push({
+          id: role.drive_role_id,
+          name: role.drive_role_name,
+          scope: "ROLE_SPECIFIC",
+        });
+      });
+    });
+
+    return timelines.sort((a, b) => {
+      if (a.id === "COMMON") return -1;
+      if (b.id === "COMMON") return 1;
+
+      return a.name.localeCompare(b.name);
+    });
+  }, [workspace]);
+
   const isCurrentRoundSaved = useMemo(() => {
     if (!workspace || !selectedRound) {
       return false;
@@ -158,8 +207,31 @@ export function RecruitmentExecutionWorkspacePage() {
   }, [workspace, selectedRound]);
 
   const participants = useMemo<RecruitmentExecutionParticipantWithStudent[]>(() => {
-    return workspace?.participants ?? [];
-  }, [workspace]);
+    if (!workspace || !selectedRound) {
+      return [];
+    }
+
+    //
+    // COMMON rounds always operate on the full participant set.
+    //
+    if (selectedRound.scope === "COMMON") {
+      return workspace.participants;
+    }
+
+    //
+    // ROLE_SPECIFIC rounds operate only on participants that selected
+    // at least one role mapped to the current round.
+    //
+    const mappedRoleIds = new Set(
+      workspace.roundRoleMappings
+        .filter((mapping) => mapping.execution_round_id === selectedRound.execution_round_id)
+        .map((mapping) => mapping.drive_role_id),
+    );
+
+    return workspace.participants.filter((participant) =>
+      participant.selected_roles.some((role) => mappedRoleIds.has(role.drive_role_id)),
+    );
+  }, [workspace, selectedRound]);
 
   const metrics = useMemo(
     () => ({
@@ -175,6 +247,27 @@ export function RecruitmentExecutionWorkspacePage() {
       return [];
     }
 
+    let visibleRounds = workspace.rounds;
+
+    //
+    // Role timeline
+    //
+    if (selectedTimeline !== "COMMON") {
+      const visibleRoundIds = new Set(
+        workspace.roundRoleMappings
+          .filter((mapping) => mapping.drive_role_id === selectedTimeline)
+          .map((mapping) => mapping.execution_round_id),
+      );
+
+      visibleRounds = workspace.rounds.filter((round) => {
+        if (round.scope === "COMMON") {
+          return true;
+        }
+
+        return visibleRoundIds.has(round.execution_round_id);
+      });
+    }
+
     const groups = new Map<
       number,
       {
@@ -183,7 +276,7 @@ export function RecruitmentExecutionWorkspacePage() {
       }
     >();
 
-    workspace.rounds.forEach((round) => {
+    visibleRounds.forEach((round) => {
       const existing = groups.get(round.stage_number);
 
       if (existing) {
@@ -197,7 +290,7 @@ export function RecruitmentExecutionWorkspacePage() {
     });
 
     return [...groups.values()].sort((a, b) => a.stageNumber - b.stageNumber);
-  }, [workspace]);
+  }, [workspace, selectedTimeline]);
 
   const shortlistedParticipants = useMemo(
     () =>
@@ -434,6 +527,23 @@ export function RecruitmentExecutionWorkspacePage() {
             <div className="mt-8 rounded-xl border p-5">
               <h2 className="mb-5 text-lg font-semibold">Recruitment Stages</h2>
 
+              <div className="mb-5 flex flex-wrap gap-2">
+                {executionTimelines.map((timeline) => (
+                  <button
+                    key={timeline.id}
+                    type="button"
+                    onClick={() => setSelectedTimeline(timeline.id)}
+                    className={`rounded-full border px-4 py-2 text-sm transition ${
+                      selectedTimeline === timeline.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    {timeline.name}
+                  </button>
+                ))}
+              </div>
+
               <div className="space-y-6">
                 {stageGroups.map((stage) => (
                   <div key={stage.stageNumber} className="rounded-xl border bg-muted/20 p-4">
@@ -453,7 +563,20 @@ export function RecruitmentExecutionWorkspacePage() {
                         <button
                           key={round.execution_round_id}
                           type="button"
-                          onClick={() => setSelectedRoundId(round.execution_round_id)}
+                          onClick={() => {
+  setSelectedTimeline(
+    round.scope === "COMMON"
+      ? "COMMON"
+      : (
+          workspace.roundRoleMappings.find(
+            (mapping) =>
+              mapping.execution_round_id === round.execution_round_id,
+          )?.drive_role_id ?? "COMMON"
+        ),
+  );
+
+  setSelectedRoundId(round.execution_round_id);
+}}
                           className={`rounded-lg border px-4 py-3 text-left transition
 
 ${
@@ -778,6 +901,8 @@ ${
               }))
         }
         loading={saving}
+        // configurationStage={currentConfigurationStage}
+        // configurationRoleId={currentConfigurationRoleId}
         onCancel={() => {
           if (stageConfigurationMode) {
             toast.error("Finish configuring all remaining active roles before leaving this stage.");
@@ -834,6 +959,12 @@ ${
             }
             setPendingRoundId(round.execution_round_id);
 
+            setCurrentConfigurationStage(round.stage_number);
+
+            if (data.roundType === "ROLE_SPECIFIC") {
+              setCurrentConfigurationRoleId(data.roleIds[0] ?? null);
+            }
+
             await loadWorkspace();
 
             const latestWorkspace = await recruitmentExecutionService.getExecutionDashboard(
@@ -861,6 +992,18 @@ ${
             }
 
             setWorkspace(latestWorkspace);
+
+            setSelectedTimeline((current) => {
+              if (current === "COMMON") {
+                return current;
+              }
+
+              const exists = latestWorkspace.participants.some((participant) =>
+                participant.selected_roles.some((role) => role.drive_role_id === current),
+              );
+
+              return exists ? current : "COMMON";
+            });
 
             setProgressSummaryOpen(false);
             setCreateRoundOpen(false);
