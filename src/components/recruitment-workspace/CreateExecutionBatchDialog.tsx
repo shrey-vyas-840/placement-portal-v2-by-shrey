@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  Calendar,
-  Clock3,
-  MapPin,
-  ClipboardList,
-  Users,
-} from "lucide-react";
+import { Calendar, Clock3, MapPin, ClipboardList, Users } from "lucide-react";
 
 import {
   Dialog,
@@ -88,42 +82,27 @@ export default function CreateExecutionBatchDialog({
 
   onSave,
 }: CreateExecutionBatchDialogProps) {
-  const [form, setForm] =
-    useState<ExecutionBatchFormData>(EMPTY_FORM);
+  const [form, setForm] = useState<ExecutionBatchFormData>(EMPTY_FORM);
 
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof ExecutionBatchFormData, string>>
-  >({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ExecutionBatchFormData, string>>>({});
 
-    useEffect(() => {
+  useEffect(() => {
     if (!open) return;
 
     setForm({
-      batchName:
-        initialValues?.batchName ??
-        defaultBatchName ??
-        `Batch ${stageNumber}`,
+      batchName: initialValues?.batchName ?? defaultBatchName ?? `Batch ${stageNumber}`,
 
-      scheduledDate:
-        initialValues?.scheduledDate ?? "",
+      scheduledDate: initialValues?.scheduledDate ?? "",
 
-      scheduledTime:
-        initialValues?.scheduledTime ?? "",
+      scheduledTime: initialValues?.scheduledTime ?? "",
 
-      venue:
-        initialValues?.venue ?? "",
+      venue: initialValues?.venue ?? "",
 
-      remarks:
-        initialValues?.remarks ?? "",
+      remarks: initialValues?.remarks ?? "",
     });
 
     setErrors({});
-  }, [
-    open,
-    stageNumber,
-    defaultBatchName,
-    initialValues,
-  ]);
+  }, [open, stageNumber, defaultBatchName, initialValues]);
 
   const isValid = useMemo(() => {
     return (
@@ -133,9 +112,7 @@ export default function CreateExecutionBatchDialog({
     );
   }, [form]);
 
-  const updateField = <
-    K extends keyof ExecutionBatchFormData
-  >(
+  const updateField = <K extends keyof ExecutionBatchFormData>(
     field: K,
     value: ExecutionBatchFormData[K],
   ) => {
@@ -153,23 +130,18 @@ export default function CreateExecutionBatchDialog({
   };
 
   const validate = () => {
-    const nextErrors: Partial<
-      Record<keyof ExecutionBatchFormData, string>
-    > = {};
+    const nextErrors: Partial<Record<keyof ExecutionBatchFormData, string>> = {};
 
     if (!form.batchName.trim()) {
-      nextErrors.batchName =
-        "Batch name is required.";
+      nextErrors.batchName = "Batch name is required.";
     }
 
     if (!form.scheduledDate) {
-      nextErrors.scheduledDate =
-        "Select the execution date.";
+      nextErrors.scheduledDate = "Select the execution date.";
     }
 
     if (!form.scheduledTime) {
-      nextErrors.scheduledTime =
-        "Select the execution time.";
+      nextErrors.scheduledTime = "Select the execution time.";
     }
 
     setErrors(nextErrors);
@@ -195,65 +167,37 @@ export default function CreateExecutionBatchDialog({
       }}
     >
       <DialogContent className="max-w-2xl">
-
         <DialogHeader>
-
           <DialogTitle className="flex items-center gap-2">
-
             <Users className="h-5 w-5" />
-
             Create Execution Batch
-
           </DialogTitle>
 
           <DialogDescription>
-
-            Schedule an execution batch for the
-            shortlisted students of this stage.
-
+            Schedule an execution batch for the shortlisted students of this stage.
           </DialogDescription>
-
         </DialogHeader>
 
         <div className="rounded-lg border bg-muted/30 p-4">
-
           <div className="flex items-center justify-between">
-
             <div>
+              <p className="text-sm font-medium">Stage {stageNumber}</p>
 
-              <p className="text-sm font-medium">
-
-                Stage {stageNumber}
-
-              </p>
-
-              <p className="text-xs text-muted-foreground">
-
-                Configure the execution schedule.
-
-              </p>
-
+              <p className="text-xs text-muted-foreground">Configure the execution schedule.</p>
             </div>
 
             <Badge variant="secondary">
-
               {participantCount} Student
               {participantCount === 1 ? "" : "s"}
-
             </Badge>
-
           </div>
-
         </div>
 
         <Separator className="my-1" />
 
         <div className="grid gap-5">
-
-                  <div className="grid gap-5 md:grid-cols-2">
-
+          <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
-
               <Label htmlFor="batch-name">
                 Batch Name <span className="text-destructive">*</span>
               </Label>
@@ -261,179 +205,107 @@ export default function CreateExecutionBatchDialog({
               <Input
                 id="batch-name"
                 value={form.batchName}
-                onChange={(event) =>
-                  updateField("batchName", event.target.value)
-                }
+                onChange={(event) => updateField("batchName", event.target.value)}
                 placeholder="Morning Batch"
               />
 
-              {errors.batchName && (
-                <p className="text-xs text-destructive">
-                  {errors.batchName}
-                </p>
-              )}
-
+              {errors.batchName && <p className="text-xs text-destructive">{errors.batchName}</p>}
             </div>
 
             <div className="space-y-2">
-
-              <Label>
-                Students
-              </Label>
+              <Label>Students</Label>
 
               <div className="flex h-10 items-center rounded-md border bg-muted/30 px-3">
-
                 <Users className="mr-2 h-4 w-4 text-muted-foreground" />
 
                 <span className="text-sm">
-
                   {participantCount} Student
                   {participantCount === 1 ? "" : "s"}
-
                 </span>
-
               </div>
-
             </div>
-
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-
             <div className="space-y-2">
-
               <Label htmlFor="batch-date">
-
                 <Calendar className="mr-1 inline h-4 w-4" />
-
                 Execution Date
                 <span className="text-destructive">*</span>
-
               </Label>
 
               <Input
                 id="batch-date"
                 type="date"
                 value={form.scheduledDate}
-                onChange={(event) =>
-                  updateField(
-                    "scheduledDate",
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => updateField("scheduledDate", event.target.value)}
               />
 
               {errors.scheduledDate && (
-                <p className="text-xs text-destructive">
-                  {errors.scheduledDate}
-                </p>
+                <p className="text-xs text-destructive">{errors.scheduledDate}</p>
               )}
-
             </div>
 
             <div className="space-y-2">
-
               <Label htmlFor="batch-time">
-
                 <Clock3 className="mr-1 inline h-4 w-4" />
-
                 Execution Time
                 <span className="text-destructive">*</span>
-
               </Label>
 
               <Input
                 id="batch-time"
                 type="time"
                 value={form.scheduledTime}
-                onChange={(event) =>
-                  updateField(
-                    "scheduledTime",
-                    event.target.value,
-                  )
-                }
+                onChange={(event) => updateField("scheduledTime", event.target.value)}
               />
 
               {errors.scheduledTime && (
-                <p className="text-xs text-destructive">
-                  {errors.scheduledTime}
-                </p>
+                <p className="text-xs text-destructive">{errors.scheduledTime}</p>
               )}
-
             </div>
-
           </div>
 
           <div className="space-y-2">
-
             <Label htmlFor="batch-venue">
-
               <MapPin className="mr-1 inline h-4 w-4" />
-
               Venue
-
             </Label>
 
             <Input
               id="batch-venue"
               value={form.venue}
-              onChange={(event) =>
-                updateField("venue", event.target.value)
-              }
+              onChange={(event) => updateField("venue", event.target.value)}
               placeholder="Interview Lab - Block A"
             />
-
           </div>
 
           <div className="space-y-2">
-
             <Label htmlFor="batch-remarks">
-
               <ClipboardList className="mr-1 inline h-4 w-4" />
-
               Remarks
-
             </Label>
 
             <Textarea
               id="batch-remarks"
               rows={4}
               value={form.remarks}
-              onChange={(event) =>
-                updateField("remarks", event.target.value)
-              }
+              onChange={(event) => updateField("remarks", event.target.value)}
               placeholder="Optional notes for this execution batch..."
             />
-
           </div>
-
-                  </div>
+        </div>
 
         <DialogFooter className="mt-2 flex items-center justify-between">
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={loading}
-          >
+          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
 
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!isValid || loading}
-          >
-            {loading
-              ? "Creating..."
-              : "Create Execution Batch"}
+          <Button type="button" onClick={handleSave} disabled={!isValid || loading}>
+            {loading ? "Creating..." : "Create Execution Batch"}
           </Button>
-
         </DialogFooter>
-
       </DialogContent>
-
     </Dialog>
   );
 }

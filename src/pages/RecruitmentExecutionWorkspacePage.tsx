@@ -11,6 +11,7 @@ import CreateRoundDialog, {
 } from "@/components/recruitment-workspace/CreateRoundDialog";
 import ProgressSummaryDialog from "@/components/recruitment-workspace/ProgressSummaryDialog";
 import ExecutionBatchParticipantDialog from "@/components/recruitment-workspace/ExecutionBatchParticipantDialog";
+import CreateExecutionBatchDialog from "@/components/recruitment-workspace/CreateExecutionBatchDialog";
 import type {
   RecruitmentExecutionWorkspace,
   RecruitmentExecutionRoundRow,
@@ -51,6 +52,8 @@ export function RecruitmentExecutionWorkspacePage() {
   const [progressSummaryOpen, setProgressSummaryOpen] = useState(false);
 
   const [batchParticipantDialogOpen, setBatchParticipantDialogOpen] = useState(false);
+
+  const [createExecutionBatchOpen, setCreateExecutionBatchOpen] = useState(false);
 
   const [selectedBatchParticipants, setSelectedBatchParticipants] = useState<string[]>([]);
 
@@ -1071,9 +1074,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
           setBatchParticipantDialogOpen(false);
 
-          setProgressToNextRound(true);
-
-          setCreateRoundOpen(true);
+          setCreateExecutionBatchOpen(true);
         }}
       />
 
