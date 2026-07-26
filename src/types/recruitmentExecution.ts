@@ -205,6 +205,7 @@ export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentE
   batch_date: string | null;
   batch_time: string | null;
 } | null;
+
 }
 
 export interface ParticipantRoleSelection {

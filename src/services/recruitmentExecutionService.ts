@@ -903,10 +903,7 @@ class RecruitmentExecutionService {
 
         has_opportunity_override: restriction?.hasOpportunityOverride ?? false,
 
-        execution_batch:
-  participantBatchMap.get(
-    participant.execution_participant_id,
-  ) ?? null,
+        execution_batch: participantBatchMap.get(participant.execution_participant_id) ?? null,
       };
     });
   }
