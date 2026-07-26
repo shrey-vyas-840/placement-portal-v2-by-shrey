@@ -834,6 +834,41 @@ class RecruitmentExecutionService {
         studentIds,
       );
 
+    const { data: batchAssignments, error: batchAssignmentError } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+      .select(
+        `
+      execution_participant_id,
+      recruitment_execution_rounds (
+        execution_round_id,
+        round_name,
+        scheduled_date,
+        scheduled_time
+      )
+    `,
+      );
+
+    if (batchAssignmentError) {
+      throw batchAssignmentError;
+    }
+
+    const participantBatchMap = new Map<string, any>();
+
+    (batchAssignments ?? []).forEach((row: any) => {
+      const round = row.recruitment_execution_rounds;
+
+      if (!round) {
+        return;
+      }
+
+      participantBatchMap.set(row.execution_participant_id, {
+        execution_round_id: round.execution_round_id,
+        batch_name: round.round_name,
+        batch_date: round.scheduled_date,
+        batch_time: round.scheduled_time,
+      });
+    });
+
     return participantRows.map((participant: any) => {
       const restriction = restrictionStates.get(participant.student_id);
 
@@ -867,6 +902,11 @@ class RecruitmentExecutionService {
         can_override_gate: restriction?.canOverride ?? false,
 
         has_opportunity_override: restriction?.hasOpportunityOverride ?? false,
+
+        execution_batch:
+  participantBatchMap.get(
+    participant.execution_participant_id,
+  ) ?? null,
       };
     });
   }

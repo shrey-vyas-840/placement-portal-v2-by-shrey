@@ -170,6 +170,8 @@ export interface RecruitmentExecutionAttendanceReviewSummary {
  *
  * This is NOT a database table.
  */
+
+
 export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentExecutionParticipantRow {
   application_status: string;
 
@@ -196,6 +198,13 @@ export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentE
   can_override_gate: boolean;
 
   has_opportunity_override: boolean;
+
+  execution_batch?: {
+  execution_round_id: string;
+  batch_name: string;
+  batch_date: string | null;
+  batch_time: string | null;
+} | null;
 }
 
 export interface ParticipantRoleSelection {
