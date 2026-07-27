@@ -1288,7 +1288,10 @@ export function RecruitmentExecutionWorkspacePage() {
         onCancel={() => setProgressSummaryOpen(false)}
         onContinue={() => {
           setProgressSummaryOpen(false);
-          setExecutionModeDialogOpen(true);
+
+          setProgressToNextRound(true);
+
+          setCreateRoundOpen(true);
         }}
       />
 
@@ -1398,6 +1401,8 @@ export function RecruitmentExecutionWorkspacePage() {
             setPendingExecutionRoundId(round.execution_round_id);
 
             setExecutionModeDialogOpen(true);
+
+            setProgressSummaryOpen(false);
 
             setPendingRoundId(round.execution_round_id);
           } catch (error) {
