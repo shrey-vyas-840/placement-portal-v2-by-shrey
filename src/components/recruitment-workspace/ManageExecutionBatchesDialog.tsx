@@ -58,6 +58,10 @@ export default function ManageExecutionBatchesDialog({
 }: ManageExecutionBatchesDialogProps) {
   const [activeTab, setActiveTab] = useState<"VIEW" | "UPDATE">("VIEW");
 
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+
+  const [studentSearch, setStudentSearch] = useState("");
+
   const batchLookup = useMemo(() => {
     const map = new Map<string, ManageExecutionBatchStudent[]>();
 
@@ -101,8 +105,30 @@ export default function ManageExecutionBatchesDialog({
 
         {activeTab === "VIEW" ? (
           <div className="space-y-5 py-4">
+            <div className="flex justify-end">
+              <input
+                type="text"
+                className="w-72 rounded-md border px-3 py-2 text-sm"
+                placeholder="Search student..."
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+              />
+            </div>
             {batches.map((batch) => {
-              const batchStudents = batchLookup.get(batch.execution_round_id) ?? [];
+              const batchStudents = (batchLookup.get(batch.execution_round_id) ?? []).filter(
+                (student) => {
+                  if (!studentSearch.trim()) {
+                    return true;
+                  }
+
+                  const search = studentSearch.toLowerCase();
+
+                  return (
+                    student.student_name.toLowerCase().includes(search) ||
+                    student.enrollment_no.toLowerCase().includes(search)
+                  );
+                },
+              );
 
               return (
                 <div key={batch.execution_round_id} className="rounded-lg border p-4">
@@ -169,25 +195,43 @@ export default function ManageExecutionBatchesDialog({
           </div>
         ) : (
           <div className="space-y-4 py-4">
-            {batches.map((batch) => (
-              <div
-                key={batch.execution_round_id}
-                className="flex items-center justify-between rounded-lg border p-4"
-              >
-                <div>
-                  <h3 className="font-medium">{batch.round_name}</h3>
+            {batches.map((batch) => {
+              const selected = selectedBatchId === batch.execution_round_id;
 
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {batch.assigned_students} Student
-                    {batch.assigned_students === 1 ? "" : "s"} Assigned
-                  </p>
+              return (
+                <div
+                  key={batch.execution_round_id}
+                  className={`rounded-lg border transition-all ${selected ? "border-primary" : ""}`}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between p-4 text-left"
+                    onClick={() => setSelectedBatchId(selected ? null : batch.execution_round_id)}
+                  >
+                    <div>
+                      <h3 className="font-medium">{batch.round_name}</h3>
+
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {batch.assigned_students} Student
+                        {batch.assigned_students === 1 ? "" : "s"}
+                      </p>
+                    </div>
+
+                    <Badge variant={selected ? "default" : "secondary"}>
+                      {selected ? "Expanded" : "Collapsed"}
+                    </Badge>
+                  </button>
+
+                  {selected && (
+                    <div className="border-t p-4">
+                      <Button onClick={() => onEditBatch(batch.execution_round_id)}>
+                        Edit Configuration
+                      </Button>
+                    </div>
+                  )}
                 </div>
-
-                <Button variant="outline" onClick={() => onEditBatch(batch.execution_round_id)}>
-                  Edit Configuration
-                </Button>
-              </div>
-            ))}
+              );
+            })}
 
             <Separator />
 
