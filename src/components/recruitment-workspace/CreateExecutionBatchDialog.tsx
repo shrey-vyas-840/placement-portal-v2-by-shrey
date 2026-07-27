@@ -204,11 +204,13 @@ export default function CreateExecutionBatchDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Create Execution Batch
+            {editingBatch ? "Update Execution Batch" : "Create Execution Batch"}
           </DialogTitle>
 
           <DialogDescription>
-            Schedule an execution batch for the shortlisted students of this stage.
+            {editingBatch
+              ? "Update the configuration of this execution batch."
+              : "Schedule an execution batch for the shortlisted students of this stage."}
           </DialogDescription>
         </DialogHeader>
 
@@ -336,7 +338,13 @@ export default function CreateExecutionBatchDialog({
           </Button>
 
           <Button type="button" onClick={handleSave} disabled={!isValid || loading}>
-            {loading ? "Creating..." : "Create Execution Batch"}
+            {loading
+              ? editingBatch
+                ? "Updating..."
+                : "Creating..."
+              : editingBatch
+                ? "Update Execution Batch"
+                : "Create Execution Batch"}
           </Button>
         </DialogFooter>
       </DialogContent>

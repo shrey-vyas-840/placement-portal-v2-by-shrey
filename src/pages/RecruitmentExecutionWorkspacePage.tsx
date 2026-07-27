@@ -920,21 +920,17 @@ export function RecruitmentExecutionWorkspacePage() {
                                   </div>
                                 </div>
 
-                                <button
-                                  type="button"
-                                  className="rounded border px-3 py-1 text-sm"
-                                  onClick={() => {
-                                    // Previous Portion of Code -
-                                    // setBatchManagementMode("VIEW");
-                                    // setEditingExecutionBatchId(batch.execution_round_id);
-                                    // setPendingExecutionRoundId(batch.execution_round_id);
-                                    // setCreateExecutionBatchOpen(true);
-
-                                    setManageExecutionBatchesOpen(true);
-                                  }}
-                                >
-                                  Manage
-                                </button>
+                                <div className="text-right">
+                                  {batch.completed ? (
+                                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                                      Completed
+                                    </span>
+                                  ) : (
+                                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                                      Pending
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
