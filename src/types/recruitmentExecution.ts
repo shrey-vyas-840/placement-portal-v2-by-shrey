@@ -171,7 +171,6 @@ export interface RecruitmentExecutionAttendanceReviewSummary {
  * This is NOT a database table.
  */
 
-
 export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentExecutionParticipantRow {
   application_status: string;
 
@@ -200,12 +199,11 @@ export interface RecruitmentExecutionParticipantWithStudent extends RecruitmentE
   has_opportunity_override: boolean;
 
   execution_batch?: {
-  execution_round_id: string;
-  batch_name: string;
-  batch_date: string | null;
-  batch_time: string | null;
-} | null;
-
+    execution_round_id: string;
+    batch_name: string;
+    batch_date: string | null;
+    batch_time: string | null;
+  } | null;
 }
 
 export interface ParticipantRoleSelection {
@@ -332,6 +330,32 @@ export interface RecruitmentExecutionRoundRoleMapping {
   };
 }
 
+export interface RecruitmentExecutionBatch {
+  execution_round_id: string;
+
+  stage_number: number;
+
+  round_order: number;
+
+  round_name: string;
+
+  scope: ExecutionScope;
+
+  scheduled_date: string | null;
+
+  scheduled_time: string | null;
+
+  venue: string | null;
+
+  participant_count: number;
+}
+
+export interface RecruitmentExecutionBatchParticipant {
+  execution_participant_id: string;
+
+  execution_round_id: string;
+}
+
 /**
  * Lightweight history summary used by the Execution Workspace.
  *
@@ -388,6 +412,10 @@ export interface RecruitmentExecutionWorkspace {
   roundRoleMappings: RecruitmentExecutionRoundRoleMapping[];
 
   historySummary: RecruitmentExecutionHistorySummary[];
+
+  executionBatches: RecruitmentExecutionBatch[];
+
+  executionBatchParticipants: RecruitmentExecutionBatchParticipant[];
 
   remainingActiveRoles: RecruitmentExecutionRemainingRole[];
 }

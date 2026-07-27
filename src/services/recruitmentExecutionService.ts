@@ -18,6 +18,8 @@ import type {
   ExecutionGateStatus,
   ExecutionProgressionStatus,
   ExecutionRoundCreationMode,
+  RecruitmentExecutionBatch,
+  RecruitmentExecutionBatchParticipant,
 } from "@/types/recruitmentExecution";
 
 /**
@@ -970,6 +972,62 @@ class RecruitmentExecutionService {
     }));
   }
 
+
+  private async loadExecutionBatches(
+  executionId: string,
+): Promise<RecruitmentExecutionBatch[]> {
+  const rounds = await this.loadRounds(executionId);
+
+  return rounds.map((round) => ({
+    execution_round_id: round.execution_round_id,
+
+    stage_number: round.stage_number,
+
+    round_order: round.round_order,
+
+    round_name: round.round_name,
+
+    scope: round.scope,
+
+    scheduled_date: round.scheduled_date,
+
+    scheduled_time: round.scheduled_time,
+
+    venue: round.venue,
+
+    participant_count: 0,
+  }));
+}
+
+private async loadExecutionBatchParticipants(
+  executionId: string,
+): Promise<RecruitmentExecutionBatchParticipant[]> {
+  const { data, error } = await (supabase as any)
+    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+    .select(`
+      execution_round_id,
+      execution_participant_id,
+      recruitment_execution_rounds!inner (
+        execution_id
+      )
+    `)
+    .eq(
+      "recruitment_execution_rounds.execution_id",
+      executionId,
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row: any) => ({
+    execution_round_id: row.execution_round_id,
+
+    execution_participant_id:
+      row.execution_participant_id,
+  }));
+}
+
   // --------------------------------------------------------------------------
   // History
   // --------------------------------------------------------------------------
@@ -1746,17 +1804,27 @@ history_revision
 
     const historySummary = await this.loadHistorySummary(executionId);
 
+    const executionBatches =
+  await this.loadExecutionBatches(executionId);
+
+const executionBatchParticipants =
+  await this.loadExecutionBatchParticipants(executionId);
+
     const remainingActiveRoles = await this.calculatePendingRoles(executionId);
 
-    return {
-      series,
-      execution,
-      rounds,
-      participants,
-      roundRoleMappings,
-      historySummary,
-      remainingActiveRoles,
-    };
+return {
+  series,
+  execution,
+  rounds,
+  participants,
+  roundRoleMappings,
+  historySummary,
+
+  executionBatches,
+  executionBatchParticipants,
+
+  remainingActiveRoles,
+};
   }
 }
 
