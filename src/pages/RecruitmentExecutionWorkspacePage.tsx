@@ -11,7 +11,9 @@ import CreateRoundDialog, {
 } from "@/components/recruitment-workspace/CreateRoundDialog";
 import ProgressSummaryDialog from "@/components/recruitment-workspace/ProgressSummaryDialog";
 import ExecutionBatchParticipantDialog from "@/components/recruitment-workspace/ExecutionBatchParticipantDialog";
-
+import CreateExecutionBatchDialog, {
+  type ExecutionBatchFormData,
+} from "@/components/recruitment-workspace/CreateExecutionBatchDialog";
 import ExecutionModeDialog, {
   type ExecutionMode,
 } from "@/components/recruitment-workspace/ExecutionModeDialog";
@@ -73,6 +75,8 @@ export function RecruitmentExecutionWorkspacePage() {
   const [showExecutionBatchPanel, setShowExecutionBatchPanel] = useState(false);
 
   const [selectedExecutionBatchId, setSelectedExecutionBatchId] = useState<string | null>(null);
+
+  const [createExecutionBatchOpen, setCreateExecutionBatchOpen] = useState(false);
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
@@ -342,6 +346,22 @@ export function RecruitmentExecutionWorkspacePage() {
     [participants, editedRows],
   );
 
+  const unassignedShortlistedParticipants = useMemo(() => {
+    if (!workspace) {
+      return [];
+    }
+
+    const assigned = new Set(
+      workspace.executionBatchParticipants.map(
+        (participant) => participant.execution_participant_id,
+      ),
+    );
+
+    return shortlistedParticipants.filter(
+      (participant) => !assigned.has(participant.execution_participant_id),
+    );
+  }, [workspace, shortlistedParticipants]);
+
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
 
@@ -391,15 +411,87 @@ export function RecruitmentExecutionWorkspacePage() {
 
     return workspace.executionBatches
       .filter((batch) => batch.stage_number === selectedStage)
-      .map((batch) => ({
-        ...batch,
-        participant_count: workspace.executionBatchParticipants.filter(
+      .map((batch) => {
+        const assignedParticipants = workspace.executionBatchParticipants.filter(
           (participant) => participant.execution_round_id === batch.execution_round_id,
-        ).length,
-        selected: batch.execution_round_id === selectedExecutionBatchId,
-      }))
+        );
+
+        const assignedIds = new Set(
+          assignedParticipants.map((participant) => participant.execution_participant_id),
+        );
+
+        const assignedRows = participants.filter((participant) =>
+          assignedIds.has(participant.execution_participant_id),
+        );
+
+        const completed =
+          assignedRows.length > 0 &&
+          assignedRows.every((participant) => {
+            const row = editedRows[participant.execution_participant_id];
+
+            return row?.attendanceStatus !== null;
+          });
+
+        return {
+          ...batch,
+
+          participant_count: assignedRows.length,
+
+          present_count: assignedRows.filter((participant) => {
+            const row = editedRows[participant.execution_participant_id];
+
+            return row?.attendanceStatus === "PRESENT";
+          }).length,
+
+          absent_count: assignedRows.filter((participant) => {
+            const row = editedRows[participant.execution_participant_id];
+
+            return row?.attendanceStatus === "ABSENT";
+          }).length,
+
+          shortlisted_count: assignedRows.filter((participant) => {
+            const row = editedRows[participant.execution_participant_id];
+
+            return row?.progressionStatus === "SHORTLISTED";
+          }).length,
+
+          selected_count: assignedRows.filter((participant) => {
+            const row = editedRows[participant.execution_participant_id];
+
+            return row?.progressionStatus === "SELECTED";
+          }).length,
+
+          completed,
+
+          pending:
+            assignedRows.length -
+            assignedRows.filter((participant) => {
+              const row = editedRows[participant.execution_participant_id];
+
+              return row?.attendanceStatus !== null;
+            }).length,
+
+          selected: batch.execution_round_id === selectedExecutionBatchId,
+        };
+      })
       .sort((a, b) => a.round_order - b.round_order);
-  }, [workspace, selectedStage, selectedExecutionBatchId]);
+  }, [workspace, selectedStage, selectedExecutionBatchId, participants, editedRows]);
+
+  const allExecutionBatchesCompleted = useMemo(() => {
+    if (!showExecutionBatchPanel) {
+      return true;
+    }
+
+    if (currentStageBatches.length === 0) {
+      return false;
+    }
+
+    if (unassignedShortlistedParticipants.length > 0) {
+      return false;
+    }
+
+    return currentStageBatches.every((batch) => batch.completed);
+  }, [showExecutionBatchPanel, currentStageBatches, unassignedShortlistedParticipants]);
 
   useEffect(() => {
     if (currentStageBatches.length > 0 && !selectedExecutionBatchId) {
@@ -638,84 +730,6 @@ export function RecruitmentExecutionWorkspacePage() {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-2">
-                {showExecutionBatchPanel && (
-                  <div className="mt-6 rounded-xl border bg-card p-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold">Execution Batches</h3>
-
-                        <p className="text-sm text-muted-foreground">
-                          Divide shortlisted students into execution batches.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="rounded-md border px-4 py-2 text-sm"
-                        onClick={() => {
-                          if (currentStageBatches.length === 0) {
-                            toast.error("Create another execution round first.");
-                            return;
-                          }
-
-                          setPendingExecutionRoundId(
-                            currentStageBatches[currentStageBatches.length - 1].execution_round_id,
-                          );
-
-                          setBatchParticipantDialogOpen(true);
-                        }}
-                      >
-                        + Create Batch
-                      </button>
-                    </div>
-
-                    <div className="mt-5 space-y-3">
-                      {currentStageBatches.length === 0 ? (
-                        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                          No execution batches created.
-                        </div>
-                      ) : (
-                        currentStageBatches.map((batch) => (
-                          <div
-                            key={batch.execution_round_id}
-                            onClick={() => setSelectedExecutionBatchId(batch.execution_round_id)}
-                            className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${
-                              batch.selected ? "border-primary bg-primary/5" : ""
-                            }`}
-                          >
-                            <div>
-                              <div className="font-medium">{batch.round_name}</div>
-
-                              <div className="text-sm text-muted-foreground">
-                                {batch.scheduled_date ?? "No Date"} •{" "}
-                                {batch.scheduled_time ?? "No Time"}
-                              </div>
-
-                              <div className="mt-1 text-xs text-muted-foreground">
-                                {batch.participant_count} participant(s)
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              className="rounded-md border px-3 py-2 text-sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-
-                                setPendingExecutionRoundId(batch.execution_round_id);
-
-                                setBatchParticipantDialogOpen(true);
-                              }}
-                            >
-                              Assign Students
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {selectedStageRounds.map((round) => (
                   <button
                     key={round.execution_round_id}
@@ -746,6 +760,116 @@ export function RecruitmentExecutionWorkspacePage() {
                   </button>
                 ))}
               </div>
+
+              {showExecutionBatchPanel && (
+                <div className="mt-6 rounded-xl border bg-card p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">Execution Batches</h3>
+
+                      <p className="text-sm text-muted-foreground">
+                        Divide shortlisted students into execution batches.
+                      </p>
+
+                      {unassignedShortlistedParticipants.length > 0 && (
+                        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                          <div className="font-medium text-red-700">
+                            {unassignedShortlistedParticipants.length}
+                            shortlisted participant(s) are not assigned to any execution batch.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="rounded-md border px-4 py-2 text-sm"
+                      onClick={() => {
+                        setCreateExecutionBatchOpen(true);
+                      }}
+                    >
+                      + Create Batch
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    {currentStageBatches.length === 0 ? (
+                      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        No execution batches created.
+                      </div>
+                    ) : (
+                      currentStageBatches.map((batch) => (
+                        <div
+                          key={batch.execution_round_id}
+                          onClick={() => setSelectedExecutionBatchId(batch.execution_round_id)}
+                          className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${
+                            batch.selected ? "border-primary bg-primary/5" : ""
+                          }`}
+                        >
+                          <div>
+                            <div className="font-medium">{batch.round_name}</div>
+
+                            <div className="text-sm text-muted-foreground">
+                              {batch.scheduled_date ?? "No Date"} •{" "}
+                              {batch.scheduled_time ?? "No Time"}
+                            </div>
+
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                                <div>Assigned : {batch.participant_count}</div>
+
+                                <div>Present : {batch.present_count}</div>
+
+                                <div>Absent : {batch.absent_count}</div>
+
+                                <div>Shortlisted : {batch.shortlisted_count}</div>
+
+                                <div>Selected : {batch.selected_count}</div>
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {batch.pending} pending attendance
+                              </div>
+                              <div className="mt-2">
+                                {batch.completed ? (
+                                  <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">
+                                    Completed
+                                  </span>
+                                ) : batch.pending === batch.participant_count ? (
+                                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs">
+                                    Not Started
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">
+                                    In Progress
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            disabled={batch.completed}
+                            type="button"
+                            className="rounded-md border px-3 py-2 text-sm"
+                            onClick={(e) => {
+                              if (batch.completed) {
+                                return;
+                              }
+                              e.stopPropagation();
+
+                              setPendingExecutionRoundId(batch.execution_round_id);
+
+                              setBatchParticipantDialogOpen(true);
+                            }}
+                          >
+                            {batch.completed ? "Completed" : "Assign Students"}
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-6 overflow-x-auto">
                 {selectedExecutionBatchId &&
@@ -990,7 +1114,12 @@ export function RecruitmentExecutionWorkspacePage() {
                     </ul>
                   </div>
                 )}
-
+                {showExecutionBatchPanel && !allExecutionBatchesCompleted && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    Complete all execution batches and assign every shortlisted participant before
+                    progressing to the next stage.
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={handleProgressToNextRound}
@@ -999,7 +1128,8 @@ export function RecruitmentExecutionWorkspacePage() {
                     roundDirty ||
                     hasUnsavedChanges ||
                     !isCurrentRoundSaved ||
-                    (workspace?.remainingActiveRoles.length ?? 0) > 0
+                    (workspace?.remainingActiveRoles.length ?? 0) > 0 ||
+                    !allExecutionBatchesCompleted
                   }
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -1009,7 +1139,13 @@ export function RecruitmentExecutionWorkspacePage() {
                 <button
                   type="button"
                   onClick={handleFinalizeExecution}
-                  disabled={saving || !isCurrentRoundSaved || roundDirty || hasUnsavedChanges}
+                  disabled={
+                    saving ||
+                    !isCurrentRoundSaved ||
+                    roundDirty ||
+                    hasUnsavedChanges ||
+                    !allExecutionBatchesCompleted
+                  }
                   className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Final Save
@@ -1165,13 +1301,12 @@ export function RecruitmentExecutionWorkspacePage() {
             setStageConfigurationMode(false);
 
             if (executionMode === "MULTIPLE") {
-              setPendingExecutionRoundId(round.execution_round_id);
-
               setShowExecutionBatchPanel(true);
 
               setCreateRoundOpen(false);
 
               setPendingExecutionRoundId(round.execution_round_id);
+
               setBatchParticipantDialogOpen(true);
 
               return;
@@ -1192,14 +1327,86 @@ export function RecruitmentExecutionWorkspacePage() {
         }}
       />
 
+      <CreateExecutionBatchDialog
+        open={createExecutionBatchOpen}
+        loading={saving}
+        stageNumber={selectedStage ?? 1}
+        participantCount={unassignedShortlistedParticipants.length}
+        defaultBatchName={`Batch ${currentStageBatches.length + 1}`}
+        onCancel={() => {
+          setCreateExecutionBatchOpen(false);
+        }}
+        onSave={async (data: ExecutionBatchFormData) => {
+          if (!workspace) return;
+
+          try {
+            setSaving(true);
+
+            const batch = await recruitmentExecutionService.createExecutionBatch({
+              executionId: workspace.execution.execution_id,
+
+              creationMode: "PARALLEL_STAGE",
+
+              roundOrder: Math.max(...workspace.rounds.map((r) => r.round_order), 0) + 1,
+
+              roundName: data.batchName,
+
+              scope: "COMMON",
+
+              roleIds: [],
+
+              executionParticipantIds: [],
+
+              scheduledDate: data.scheduledDate,
+
+              scheduledTime: data.scheduledTime,
+
+              venue: data.venue,
+
+              remarks: data.remarks,
+            });
+
+            await loadWorkspace();
+
+            setCreateExecutionBatchOpen(false);
+
+            setPendingExecutionRoundId(batch.execution_round_id);
+
+            setSelectedExecutionBatchId(batch.execution_round_id);
+
+            setBatchParticipantDialogOpen(true);
+
+            toast.success("Execution batch created.");
+          } catch (error) {
+            console.error(error);
+
+            toast.error(
+              error instanceof Error ? error.message : "Unable to create execution batch.",
+            );
+          } finally {
+            setSaving(false);
+          }
+        }}
+      />
+
       <ExecutionBatchParticipantDialog
         open={batchParticipantDialogOpen}
         loading={loading}
         participants={shortlistedParticipants}
         alreadyAssignedParticipantIds={
           workspace?.executionBatchParticipants
-            .filter((participant) => participant.execution_round_id === pendingExecutionRoundId)
-            .map((participant) => participant.execution_participant_id) ?? []
+            .filter((assignment) => {
+              if (assignment.execution_round_id === pendingExecutionRoundId) {
+                return false;
+              }
+
+              const batch = workspace.executionBatches.find(
+                (b) => b.execution_round_id === assignment.execution_round_id,
+              );
+
+              return batch?.stage_number === selectedStage;
+            })
+            .map((assignment) => assignment.execution_participant_id) ?? []
         }
         roleName="Execution Batch"
         stageNumber={selectedStage ?? 1}
