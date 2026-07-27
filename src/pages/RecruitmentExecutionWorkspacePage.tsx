@@ -90,6 +90,14 @@ export function RecruitmentExecutionWorkspacePage() {
 
       setWorkspace(data);
 
+      const hasExecutionBatches = data.executionBatches.length > 0;
+
+      const hasExistingBatchAssignments = data.executionBatchParticipants.length > 0;
+
+      setShowExecutionBatchPanel(hasExecutionBatches || hasExistingBatchAssignments);
+
+      setExecutionMode(hasExecutionBatches || hasExistingBatchAssignments ? "MULTIPLE" : "SINGLE");
+
       if (data.rounds.length === 0) {
         setCreateRoundOpen(true);
       } else {
@@ -250,8 +258,21 @@ export function RecruitmentExecutionWorkspacePage() {
     //
     // COMMON rounds always operate on the full participant set.
     //
+
     if (selectedRound.scope === "COMMON") {
-      return workspace.participants;
+      if (!showExecutionBatchPanel || !selectedExecutionBatchId) {
+        return workspace.participants;
+      }
+
+      const assignedIds = new Set(
+        workspace.executionBatchParticipants
+          .filter((assignment) => assignment.execution_round_id === selectedExecutionBatchId)
+          .map((assignment) => assignment.execution_participant_id),
+      );
+
+      return workspace.participants.filter((participant) =>
+        assignedIds.has(participant.execution_participant_id),
+      );
     }
 
     //
@@ -267,16 +288,7 @@ export function RecruitmentExecutionWorkspacePage() {
     return workspace.participants.filter((participant) =>
       participant.selected_roles.some((role) => mappedRoleIds.has(role.drive_role_id)),
     );
-  }, [workspace, selectedRound]);
-
-  const metrics = useMemo(
-    () => ({
-      totalParticipants: participants.length,
-      totalRounds: workspace?.rounds.length ?? 0,
-      finalizedRounds: 0,
-    }),
-    [participants, workspace],
-  );
+  }, [workspace, selectedRound, showExecutionBatchPanel, selectedExecutionBatchId]);
 
   const stageGroups = useMemo(() => {
     if (!workspace) {
@@ -351,6 +363,10 @@ export function RecruitmentExecutionWorkspacePage() {
       return [];
     }
 
+    if (!showExecutionBatchPanel) {
+      return [];
+    }
+
     const assigned = new Set(
       workspace.executionBatchParticipants.map(
         (participant) => participant.execution_participant_id,
@@ -360,7 +376,7 @@ export function RecruitmentExecutionWorkspacePage() {
     return shortlistedParticipants.filter(
       (participant) => !assigned.has(participant.execution_participant_id),
     );
-  }, [workspace, shortlistedParticipants]);
+  }, [workspace, shortlistedParticipants, showExecutionBatchPanel]);
 
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
@@ -477,6 +493,17 @@ export function RecruitmentExecutionWorkspacePage() {
       .sort((a, b) => a.round_order - b.round_order);
   }, [workspace, selectedStage, selectedExecutionBatchId, participants, editedRows]);
 
+  const metrics = useMemo(
+    () => ({
+      totalParticipants: showExecutionBatchPanel
+        ? currentStageBatches.reduce((sum, batch) => sum + batch.participant_count, 0)
+        : participants.length,
+      totalRounds: workspace?.rounds.length ?? 0,
+      finalizedRounds: 0,
+    }),
+    [participants, workspace, showExecutionBatchPanel, currentStageBatches],
+  );
+
   const allExecutionBatchesCompleted = useMemo(() => {
     if (!showExecutionBatchPanel) {
       return true;
@@ -574,8 +601,7 @@ export function RecruitmentExecutionWorkspacePage() {
       );
       return;
     }
-
-    setStageConfigurationMode(true);
+    setExecutionModeDialogOpen(true);
     setProgressSummaryOpen(true);
   };
 
@@ -1185,12 +1211,24 @@ export function RecruitmentExecutionWorkspacePage() {
         onCancel={() => {
           setExecutionModeDialogOpen(false);
         }}
-        onContinue={(mode: ExecutionMode) => {
+        onContinue={(mode) => {
           setExecutionMode(mode);
 
           setExecutionModeDialogOpen(false);
 
-          setCreateRoundOpen(true);
+          if (mode === "MULTIPLE") {
+            setShowExecutionBatchPanel(true);
+
+            if (workspace.executionBatches.length === 0) {
+              setCreateExecutionBatchOpen(true);
+            } else {
+              setCreateRoundOpen(true);
+            }
+          } else {
+            setShowExecutionBatchPanel(false);
+
+            setCreateRoundOpen(true);
+          }
         }}
       />
 
@@ -1303,11 +1341,12 @@ export function RecruitmentExecutionWorkspacePage() {
             if (executionMode === "MULTIPLE") {
               setShowExecutionBatchPanel(true);
 
+              if (workspace.executionBatches.length === 0) {
+                setPendingExecutionRoundId(round.execution_round_id);
+                setBatchParticipantDialogOpen(true);
+              }
+
               setCreateRoundOpen(false);
-
-              setPendingExecutionRoundId(round.execution_round_id);
-
-              setBatchParticipantDialogOpen(true);
 
               return;
             }
@@ -1373,7 +1412,7 @@ export function RecruitmentExecutionWorkspacePage() {
             setPendingExecutionRoundId(batch.execution_round_id);
 
             setSelectedExecutionBatchId(batch.execution_round_id);
-
+            setShowExecutionBatchPanel(true);
             setBatchParticipantDialogOpen(true);
 
             toast.success("Execution batch created.");
