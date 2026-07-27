@@ -684,12 +684,20 @@ class RecruitmentExecutionService {
     return (data ?? []).map((row: any) => row.execution_participant_id as string);
   }
 
-  async assignExecutionBatchParticipants(input: {
-    executionRoundId: string;
-    executionParticipantIds: string[];
-  }): Promise<void> {
-    await this.assignParticipantsToRound(input);
-  }
+ async assignExecutionBatchParticipants(input: {
+  executionRoundId: string;
+  executionParticipantIds: string[];
+}): Promise<void> {
+  console.log("ASSIGN BATCH", {
+    executionRoundId: input.executionRoundId,
+    participantCount: input.executionParticipantIds.length,
+    participantIds: input.executionParticipantIds,
+  });
+
+  await this.removeRoundParticipants(input.executionRoundId);
+
+  await this.assignParticipantsToRound(input);
+}
 
   private async assignParticipantsToRound(input: {
     executionRoundId: string;
@@ -747,18 +755,34 @@ class RecruitmentExecutionService {
       }
     }
 
-    const rows = input.executionParticipantIds.map((executionParticipantId) => ({
-      execution_round_id: input.executionRoundId,
-      execution_participant_id: executionParticipantId,
-    }));
+  const rows = input.executionParticipantIds.map((executionParticipantId) => ({
+  execution_round_id: input.executionRoundId,
+  execution_participant_id: executionParticipantId,
+}));
 
-    const { error } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-      .insert(rows);
+console.log("INSERTING ROUND PARTICIPANTS", {
+  executionRoundId: input.executionRoundId,
+  rows,
+});
 
-    if (error) {
-      throw error;
-    }
+const { data: inserted, error } = await (supabase as any)
+  .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+  .insert(rows)
+  .select();
+
+console.log("INSERT RESULT", inserted);
+
+if (error) {
+  console.error("INSERT ERROR", error);
+  throw error;
+}
+
+const { data: verify } = await (supabase as any)
+  .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+  .select("*")
+  .eq("execution_round_id", input.executionRoundId);
+
+console.log("VERIFY AFTER INSERT", verify);
   }
 
   private async removeRoundParticipants(executionRoundId: string): Promise<void> {
@@ -972,59 +996,61 @@ class RecruitmentExecutionService {
     }));
   }
 
+  private async loadExecutionBatches(executionId: string): Promise<RecruitmentExecutionBatch[]> {
+    const rounds = await this.loadRounds(executionId);
 
-  private async loadExecutionBatches(
-  executionId: string,
-): Promise<RecruitmentExecutionBatch[]> {
-  const rounds = await this.loadRounds(executionId);
+    return rounds.map((round) => ({
+      execution_round_id: round.execution_round_id,
 
-  return rounds.map((round) => ({
-    execution_round_id: round.execution_round_id,
+      stage_number: round.stage_number,
 
-    stage_number: round.stage_number,
+      round_order: round.round_order,
 
-    round_order: round.round_order,
+      round_name: round.round_name,
 
-    round_name: round.round_name,
+      scope: round.scope,
 
-    scope: round.scope,
+      scheduled_date: round.scheduled_date,
 
-    scheduled_date: round.scheduled_date,
+      scheduled_time: round.scheduled_time,
 
-    scheduled_time: round.scheduled_time,
+      venue: round.venue,
 
-    venue: round.venue,
+      participant_count: 0,
+    }));
+  }
 
-    participant_count: 0,
-  }));
-}
-
-private async loadExecutionBatchParticipants(
+ private async loadExecutionBatchParticipants(
   executionId: string,
 ): Promise<RecruitmentExecutionBatchParticipant[]> {
+  const rounds = await this.loadRounds(executionId);
+
+  if (rounds.length === 0) {
+    return [];
+  }
+
+  const roundIds = rounds.map((round) => round.execution_round_id);
+
   const { data, error } = await (supabase as any)
     .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
     .select(`
       execution_round_id,
-      execution_participant_id,
-      recruitment_execution_rounds!inner (
-        execution_id
-      )
+      execution_participant_id
     `)
-    .eq(
-      "recruitment_execution_rounds.execution_id",
-      executionId,
-    );
+    .in("execution_round_id", roundIds);
 
   if (error) {
     throw error;
   }
-
+console.log(
+  "loadExecutionBatchParticipants",
+  executionId,
+  rounds.length,
+  data
+);
   return (data ?? []).map((row: any) => ({
     execution_round_id: row.execution_round_id,
-
-    execution_participant_id:
-      row.execution_participant_id,
+    execution_participant_id: row.execution_participant_id,
   }));
 }
 
@@ -1804,27 +1830,25 @@ history_revision
 
     const historySummary = await this.loadHistorySummary(executionId);
 
-    const executionBatches =
-  await this.loadExecutionBatches(executionId);
+    const executionBatches = await this.loadExecutionBatches(executionId);
 
-const executionBatchParticipants =
-  await this.loadExecutionBatchParticipants(executionId);
+    const executionBatchParticipants = await this.loadExecutionBatchParticipants(executionId);
 
     const remainingActiveRoles = await this.calculatePendingRoles(executionId);
 
-return {
-  series,
-  execution,
-  rounds,
-  participants,
-  roundRoleMappings,
-  historySummary,
+    return {
+      series,
+      execution,
+      rounds,
+      participants,
+      roundRoleMappings,
+      historySummary,
 
-  executionBatches,
-  executionBatchParticipants,
+      executionBatches,
+      executionBatchParticipants,
 
-  remainingActiveRoles,
-};
+      remainingActiveRoles,
+    };
   }
 }
 

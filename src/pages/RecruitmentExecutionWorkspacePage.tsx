@@ -78,6 +78,12 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [createExecutionBatchOpen, setCreateExecutionBatchOpen] = useState(false);
 
+  const [editingExecutionBatchId, setEditingExecutionBatchId] = useState<string | null>(null);
+
+  const [executionBatchAssignments, setExecutionBatchAssignments] = useState<
+    Record<string, string>
+  >({});
+
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
@@ -89,6 +95,23 @@ export function RecruitmentExecutionWorkspacePage() {
       const data = await recruitmentExecutionService.getExecutionDashboard(executionId);
 
       setWorkspace(data);
+
+      console.log("Participants:", data.participants);
+      console.log("Participant Count:", data.participants.length);
+
+      if (data.participants.length > 0) {
+        console.log("First Participant:", data.participants[0]);
+        console.log("Student:", data.participants[0].student);
+        console.log("Roles:", data.participants[0].selected_roles);
+      }
+
+      const assignments: Record<string, string> = {};
+
+      data.executionBatchParticipants.forEach((assignment) => {
+        assignments[assignment.execution_participant_id] = assignment.execution_round_id;
+      });
+
+      setExecutionBatchAssignments(assignments);
 
       const hasExecutionBatches = data.executionBatches.length > 0;
 
@@ -254,12 +277,47 @@ export function RecruitmentExecutionWorkspacePage() {
     if (!workspace || !selectedRound) {
       return [];
     }
+    console.log("Selected Round", selectedRound);
+    console.log("Selected Round Scope", selectedRound.scope);
+    console.log("Selected Batch", selectedExecutionBatchId);
 
+    console.log("Assignments", workspace.executionBatchParticipants);
+
+    console.log(
+      "Participant IDs",
+      workspace.executionBatchParticipants.map((p) => ({
+        batch: p.execution_round_id,
+        participant: p.execution_participant_id,
+      })),
+    );
+
+    console.log(
+      "Workspace Participants",
+      workspace.participants.map((p) => p.execution_participant_id),
+    );
+    console.log("Show Batch Panel", showExecutionBatchPanel);
     //
     // COMMON rounds always operate on the full participant set.
     //
 
     if (selectedRound.scope === "COMMON") {
+      console.log("COMMON ROUND");
+
+      console.log(
+        "Returning Participants",
+        !showExecutionBatchPanel || !selectedExecutionBatchId
+          ? workspace.participants.length
+          : workspace.participants.filter((participant) =>
+              new Set(
+                workspace.executionBatchParticipants
+                  .filter(
+                    (assignment) => assignment.execution_round_id === selectedExecutionBatchId,
+                  )
+                  .map((a) => a.execution_participant_id),
+              ).has(participant.execution_participant_id),
+            ).length,
+      );
+
       if (!showExecutionBatchPanel || !selectedExecutionBatchId) {
         return workspace.participants;
       }
@@ -368,15 +426,13 @@ export function RecruitmentExecutionWorkspacePage() {
     }
 
     const assigned = new Set(
-      workspace.executionBatchParticipants.map(
-        (participant) => participant.execution_participant_id,
-      ),
+      workspace.executionBatchParticipants.map((assignment) => assignment.execution_participant_id),
     );
 
     return shortlistedParticipants.filter(
       (participant) => !assigned.has(participant.execution_participant_id),
     );
-  }, [workspace, shortlistedParticipants, showExecutionBatchPanel]);
+  }, [shortlistedParticipants, showExecutionBatchPanel, workspace]);
 
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
@@ -428,12 +484,10 @@ export function RecruitmentExecutionWorkspacePage() {
     return workspace.executionBatches
       .filter((batch) => batch.stage_number === selectedStage)
       .map((batch) => {
-        const assignedParticipants = workspace.executionBatchParticipants.filter(
-          (participant) => participant.execution_round_id === batch.execution_round_id,
-        );
-
         const assignedIds = new Set(
-          assignedParticipants.map((participant) => participant.execution_participant_id),
+          workspace.executionBatchParticipants
+            .filter((assignment) => assignment.execution_round_id === batch.execution_round_id)
+            .map((assignment) => assignment.execution_participant_id),
         );
 
         const assignedRows = participants.filter((participant) =>
@@ -520,12 +574,6 @@ export function RecruitmentExecutionWorkspacePage() {
     return currentStageBatches.every((batch) => batch.completed);
   }, [showExecutionBatchPanel, currentStageBatches, unassignedShortlistedParticipants]);
 
-  useEffect(() => {
-    if (currentStageBatches.length > 0 && !selectedExecutionBatchId) {
-      setSelectedExecutionBatchId(currentStageBatches[0].execution_round_id);
-    }
-  }, [currentStageBatches, selectedExecutionBatchId]);
-
   const handleSaveRound = async () => {
     setSaving(true);
 
@@ -601,7 +649,6 @@ export function RecruitmentExecutionWorkspacePage() {
       );
       return;
     }
-    setExecutionModeDialogOpen(true);
     setProgressSummaryOpen(true);
   };
 
@@ -789,131 +836,114 @@ export function RecruitmentExecutionWorkspacePage() {
 
               {showExecutionBatchPanel && (
                 <div className="mt-6 rounded-xl border bg-card p-5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div>
                       <h3 className="text-lg font-semibold">Execution Batches</h3>
 
                       <p className="text-sm text-muted-foreground">
-                        Divide shortlisted students into execution batches.
+                        Configure batches for this stage.
                       </p>
-
-                      {unassignedShortlistedParticipants.length > 0 && (
-                        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
-                          <div className="font-medium text-red-700">
-                            {unassignedShortlistedParticipants.length}
-                            shortlisted participant(s) are not assigned to any execution batch.
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     <button
                       type="button"
                       className="rounded-md border px-4 py-2 text-sm"
                       onClick={() => {
+                        setEditingExecutionBatchId(null);
                         setCreateExecutionBatchOpen(true);
                       }}
                     >
-                      + Create Batch
+                      {currentStageBatches.length === 0 ? "Create Batches" : "Update Batches"}
                     </button>
                   </div>
 
-                  <div className="mt-5 space-y-3">
+                  <div className="mt-5">
                     {currentStageBatches.length === 0 ? (
-                      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                        No execution batches created.
+                      <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
+                        No execution batches have been configured for this stage.
                       </div>
                     ) : (
-                      currentStageBatches.map((batch) => (
-                        <div
-                          key={batch.execution_round_id}
-                          onClick={() => setSelectedExecutionBatchId(batch.execution_round_id)}
-                          className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${
-                            batch.selected ? "border-primary bg-primary/5" : ""
-                          }`}
-                        >
-                          <div>
-                            <div className="font-medium">{batch.round_name}</div>
-
-                            <div className="text-sm text-muted-foreground">
-                              {batch.scheduled_date ?? "No Date"} •{" "}
-                              {batch.scheduled_time ?? "No Time"}
-                            </div>
-
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                                <div>Assigned : {batch.participant_count}</div>
-
-                                <div>Present : {batch.present_count}</div>
-
-                                <div>Absent : {batch.absent_count}</div>
-
-                                <div>Shortlisted : {batch.shortlisted_count}</div>
-
-                                <div>Selected : {batch.selected_count}</div>
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {batch.pending} pending attendance
-                              </div>
-                              <div className="mt-2">
-                                {batch.completed ? (
-                                  <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">
-                                    Completed
-                                  </span>
-                                ) : batch.pending === batch.participant_count ? (
-                                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs">
-                                    Not Started
-                                  </span>
-                                ) : (
-                                  <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-700">
-                                    In Progress
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                      <>
+                        <div className="rounded-lg border bg-muted/30 p-4">
+                          <div className="font-medium">
+                            {currentStageBatches.length} Batch
+                            {currentStageBatches.length === 1 ? "" : "es"} Configured
                           </div>
 
-                          <button
-                            disabled={batch.completed}
-                            type="button"
-                            className="rounded-md border px-3 py-2 text-sm"
-                            onClick={(e) => {
-                              if (batch.completed) {
-                                return;
-                              }
-                              e.stopPropagation();
+                          <div className="mt-3 space-y-2">
+                            {currentStageBatches.map((batch) => (
+                              <div
+                                key={batch.execution_round_id}
+                                className="flex items-center justify-between rounded border bg-background px-3 py-2"
+                              >
+                                <div>
+                                  <div className="font-medium">{batch.round_name}</div>
 
-                              setPendingExecutionRoundId(batch.execution_round_id);
+                                  <div className="text-xs text-muted-foreground">
+                                    {batch.scheduled_date ?? "No Date"} •{" "}
+                                    {batch.scheduled_time ?? "No Time"}
+                                  </div>
 
-                              setBatchParticipantDialogOpen(true);
-                            }}
-                          >
-                            {batch.completed ? "Completed" : "Assign Students"}
-                          </button>
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    {
+                                      Object.entries(executionBatchAssignments).filter(
+                                        ([, value]) => value === batch.execution_round_id,
+                                      ).length
+                                    }{" "}
+                                    student(s) assigned
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  className="rounded border px-3 py-1 text-sm"
+                                  onClick={() => {
+                                    setEditingExecutionBatchId(batch.execution_round_id);
+                                    setPendingExecutionRoundId(batch.execution_round_id);
+                                    setCreateExecutionBatchOpen(true);
+                                  }}
+                                >
+                                  View / Update
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))
+
+                        {shortlistedParticipants.some(
+                          (participant) =>
+                            !executionBatchAssignments[participant.execution_participant_id],
+                        ) ? (
+                          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                            <div className="font-medium text-amber-800">
+                              {unassignedShortlistedParticipants.length} shortlisted participant(s)
+                              still need batch assignment.
+                            </div>
+
+                            <button
+                              className="mt-3 rounded border bg-background px-3 py-2 text-sm"
+                              onClick={() => {
+                                setBatchParticipantDialogOpen(true);
+                              }}
+                            >
+                              Assign Batches
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
+                            <div className="font-medium text-green-700">
+                              ✓ All shortlisted participants have been assigned to execution
+                              batches.
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
               )}
 
               <div className="mt-6 overflow-x-auto">
-                {selectedExecutionBatchId &&
-                  (selectedExecutionBatchId
-                    ? participants.filter((participant) =>
-                        workspace?.executionBatchParticipants.some(
-                          (assignment) =>
-                            assignment.execution_round_id === selectedExecutionBatchId &&
-                            assignment.execution_participant_id ===
-                              participant.execution_participant_id,
-                        ),
-                      ).length === 0
-                    : false) && (
-                    <div className="mb-4 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                      No students assigned to this execution batch.
-                    </div>
-                  )}
-
                 <table className="min-w-full border-collapse">
                   <thead className="sticky top-0 z-10 bg-background">
                     <tr className="border-b transition-colors hover:bg-muted/30">
@@ -928,21 +958,15 @@ export function RecruitmentExecutionWorkspacePage() {
                       <th className="px-3 py-3 text-left text-sm">Gate</th>
 
                       <th className="px-3 py-3 text-left text-sm">Progression</th>
+
+                      {showExecutionBatchPanel && (
+                        <th className="px-3 py-2 text-left font-medium">Execution Batch</th>
+                      )}
                     </tr>
                   </thead>
 
                   <tbody>
-                    {(selectedExecutionBatchId
-                      ? participants.filter((participant) =>
-                          workspace?.executionBatchParticipants.some(
-                            (assignment) =>
-                              assignment.execution_round_id === selectedExecutionBatchId &&
-                              assignment.execution_participant_id ===
-                                participant.execution_participant_id,
-                          ),
-                        )
-                      : participants
-                    ).map((participant) => {
+                    {participants.map((participant) => {
                       const editedRow = editedRows[participant.execution_participant_id];
 
                       const effectiveGateStatus: ExecutionGateStatus | "ALLOWED_OVERRIDE" =
@@ -1097,6 +1121,45 @@ export function RecruitmentExecutionWorkspacePage() {
                               </p>
                             )}
                           </td>
+
+                          {showExecutionBatchPanel && (
+                            <td className="px-3 py-3">
+                              {editedRow?.progressionStatus === "SHORTLISTED" ? (
+                                <select
+                                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                                  value={
+                                    executionBatchAssignments[
+                                      participant.execution_participant_id
+                                    ] ?? ""
+                                  }
+                                  onChange={(e) => {
+                                    const batchId = e.target.value;
+
+                                    setExecutionBatchAssignments((prev) => ({
+                                      ...prev,
+                                      [participant.execution_participant_id]: batchId,
+                                    }));
+
+                                    setRoundDirty(true);
+                                    setHasUnsavedChanges(true);
+                                  }}
+                                >
+                                  <option value="">Assign Batch</option>
+
+                                  {currentStageBatches.map((batch) => (
+                                    <option
+                                      key={batch.execution_round_id}
+                                      value={batch.execution_round_id}
+                                    >
+                                      {batch.round_name}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -1216,19 +1279,21 @@ export function RecruitmentExecutionWorkspacePage() {
 
           setExecutionModeDialogOpen(false);
 
-          if (mode === "MULTIPLE") {
-            setShowExecutionBatchPanel(true);
-
-            if (workspace.executionBatches.length === 0) {
-              setCreateExecutionBatchOpen(true);
-            } else {
-              setCreateRoundOpen(true);
-            }
-          } else {
+          if (mode === "SINGLE") {
             setShowExecutionBatchPanel(false);
 
-            setCreateRoundOpen(true);
+            setSelectedExecutionBatchId(null);
+
+            setPendingExecutionRoundId(null);
+
+            toast.success("Common attendance selected.");
+
+            return;
           }
+
+          setShowExecutionBatchPanel(true);
+
+          setCreateExecutionBatchOpen(true);
         }}
       />
 
@@ -1338,23 +1403,30 @@ export function RecruitmentExecutionWorkspacePage() {
             setProgressToNextRound(false);
             setStageConfigurationMode(false);
 
-            if (executionMode === "MULTIPLE") {
-              setShowExecutionBatchPanel(true);
+            //
+            // First round of a new stage.
+            // Decide execution strategy BEFORE attendance.
+            //
+            const createdStageRounds = latestWorkspace.rounds.filter(
+              (r) => r.stage_number === round.stage_number,
+            );
 
-              if (workspace.executionBatches.length === 0) {
-                setPendingExecutionRoundId(round.execution_round_id);
-                setBatchParticipantDialogOpen(true);
-              }
+            const existingExecutionBatches = latestWorkspace.executionBatches.filter(
+              (b) => b.stage_number === round.stage_number,
+            );
+
+            if (createdStageRounds.length === 1 && existingExecutionBatches.length === 0) {
+              setSelectedStage(round.stage_number);
+
+              setPendingExecutionRoundId(round.execution_round_id);
+
+              setExecutionModeDialogOpen(true);
 
               setCreateRoundOpen(false);
 
               return;
             }
-            if (executionMode === "SINGLE") {
-              setShowExecutionBatchPanel(false);
 
-              setPendingExecutionRoundId(null);
-            }
             toast.success("Round created successfully.");
           } catch (error) {
             console.error(error);
@@ -1370,7 +1442,11 @@ export function RecruitmentExecutionWorkspacePage() {
         open={createExecutionBatchOpen}
         loading={saving}
         stageNumber={selectedStage ?? 1}
-        participantCount={unassignedShortlistedParticipants.length}
+        participantCount={
+          editingExecutionBatchId
+            ? shortlistedParticipants.length
+            : unassignedShortlistedParticipants.length
+        }
         defaultBatchName={`Batch ${currentStageBatches.length + 1}`}
         onCancel={() => {
           setCreateExecutionBatchOpen(false);
@@ -1381,27 +1457,41 @@ export function RecruitmentExecutionWorkspacePage() {
           try {
             setSaving(true);
 
+            //
+            // UPDATE EXISTING BATCH
+            //
+            console.log("UPDATE BATCH PATH", editingExecutionBatchId);
+            if (editingExecutionBatchId) {
+              setCreateExecutionBatchOpen(false);
+
+              setPendingExecutionRoundId(editingExecutionBatchId);
+
+              setSelectedExecutionBatchId(editingExecutionBatchId);
+
+              setShowExecutionBatchPanel(true);
+
+              setEditingExecutionBatchId(null);
+
+              setBatchParticipantDialogOpen(true);
+
+              return;
+            }
+
+            //
+            // CREATE NEW BATCH
+            //
+            console.log("CREATE BATCH PATH");
             const batch = await recruitmentExecutionService.createExecutionBatch({
               executionId: workspace.execution.execution_id,
-
               creationMode: "PARALLEL_STAGE",
-
               roundOrder: Math.max(...workspace.rounds.map((r) => r.round_order), 0) + 1,
-
               roundName: data.batchName,
-
               scope: "COMMON",
-
               roleIds: [],
-
               executionParticipantIds: [],
-
               scheduledDate: data.scheduledDate,
-
               scheduledTime: data.scheduledTime,
-
               venue: data.venue,
-
               remarks: data.remarks,
             });
 
@@ -1412,8 +1502,12 @@ export function RecruitmentExecutionWorkspacePage() {
             setPendingExecutionRoundId(batch.execution_round_id);
 
             setSelectedExecutionBatchId(batch.execution_round_id);
+
             setShowExecutionBatchPanel(true);
+
             setBatchParticipantDialogOpen(true);
+
+            setEditingExecutionBatchId(null);
 
             toast.success("Execution batch created.");
           } catch (error) {
@@ -1466,6 +1560,8 @@ export function RecruitmentExecutionWorkspacePage() {
             });
 
             await loadWorkspace();
+
+            setExecutionBatchAssignments((prev) => ({ ...prev }));
 
             setSelectedExecutionBatchId(pendingExecutionRoundId);
 
