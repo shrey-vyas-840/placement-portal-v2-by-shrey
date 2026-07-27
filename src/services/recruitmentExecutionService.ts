@@ -684,20 +684,20 @@ class RecruitmentExecutionService {
     return (data ?? []).map((row: any) => row.execution_participant_id as string);
   }
 
- async assignExecutionBatchParticipants(input: {
-  executionRoundId: string;
-  executionParticipantIds: string[];
-}): Promise<void> {
-  console.log("ASSIGN BATCH", {
-    executionRoundId: input.executionRoundId,
-    participantCount: input.executionParticipantIds.length,
-    participantIds: input.executionParticipantIds,
-  });
+  async assignExecutionBatchParticipants(input: {
+    executionRoundId: string;
+    executionParticipantIds: string[];
+  }): Promise<void> {
+    console.log("ASSIGN BATCH", {
+      executionRoundId: input.executionRoundId,
+      participantCount: input.executionParticipantIds.length,
+      participantIds: input.executionParticipantIds,
+    });
 
-  await this.removeRoundParticipants(input.executionRoundId);
+    await this.removeRoundParticipants(input.executionRoundId);
 
-  await this.assignParticipantsToRound(input);
-}
+    await this.assignParticipantsToRound(input);
+  }
 
   private async assignParticipantsToRound(input: {
     executionRoundId: string;
@@ -755,34 +755,34 @@ class RecruitmentExecutionService {
       }
     }
 
-  const rows = input.executionParticipantIds.map((executionParticipantId) => ({
-  execution_round_id: input.executionRoundId,
-  execution_participant_id: executionParticipantId,
-}));
+    const rows = input.executionParticipantIds.map((executionParticipantId) => ({
+      execution_round_id: input.executionRoundId,
+      execution_participant_id: executionParticipantId,
+    }));
 
-console.log("INSERTING ROUND PARTICIPANTS", {
-  executionRoundId: input.executionRoundId,
-  rows,
-});
+    console.log("INSERTING ROUND PARTICIPANTS", {
+      executionRoundId: input.executionRoundId,
+      rows,
+    });
 
-const { data: inserted, error } = await (supabase as any)
-  .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-  .insert(rows)
-  .select();
+    const { data: inserted, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+      .insert(rows)
+      .select();
 
-console.log("INSERT RESULT", inserted);
+    console.log("INSERT RESULT", inserted);
 
-if (error) {
-  console.error("INSERT ERROR", error);
-  throw error;
-}
+    if (error) {
+      console.error("INSERT ERROR", error);
+      throw error;
+    }
 
-const { data: verify } = await (supabase as any)
-  .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-  .select("*")
-  .eq("execution_round_id", input.executionRoundId);
+    const { data: verify } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+      .select("*")
+      .eq("execution_round_id", input.executionRoundId);
 
-console.log("VERIFY AFTER INSERT", verify);
+    console.log("VERIFY AFTER INSERT", verify);
   }
 
   private async removeRoundParticipants(executionRoundId: string): Promise<void> {
@@ -1020,39 +1020,36 @@ console.log("VERIFY AFTER INSERT", verify);
     }));
   }
 
- private async loadExecutionBatchParticipants(
-  executionId: string,
-): Promise<RecruitmentExecutionBatchParticipant[]> {
-  const rounds = await this.loadRounds(executionId);
+  private async loadExecutionBatchParticipants(
+    executionId: string,
+  ): Promise<RecruitmentExecutionBatchParticipant[]> {
+    const rounds = await this.loadRounds(executionId);
 
-  if (rounds.length === 0) {
-    return [];
-  }
+    if (rounds.length === 0) {
+      return [];
+    }
 
-  const roundIds = rounds.map((round) => round.execution_round_id);
+    const roundIds = rounds.map((round) => round.execution_round_id);
 
-  const { data, error } = await (supabase as any)
-    .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-    .select(`
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+      .select(
+        `
       execution_round_id,
       execution_participant_id
-    `)
-    .in("execution_round_id", roundIds);
+    `,
+      )
+      .in("execution_round_id", roundIds);
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+    console.log("loadExecutionBatchParticipants", executionId, rounds.length, data);
+    return (data ?? []).map((row: any) => ({
+      execution_round_id: row.execution_round_id,
+      execution_participant_id: row.execution_participant_id,
+    }));
   }
-console.log(
-  "loadExecutionBatchParticipants",
-  executionId,
-  rounds.length,
-  data
-);
-  return (data ?? []).map((row: any) => ({
-    execution_round_id: row.execution_round_id,
-    execution_participant_id: row.execution_participant_id,
-  }));
-}
 
   // --------------------------------------------------------------------------
   // History

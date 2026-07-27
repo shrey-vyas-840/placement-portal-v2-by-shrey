@@ -127,9 +127,11 @@ export function RecruitmentExecutionWorkspacePage() {
         setCreateRoundOpen(false);
       }
 
-      setSelectedRoundId(data.rounds[0]?.execution_round_id ?? "");
+      if (!pendingRoundId) {
+        setSelectedRoundId((current) => current || data.rounds[0]?.execution_round_id || "");
 
-      setSelectedStage(data.rounds[0]?.stage_number ?? null);
+        setSelectedStage((current) => current ?? data.rounds[0]?.stage_number ?? null);
+      }
 
       const historyLookup = new Map(
         data.historySummary.map((item) => [item.execution_participant_id, item]),
@@ -181,7 +183,7 @@ export function RecruitmentExecutionWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [executionId]);
+  }, [executionId, pendingRoundId]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -582,6 +584,8 @@ export function RecruitmentExecutionWorkspacePage() {
         return;
       }
 
+      console.log("SAVE ROUND - START");
+
       const result = await recruitmentExecutionService.saveRound({
         executionId: workspace.execution.execution_id,
         executionRoundId: selectedRound.execution_round_id,
@@ -611,6 +615,7 @@ export function RecruitmentExecutionWorkspacePage() {
         }),
       });
 
+      console.log("SAVE ROUND - SERVICE RETURNED");
       toast.success("Round saved successfully.");
       setAttendanceReviewOpen(false);
 
@@ -619,6 +624,7 @@ export function RecruitmentExecutionWorkspacePage() {
       }
 
       await loadWorkspace();
+      console.log("SAVE ROUND - WORKSPACE RELOADED");
       setProgressToNextRound(false);
       setRoundDirty(false);
       setHasUnsavedChanges(false);
@@ -630,11 +636,6 @@ export function RecruitmentExecutionWorkspacePage() {
       setSaving(false);
     }
   };
-
-  if (roundDirty) {
-    toast.error("Save the current round before creating another round.");
-    return;
-  }
 
   const handleProgressToNextRound = async () => {
     const shortlistedParticipants = participants.filter((participant) => {
@@ -1132,16 +1133,41 @@ export function RecruitmentExecutionWorkspacePage() {
                                       participant.execution_participant_id
                                     ] ?? ""
                                   }
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const batchId = e.target.value;
 
-                                    setExecutionBatchAssignments((prev) => ({
-                                      ...prev,
-                                      [participant.execution_participant_id]: batchId,
-                                    }));
+                                    if (!batchId) {
+                                      return;
+                                    }
 
-                                    setRoundDirty(true);
-                                    setHasUnsavedChanges(true);
+                                    try {
+                                      setSaving(true);
+
+                                      await recruitmentExecutionService.assignExecutionBatchParticipants(
+                                        {
+                                          executionRoundId: batchId,
+                                          executionParticipantIds: [
+                                            participant.execution_participant_id,
+                                          ],
+                                        },
+                                      );
+
+                                      await loadWorkspace();
+
+                                      setSelectedExecutionBatchId(batchId);
+
+                                      toast.success("Execution batch updated.");
+                                    } catch (error) {
+                                      console.error(error);
+
+                                      toast.error(
+                                        error instanceof Error
+                                          ? error.message
+                                          : "Unable to update execution batch.",
+                                      );
+                                    } finally {
+                                      setSaving(false);
+                                    }
                                   }}
                                 >
                                   <option value="">Assign Batch</option>
@@ -1274,7 +1300,7 @@ export function RecruitmentExecutionWorkspacePage() {
         onCancel={() => {
           setExecutionModeDialogOpen(false);
         }}
-        onContinue={(mode) => {
+        onContinue={async (mode) => {
           setExecutionMode(mode);
 
           setExecutionModeDialogOpen(false);
@@ -1286,7 +1312,9 @@ export function RecruitmentExecutionWorkspacePage() {
 
             setPendingExecutionRoundId(null);
 
-            toast.success("Common attendance selected.");
+            await loadWorkspace();
+
+            toast.success("Stage created.");
 
             return;
           }
@@ -1358,76 +1386,20 @@ export function RecruitmentExecutionWorkspacePage() {
               setCurrentConfigurationRoleId(data.roleIds[0] ?? null);
             }
 
-            await loadWorkspace();
-
-            const latestWorkspace = await recruitmentExecutionService.getExecutionDashboard(
-              workspace.execution.execution_id,
-            );
-
-            const remainingRoles = latestWorkspace.remainingActiveRoles;
-
-            if (data.roundType === "ROLE_SPECIFIC" && remainingRoles.length > 0) {
-              setWorkspace(latestWorkspace);
-
-              setProgressSummaryOpen(false);
-
-              setCreateRoundOpen(true);
-
-              setProgressToNextRound(false);
-
-              setStageConfigurationMode(true);
-
-              toast.success(
-                "Round created successfully. Configure the remaining active roles for this stage.",
-              );
-
-              return;
-            }
-
-            setWorkspace(latestWorkspace);
-
-            setSelectedTimeline((current) => {
-              if (current === "COMMON") {
-                return current;
-              }
-
-              const exists = latestWorkspace.participants.some((participant) =>
-                participant.selected_roles.some((role) => role.drive_role_id === current),
-              );
-
-              return exists ? current : "COMMON";
-            });
-
-            setProgressSummaryOpen(false);
+            //
+            // First round of a stage.
+            // Do NOT reload the workspace yet.
+            // Ask the admin how this stage should execute.
+            //
             setCreateRoundOpen(false);
-            setProgressToNextRound(false);
-            setStageConfigurationMode(false);
 
-            //
-            // First round of a new stage.
-            // Decide execution strategy BEFORE attendance.
-            //
-            const createdStageRounds = latestWorkspace.rounds.filter(
-              (r) => r.stage_number === round.stage_number,
-            );
+            setSelectedStage(round.stage_number);
 
-            const existingExecutionBatches = latestWorkspace.executionBatches.filter(
-              (b) => b.stage_number === round.stage_number,
-            );
+            setPendingExecutionRoundId(round.execution_round_id);
 
-            if (createdStageRounds.length === 1 && existingExecutionBatches.length === 0) {
-              setSelectedStage(round.stage_number);
+            setExecutionModeDialogOpen(true);
 
-              setPendingExecutionRoundId(round.execution_round_id);
-
-              setExecutionModeDialogOpen(true);
-
-              setCreateRoundOpen(false);
-
-              return;
-            }
-
-            toast.success("Round created successfully.");
+            setPendingRoundId(round.execution_round_id);
           } catch (error) {
             console.error(error);
             setProgressToNextRound(false);
