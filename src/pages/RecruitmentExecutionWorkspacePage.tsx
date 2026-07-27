@@ -1315,16 +1315,34 @@ export function RecruitmentExecutionWorkspacePage() {
 
             setPendingExecutionRoundId(null);
 
+            setCreateRoundOpen(false);
+
+            setExecutionModeDialogOpen(false);
+
+            setProgressSummaryOpen(false);
+
+            setProgressToNextRound(false);
+
+            setStageConfigurationMode(false);
+
             await loadWorkspace();
 
-            toast.success("Stage created.");
+            toast.success("Stage created successfully.");
 
             return;
           }
 
-          setShowExecutionBatchPanel(true);
+setShowExecutionBatchPanel(true);
 
-          setCreateExecutionBatchOpen(true);
+setSelectedExecutionBatchId(null);
+
+setCreateRoundOpen(false);
+
+setExecutionModeDialogOpen(false);
+
+setProgressSummaryOpen(false);
+
+setCreateExecutionBatchOpen(true);
         }}
       />
 
