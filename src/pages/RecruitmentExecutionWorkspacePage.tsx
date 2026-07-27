@@ -113,6 +113,21 @@ export function RecruitmentExecutionWorkspacePage() {
 
       setExecutionBatchAssignments(assignments);
 
+      //
+      // Automatically select the first execution batch
+      // of the current stage when none is selected.
+      //
+      if (!selectedExecutionBatchId && data.executionBatches.length > 0) {
+        const firstBatch =
+          data.executionBatches.find(
+            (batch) => batch.stage_number === (selectedStage ?? data.rounds[0]?.stage_number),
+          ) ?? data.executionBatches[0];
+
+        if (firstBatch) {
+          setSelectedExecutionBatchId(firstBatch.execution_round_id);
+        }
+      }
+
       const hasExecutionBatches = data.executionBatches.length > 0;
 
       const hasExistingBatchAssignments = data.executionBatchParticipants.length > 0;
@@ -183,7 +198,7 @@ export function RecruitmentExecutionWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [executionId, pendingRoundId]);
+  }, [executionId, pendingRoundId, selectedExecutionBatchId, selectedStage]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -835,7 +850,7 @@ export function RecruitmentExecutionWorkspacePage() {
                 ))}
               </div>
 
-              {showExecutionBatchPanel && (
+              {executionMode === "MULTIPLE" && showExecutionBatchPanel && (
                 <div className="mt-6 rounded-xl border bg-card p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -854,7 +869,9 @@ export function RecruitmentExecutionWorkspacePage() {
                         setCreateExecutionBatchOpen(true);
                       }}
                     >
-                      {currentStageBatches.length === 0 ? "Create Batches" : "Update Batches"}
+                      {currentStageBatches.length === 0
+                        ? "Create Execution Batches"
+                        : "Manage Execution Batches"}
                     </button>
                   </div>
 
@@ -904,40 +921,12 @@ export function RecruitmentExecutionWorkspacePage() {
                                     setCreateExecutionBatchOpen(true);
                                   }}
                                 >
-                                  View / Update
+                                  Manage
                                 </button>
                               </div>
                             ))}
                           </div>
                         </div>
-
-                        {shortlistedParticipants.some(
-                          (participant) =>
-                            !executionBatchAssignments[participant.execution_participant_id],
-                        ) ? (
-                          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                            <div className="font-medium text-amber-800">
-                              {unassignedShortlistedParticipants.length} shortlisted participant(s)
-                              still need batch assignment.
-                            </div>
-
-                            <button
-                              className="mt-3 rounded border bg-background px-3 py-2 text-sm"
-                              onClick={() => {
-                                setBatchParticipantDialogOpen(true);
-                              }}
-                            >
-                              Assign Batches
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
-                            <div className="font-medium text-green-700">
-                              ✓ All shortlisted participants have been assigned to execution
-                              batches.
-                            </div>
-                          </div>
-                        )}
                       </>
                     )}
                   </div>
@@ -960,7 +949,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
                       <th className="px-3 py-3 text-left text-sm">Progression</th>
 
-                      {showExecutionBatchPanel && (
+                      {executionMode === "MULTIPLE" && showExecutionBatchPanel && (
                         <th className="px-3 py-2 text-left font-medium">Execution Batch</th>
                       )}
                     </tr>
@@ -1123,7 +1112,7 @@ export function RecruitmentExecutionWorkspacePage() {
                             )}
                           </td>
 
-                          {showExecutionBatchPanel && (
+                          {executionMode === "MULTIPLE" && showExecutionBatchPanel && (
                             <td className="px-3 py-3">
                               {editedRow?.progressionStatus === "SHORTLISTED" ? (
                                 <select
@@ -1332,17 +1321,17 @@ export function RecruitmentExecutionWorkspacePage() {
             return;
           }
 
-setShowExecutionBatchPanel(true);
+          setShowExecutionBatchPanel(true);
 
-setSelectedExecutionBatchId(null);
+          setSelectedExecutionBatchId(null);
 
-setCreateRoundOpen(false);
+          setCreateRoundOpen(false);
 
-setExecutionModeDialogOpen(false);
+          setExecutionModeDialogOpen(false);
 
-setProgressSummaryOpen(false);
+          setProgressSummaryOpen(false);
 
-setCreateExecutionBatchOpen(true);
+          setCreateExecutionBatchOpen(true);
         }}
       />
 
