@@ -17,6 +17,10 @@ import CreateExecutionBatchDialog, {
 import ExecutionModeDialog, {
   type ExecutionMode,
 } from "@/components/recruitment-workspace/ExecutionModeDialog";
+import ManageExecutionBatchesDialog, {
+  ManageExecutionBatch,
+  ManageExecutionBatchStudent,
+} from "@/components/recruitment-workspace/ManageExecutionBatchesDialog";
 import type {
   RecruitmentExecutionWorkspace,
   RecruitmentExecutionRoundRow,
@@ -79,6 +83,10 @@ export function RecruitmentExecutionWorkspacePage() {
   const [createExecutionBatchOpen, setCreateExecutionBatchOpen] = useState(false);
 
   const [editingExecutionBatchId, setEditingExecutionBatchId] = useState<string | null>(null);
+
+  const [manageExecutionBatchesOpen, setManageExecutionBatchesOpen] = useState(false);
+
+  const [batchManagementMode, setBatchManagementMode] = useState<"VIEW" | "UPDATE">("VIEW");
 
   const [executionBatchAssignments, setExecutionBatchAssignments] = useState<
     Record<string, string>
@@ -865,8 +873,8 @@ export function RecruitmentExecutionWorkspacePage() {
                       type="button"
                       className="rounded-md border px-4 py-2 text-sm"
                       onClick={() => {
-                        setEditingExecutionBatchId(null);
-                        setCreateExecutionBatchOpen(true);
+                        setBatchManagementMode("UPDATE");
+                        setManageExecutionBatchesOpen(true);
                       }}
                     >
                       {currentStageBatches.length === 0
@@ -916,9 +924,13 @@ export function RecruitmentExecutionWorkspacePage() {
                                   type="button"
                                   className="rounded border px-3 py-1 text-sm"
                                   onClick={() => {
-                                    setEditingExecutionBatchId(batch.execution_round_id);
-                                    setPendingExecutionRoundId(batch.execution_round_id);
-                                    setCreateExecutionBatchOpen(true);
+                                    // Previous Portion of Code -
+                                    // setBatchManagementMode("VIEW");
+                                    // setEditingExecutionBatchId(batch.execution_round_id);
+                                    // setPendingExecutionRoundId(batch.execution_round_id);
+                                    // setCreateExecutionBatchOpen(true);
+
+                                    setManageExecutionBatchesOpen(true);
                                   }}
                                 >
                                   Manage
@@ -1432,6 +1444,28 @@ export function RecruitmentExecutionWorkspacePage() {
             : unassignedShortlistedParticipants.length
         }
         defaultBatchName={`Batch ${currentStageBatches.length + 1}`}
+        editingBatch={
+          editingExecutionBatchId
+            ? (() => {
+                const batch = currentStageBatches.find(
+                  (b) => b.execution_round_id === editingExecutionBatchId,
+                );
+
+                if (!batch) {
+                  return null;
+                }
+
+                return {
+                  execution_round_id: batch.execution_round_id,
+                  round_name: batch.round_name,
+                  scheduled_date: batch.scheduled_date,
+                  scheduled_time: batch.scheduled_time,
+                  venue: batch.venue,
+                  remarks: batch.remarks,
+                };
+              })()
+            : null
+        }
         onCancel={() => {
           setCreateExecutionBatchOpen(false);
         }}
@@ -1446,21 +1480,30 @@ export function RecruitmentExecutionWorkspacePage() {
             //
             console.log("UPDATE BATCH PATH", editingExecutionBatchId);
             if (editingExecutionBatchId) {
+              await recruitmentExecutionService.updateExecutionBatch({
+                executionRoundId: editingExecutionBatchId,
+
+                batchName: data.batchName,
+
+                scheduledDate: data.scheduledDate,
+
+                scheduledTime: data.scheduledTime,
+
+                venue: data.venue,
+
+                remarks: data.remarks,
+              });
+
+              await loadWorkspace();
+
               setCreateExecutionBatchOpen(false);
-
-              setPendingExecutionRoundId(editingExecutionBatchId);
-
-              setSelectedExecutionBatchId(editingExecutionBatchId);
-
-              setShowExecutionBatchPanel(true);
 
               setEditingExecutionBatchId(null);
 
-              setBatchParticipantDialogOpen(true);
+              toast.success("Execution batch updated.");
 
               return;
             }
-
             //
             // CREATE NEW BATCH
             //
@@ -1559,6 +1602,42 @@ export function RecruitmentExecutionWorkspacePage() {
           } finally {
             setLoading(false);
           }
+        }}
+      />
+
+      <ManageExecutionBatchesDialog
+        open={manageExecutionBatchesOpen}
+        batches={currentStageBatches as unknown as ManageExecutionBatch[]}
+        students={
+          participants.map((participant) => ({
+            execution_participant_id: participant.execution_participant_id,
+
+            execution_round_id:
+              executionBatchAssignments[participant.execution_participant_id] ?? null,
+
+            enrollment_no: participant.student.enrollment_no,
+
+            student_name: `${participant.student.first_name} ${participant.student.last_name}`,
+          })) as ManageExecutionBatchStudent[]
+        }
+        onClose={() => {
+          setManageExecutionBatchesOpen(false);
+        }}
+        onCreateBatch={() => {
+          setManageExecutionBatchesOpen(false);
+
+          setEditingExecutionBatchId(null);
+
+          setCreateExecutionBatchOpen(true);
+        }}
+        onEditBatch={(executionRoundId) => {
+          setManageExecutionBatchesOpen(false);
+
+          setEditingExecutionBatchId(executionRoundId);
+
+          setPendingExecutionRoundId(executionRoundId);
+
+          setCreateExecutionBatchOpen(true);
         }}
       />
 

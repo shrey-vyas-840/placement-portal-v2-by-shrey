@@ -347,6 +347,8 @@ export interface RecruitmentExecutionBatch {
 
   venue: string | null;
 
+  remarks: string | null;
+
   participant_count: number;
 }
 

@@ -48,6 +48,20 @@ interface CreateExecutionBatchDialogProps {
 
   initialValues?: Partial<ExecutionBatchFormData>;
 
+  editingBatch?: {
+    execution_round_id: string;
+
+    round_name: string;
+
+    scheduled_date: string | null;
+
+    scheduled_time: string | null;
+
+    venue: string | null;
+
+    remarks: string | null;
+  } | null;
+
   onCancel: () => void;
 
   onSave: (data: ExecutionBatchFormData) => void;
@@ -78,6 +92,8 @@ export default function CreateExecutionBatchDialog({
 
   initialValues,
 
+  editingBatch,
+
   onCancel,
 
   onSave,
@@ -88,6 +104,24 @@ export default function CreateExecutionBatchDialog({
 
   useEffect(() => {
     if (!open) return;
+
+    if (editingBatch) {
+      setForm({
+        batchName: editingBatch.round_name,
+
+        scheduledDate: editingBatch.scheduled_date ?? "",
+
+        scheduledTime: editingBatch.scheduled_time ?? "",
+
+        venue: editingBatch.venue ?? "",
+
+        remarks: editingBatch.remarks ?? "",
+      });
+
+      setErrors({});
+
+      return;
+    }
 
     setForm({
       batchName: initialValues?.batchName ?? defaultBatchName ?? `Batch ${stageNumber}`,
@@ -102,7 +136,7 @@ export default function CreateExecutionBatchDialog({
     });
 
     setErrors({});
-  }, [open, stageNumber, defaultBatchName, initialValues]);
+  }, [open, stageNumber, defaultBatchName, initialValues, editingBatch]);
 
   const isValid = useMemo(() => {
     return (

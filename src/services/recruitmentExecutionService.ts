@@ -539,6 +539,30 @@ class RecruitmentExecutionService {
     return participants.length;
   }
 
+  async updateExecutionBatch(input: {
+    executionRoundId: string;
+    batchName: string;
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUNDS_TABLE)
+      .update({
+        round_name: input.batchName,
+        scheduled_date: input.scheduledDate ?? null,
+        scheduled_time: input.scheduledTime ?? null,
+        venue: input.venue ?? null,
+        remarks: input.remarks ?? null,
+      })
+      .eq("execution_round_id", input.executionRoundId)
+      .select()
+      .single();
+
+    return requireData(data as RecruitmentExecutionRoundRow | null, error, "updateExecutionBatch");
+  }
+
   async updateRound(input: {
     executionRoundId: string;
     roundName: string;
@@ -1015,6 +1039,8 @@ class RecruitmentExecutionService {
       scheduled_time: round.scheduled_time,
 
       venue: round.venue,
+
+      remarks: round.remarks,
 
       participant_count: 0,
     }));
