@@ -874,463 +874,504 @@ export function RecruitmentExecutionWorkspacePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Recruitment Execution</h1>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Execute recruitment rounds, shortlist candidates and finalize selections.
-            </p>
-          </div>
-
-          <Link to="/admin" className="rounded border px-4 py-2 text-sm">
-            Back to Admin
-          </Link>
-        </div>
-
-        {hasRounds ? (
-          <>
-            {/* existing workspace UI */}
-
-            <div className="mt-8 grid gap-4 md:grid-cols-4">
-              <div className="rounded-lg border p-5">
-                <div className="text-sm text-muted-foreground">Participants</div>
-
-                <div className="mt-2 text-3xl font-bold">{metrics.totalParticipants}</div>
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-5 px-6 py-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
+                  Execution Workspace
+                </p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                  Recruitment Execution
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm text-slate-600">
+                  Execute recruitment rounds, shortlist candidates and finalize selections.
+                </p>
               </div>
 
-              <div className="rounded-lg border p-5">
-                <div className="text-sm text-muted-foreground">Rounds</div>
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+                  Revision {workspace.execution.revision_number}
+                </span>
 
-                <div className="mt-2 text-3xl font-bold">{metrics.totalRounds}</div>
-              </div>
+                <span className="inline-flex rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700">
+                  {metrics.totalRounds} Rounds
+                </span>
 
-              <div className="rounded-lg border p-5">
-                <div className="text-sm text-muted-foreground">Finalized</div>
-
-                <div className="mt-2 text-3xl font-bold">{metrics.finalizedRounds}</div>
-              </div>
-
-              <div className="rounded-lg border p-5">
-                <div className="text-sm text-muted-foreground">Revision</div>
-
-                <div className="mt-2 text-3xl font-bold">{workspace.execution.revision_number}</div>
+                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+                  {executionFinalized ? "Finalized" : "In Progress"}
+                </span>
               </div>
             </div>
 
-            <div className="mt-8 rounded-xl border p-5">
-              <ExecutionProgressBar
-                rounds={workspace.rounds}
-                roundRoleMappings={workspace.roundRoleMappings}
-                timelines={executionTimelines}
-                remainingActiveRoles={workspace.remainingActiveRoles}
-                selectedStage={selectedStage}
-                onStageSelect={(stageNumber) => {
-                  setViewingExecutionBatchId(null);
-                  setPendingExecutionRoundId(null);
-                  setSelectedStage(stageNumber);
+            <Link
+              to="/admin/recruitment"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Back
+            </Link>
+          </div>
 
-                  const firstRound = workspace.rounds
-                    .filter((r) => r.stage_number === stageNumber)
-                    .sort((a, b) => a.round_order - b.round_order)[0];
+          <div className="grid gap-3 border-t border-slate-200 bg-slate-50/80 px-6 py-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Participants
+              </div>
+              <div className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                {metrics.totalParticipants}
+              </div>
+              <div className="mt-1 text-sm text-slate-500">Active in this execution</div>
+            </div>
 
-                  if (!firstRound) {
-                    return;
-                  }
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Rounds
+              </div>
+              <div className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                {metrics.totalRounds}
+              </div>
+              <div className="mt-1 text-sm text-slate-500">Available in this stage flow</div>
+            </div>
 
-                  setSelectedRoundId(firstRound.execution_round_id);
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Finalized
+              </div>
+              <div className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                {metrics.finalizedRounds}
+              </div>
+              <div className="mt-1 text-sm text-slate-500">Saved rounds so far</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Revision
+              </div>
+              <div className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                {workspace.execution.revision_number}
+              </div>
+              <div className="mt-1 text-sm text-slate-500">Current execution revision</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <ExecutionProgressBar
+            rounds={workspace.rounds}
+            roundRoleMappings={workspace.roundRoleMappings}
+            timelines={executionTimelines}
+            remainingActiveRoles={workspace.remainingActiveRoles}
+            selectedStage={selectedStage}
+            onStageSelect={(stageNumber) => {
+              setViewingExecutionBatchId(null);
+              setPendingExecutionRoundId(null);
+              setSelectedStage(stageNumber);
+
+              const firstRound = workspace.rounds
+                .filter((r) => r.stage_number === stageNumber)
+                .sort((a, b) => a.round_order - b.round_order)[0];
+
+              if (!firstRound) {
+                return;
+              }
+
+              setSelectedRoundId(firstRound.execution_round_id);
+
+              const firstBatch = workspace.executionBatches
+                .filter((b) => b.parent_execution_round_id === firstRound.execution_round_id)
+                .sort((a, b) => a.round_order - b.round_order)[0];
+
+              setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
+
+              if (firstRound.scope === "COMMON") {
+                setSelectedTimeline("COMMON");
+                return;
+              }
+
+              const mapping = workspace.roundRoleMappings.find(
+                (m) => m.execution_round_id === firstRound.execution_round_id,
+              );
+
+              if (mapping) {
+                setSelectedTimeline(mapping.drive_role_id);
+              }
+            }}
+          />
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                  Stage {selectedStage}
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedStageRounds.length} Round
+                  {selectedStageRounds.length === 1 ? "" : "s"}
+                </p>
+              </div>
+
+              <p className="max-w-2xl text-sm text-slate-600">
+                Manage attendance, gate status and progression.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+              <span className="font-medium text-slate-900">{participants.length}</span>
+              Participants
+            </div>
+          </div>
+
+          <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+            {selectedStageRounds.map((round) => (
+              <button
+                key={round.execution_round_id}
+                type="button"
+                onClick={() => {
+                  setSelectedRoundId(round.execution_round_id);
 
                   const firstBatch = workspace.executionBatches
-                    .filter((b) => b.parent_execution_round_id === firstRound.execution_round_id)
+                    .filter((b) => b.parent_execution_round_id === round.execution_round_id)
                     .sort((a, b) => a.round_order - b.round_order)[0];
 
                   setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
 
-                  if (firstRound.scope === "COMMON") {
+                  if (round.scope === "COMMON") {
                     setSelectedTimeline("COMMON");
                     return;
                   }
 
-                  const mapping = workspace.roundRoleMappings.find(
-                    (m) => m.execution_round_id === firstRound.execution_round_id,
+                  const mapping = workspace?.roundRoleMappings.find(
+                    (m) => m.execution_round_id === round.execution_round_id,
                   );
 
                   if (mapping) {
                     setSelectedTimeline(mapping.drive_role_id);
                   }
                 }}
-              />
-            </div>
+                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  selectedRoundId === round.execution_round_id
+                    ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {round.round_name}
+              </button>
+            ))}
+          </div>
 
-            <div className="mt-8 rounded-lg border p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div>
-                    <h2 className="text-xl font-semibold">Stage {selectedStage}</h2>
+          {isMultipleExecutionStage && (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold text-slate-900">Execution Batches</h3>
 
-                    <p className="text-sm text-muted-foreground">
-                      {selectedStageRounds.length} Round
-                      {selectedStageRounds.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Manage attendance, gate status and progression.
+                  <p className="text-sm text-slate-600">
+                    {currentStageBatches.filter((b) => b.participant_count > 0).length} of{" "}
+                    {currentStageBatches.length} batches in use ·{" "}
+                    {currentStageBatches.reduce((sum, batch) => sum + batch.participant_count, 0)}{" "}
+                    students assigned
                   </p>
-                </div>
-
-                <div className="text-sm text-muted-foreground">
-                  {participants.length} Participants
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-2">
-                {selectedStageRounds.map((round) => (
-                  <button
-                    key={round.execution_round_id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedRoundId(round.execution_round_id);
-
-                      const firstBatch = workspace.executionBatches
-                        .filter((b) => b.parent_execution_round_id === round.execution_round_id)
-                        .sort((a, b) => a.round_order - b.round_order)[0];
-
-                      setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
-
-                      if (round.scope === "COMMON") {
-                        setSelectedTimeline("COMMON");
-                        return;
-                      }
-
-                      const mapping = workspace?.roundRoleMappings.find(
-                        (m) => m.execution_round_id === round.execution_round_id,
-                      );
-
-                      if (mapping) {
-                        setSelectedTimeline(mapping.drive_role_id);
-                      }
-                    }}
-                    className={`rounded-lg border px-4 py-2 text-sm transition ${
-                      selectedRoundId === round.execution_round_id
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                    }`}
-                  >
-                    {round.round_name}
-                  </button>
-                ))}
-              </div>
-
-              {isMultipleExecutionStage && (
-                <div className="mt-5 rounded-lg border bg-muted/30 p-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">Execution Batches</h3>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">
-                        {currentStageBatches.filter((b) => b.participant_count > 0).length} of{" "}
-                        {currentStageBatches.length} Batches In Use
-                      </div>
-
-                      <div className="mt-1 text-sm text-muted-foreground">
-                        {currentStageBatches.reduce(
-                          (sum, batch) => sum + batch.participant_count,
-                          0,
-                        )}{" "}
-                        student(s) assigned
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="rounded-md border px-4 py-2 text-sm"
-                      onClick={() => {
-                        setBatchManagementMode("UPDATE");
-                        setManageExecutionBatchesOpen(true);
-                      }}
-                    >
-                      {currentStageBatches.length === 0
-                        ? "Create Execution Batches"
-                        : "Manage Execution Batches"}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-6 overflow-x-auto">
-                <table className="min-w-full border-collapse">
-                  <thead className="sticky top-0 z-10 bg-background">
-                    <tr className="border-b transition-colors hover:bg-muted/30">
-                      <th className="px-3 py-3 text-left text-sm">Student</th>
-
-                      <th className="px-3 py-3 text-left text-sm">Enrollment</th>
-
-                      <th className="px-3 py-3 text-left text-sm">Selected Roles</th>
-
-                      <th className="px-3 py-3 text-left text-sm">Attendance</th>
-
-                      <th className="px-3 py-3 text-left text-sm">Gate</th>
-
-                      <th className="px-3 py-3 text-left text-sm">Progression</th>
-
-                      {isMultipleExecutionStage && (
-                        <th className="px-3 py-2 text-left font-medium">Execution Batch</th>
-                      )}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {participants.map((participant) => {
-                      const editedRow = editedRows[participant.execution_participant_id];
-
-                      const effectiveGateStatus: ExecutionGateStatus | "ALLOWED_OVERRIDE" =
-                        editedRow?.restrictionOverride
-                          ? "ALLOWED_OVERRIDE"
-                          : editedRow?.gateStatus === "RESTRICTED"
-                            ? "RESTRICTED"
-                            : "ALLOWED";
-
-                      const effectiveAttendanceStatus = editedRow?.attendanceStatus ?? null;
-
-                      const effectiveAttendanceAllowed =
-                        effectiveAttendanceStatus === "PRESENT" ||
-                        (effectiveAttendanceStatus === "ABSENT" &&
-                          editedRow?.absenceDisposition === "ALLOWED");
-
-                      const effectiveGateAllowed = effectiveGateStatus !== "RESTRICTED";
-
-                      const canProgress = effectiveAttendanceAllowed && effectiveGateAllowed;
-
-                      return (
-                        <tr key={participant.execution_participant_id} className="border-b">
-                          <td className="px-3 py-3">
-                            <div className="font-medium">
-                              {`${participant.student.first_name} ${participant.student.last_name}`}
-                            </div>
-
-                            <div className="text-xs text-muted-foreground">
-                              {participant.student.institute_email}
-                            </div>
-                          </td>
-
-                          <td className="px-3 py-3">{participant.student.enrollment_no}</td>
-
-                          <td className="px-3 py-3">
-                            <div className="flex flex-wrap gap-1">
-                              {participant.selected_roles.map((role) => (
-                                <span
-                                  key={role.drive_role_id}
-                                  className="rounded bg-muted px-2 py-1 text-xs"
-                                >
-                                  {role.drive_role_name}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-
-                          <td className="px-3 py-3">
-                            <select
-                              className={`w-full rounded-lg border px-3 py-2 text-sm font-medium transition-colors
-
-    ${
-      editedRow?.attendanceStatus === "PRESENT"
-        ? "border-green-300 bg-green-50 text-green-700"
-        : editedRow?.attendanceStatus === "ABSENT"
-          ? "border-amber-300 bg-amber-50 text-amber-700"
-          : "border-border bg-background"
-    }`}
-                              value={
-                                editedRows[participant.execution_participant_id]
-                                  ?.attendanceStatus ?? ""
-                              }
-                              onChange={(e) => {
-                                setEditedRows((prev) => {
-                                  const next = {
-                                    ...prev,
-                                    [participant.execution_participant_id]: {
-                                      ...prev[participant.execution_participant_id],
-                                      attendanceStatus: (e.target.value ||
-                                        null) as ExecutionAttendanceStatus | null,
-                                    },
-                                  };
-
-                                  return next;
-                                });
-
-                                setRoundDirty(true);
-
-                                setHasUnsavedChanges(true);
-                              }}
-                            >
-                              <option value="">—</option>
-                              <option value="PRESENT">🟢 Present</option>
-                              <option value="ABSENT">🟠 Absent</option>
-                            </select>
-                            {editedRow?.attendanceStatus === "ABSENT" &&
-                              editedRow?.absenceDisposition === "ALLOWED" && (
-                                <p className="mt-1 text-xs text-green-600">Allowed Absence</p>
-                              )}
-                          </td>
-
-                          <td className="px-3 py-3">
-                            <div className="space-y-2">
-                              {effectiveGateStatus === "RESTRICTED" ? (
-                                <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                                  Restricted
-                                </span>
-                              ) : effectiveGateStatus === "ALLOWED_OVERRIDE" ? (
-                                <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                                  Allowed (Override)
-                                </span>
-                              ) : (
-                                <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                                  Allowed
-                                </span>
-                              )}
-
-                              {participant.restriction_reason && (
-                                <p className="max-w-xs text-xs text-muted-foreground">
-                                  {participant.restriction_reason}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="px-3 py-3">
-                            <select
-                              className="w-full rounded border px-2 py-1 text-sm"
-                              value={
-                                editedRows[participant.execution_participant_id]
-                                  ?.progressionStatus ?? "NONE"
-                              }
-                              onChange={(e) => {
-                                setHasUnsavedChanges(true);
-
-                                setRoundDirty(true);
-
-                                setEditedRows((prev) => ({
-                                  ...prev,
-                                  [participant.execution_participant_id]: {
-                                    ...prev[participant.execution_participant_id],
-                                    progressionStatus: e.target.value as ExecutionProgressionStatus,
-                                  },
-                                }));
-                              }}
-                            >
-                              <option value="NONE">No Progress</option>
-
-                              <option value="SHORTLISTED" disabled={!canProgress}>
-                                Shortlisted
-                              </option>
-
-                              <option value="SELECTED" disabled={!canProgress}>
-                                Selected
-                              </option>
-                            </select>
-
-                            {!canProgress && (
-                              <p className="mt-1 text-xs text-amber-600">
-                                Candidate cannot progress until attendance/restriction issues are
-                                resolved.
-                              </p>
-                            )}
-                          </td>
-
-                          {isMultipleExecutionStage && (
-                            <td className="px-3 py-3">
-                              {editedRow?.progressionStatus === "SHORTLISTED" ? (
-                                <select
-                                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                                  value={
-                                    executionBatchAssignments[
-                                      participant.execution_participant_id
-                                    ] ?? ""
-                                  }
-                                  onChange={(e) => {
-                                    const batchId = e.target.value;
-
-                                    if (!batchId) {
-                                      return;
-                                    }
-
-                                    setExecutionBatchAssignments((prev) => ({
-                                      ...prev,
-                                      [participant.execution_participant_id]: batchId,
-                                    }));
-
-                                    setRoundDirty(true);
-                                    setHasUnsavedChanges(true);
-                                  }}
-                                >
-                                  <option value="">Assign Batch</option>
-
-                                  {currentStageBatches.map((batch) => (
-                                    <option
-                                      key={batch.execution_round_id}
-                                      value={batch.execution_round_id}
-                                    >
-                                      {batch.round_name}
-                                    </option>
-                                  ))}
-                                </select>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
-                              )}
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-8 flex items-center justify-between rounded-xl border bg-muted/30 p-4">
-                <div>
-                  <div className="font-medium">Attendance Review</div>
-
-                  <div className="text-sm text-muted-foreground">
-                    Review absentees and restriction overrides before saving.
-                  </div>
                 </div>
 
                 <button
                   type="button"
+                  className="inline-flex h-10 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => {
+                    setBatchManagementMode("UPDATE");
+                    setManageExecutionBatchesOpen(true);
+                  }}
+                >
+                  {currentStageBatches.length === 0
+                    ? "Create Execution Batches"
+                    : "Manage Execution Batches"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+            <div className="max-h-[72vh] overflow-auto">
+              <table className="min-w-full border-collapse text-sm">
+                <thead className="sticky top-0 z-10 bg-slate-50">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Student
+                    </th>
+
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Enrollment
+                    </th>
+
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Selected Roles
+                    </th>
+
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Attendance
+                    </th>
+
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Gate
+                    </th>
+
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Progression
+                    </th>
+
+                    {isMultipleExecutionStage && (
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Execution Batch
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {participants.map((participant) => {
+                    const editedRow = editedRows[participant.execution_participant_id];
+
+                    const effectiveGateStatus: ExecutionGateStatus | "ALLOWED_OVERRIDE" =
+                      editedRow?.restrictionOverride
+                        ? "ALLOWED_OVERRIDE"
+                        : editedRow?.gateStatus === "RESTRICTED"
+                          ? "RESTRICTED"
+                          : "ALLOWED";
+
+                    const effectiveAttendanceStatus = editedRow?.attendanceStatus ?? null;
+
+                    const effectiveAttendanceAllowed =
+                      effectiveAttendanceStatus === "PRESENT" ||
+                      (effectiveAttendanceStatus === "ABSENT" &&
+                        editedRow?.absenceDisposition === "ALLOWED");
+
+                    const effectiveGateAllowed = effectiveGateStatus !== "RESTRICTED";
+
+                    const canProgress = effectiveAttendanceAllowed && effectiveGateAllowed;
+
+                    return (
+                      <tr
+                        key={participant.execution_participant_id}
+                        className="border-b border-slate-100 transition-colors hover:bg-slate-50"
+                      >
+                        <td className="px-4 py-3 align-top">
+                          <div className="font-medium text-slate-900">
+                            {`${participant.student.first_name} ${participant.student.last_name}`}
+                          </div>
+
+                          <div className="mt-1 text-xs text-slate-500">
+                            {participant.student.institute_email}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3 align-top text-slate-700">
+                          {participant.student.enrollment_no}
+                        </td>
+
+                        <td className="px-4 py-3 align-top">
+                          <div className="flex flex-wrap gap-1.5">
+                            {participant.selected_roles.map((role) => (
+                              <span
+                                key={role.drive_role_id}
+                                className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+                              >
+                                {role.drive_role_name}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3 align-top">
+                          <select
+                            className={`w-full min-w-37.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                              editedRow?.attendanceStatus === "PRESENT"
+                                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                : editedRow?.attendanceStatus === "ABSENT"
+                                  ? "border-amber-300 bg-amber-50 text-amber-700"
+                                  : "border-slate-300 bg-white text-slate-700"
+                            }`}
+                            value={
+                              editedRows[participant.execution_participant_id]?.attendanceStatus ??
+                              ""
+                            }
+                            onChange={(e) => {
+                              setEditedRows((prev) => {
+                                const next = {
+                                  ...prev,
+                                  [participant.execution_participant_id]: {
+                                    ...prev[participant.execution_participant_id],
+                                    attendanceStatus: (e.target.value ||
+                                      null) as ExecutionAttendanceStatus | null,
+                                  },
+                                };
+
+                                return next;
+                              });
+
+                              setRoundDirty(true);
+                              setHasUnsavedChanges(true);
+                            }}
+                          >
+                            <option value="">—</option>
+                            <option value="PRESENT">🟢 Present</option>
+                            <option value="ABSENT">🟠 Absent</option>
+                          </select>
+
+                          {editedRow?.attendanceStatus === "ABSENT" &&
+                            editedRow?.absenceDisposition === "ALLOWED" && (
+                              <p className="mt-1 text-xs text-emerald-600">Allowed Absence</p>
+                            )}
+                        </td>
+
+                        <td className="px-4 py-3 align-top">
+                          <div className="space-y-2">
+                            {effectiveGateStatus === "RESTRICTED" ? (
+                              <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                                Restricted
+                              </span>
+                            ) : effectiveGateStatus === "ALLOWED_OVERRIDE" ? (
+                              <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                Allowed (Override)
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                Allowed
+                              </span>
+                            )}
+
+                            {participant.restriction_reason && (
+                              <p className="max-w-xs text-xs text-slate-500">
+                                {participant.restriction_reason}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3 align-top">
+                          <select
+                            className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                            value={
+                              editedRows[participant.execution_participant_id]?.progressionStatus ??
+                              "NONE"
+                            }
+                            onChange={(e) => {
+                              setHasUnsavedChanges(true);
+                              setRoundDirty(true);
+
+                              setEditedRows((prev) => ({
+                                ...prev,
+                                [participant.execution_participant_id]: {
+                                  ...prev[participant.execution_participant_id],
+                                  progressionStatus: e.target.value as ExecutionProgressionStatus,
+                                },
+                              }));
+                            }}
+                          >
+                            <option value="NONE">No Progress</option>
+                            <option value="SHORTLISTED" disabled={!canProgress}>
+                              Shortlisted
+                            </option>
+                            <option value="SELECTED" disabled={!canProgress}>
+                              Selected
+                            </option>
+                          </select>
+
+                          {!canProgress && (
+                            <p className="mt-1 text-xs text-amber-600">
+                              Candidate cannot progress until attendance/restriction issues are
+                              resolved.
+                            </p>
+                          )}
+                        </td>
+
+                        {isMultipleExecutionStage && (
+                          <td className="px-4 py-3 align-top">
+                            {editedRow?.progressionStatus === "SHORTLISTED" ? (
+                              <select
+                                className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                value={
+                                  executionBatchAssignments[participant.execution_participant_id] ??
+                                  ""
+                                }
+                                onChange={(e) => {
+                                  const batchId = e.target.value;
+
+                                  if (!batchId) {
+                                    return;
+                                  }
+
+                                  setExecutionBatchAssignments((prev) => ({
+                                    ...prev,
+                                    [participant.execution_participant_id]: batchId,
+                                  }));
+
+                                  setRoundDirty(true);
+                                  setHasUnsavedChanges(true);
+                                }}
+                              >
+                                <option value="">Assign Batch</option>
+
+                                {currentStageBatches.map((batch) => (
+                                  <option
+                                    key={batch.execution_round_id}
+                                    value={batch.execution_round_id}
+                                  >
+                                    {batch.round_name}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-xs text-slate-500">—</span>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-semibold text-slate-900">Attendance Review</div>
+
+                  <span className="inline-flex rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700">
+                    Required before save
+                  </span>
+                </div>
+
+                <div className="text-sm text-slate-600">
+                  Review absentees and restriction overrides before saving.
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
                   onClick={() => setAttendanceReviewOpen(true)}
                   disabled={saving || executionFinalized}
-                  className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-11 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isCurrentRoundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
                 </button>
 
                 {workspace.transition.requiresRoleAssignment &&
                   workspace.remainingActiveRoles.length > 0 && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-                      <div className="font-medium text-amber-800">
-                        Assign shortlisted candidates to role-specific execution rounds.
-                      </div>
-
-                      <div className="mt-1 text-sm text-amber-700">
-                        Before Stage {workspace.transition.nextStage} can begin, shortlisted
-                        candidates must be routed into the correct role-specific round.
-                      </div>
-
-                      <ul className="mt-3 list-disc pl-5 text-sm text-amber-700">
-                        {workspace.remainingActiveRoles.map((role) => (
-                          <li key={role.drive_role_id}>
-                            {role.drive_role_name} ({role.candidate_count} candidate
-                            {role.candidate_count !== 1 ? "s" : ""})
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    <button
+                      type="button"
+                      disabled
+                      className="inline-flex h-11 items-center rounded-full border border-amber-200 bg-amber-50 px-4 text-sm font-medium text-amber-800"
+                    >
+                      Role assignment pending
+                    </button>
                   )}
-                {showExecutionBatchPanel && !allExecutionBatchesCompleted && (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                    Complete all execution batches and assign every shortlisted participant before
-                    progressing to the next stage.
-                  </div>
-                )}
+
                 <button
                   type="button"
                   onClick={handleProgressToNextRound}
@@ -1343,7 +1384,7 @@ export function RecruitmentExecutionWorkspacePage() {
                       workspace.remainingActiveRoles.length > 0) ||
                     !allExecutionBatchesCompleted
                   }
-                  className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-11 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Progress to Next Stage
                 </button>
@@ -1359,23 +1400,46 @@ export function RecruitmentExecutionWorkspacePage() {
                     hasUnsavedChanges ||
                     !allExecutionBatchesCompleted
                   }
-                  className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-11 items-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Final Save
                 </button>
               </div>
             </div>
-          </>
-        ) : (
-          <div className="mt-10 rounded-xl border border-dashed p-10 text-center">
-            <h2 className="text-2xl font-semibold">Create Your First Round</h2>
 
-            <p className="mt-3 text-muted-foreground">
-              This execution has no rounds yet. Create Round 1 before attendance, attendance review,
-              Save Round, progression, or Final Save become available.
-            </p>
+            <div className="mt-4 grid gap-3">
+              {workspace.transition.requiresRoleAssignment &&
+                workspace.remainingActiveRoles.length > 0 && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <div className="font-medium text-amber-800">
+                      Assign shortlisted candidates to role-specific execution rounds.
+                    </div>
+
+                    <div className="mt-1 text-sm text-amber-700">
+                      Before Stage {workspace.transition.nextStage} can begin, shortlisted
+                      candidates must be routed into the correct role-specific round.
+                    </div>
+
+                    <ul className="mt-3 list-disc pl-5 text-sm text-amber-700">
+                      {workspace.remainingActiveRoles.map((role) => (
+                        <li key={role.drive_role_id}>
+                          {role.drive_role_name} ({role.candidate_count} candidate
+                          {role.candidate_count !== 1 ? "s" : ""})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+              {showExecutionBatchPanel && !allExecutionBatchesCompleted && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Complete all execution batches and assign every shortlisted participant before
+                  progressing to the next stage.
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       <ProgressSummaryDialog
