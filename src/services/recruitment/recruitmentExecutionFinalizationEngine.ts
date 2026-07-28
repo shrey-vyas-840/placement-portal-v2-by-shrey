@@ -106,11 +106,13 @@ export interface FinalizationPlacementRow {
 
   companyName: string;
 
-  packageLpa: number | null;
+  packageLpa: number;
 
   placementType: string;
 
   placedAt: string;
+
+  placementNotes: string;
 
   isCurrent: boolean;
 }
@@ -123,13 +125,15 @@ export interface FinalizeExecutionRequest {
   verification: {
     notes: string;
 
-    placements: Array<{
-      studentId: string;
+placements: Array<{
+  studentId: string;
 
-      placementType: string;
+  placementType: string;
 
-      packageLpa: number | null;
-    }>;
+  packageLpa: number;
+
+  placementNotes: string;
+}>;
   };
 }
 
@@ -212,18 +216,23 @@ async finalize(
 
         companyName: candidate.companyName,
 
-        packageLpa:
-          configuration?.packageLpa ??
-          candidate.packageLpa ??
-          null,
+   packageLpa:
+  configuration?.packageLpa ??
+  4,
 
-        placementType:
-          configuration?.placementType ??
-          "ON_CAMPUS_PLACEMENT",
+placementType:
+  configuration?.placementType ??
+  "On Campus Internship + PPO",
 
-        placedAt: new Date().toISOString(),
+placedAt:
+  new Date()
+    .toISOString()
+    .slice(0, 10),
 
-        isCurrent: true,
+placementNotes:
+  configuration?.placementNotes ?? "",
+
+isCurrent: true,
       };
     });
 
