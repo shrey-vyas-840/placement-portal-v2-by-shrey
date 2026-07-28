@@ -138,157 +138,226 @@ export default function CreateRoundDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6">
-      <div className="w-full max-w-2xl rounded-xl bg-background shadow-xl">
-        <div className="border-b px-6 py-5">
-          <h2 className="text-2xl font-semibold">
-            {nextRoundOrder === 1 ? "Create First Round" : "Create Round"}
-          </h2>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-6">
+      <div className="mx-auto my-8 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-800 via-blue-700 to-cyan-600 px-8 py-5 text-white">
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/10 blur-xl" />
 
-          <p className="mt-2 text-sm text-muted-foreground">Configure the next execution round.</p>
+          <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-cyan-300/10 blur-xl" />
+
+          <div className="relative z-10 flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
+                Execution Workspace
+              </p>
+
+              <h2 className="mt-1 text-3xl font-bold">
+                {nextRoundOrder === 1 ? "Create First Round" : `Create Round ${nextRoundOrder}`}
+              </h2>
+
+              <p className="mt-1 text-sm text-white/80">
+                Configure scheduling, execution type and participating roles.
+              </p>
+            </div>
+
+            <span className="rounded-full bg-white/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm">
+              Stage Round {nextRoundOrder}
+            </span>
+          </div>
         </div>
 
-        <div className="space-y-6 p-6">
-          <div>
-            <label className="mb-2 block text-sm font-medium">Round Name</label>
+        <div className="flex-1 space-y-7 overflow-y-auto bg-slate-50 p-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <label className="mb-3 block text-sm font-semibold text-slate-800">Round Name</label>
 
             <input
               value={roundName}
               onChange={(e) => setRoundName(e.target.value)}
-              className="w-full rounded-md border px-3 py-2"
               placeholder="Technical Interview"
+              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100"
             />
           </div>
 
-          <div>
-            <label className="mb-3 block text-sm font-medium">Round Type</label>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <label className="mb-4 block text-sm font-semibold text-slate-800">Round Type</label>
 
-            <div className="flex gap-6">
-              <div className="flex flex-col">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={roundType === "COMMON"}
-                    disabled={commonStageLocked}
-                    onChange={() => setRoundType("COMMON")}
-                  />
-                  Common
-                </label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                disabled={commonStageLocked}
+                onClick={() => setRoundType("COMMON")}
+                className={`rounded-2xl border p-4 text-left transition-all ${
+                  roundType === "COMMON"
+                    ? "border-blue-500 bg-blue-50 shadow-md"
+                    : "border-slate-200 bg-white hover:border-blue-300"
+                } ${commonStageLocked ? "cursor-not-allowed opacity-50" : ""}`}
+              >
+                <div className="text-lg font-semibold">🌐 Common Round</div>
 
-                {commonStageLocked && (
-                  <p className="ml-6 mt-1 text-xs text-amber-600">
-                    {commonStageLockReason ??
-                      "Complete the configured role-specific stage before merging into a Common stage."}
-                  </p>
+                <div className="mt-1 text-sm text-slate-600">
+                  One round shared by every active role.
+                </div>
+
+                {roundType === "COMMON" && (
+                  <div className="mt-4 text-sm font-semibold text-blue-700">✓ Selected</div>
                 )}
-              </div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={roundType === "ROLE_SPECIFIC"}
-                  onChange={() => setRoundType("ROLE_SPECIFIC")}
-                />
-                Role Specific
-              </label>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRoundType("ROLE_SPECIFIC")}
+                className={`rounded-2xl border p-4 text-left transition-all ${
+                  roundType === "ROLE_SPECIFIC"
+                    ? "border-blue-500 bg-blue-50 shadow-md"
+                    : "border-slate-200 bg-white hover:border-blue-300"
+                }`}
+              >
+                <div className="text-lg font-semibold">🎯 Role Specific</div>
+
+                <div className="mt-1 text-sm text-slate-600">
+                  Configure separate execution for selected roles.
+                </div>
+
+                {roundType === "ROLE_SPECIFIC" && (
+                  <div className="mt-4 text-sm font-semibold text-blue-700">✓ Selected</div>
+                )}
+              </button>
             </div>
+
+            {commonStageLocked && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                🔒{" "}
+                {commonStageLockReason ??
+                  "Complete all role-specific execution before creating a Common Round."}
+              </div>
+            )}
           </div>
 
           {roundType === "ROLE_SPECIFIC" && (
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <label className="block text-sm font-medium">Remaining Active Roles</label>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-800">Remaining Active Roles</h3>
 
-                <span className="text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-slate-500">
+                    Select one or more roles for this execution round.
+                  </p>
+                </div>
+
+                <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                   {remainingRoles.length} Remaining
                 </span>
               </div>
 
-              <div className="max-h-52 space-y-2 overflow-auto rounded-lg border p-3">
+              <div className="grid max-h-80 grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2">
                 {remainingRoles.map((role) => {
                   const checked = selectedRoles.includes(role.driveRoleId);
 
                   return (
-                    <label
+                    <button
                       key={role.driveRoleId}
-                      className="flex items-center justify-between rounded p-2 hover:bg-muted"
+                      type="button"
+                      onClick={() => {
+                        if (checked) {
+                          setSelectedRoles((prev) => prev.filter((id) => id !== role.driveRoleId));
+                        } else {
+                          setSelectedRoles((prev) => [...prev, role.driveRoleId]);
+                        }
+                      }}
+                      className={`rounded-2xl border p-4 text-left transition-all ${
+                        checked
+                          ? "border-blue-500 bg-blue-50 shadow-md"
+                          : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedRoles((prev) => [...prev, role.driveRoleId]);
-                            } else {
-                              setSelectedRoles((prev) =>
-                                prev.filter((id) => id !== role.driveRoleId),
-                              );
-                            }
-                          }}
-                        />
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-900">
+                            💼 {role.roleName}
+                          </div>
 
-                        <span>{role.roleName}</span>
+                          <div className="mt-1 text-xs text-slate-500">
+                            👥 {role.candidateCount} Candidate
+                            {role.candidateCount !== 1 ? "s" : ""}
+                          </div>
+                        </div>
+
+                        <div
+                          className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs ${
+                            checked
+                              ? "border-blue-600 bg-blue-600 text-white"
+                              : "border-slate-300 bg-white text-transparent"
+                          }`}
+                        >
+                          ✓
+                        </div>
                       </div>
-
-                      <span className="text-xs text-muted-foreground">
-                        {role.candidateCount} Candidate{role.candidateCount === 1 ? "" : "s"}
-                      </span>
-                    </label>
+                    </button>
                   );
                 })}
               </div>
             </div>
           )}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-5 text-m font-semibold text-slate-800">Schedule</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium">Date</label>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium">Date</label>
+                <input
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
 
-              <input
-                type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full rounded-md border px-3 py-2"
-              />
+              <div>
+                <label className="mb-2 block text-sm font-medium">Time</label>
+
+                <input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
             </div>
+          </div>
 
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div>
-              <label className="mb-2 block text-sm font-medium">Time</label>
+              <label className="mb-3 block text-sm font-semibold text-slate-800">Venue</label>
 
               <input
-                type="time"
-                value={scheduledTime}
-                onChange={(e) => setScheduledTime(e.target.value)}
-                className="w-full rounded-md border px-3 py-2"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100"
               />
             </div>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">Venue</label>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div>
+              <label className="mb-3 block text-sm font-semibold text-slate-800">Remarks</label>
 
-            <input
-              value={venue}
-              onChange={(e) => setVenue(e.target.value)}
-              className="w-full rounded-md border px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">Remarks</label>
-
-            <textarea
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              rows={4}
-              className="w-full rounded-md border px-3 py-2"
-            />
+              <textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                rows={4}
+                className="w-full rounded-md border px-3 py-2"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t px-6 py-5">
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-8 py-5">
           {!mandatory && (
-            <button type="button" onClick={onCancel} className="rounded-md border px-4 py-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-md mt-5 mb-5 space-x-10 border px-4 py-2"
+            >
               Cancel
             </button>
           )}
@@ -297,10 +366,10 @@ export default function CreateRoundDialog({
             type="button"
             disabled={loading}
             onClick={() => void handleCreate()}
-            className="rounded-md bg-primary px-5 py-2 text-primary-foreground disabled:opacity-50"
+            className="rounded-xl mt-5 mb-5 bg-gradient-to-r from-blue-700 to-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
           >
             {remainingRoles.length > 0
-              ? "Create & Configure Next Role"
+              ? "→ Create & Configure Next Round"
               : "Finish Stage Configuration"}
           </button>
         </div>
