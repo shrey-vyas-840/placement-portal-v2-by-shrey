@@ -873,7 +873,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto w-full max-w-[1750px] px-6 py-6">
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-5 px-6 py-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
@@ -955,7 +955,7 @@ export function RecruitmentExecutionWorkspacePage() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
           <ExecutionProgressBar
             rounds={workspace.rounds}
             roundRoleMappings={workspace.roundRoleMappings}
@@ -999,11 +999,11 @@ export function RecruitmentExecutionWorkspacePage() {
           />
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   Stage {selectedStage}
                 </h2>
 
@@ -1013,18 +1013,18 @@ export function RecruitmentExecutionWorkspacePage() {
                 </p>
               </div>
 
-              <p className="max-w-2xl text-sm text-slate-600">
+              <p className="text-sm text-slate-600">
                 Manage attendance, gate status and progression.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
               <span className="font-medium text-slate-900">{participants.length}</span>
               Participants
             </div>
           </div>
 
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
             {selectedStageRounds.map((round) => (
               <button
                 key={round.execution_round_id}
@@ -1092,7 +1092,7 @@ export function RecruitmentExecutionWorkspacePage() {
             </div>
           )}
 
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
   <div className="flex items-center gap-3 overflow-x-auto">
 
     {/* Search */}
