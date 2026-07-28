@@ -12,6 +12,10 @@ interface ExecutionBatchParticipantDialogProps {
 
   loading?: boolean;
 
+  mode?: "ASSIGN" | "VIEW";
+
+  assignedBatchName?: string;
+
   roleName: string;
 
   stageNumber: number;
@@ -28,6 +32,8 @@ interface ExecutionBatchParticipantDialogProps {
 export default function ExecutionBatchParticipantDialog({
   open,
   loading = false,
+  mode = "ASSIGN",
+  assignedBatchName,
   roleName,
   stageNumber,
   participants,
@@ -55,8 +61,10 @@ export default function ExecutionBatchParticipantDialog({
     const keyword = search.trim().toLowerCase();
 
     return participants.filter((participant) => {
-      if (assignedParticipantIds.has(participant.execution_participant_id)) {
-        return false;
+      if (mode === "ASSIGN") {
+        if (assignedParticipantIds.has(participant.execution_participant_id)) {
+          return false;
+        }
       }
 
       if (keyword.length === 0) {
@@ -74,7 +82,7 @@ export default function ExecutionBatchParticipantDialog({
         fullName.includes(keyword) || (student?.enrollment_no ?? "").toLowerCase().includes(keyword)
       );
     });
-  }, [participants, assignedParticipantIds, search]);
+  }, [search, participants, mode, assignedParticipantIds]);
 
   const toggleParticipant = (executionParticipantId: string) => {
     setSelectedIds((previous) => {
@@ -104,22 +112,32 @@ export default function ExecutionBatchParticipantDialog({
         <div className="border-b px-6 py-5">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Create Execution Batch</h2>
+              <h2 className="text-xl font-semibold">
+                {mode === "VIEW"
+                  ? assignedBatchName
+                    ? `${assignedBatchName} • Students`
+                    : "Assigned Students"
+                  : "Assign Students to Execution Batch"}
+              </h2>
 
               <p className="mt-1 text-sm text-muted-foreground">
                 Stage {stageNumber} • {roleName}
               </p>
 
               <p className="mt-2 text-sm text-muted-foreground">
-                Select the shortlisted students that should attend this execution batch.
+                {mode === "VIEW"
+                  ? "Students currently assigned to this execution batch."
+                  : "Select the shortlisted students that should attend this execution batch."}
               </p>
             </div>
 
-            <div className="rounded-lg border px-4 py-2 text-center">
-              <div className="text-lg font-semibold">{selectedIds.length}</div>
+            {mode === "ASSIGN" && (
+              <div className="rounded-lg border px-4 py-2 text-center">
+                <div className="text-lg font-semibold">{selectedIds.length}</div>
 
-              <div className="text-xs text-muted-foreground">Selected</div>
-            </div>
+                <div className="text-xs text-muted-foreground">Selected</div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -185,14 +203,18 @@ export default function ExecutionBatchParticipantDialog({
                 return (
                   <label
                     key={participant.execution_participant_id}
-                    className="flex cursor-pointer items-center gap-4 px-6 py-4 transition hover:bg-muted/40"
+                    className={`flex items-center gap-4 px-6 py-4 transition ${
+                      mode === "ASSIGN" ? "cursor-pointer hover:bg-muted/40" : ""
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleParticipant(participant.execution_participant_id)}
-                      className="h-4 w-4"
-                    />
+                    {mode === "ASSIGN" && (
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleParticipant(participant.execution_participant_id)}
+                        className="h-4 w-4"
+                      />
+                    )}
 
                     <div className="flex-1">
                       <div className="font-medium">{fullName || "Unknown Student"}</div>
@@ -226,10 +248,17 @@ export default function ExecutionBatchParticipantDialog({
         </div>
 
         <div className="flex items-center justify-between border-t px-6 py-4">
-          <div className="text-sm text-muted-foreground">
-            {selectedIds.length} student
-            {selectedIds.length === 1 ? "" : "s"} selected
-          </div>
+          {mode === "ASSIGN" ? (
+            <div className="text-sm text-muted-foreground">
+              {selectedIds.length} student
+              {selectedIds.length === 1 ? "" : "s"} selected
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              {filteredParticipants.length} assigned student
+              {filteredParticipants.length === 1 ? "" : "s"}
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <button
@@ -238,17 +267,19 @@ export default function ExecutionBatchParticipantDialog({
               disabled={loading}
               className="rounded-lg border px-4 py-2 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Cancel
+              {mode === "VIEW" ? "Close" : "Cancel"}
             </button>
 
-            <button
-              type="button"
-              disabled={loading || selectedIds.length === 0}
-              onClick={() => onContinue(selectedIds)}
-              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? "Creating..." : `Continue (${selectedIds.length})`}
-            </button>
+            {mode === "ASSIGN" && (
+              <button
+                type="button"
+                disabled={loading || selectedIds.length === 0}
+                onClick={() => onContinue(selectedIds)}
+                className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "Creating..." : `Continue (${selectedIds.length})`}
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -46,6 +46,10 @@ interface ManageExecutionBatchesDialogProps {
   onCreateBatch: () => void;
 
   onEditBatch: (executionRoundId: string) => void;
+
+  onViewStudents: (executionRoundId: string) => void;
+
+  onContinue: () => void;
 }
 
 export default function ManageExecutionBatchesDialog({
@@ -55,6 +59,8 @@ export default function ManageExecutionBatchesDialog({
   onClose,
   onCreateBatch,
   onEditBatch,
+  onViewStudents,
+  onContinue,
 }: ManageExecutionBatchesDialogProps) {
   const [activeTab, setActiveTab] = useState<"VIEW" | "UPDATE">("VIEW");
 
@@ -224,20 +230,32 @@ export default function ManageExecutionBatchesDialog({
 
                   {selected && (
                     <div className="border-t p-4">
-                      <Button onClick={() => onEditBatch(batch.execution_round_id)}>
-                        Edit Configuration
-                      </Button>
+                      <div className="flex flex-wrap gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => onViewStudents(batch.execution_round_id)}
+                        >
+                          View Students
+                        </Button>
+
+                        <Button onClick={() => onEditBatch(batch.execution_round_id)}>
+                          Batch Settings
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
               );
             })}
-
             <Separator />
 
-            <Button className="w-full" onClick={onCreateBatch}>
-              + Create New Execution Batch
-            </Button>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={onContinue}>
+                Continue
+              </Button>
+
+              <Button onClick={onCreateBatch}>+ Create New Execution Batch</Button>
+            </div>
           </div>
         )}
       </DialogContent>

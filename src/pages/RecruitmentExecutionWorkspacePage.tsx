@@ -88,6 +88,8 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [batchManagementMode, setBatchManagementMode] = useState<"VIEW" | "UPDATE">("VIEW");
 
+  const [viewingExecutionBatchId, setViewingExecutionBatchId] = useState<string | null>(null);
+
   const [executionBatchAssignments, setExecutionBatchAssignments] = useState<
     Record<string, string>
   >({});
@@ -1520,17 +1522,23 @@ export function RecruitmentExecutionWorkspacePage() {
 
             await loadWorkspace();
 
-            setCreateExecutionBatchOpen(false);
-
             setPendingExecutionRoundId(batch.execution_round_id);
 
             setSelectedExecutionBatchId(batch.execution_round_id);
 
             setShowExecutionBatchPanel(true);
 
-            setBatchParticipantDialogOpen(true);
-
             setEditingExecutionBatchId(null);
+
+            /*
+             * If this stage supports multiple batches,
+             * immediately open Batch Management first.
+             * Admin can either create another batch
+             * or continue to assign students.
+             */
+            setManageExecutionBatchesOpen(true);
+
+            setCreateExecutionBatchOpen(false);
 
             toast.success("Execution batch created.");
           } catch (error) {
@@ -1548,6 +1556,14 @@ export function RecruitmentExecutionWorkspacePage() {
       <ExecutionBatchParticipantDialog
         open={batchParticipantDialogOpen}
         loading={loading}
+        mode={viewingExecutionBatchId ? "VIEW" : "ASSIGN"}
+        assignedBatchName={
+          viewingExecutionBatchId
+            ? currentStageBatches.find(
+                (batch) => batch.execution_round_id === viewingExecutionBatchId,
+              )?.round_name
+            : undefined
+        }
         participants={shortlistedParticipants}
         alreadyAssignedParticipantIds={
           workspace?.executionBatchParticipants
@@ -1568,6 +1584,8 @@ export function RecruitmentExecutionWorkspacePage() {
         stageNumber={selectedStage ?? 1}
         onCancel={() => {
           setBatchParticipantDialogOpen(false);
+
+          setViewingExecutionBatchId(null);
         }}
         onContinue={async (participantIds: string[]) => {
           if (!pendingExecutionRoundId) {
@@ -1589,6 +1607,17 @@ export function RecruitmentExecutionWorkspacePage() {
             setSelectedExecutionBatchId(pendingExecutionRoundId);
 
             setBatchParticipantDialogOpen(false);
+
+            setViewingExecutionBatchId(null);
+
+            /*
+             * Return to Batch Management so the admin can:
+             * - review assignments
+             * - create another batch
+             * - edit an existing batch
+             * - finish when satisfied
+             */
+            setManageExecutionBatchesOpen(true);
 
             toast.success("Students assigned successfully.");
           } catch (error) {
@@ -1618,11 +1647,19 @@ export function RecruitmentExecutionWorkspacePage() {
         }
         onClose={() => {
           setManageExecutionBatchesOpen(false);
+
+          if (currentStageBatches.length > 0) {
+            setBatchParticipantDialogOpen(true);
+
+            setPendingExecutionRoundId(
+              selectedExecutionBatchId ?? currentStageBatches[0]?.execution_round_id ?? null,
+            );
+          }
         }}
         onCreateBatch={() => {
-          setManageExecutionBatchesOpen(false);
-
           setEditingExecutionBatchId(null);
+
+          setPendingExecutionRoundId(null);
 
           setCreateExecutionBatchOpen(true);
         }}
@@ -1634,6 +1671,24 @@ export function RecruitmentExecutionWorkspacePage() {
           setPendingExecutionRoundId(executionRoundId);
 
           setCreateExecutionBatchOpen(true);
+        }}
+        onViewStudents={(executionRoundId) => {
+          setManageExecutionBatchesOpen(false);
+
+          setViewingExecutionBatchId(executionRoundId);
+
+          setPendingExecutionRoundId(executionRoundId);
+
+          setSelectedExecutionBatchId(executionRoundId);
+
+          setBatchParticipantDialogOpen(true);
+        }}
+        onContinue={() => {
+          setManageExecutionBatchesOpen(false);
+
+          setBatchParticipantDialogOpen(false);
+
+          toast.success("Execution batches configured.");
         }}
       />
 

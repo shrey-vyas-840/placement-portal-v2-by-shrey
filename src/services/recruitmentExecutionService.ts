@@ -1767,6 +1767,28 @@ history_revision
       this.loadRounds(executionId),
     ]);
 
+        // ------------------------------------------------------------------
+    // Pure Common Execution
+    //
+    // If the execution does not contain ANY role-specific rounds,
+    // then there are no pending role assignments.
+    //
+    // This allows:
+    //
+    // Common -> Common
+    // Common -> Common -> Common
+    //
+    // workflows to progress normally.
+    // ------------------------------------------------------------------
+
+    const hasRoleSpecificRounds = rounds.some(
+      (round) => round.scope === "ROLE_SPECIFIC",
+    );
+
+    if (!hasRoleSpecificRounds) {
+      return [];
+    }
+
     const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
 
     historySummary.forEach((history) => {
