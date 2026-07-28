@@ -860,41 +860,17 @@ class RecruitmentExecutionService {
         candidate.execution_round_id !== input.executionRoundId,
     );
 
-    if (siblingRounds.length > 0) {
+    if (siblingRounds.length > 0 && input.executionParticipantIds.length > 0) {
       const siblingRoundIds = siblingRounds.map((candidate) => candidate.execution_round_id);
 
-      const { data, error } = await (supabase as any)
+      const { error: deleteError } = await (supabase as any)
         .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-        .select(
-          `
-execution_participant_id,
-recruitment_execution_rounds!inner(
-  execution_round_id,
-  parent_execution_round_id,
-  round_name,
-  scheduled_date,
-  scheduled_time
-)
-`,
-        )
-        .in("execution_round_id", siblingRoundIds);
+        .delete()
+        .in("execution_round_id", siblingRoundIds)
+        .in("execution_participant_id", input.executionParticipantIds);
 
-      if (error) {
-        throw error;
-      }
-
-      const alreadyAssigned = new Set<string>(
-        (data ?? []).map((row: any) => row.execution_participant_id),
-      );
-
-      const duplicateParticipant = input.executionParticipantIds.find((participantId) =>
-        alreadyAssigned.has(participantId),
-      );
-
-      if (duplicateParticipant) {
-        throw new Error(
-          "One or more selected students are already assigned to another execution batch in this stage.",
-        );
+      if (deleteError) {
+        throw deleteError;
       }
     }
 
@@ -1502,6 +1478,10 @@ history_revision
     executionRevision: number;
     nextRoundId?: string;
     changedBy?: string | null;
+    batchAssignments?: {
+      executionParticipantId: string;
+      executionRoundId: string;
+    }[];
     rows: Array<{
       executionParticipantId: string;
       attendanceStatus: ExecutionAttendanceStatus | null;
@@ -1569,6 +1549,7 @@ history_revision
       p_execution_revision: input.executionRevision,
       p_changed_by: input.changedBy ?? null,
       p_history_rows: historyEvents,
+      p_batch_assignments: input.batchAssignments ?? [],
       p_next_round_id: input.nextRoundId ?? null,
     });
 

@@ -620,13 +620,11 @@ export function RecruitmentExecutionWorkspacePage() {
           assignedIds.has(participant.execution_participant_id),
         );
 
-        const completed =
-          assignedRows.length > 0 &&
-          assignedRows.every((participant) => {
-            const row = editedRows[participant.execution_participant_id];
+        const completed = assignedRows.every((participant) => {
+          const row = editedRows[participant.execution_participant_id];
 
-            return row?.attendanceStatus !== null;
-          });
+          return row?.attendanceStatus !== null;
+        });
 
         return {
           ...batch,
@@ -689,15 +687,17 @@ export function RecruitmentExecutionWorkspacePage() {
       return true;
     }
 
-    if (currentStageBatches.length === 0) {
-      return false;
-    }
-
     if (unassignedShortlistedParticipants.length > 0) {
       return false;
     }
 
-    return currentStageBatches.every((batch) => batch.completed);
+    return currentStageBatches.every((batch) => {
+      if (batch.participant_count === 0) {
+        return true;
+      }
+
+      return batch.completed;
+    });
   }, [isMultipleExecutionStage, currentStageBatches, unassignedShortlistedParticipants]);
 
   const executionFinalized = workspace?.execution.execution_status === "FINALIZED";
@@ -711,11 +711,25 @@ export function RecruitmentExecutionWorkspacePage() {
       }
 
       console.log("SAVE ROUND - START");
-
+      console.log(
+        "SAVE BATCH ASSIGNMENTS",
+        Object.entries(executionBatchAssignments)
+          .filter(([, executionRoundId]) => Boolean(executionRoundId))
+          .map(([executionParticipantId, executionRoundId]) => ({
+            executionParticipantId,
+            executionRoundId,
+          })),
+      );
       const result = await recruitmentExecutionService.saveRound({
         executionId: workspace.execution.execution_id,
         executionRoundId: selectedRound.execution_round_id,
         executionRevision: workspace.execution.revision_number,
+        batchAssignments: Object.entries(executionBatchAssignments)
+          .filter(([, executionRoundId]) => Boolean(executionRoundId))
+          .map(([executionParticipantId, executionRoundId]) => ({
+            executionParticipantId,
+            executionRoundId,
+          })),
         rows: participants.map((participant) => {
           const row = editedRows[participant.execution_participant_id];
 
@@ -1287,39 +1301,20 @@ export function RecruitmentExecutionWorkspacePage() {
                                       participant.execution_participant_id
                                     ] ?? ""
                                   }
-                                  onChange={async (e) => {
+                                  onChange={(e) => {
                                     const batchId = e.target.value;
 
                                     if (!batchId) {
                                       return;
                                     }
 
-                                    try {
-                                      setSaving(true);
+                                    setExecutionBatchAssignments((prev) => ({
+                                      ...prev,
+                                      [participant.execution_participant_id]: batchId,
+                                    }));
 
-                                      await recruitmentExecutionService.assignExecutionBatchParticipants(
-                                        {
-                                          executionRoundId: batchId,
-                                          executionParticipantIds: [
-                                            participant.execution_participant_id,
-                                          ],
-                                        },
-                                      );
-
-                                      await loadWorkspace();
-
-                                      toast.success("Execution batch updated.");
-                                    } catch (error) {
-                                      console.error(error);
-
-                                      toast.error(
-                                        error instanceof Error
-                                          ? error.message
-                                          : "Unable to update execution batch.",
-                                      );
-                                    } finally {
-                                      setSaving(false);
-                                    }
+                                    setRoundDirty(true);
+                                    setHasUnsavedChanges(true);
                                   }}
                                 >
                                   <option value="">Assign Batch</option>
