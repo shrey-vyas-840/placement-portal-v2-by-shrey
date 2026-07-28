@@ -402,6 +402,20 @@ export interface RecruitmentExecutionRemainingRole {
   candidate_count: number;
 }
 
+export interface RecruitmentExecutionTransition {
+  currentStage: number | null;
+
+  currentScope: ExecutionScope | null;
+
+  nextStage: number | null;
+
+  nextScope: ExecutionScope | null;
+
+  requiresRoleAssignment: boolean;
+
+  requiresSynchronization: boolean;
+}
+
 export interface RecruitmentExecutionWorkspace {
   series: RecruitmentExecutionSeriesRow;
 
@@ -420,4 +434,6 @@ export interface RecruitmentExecutionWorkspace {
   executionBatchParticipants: RecruitmentExecutionBatchParticipant[];
 
   remainingActiveRoles: RecruitmentExecutionRemainingRole[];
+
+  transition: RecruitmentExecutionTransition;
 }

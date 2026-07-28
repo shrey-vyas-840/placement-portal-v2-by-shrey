@@ -358,7 +358,9 @@ class RecruitmentExecutionService {
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
     const rounds = await this.loadRounds(input.executionId);
+    const transition = await this.getRoundTransition(input.executionId);
 
+   
     let stageNumber = 1;
 
     if (rounds.length > 0) {
@@ -366,6 +368,19 @@ class RecruitmentExecutionService {
 
       stageNumber = input.creationMode === "NEXT_STAGE" ? highestStage + 1 : highestStage;
     }
+
+    if (
+  input.scope === "COMMON" &&
+  transition.requiresSynchronization &&
+  !(await this.canCreateCommonStage(
+    input.executionId,
+    stageNumber,
+  ))
+) {
+  throw new Error(
+    "A Common stage cannot be created because one or more roles have already configured this stage.",
+  );
+}
 
     const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
       p_execution_id: input.executionId,
@@ -399,6 +414,7 @@ class RecruitmentExecutionService {
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
     const rounds = await this.loadRounds(input.executionId);
+    const transition = await this.getRoundTransition(input.executionId);
 
     let stageNumber = 1;
 
@@ -411,6 +427,19 @@ class RecruitmentExecutionService {
         stageNumber = highestStage;
       }
     }
+
+    if (
+  input.scope === "COMMON" &&
+  transition.requiresSynchronization &&
+  !(await this.canCreateCommonStage(
+    input.executionId,
+    stageNumber,
+  ))
+) {
+  throw new Error(
+    "A Common stage cannot be created because one or more roles have already configured this stage.",
+  );
+}
 
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -1757,6 +1786,121 @@ history_revision
   // Workspace Facade
   // --------------------------------------------------------------------------
 
+  private async getRoundTransition(executionId: string): Promise<{
+    currentStage: number | null;
+    currentScope: ExecutionScope | null;
+    nextStage: number | null;
+    nextScope: ExecutionScope | null;
+    requiresRoleAssignment: boolean;
+    requiresSynchronization: boolean;
+  }> {
+    const rounds = await this.loadRounds(executionId);
+
+    if (rounds.length === 0) {
+      return {
+        currentStage: null,
+        currentScope: null,
+        nextStage: null,
+        nextScope: null,
+        requiresRoleAssignment: false,
+        requiresSynchronization: false,
+      };
+    }
+
+    const latestStage = Math.max(...rounds.map((round) => round.stage_number));
+
+    const currentRounds = rounds.filter((round) => round.stage_number === latestStage);
+
+    const currentScope = currentRounds.some((round) => round.scope === "ROLE_SPECIFIC")
+      ? "ROLE_SPECIFIC"
+      : "COMMON";
+
+    const nextRounds = rounds.filter((round) => round.stage_number === latestStage + 1);
+
+    if (nextRounds.length === 0) {
+      return {
+        currentStage: latestStage,
+        currentScope,
+        nextStage: null,
+        nextScope: null,
+        requiresRoleAssignment: false,
+        requiresSynchronization: false,
+      };
+    }
+
+    const nextScope = nextRounds.some((round) => round.scope === "ROLE_SPECIFIC")
+      ? "ROLE_SPECIFIC"
+      : "COMMON";
+
+    return {
+      currentStage: latestStage,
+      currentScope,
+      nextStage: latestStage + 1,
+      nextScope,
+      requiresRoleAssignment: currentScope === "COMMON" && nextScope === "ROLE_SPECIFIC",
+      requiresSynchronization: currentScope === "ROLE_SPECIFIC" && nextScope === "COMMON",
+    };
+  }
+
+private async canCreateCommonStage(
+  executionId: string,
+  targetStageNumber: number,
+): Promise<boolean>{
+  const rounds = await this.loadRounds(executionId);
+
+  const mappings = await this.loadRoundRoleMappings(executionId);
+
+  const previousStage = targetStageNumber - 1;
+
+  const previousStageRoleSpecificRounds = rounds.filter(
+    (round) =>
+      round.stage_number === previousStage &&
+      round.scope === "ROLE_SPECIFIC",
+  );
+
+  if (previousStageRoleSpecificRounds.length === 0) {
+    return true;
+  }
+
+  const previousStageRoleIds = new Set<string>();
+
+  previousStageRoleSpecificRounds.forEach((round) => {
+    mappings
+      .filter(
+        (mapping) =>
+          mapping.execution_round_id === round.execution_round_id,
+      )
+      .forEach((mapping) => {
+        previousStageRoleIds.add(mapping.drive_role_id);
+      });
+  });
+
+  const nextStageRoleSpecificRounds = rounds.filter(
+    (round) =>
+      round.stage_number === targetStageNumber &&
+      round.scope === "ROLE_SPECIFIC",
+  );
+
+  for (const round of nextStageRoleSpecificRounds) {
+    const configuredRoleIds = mappings
+      .filter(
+        (mapping) =>
+          mapping.execution_round_id === round.execution_round_id,
+      )
+      .map((mapping) => mapping.drive_role_id);
+
+    if (
+      configuredRoleIds.some((roleId) =>
+        previousStageRoleIds.has(roleId),
+      )
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
   private async calculatePendingRoles(
     executionId: string,
   ): Promise<RecruitmentExecutionRemainingRole[]> {
@@ -1766,8 +1910,12 @@ history_revision
       this.loadRoundRoleMappings(executionId),
       this.loadRounds(executionId),
     ]);
+    const transition = await this.getRoundTransition(executionId);
 
-        // ------------------------------------------------------------------
+    if (!transition.requiresRoleAssignment) {
+      return [];
+    }
+    // ------------------------------------------------------------------
     // Pure Common Execution
     //
     // If the execution does not contain ANY role-specific rounds,
@@ -1780,14 +1928,6 @@ history_revision
     //
     // workflows to progress normally.
     // ------------------------------------------------------------------
-
-    const hasRoleSpecificRounds = rounds.some(
-      (round) => round.scope === "ROLE_SPECIFIC",
-    );
-
-    if (!hasRoleSpecificRounds) {
-      return [];
-    }
 
     const remaining = new Map<string, RecruitmentExecutionRemainingRole>();
 
@@ -1809,22 +1949,26 @@ history_revision
       if (!currentRound) {
         return;
       }
-
+      if (
+        transition.currentStage !== null &&
+        currentRound.stage_number !== transition.currentStage
+      ) {
+        return;
+      }
       //
       // A COMMON round never consumes roles.
       //
       // After a common screening every shortlisted role is still active
       // until it is explicitly assigned to a ROLE_SPECIFIC round.
       //
-      let consumedRoleIds = new Set<string>();
-
-      if (currentRound.scope === "ROLE_SPECIFIC") {
-        consumedRoleIds = new Set(
-          roundRoleMappings
-            .filter((mapping) => mapping.execution_round_id === currentRound.execution_round_id)
-            .map((mapping) => mapping.drive_role_id),
-        );
-      }
+      const consumedRoleIds =
+        currentRound.scope === "ROLE_SPECIFIC"
+          ? new Set(
+              roundRoleMappings
+                .filter((mapping) => mapping.execution_round_id === currentRound.execution_round_id)
+                .map((mapping) => mapping.drive_role_id),
+            )
+          : new Set<string>();
 
       participant.selected_roles.forEach((role) => {
         if (consumedRoleIds.has(role.drive_role_id)) {
@@ -1879,7 +2023,11 @@ history_revision
 
     const executionBatchParticipants = await this.loadExecutionBatchParticipants(executionId);
 
-    const remainingActiveRoles = await this.calculatePendingRoles(executionId);
+    const transition = await this.getRoundTransition(executionId);
+
+    const remainingActiveRoles = transition.requiresRoleAssignment
+      ? await this.calculatePendingRoles(executionId)
+      : [];
 
     return {
       series,
@@ -1893,6 +2041,7 @@ history_revision
       executionBatchParticipants,
 
       remainingActiveRoles,
+      transition,
     };
   }
 }
