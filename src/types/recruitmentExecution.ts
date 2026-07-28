@@ -81,17 +81,31 @@ export interface RecruitmentExecutionRow {
 
 export interface RecruitmentExecutionRoundRow {
   execution_round_id: string;
+
+  parent_execution_round_id: string | null;
+
   execution_id: string;
+
   stage_number: number;
+
   round_order: number;
+
   round_name: string;
+
   scope: ExecutionScope;
+
   scheduled_date: string | null;
+
   scheduled_time: string | null;
+
   venue: string | null;
+
   remarks: string | null;
+
   created_by: string | null;
+
   created_at: string;
+
   updated_at: string;
 }
 
@@ -332,6 +346,8 @@ export interface RecruitmentExecutionRoundRoleMapping {
 
 export interface RecruitmentExecutionBatch {
   execution_round_id: string;
+
+  parent_execution_round_id: string | null;
 
   stage_number: number;
 

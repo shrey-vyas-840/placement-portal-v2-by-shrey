@@ -336,6 +336,7 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_ROUNDS_TABLE)
       .select("*")
       .eq("execution_id", executionId)
+      .is("parent_execution_round_id", null)
       .order("round_order", {
         ascending: true,
       });
@@ -401,6 +402,80 @@ class RecruitmentExecutionService {
     return requireData(data as RecruitmentExecutionRoundRow | null, error, "createExecutionBatch");
   }
 
+  async createExecutionChildBatch(input: {
+    executionId: string;
+    parentExecutionRoundId: string;
+    batchName: string;
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    const parent = await this.getRound(input.parentExecutionRoundId);
+
+    if (!parent) {
+      throw new Error("Parent execution stage not found.");
+    }
+
+    //
+    // Every execution_round row must have a unique round_order.
+    //
+    const rounds = await this.loadExecutionRounds(input.executionId);
+
+    const nextRoundOrder = Math.max(...rounds.map((r) => r.round_order), 0) + 1;
+
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUNDS_TABLE)
+      .insert({
+        execution_id: input.executionId,
+
+        stage_number: parent.stage_number,
+
+        round_order: nextRoundOrder,
+
+        round_name: input.batchName,
+
+        scope: parent.scope,
+
+        scheduled_date: input.scheduledDate ?? parent.scheduled_date,
+
+        scheduled_time: input.scheduledTime ?? parent.scheduled_time,
+
+        venue: input.venue ?? parent.venue,
+
+        remarks: input.remarks ?? parent.remarks,
+
+        created_by: input.createdBy ?? null,
+
+        parent_execution_round_id: parent.execution_round_id,
+      })
+      .select()
+      .single();
+
+    return requireData(
+      data as RecruitmentExecutionRoundRow | null,
+      error,
+      "createExecutionChildBatch",
+    );
+  }
+
+  private async loadExecutionRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUNDS_TABLE)
+      .select("*")
+      .eq("execution_id", executionId)
+      .order("round_order", {
+        ascending: true,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []) as RecruitmentExecutionRoundRow[];
+  }
+
   async createRound(input: {
     executionId: string;
     creationMode: ExecutionRoundCreationMode;
@@ -451,6 +526,7 @@ class RecruitmentExecutionService {
         venue: input.venue ?? null,
         remarks: input.remarks ?? null,
         created_by: input.createdBy ?? null,
+        parent_execution_round_id: null,
       })
       .select()
       .single();
@@ -583,6 +659,7 @@ class RecruitmentExecutionService {
         remarks: input.remarks ?? null,
       })
       .eq("execution_round_id", input.executionRoundId)
+      .not("parent_execution_round_id", "is", null)
       .select()
       .single();
 
@@ -767,9 +844,11 @@ class RecruitmentExecutionService {
     // A participant may belong to only ONE execution batch
     // within the same stage.
     //
-    const siblingRounds = (await this.loadRounds(round.execution_id)).filter(
+    const parentRoundId = round.parent_execution_round_id ?? round.execution_round_id;
+
+    const siblingRounds = (await this.loadExecutionBatches(round.execution_id)).filter(
       (candidate) =>
-        candidate.stage_number === round.stage_number &&
+        candidate.parent_execution_round_id === parentRoundId &&
         candidate.execution_round_id !== input.executionRoundId,
     );
 
@@ -780,9 +859,15 @@ class RecruitmentExecutionService {
         .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
         .select(
           `
-          execution_round_id,
-          execution_participant_id
-        `,
+execution_participant_id,
+recruitment_execution_rounds!inner(
+  execution_round_id,
+  parent_execution_round_id,
+  round_name,
+  scheduled_date,
+  scheduled_time
+)
+`,
         )
         .in("execution_round_id", siblingRoundIds);
 
@@ -914,9 +999,10 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
       .select(
         `
-      execution_participant_id,
+        execution_participant_id,
       recruitment_execution_rounds (
         execution_round_id,
+        parent_execution_round_id,
         round_name,
         scheduled_date,
         scheduled_time
@@ -932,6 +1018,10 @@ class RecruitmentExecutionService {
 
     (batchAssignments ?? []).forEach((row: any) => {
       const round = row.recruitment_execution_rounds;
+
+      if (!round.parent_execution_round_id) {
+        return;
+      }
 
       if (!round) {
         return;
@@ -987,16 +1077,49 @@ class RecruitmentExecutionService {
   async loadRoundParticipants(
     executionRoundId: string,
   ): Promise<RecruitmentExecutionParticipantWithStudent[]> {
-    const participantIds = await this.loadRoundParticipantIds(executionRoundId);
-
-    if (participantIds.length === 0) {
-      return [];
-    }
-
     const round = await this.getRound(executionRoundId);
 
     if (!round) {
       throw new Error("Execution round not found.");
+    }
+
+    let participantIds: string[];
+
+    if (round.parent_execution_round_id) {
+      // Child execution batch
+      participantIds = await this.loadRoundParticipantIds(executionRoundId);
+    } else {
+      // Parent stage
+      const childBatches = await this.loadExecutionBatches(round.execution_id);
+
+      const childIds = childBatches
+        .filter((batch) => batch.parent_execution_round_id === round.execution_round_id)
+        .map((batch) => batch.execution_round_id);
+
+      if (childIds.length === 0) {
+        participantIds = await this.loadRoundParticipantIds(executionRoundId);
+      } else {
+        const { data, error } = await (supabase as any)
+          .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+          .select("execution_participant_id")
+          .in("execution_round_id", childIds);
+
+        if (error) {
+          throw error;
+        }
+
+        participantIds = Array.from(
+          new Set(
+            (data ?? []).map(
+              (row: { execution_participant_id: string }) => row.execution_participant_id,
+            ),
+          ),
+        ) as string[];
+      }
+    }
+
+    if (participantIds.length === 0) {
+      return [];
     }
 
     const participants = await this.loadParticipants(round.execution_id);
@@ -1047,27 +1170,29 @@ class RecruitmentExecutionService {
   }
 
   private async loadExecutionBatches(executionId: string): Promise<RecruitmentExecutionBatch[]> {
-    const rounds = await this.loadRounds(executionId);
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUNDS_TABLE)
+      .select("*")
+      .eq("execution_id", executionId)
+      .not("parent_execution_round_id", "is", null)
+      .order("stage_number", { ascending: true })
+      .order("round_order", { ascending: true });
 
-    return rounds.map((round) => ({
-      execution_round_id: round.execution_round_id,
+    if (error) {
+      throw error;
+    }
 
-      stage_number: round.stage_number,
-
-      round_order: round.round_order,
-
-      round_name: round.round_name,
-
-      scope: round.scope,
-
-      scheduled_date: round.scheduled_date,
-
-      scheduled_time: round.scheduled_time,
-
-      venue: round.venue,
-
-      remarks: round.remarks,
-
+    return (data ?? []).map((batch: any) => ({
+      execution_round_id: batch.execution_round_id,
+      parent_execution_round_id: batch.parent_execution_round_id,
+      stage_number: batch.stage_number,
+      round_order: batch.round_order,
+      round_name: batch.round_name,
+      scope: batch.scope,
+      scheduled_date: batch.scheduled_date,
+      scheduled_time: batch.scheduled_time,
+      venue: batch.venue,
+      remarks: batch.remarks,
       participant_count: 0,
     }));
   }
@@ -1075,13 +1200,13 @@ class RecruitmentExecutionService {
   private async loadExecutionBatchParticipants(
     executionId: string,
   ): Promise<RecruitmentExecutionBatchParticipant[]> {
-    const rounds = await this.loadRounds(executionId);
+    const batches = await this.loadExecutionBatches(executionId);
 
-    if (rounds.length === 0) {
+    if (batches.length === 0) {
       return [];
     }
 
-    const roundIds = rounds.map((round) => round.execution_round_id);
+    const roundIds = batches.map((batch) => batch.execution_round_id);
 
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
@@ -1096,7 +1221,7 @@ class RecruitmentExecutionService {
     if (error) {
       throw error;
     }
-    console.log("loadExecutionBatchParticipants", executionId, rounds.length, data);
+    console.log("loadExecutionBatchParticipants", executionId, batches.length, data);
     return (data ?? []).map((row: any) => ({
       execution_round_id: row.execution_round_id,
       execution_participant_id: row.execution_participant_id,
@@ -2042,7 +2167,18 @@ history_revision
 
     const historySummary = await this.loadHistorySummary(executionId);
 
-    const executionBatches = await this.loadExecutionBatches(executionId);
+    const executionBatches = (await this.loadExecutionBatches(executionId)).filter((batch) => {
+      const parent = rounds.find(
+        (round) => round.execution_round_id === batch.parent_execution_round_id,
+      );
+
+      if (!parent) {
+        return false;
+      }
+
+      // Hide the automatically-created child batch for COMMON stages.
+      return parent.scope !== "COMMON";
+    });
 
     const executionBatchParticipants = await this.loadExecutionBatchParticipants(executionId);
 
