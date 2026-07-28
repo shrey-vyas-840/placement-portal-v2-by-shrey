@@ -436,4 +436,6 @@ export interface RecruitmentExecutionWorkspace {
   remainingActiveRoles: RecruitmentExecutionRemainingRole[];
 
   transition: RecruitmentExecutionTransition;
+
+  commonStageLocked: boolean;
 }

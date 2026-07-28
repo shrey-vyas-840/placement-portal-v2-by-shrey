@@ -1374,10 +1374,10 @@ export function RecruitmentExecutionWorkspacePage() {
           setCreateRoundOpen(false);
           setProgressToNextRound(false);
         }}
-        commonStageLocked={workspace?.transition.requiresSynchronization === true}
+        commonStageLocked={workspace.commonStageLocked}
 
         commonStageLockReason={
-          workspace?.transition.requiresSynchronization
+          workspace.commonStageLocked
             ? "One or more role-specific pipelines have already configured their next stage. Complete those configured stages before creating a Common stage."
             : undefined
         }

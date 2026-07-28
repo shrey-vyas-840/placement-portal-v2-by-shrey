@@ -1870,7 +1870,6 @@ history_revision
 
     const activeRoleIds = await this.getActiveRoleIdsForStage(executionId, previousStage);
 
-
     const previousStageRoleSpecificRounds = rounds.filter(
       (round) => round.stage_number === previousStage && round.scope === "ROLE_SPECIFIC",
     );
@@ -2038,6 +2037,11 @@ history_revision
       ? await this.calculatePendingRoles(executionId)
       : [];
 
+    const commonStageLocked =
+      transition.requiresSynchronization &&
+      transition.currentStage !== null &&
+      !(await this.canCreateCommonStage(executionId, transition.currentStage + 1));
+
     return {
       series,
       execution,
@@ -2051,6 +2055,7 @@ history_revision
 
       remainingActiveRoles,
       transition,
+      commonStageLocked,
     };
   }
 }
