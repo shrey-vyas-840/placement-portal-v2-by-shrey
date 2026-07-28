@@ -1668,6 +1668,16 @@ history_revision
     };
   }
 
+  private async validateOpportunityClosed(executionId: string): Promise<void> {
+    const context = await this.getExecutionContext(executionId);
+
+    if (context.opportunity.application_status !== "Closed") {
+      throw new Error(
+        "Recruitment execution cannot be finalized while applications are still accepting submissions.",
+      );
+    }
+  }
+
   private async buildPlacementHistoryRows(executionId: string) {
     const participants = await this.getSelectedParticipants(executionId);
 
@@ -1729,6 +1739,7 @@ history_revision
     finalizationNotes?: string | null;
   }) {
     await this.validateExecutionCompletion(input.executionId);
+    await this.validateOpportunityClosed(input.executionId);
     const finalSelectionRows = await this.buildFinalSelectionRows(input.executionId);
     const placementHistoryRows = await this.buildPlacementHistoryRows(input.executionId);
     const studentIds = await this.buildStudentPlacementUpdates(input.executionId);

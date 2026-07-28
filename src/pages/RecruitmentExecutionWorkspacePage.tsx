@@ -627,6 +627,9 @@ export function RecruitmentExecutionWorkspacePage() {
     return currentStageBatches.every((batch) => batch.completed);
   }, [showExecutionBatchPanel, currentStageBatches, unassignedShortlistedParticipants]);
 
+  const executionFinalized =
+  workspace?.execution.execution_status === "FINALIZED";
+
   const handleSaveRound = async () => {
     setSaving(true);
 
@@ -1260,7 +1263,8 @@ export function RecruitmentExecutionWorkspacePage() {
                 <button
                   type="button"
                   onClick={() => setAttendanceReviewOpen(true)}
-                  disabled={saving || !roundDirty}
+                  disabled={saving ||
+  executionFinalized}
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isCurrentRoundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
@@ -1299,7 +1303,7 @@ export function RecruitmentExecutionWorkspacePage() {
                   onClick={handleProgressToNextRound}
                   disabled={
                     saving ||
-                    roundDirty ||
+  executionFinalized ||
                     hasUnsavedChanges ||
                     !isCurrentRoundSaved ||
                     (workspace.transition.requiresRoleAssignment &&
@@ -1314,13 +1318,14 @@ export function RecruitmentExecutionWorkspacePage() {
                 <button
                   type="button"
                   onClick={handleFinalizeExecution}
-                  disabled={
-                    saving ||
-                    !isCurrentRoundSaved ||
-                    roundDirty ||
-                    hasUnsavedChanges ||
-                    !allExecutionBatchesCompleted
-                  }
+                 disabled={
+  saving ||
+  executionFinalized ||
+  !isCurrentRoundSaved ||
+  roundDirty ||
+  hasUnsavedChanges ||
+  !allExecutionBatchesCompleted
+}
                   className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Final Save

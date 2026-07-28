@@ -440,13 +440,6 @@ private getStageNumber(
   // Finalization Validation
   // --------------------------------------------------------------------------
 
-private validateOpportunityClosed(
-  _result: FinalizationPreparationResult,
-): void {
-  // Implement after integrating with the existing
-  // RecruitmentExecutionService opportunity loader.
-}
-
 private validateParticipants(
   result: FinalizationPreparationResult,
 ): void {
@@ -666,13 +659,11 @@ private validateParticipants(
     const result =
       this.createPreparationResult();
 
-    this.validateOpportunityClosed(result);
+this.validateParticipants(result);
 
-    this.validateParticipants(result);
+this.buildSelectedCandidates(result);
 
-    this.buildSelectedCandidates(result);
-
-    this.buildPipelineBlockers(result);
+this.buildPipelineBlockers(result);
 
     this.finalizeStatistics(result);
 
