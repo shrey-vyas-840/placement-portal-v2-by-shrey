@@ -362,7 +362,11 @@ class RecruitmentExecutionService {
     remarks?: string | null;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
-    const rounds = await this.loadRounds(input.executionId);
+    const rounds = await this.loadExecutionRounds(input.executionId);
+
+    const nextRoundOrder =
+      rounds.length === 0 ? 1 : Math.max(...rounds.map((r) => r.round_order)) + 1;
+
     const transition = await this.getRoundTransition(input.executionId);
 
     let stageNumber = 1;
@@ -386,7 +390,7 @@ class RecruitmentExecutionService {
     const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
       p_execution_id: input.executionId,
       p_creation_mode: input.creationMode,
-      p_round_order: input.roundOrder,
+      p_round_order: nextRoundOrder,
       p_round_name: input.roundName,
       p_scope: input.scope,
       p_stage_number: stageNumber,
@@ -488,7 +492,11 @@ class RecruitmentExecutionService {
     remarks?: string | null;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
-    const rounds = await this.loadRounds(input.executionId);
+    const rounds = await this.loadExecutionRounds(input.executionId);
+
+    const nextRoundOrder =
+      rounds.length === 0 ? 1 : Math.max(...rounds.map((r) => r.round_order)) + 1;
+
     const transition = await this.getRoundTransition(input.executionId);
 
     let stageNumber = 1;
@@ -518,7 +526,7 @@ class RecruitmentExecutionService {
       .insert({
         execution_id: input.executionId,
         stage_number: stageNumber,
-        round_order: input.roundOrder,
+        round_order: nextRoundOrder,
         round_name: input.roundName,
         scope: input.scope,
         scheduled_date: input.scheduledDate ?? null,
