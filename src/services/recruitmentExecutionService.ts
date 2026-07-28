@@ -58,6 +58,10 @@ function requireData<T>(data: T | null, error: unknown, operation: string): T {
 }
 
 class RecruitmentExecutionService {
+  getSupabaseClient() {
+    return supabase;
+  }
+
   /**
    * --------------------------------------------------------------------------
    * Execution Series
@@ -2042,6 +2046,10 @@ history_revision
       transition.currentStage !== null &&
       !(await this.canCreateCommonStage(executionId, transition.currentStage + 1));
 
+    const commonStageLockReason = commonStageLocked
+      ? "One or more role-specific pipelines have already configured their immediate next stage. Complete those configured stages before merging into a Common stage."
+      : null;
+
     return {
       series,
       execution,
@@ -2056,6 +2064,7 @@ history_revision
       remainingActiveRoles,
       transition,
       commonStageLocked,
+      commonStageLockReason,
     };
   }
 }

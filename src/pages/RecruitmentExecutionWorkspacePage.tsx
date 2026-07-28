@@ -2,9 +2,16 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { recruitmentExecutionService } from "@/services/recruitmentExecutionService";
+import {
+  RecruitmentExecutionFinalizationEngine,
+  type FinalizationPreparationResult,
+} from "@/services/recruitment/recruitmentExecutionFinalizationEngine";
 import { useNavigate } from "@tanstack/react-router";
 import { getExecutionBootstrapContext } from "@/services/recruitmentExecutionBootstrapService";
 import AttendanceReviewDialog from "@/components/recruitment-workspace/AttendanceReviewDialog";
+import FinalizationVerificationDialog, {
+  type FinalizationVerificationResult,
+} from "@/components/recruitment-workspace/FinalizationVerificationDialog";
 import ExecutionProgressBar from "@/components/recruitment-workspace/ExecutionProgressBar";
 import CreateRoundDialog, {
   type ActiveRoleOption,
@@ -39,6 +46,13 @@ export function RecruitmentExecutionWorkspacePage() {
   const [loading, setLoading] = useState(true);
 
   const [saving, setSaving] = useState(false);
+
+  const [finalizationDialogOpen, setFinalizationDialogOpen] = useState(false);
+
+  const [finalizationPreparation, setFinalizationPreparation] =
+    useState<FinalizationPreparationResult | null>(null);
+
+  const [finalizationLoading, setFinalizationLoading] = useState(false);
 
   const [roundDirty, setRoundDirty] = useState(false);
 
@@ -375,6 +389,18 @@ export function RecruitmentExecutionWorkspacePage() {
     );
   }, [workspace, selectedRound, showExecutionBatchPanel, selectedExecutionBatchId]);
 
+  const finalizationEngine = useMemo(() => {
+    if (!workspace) {
+      return null;
+    }
+
+    return new RecruitmentExecutionFinalizationEngine({
+      supabase: recruitmentExecutionService.getSupabaseClient(),
+
+      workspace,
+    });
+  }, [workspace]);
+
   const stageGroups = useMemo(() => {
     if (!workspace) {
       return [];
@@ -679,35 +705,66 @@ export function RecruitmentExecutionWorkspacePage() {
   };
 
   const handleFinalizeExecution = async () => {
-    if (!workspace) {
+    if (!workspace || !finalizationEngine) {
       return;
     }
-
-    const confirmed = window.confirm(
-      "Finalize this recruitment execution?\n\nAfter finalization, this execution will become read-only.",
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setSaving(true);
 
     try {
-      await recruitmentExecutionService.finalizeExecutionWorkflow({
-        executionId: workspace.execution.execution_id,
+      setFinalizationLoading(true);
+
+      const preparation = await finalizationEngine.prepareFinalization();
+
+      setFinalizationPreparation(preparation);
+
+      setFinalizationDialogOpen(true);
+    } catch (error) {
+      console.error(error);
+
+      toast.error(error instanceof Error ? error.message : "Unable to prepare Final Save.");
+    } finally {
+      setFinalizationLoading(false);
+    }
+  };
+
+  const handleFinalizationConfirmed = async (result: FinalizationVerificationResult) => {
+    if (!workspace || !finalizationEngine || !finalizationPreparation) {
+      return;
+    }
+
+    try {
+      setFinalizationLoading(true);
+
+      const {
+        data: { user },
+      } = await recruitmentExecutionService.getSupabaseClient().auth.getUser();
+
+      if (!user) {
+        throw new Error("Unable to determine the current administrator.");
+      }
+
+      await finalizationEngine.finalize({
+        finalizedBy: user.id,
+
+        preparation: finalizationPreparation,
+
+        verification: result,
       });
 
       toast.success("Recruitment execution finalized successfully.");
 
+      setFinalizationDialogOpen(false);
+
+      setFinalizationPreparation(null);
+
       await loadWorkspace();
-      setProgressToNextRound(false);
     } catch (error) {
       console.error(error);
 
-      toast.error(error instanceof Error ? error.message : "Unable to finalize execution.");
+      toast.error(
+        error instanceof Error ? error.message : "Unable to finalize recruitment execution.",
+      );
     } finally {
-      setSaving(false);
+      setFinalizationLoading(false);
     }
   };
 
@@ -1376,11 +1433,7 @@ export function RecruitmentExecutionWorkspacePage() {
         }}
         commonStageLocked={workspace.commonStageLocked}
 
-        commonStageLockReason={
-          workspace.commonStageLocked
-            ? "One or more role-specific pipelines have already configured their next stage. Complete those configured stages before creating a Common stage."
-            : undefined
-        }
+        commonStageLockReason={workspace.commonStageLockReason ?? undefined}
         onCreate={async (data) => {
           if (!workspace) {
             return;
@@ -1741,6 +1794,20 @@ export function RecruitmentExecutionWorkspacePage() {
           setAttendanceReviewOpen(false);
           void handleSaveRound();
         }}
+      />
+
+      <FinalizationVerificationDialog
+        open={finalizationDialogOpen}
+        loading={finalizationLoading}
+        preparation={finalizationPreparation}
+        onCancel={() => {
+          if (finalizationLoading) {
+            return;
+          }
+
+          setFinalizationDialogOpen(false);
+        }}
+        onConfirm={handleFinalizationConfirmed}
       />
     </div>
   );

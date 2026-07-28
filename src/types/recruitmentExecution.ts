@@ -437,5 +437,7 @@ export interface RecruitmentExecutionWorkspace {
 
   transition: RecruitmentExecutionTransition;
 
-  commonStageLocked: boolean;
+ commonStageLocked: boolean;
+
+commonStageLockReason: string | null;
 }
