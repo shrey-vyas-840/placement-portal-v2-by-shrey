@@ -47,10 +47,6 @@ export interface FinalizationSelectedCandidate {
 
   opportunityId: string;
   driveId: string;
-
-  packageLpa: number | null;
-
-  placementType: string | null;
 }
 
 export interface FinalizationPendingParticipant {
@@ -94,7 +90,6 @@ export interface FinalizationPreparationResult {
   statistics: FinalizationStatistics;
 }
 
-
 export interface FinalizationPlacementRow {
   studentId: string;
 
@@ -125,15 +120,15 @@ export interface FinalizeExecutionRequest {
   verification: {
     notes: string;
 
-placements: Array<{
-  studentId: string;
+    placements: Array<{
+      studentId: string;
 
-  placementType: string;
+      placementType: string;
 
-  packageLpa: number;
+      packageLpa: number;
 
-  placementNotes: string;
-}>;
+      placementNotes: string;
+    }>;
   };
 }
 
@@ -151,14 +146,9 @@ interface EngineContext {
   workspace: RecruitmentExecutionWorkspace;
 }
 
-type DerivedParticipantOutcome =
-  | "NO_PROGRESS"
-  | "SHORTLISTED"
-  | "SELECTED";
+type DerivedParticipantOutcome = "NO_PROGRESS" | "SHORTLISTED" | "SELECTED";
 
-type ParticipantValidationState =
-  | "READY"
-  | "PENDING";
+type ParticipantValidationState = "READY" | "PENDING";
 
 interface DerivedParticipantState {
   participant: RecruitmentExecutionParticipantWithStudent;
@@ -183,69 +173,58 @@ export class RecruitmentExecutionFinalizationEngine {
   }
 
   async prepareFinalization(): Promise<FinalizationPreparationResult> {
-  return this.buildPreparationResult();
-}
-
-async finalize(
-  request: FinalizeExecutionRequest,
-): Promise<void> {
-  const { preparation, verification } = request;
-
-  if (!preparation.canFinalize) {
-    throw new Error(
-      "Recruitment execution cannot be finalized because blocking issues still exist.",
-    );
+    return this.buildPreparationResult();
   }
 
-  const placementRows: FinalizationPlacementRow[] =
-    preparation.selectedCandidates.map((candidate) => {
-      const configuration =
-        verification.placements.find(
-          (placement) =>
-            placement.studentId === candidate.studentId,
+  async finalize(request: FinalizeExecutionRequest): Promise<void> {
+    const { preparation, verification } = request;
+
+    if (!preparation.canFinalize) {
+      throw new Error(
+        "Recruitment execution cannot be finalized because blocking issues still exist.",
+      );
+    }
+
+    const placementRows: FinalizationPlacementRow[] = preparation.selectedCandidates.map(
+      (candidate) => {
+        const configuration = verification.placements.find(
+          (placement) => placement.studentId === candidate.studentId,
         );
 
-      return {
-        studentId: candidate.studentId,
+        return {
+          studentId: candidate.studentId,
 
-        opportunityId: candidate.opportunityId,
+          opportunityId: candidate.opportunityId,
 
-        driveId: candidate.driveId,
+          driveId: candidate.driveId,
 
-        companyId: candidate.companyId,
+          companyId: candidate.companyId,
 
-        companyName: candidate.companyName,
+          companyName: candidate.companyName,
 
-   packageLpa:
-  configuration?.packageLpa ??
-  4,
+          packageLpa: configuration?.packageLpa ?? 4,
 
-placementType:
-  configuration?.placementType ??
-  "On Campus Internship + PPO",
+          placementType: configuration?.placementType ?? "On Campus Internship + PPO",
 
-placedAt:
-  new Date()
-    .toISOString()
-    .slice(0, 10),
+          placedAt: new Date().toISOString().slice(0, 10),
 
-placementNotes:
-  configuration?.placementNotes ?? "",
+          placementNotes: configuration?.placementNotes ?? "",
 
-isCurrent: true,
-      };
+          isCurrent: true,
+        };
+      },
+    );
+
+    await this.executeFinalization({
+      finalizedBy: request.finalizedBy,
+
+      preparation,
+
+      placementRows,
+
+      notes: verification.notes,
     });
-
-await this.executeFinalization({
-    finalizedBy: request.finalizedBy,
-
-    preparation,
-
-    placementRows,
-
-    notes: verification.notes,
-});
-}
+  }
   // --------------------------------------------------------------------------
   // Context Builders
   // --------------------------------------------------------------------------
@@ -264,58 +243,37 @@ await this.executeFinalization({
 
   private getParticipantMap() {
     return new Map(
-      this.participants.map((participant) => [
-        participant.execution_participant_id,
-        participant,
-      ]),
+      this.participants.map((participant) => [participant.execution_participant_id, participant]),
     );
   }
 
   private getHistoryMap() {
-    return new Map(
-      this.history.map((history) => [
-        history.execution_participant_id,
-        history,
-      ]),
-    );
+    return new Map(this.history.map((history) => [history.execution_participant_id, history]));
   }
 
   private getRoundMap() {
-    return new Map(
-      this.rounds.map((round) => [
-        round.execution_round_id,
-        round,
-      ]),
-    );
+    return new Map(this.rounds.map((round) => [round.execution_round_id, round]));
   }
 
- private getRound(
-  executionRoundId: string,
-): RecruitmentExecutionRoundRow | undefined {
-  return this.rounds.find(
-    (round) => round.execution_round_id === executionRoundId,
-  );
-}
-
-private getStageName(
-  executionRoundId: string | null,
-): string | null {
-  if (!executionRoundId) {
-    return null;
+  private getRound(executionRoundId: string): RecruitmentExecutionRoundRow | undefined {
+    return this.rounds.find((round) => round.execution_round_id === executionRoundId);
   }
 
-  return this.getRound(executionRoundId)?.round_name ?? null;
-}
+  private getStageName(executionRoundId: string | null): string | null {
+    if (!executionRoundId) {
+      return null;
+    }
 
-private getStageNumber(
-  executionRoundId: string | null,
-): number | null {
-  if (!executionRoundId) {
-    return null;
+    return this.getRound(executionRoundId)?.round_name ?? null;
   }
 
-  return this.getRound(executionRoundId)?.stage_number ?? null;
-}
+  private getStageNumber(executionRoundId: string | null): number | null {
+    if (!executionRoundId) {
+      return null;
+    }
+
+    return this.getRound(executionRoundId)?.stage_number ?? null;
+  }
 
   private getLatestHistory(
     executionParticipantId: string,
@@ -323,9 +281,7 @@ private getStageNumber(
     return this.getHistoryMap().get(executionParticipantId);
   }
 
-  private getEditedRow(
-    executionParticipantId: string,
-  ): RecruitmentExecutionEditedRow | undefined {
+  private getEditedRow(executionParticipantId: string): RecruitmentExecutionEditedRow | undefined {
     const history = this.getLatestHistory(executionParticipantId);
 
     if (!history) {
@@ -334,9 +290,7 @@ private getStageNumber(
 
     return {
       attendanceStatus: history.attendance_status,
-      gateStatus: history.restriction_override
-        ? "ALLOWED"
-        : history.gate_status,
+      gateStatus: history.restriction_override ? "ALLOWED" : history.gate_status,
       progressionStatus: history.progression_status,
       remarks: history.remarks ?? "",
       absenceDisposition: history.absence_disposition,
@@ -368,7 +322,7 @@ private getStageNumber(
     return {
       totalParticipants: 0,
       selectedParticipants: 0,
-     noProgressParticipants: 0,
+      noProgressParticipants: 0,
       pendingParticipants: 0,
       shortlistedParticipants: 0,
       dirtyStages: 0,
@@ -393,16 +347,13 @@ private getStageNumber(
   private deriveParticipantState(
     participant: RecruitmentExecutionParticipantWithStudent,
   ): DerivedParticipantState {
-    const history = this.getLatestHistory(
-      participant.execution_participant_id,
-    );
+    const history = this.getLatestHistory(participant.execution_participant_id);
 
     if (!history) {
       return {
         participant,
         validationState: "PENDING",
-        pendingReason:
-          "Participant has not yet entered the execution pipeline.",
+        pendingReason: "Participant has not yet entered the execution pipeline.",
       };
     }
 
@@ -430,8 +381,7 @@ private getStageNumber(
             participant,
             history,
             validationState: "PENDING",
-            pendingReason:
-              "Attendance has not yet been completed.",
+            pendingReason: "Attendance has not yet been completed.",
           };
         }
 
@@ -444,110 +394,88 @@ private getStageNumber(
       }
     }
   }
-  
-    // --------------------------------------------------------------------------
+
+  // --------------------------------------------------------------------------
   // Finalization Validation
   // --------------------------------------------------------------------------
 
-private validateParticipants(
-  result: FinalizationPreparationResult,
-): void {
-  result.statistics.totalParticipants = this.participants.length;
+  private validateParticipants(result: FinalizationPreparationResult): void {
+    result.statistics.totalParticipants = this.participants.length;
 
-  for (const participant of this.participants) {
-    const state = this.deriveParticipantState(participant);
+    for (const participant of this.participants) {
+      const state = this.deriveParticipantState(participant);
 
-    const studentName =
-      [
-        participant.student.first_name,
-        participant.student.middle_name,
-        participant.student.last_name,
-      ]
-        .filter(Boolean)
-        .join(" ") || "Unknown Student";
+      const studentName =
+        [
+          participant.student.first_name,
+          participant.student.middle_name,
+          participant.student.last_name,
+        ]
+          .filter(Boolean)
+          .join(" ") || "Unknown Student";
 
-    if (state.validationState === "PENDING") {
-      result.pendingParticipants.push({
-        executionParticipantId:
-          participant.execution_participant_id,
-        studentId: participant.student_id,
-
-        enrollmentNumber:
-          participant.student.enrollment_no,
-
-        studentName,
-
-        currentStageNumber: state.history
-          ? this.getStageNumber(
-              state.history.execution_round_id,
-            )
-          : null,
-
-        currentStageName: state.history
-          ? this.getStageName(
-              state.history.execution_round_id,
-            )
-          : null,
-
-        reason:
-          state.pendingReason ??
-          "Participant is still pending.",
-      });
-
-      continue;
-    }
-
-    switch (state.outcome) {
-      case "SELECTED":
-        result.statistics.selectedParticipants++;
-        break;
-
-      case "SHORTLISTED":
-        result.statistics.shortlistedParticipants++;
-
+      if (state.validationState === "PENDING") {
         result.pendingParticipants.push({
-          executionParticipantId:
-            participant.execution_participant_id,
+          executionParticipantId: participant.execution_participant_id,
           studentId: participant.student_id,
 
-          enrollmentNumber:
-            participant.student.enrollment_no,
+          enrollmentNumber: participant.student.enrollment_no,
 
           studentName,
 
-          currentStageNumber:
-            this.getStageNumber(
-              state.history!.execution_round_id,
-            ),
+          currentStageNumber: state.history
+            ? this.getStageNumber(state.history.execution_round_id)
+            : null,
 
-          currentStageName:
-            this.getStageName(
-              state.history!.execution_round_id,
-            ),
+          currentStageName: state.history
+            ? this.getStageName(state.history.execution_round_id)
+            : null,
 
-          reason:
-            "Participant is still progressing through the recruitment pipeline.",
+          reason: state.pendingReason ?? "Participant is still pending.",
         });
 
-        break;
+        continue;
+      }
 
-      case "NO_PROGRESS":
-        result.statistics.noProgressParticipants++;
-        break;
+      switch (state.outcome) {
+        case "SELECTED":
+          result.statistics.selectedParticipants++;
+          break;
+
+        case "SHORTLISTED":
+          result.statistics.shortlistedParticipants++;
+
+          result.pendingParticipants.push({
+            executionParticipantId: participant.execution_participant_id,
+            studentId: participant.student_id,
+
+            enrollmentNumber: participant.student.enrollment_no,
+
+            studentName,
+
+            currentStageNumber: this.getStageNumber(state.history!.execution_round_id),
+
+            currentStageName: this.getStageName(state.history!.execution_round_id),
+
+            reason: "Participant is still progressing through the recruitment pipeline.",
+          });
+
+          break;
+
+        case "NO_PROGRESS":
+          result.statistics.noProgressParticipants++;
+          break;
+      }
     }
-  }
 
-  result.statistics.pendingParticipants =
-    result.pendingParticipants.length;
-}
+    result.statistics.pendingParticipants = result.pendingParticipants.length;
+  }
 
   // --------------------------------------------------------------------------
   // Selected Candidate Aggregation
   // --------------------------------------------------------------------------
 
-  private buildSelectedCandidates(
-    result: FinalizationPreparationResult,
-  ): void {
+  private buildSelectedCandidates(result: FinalizationPreparationResult): void {
     for (const participant of this.participants) {
       const state = this.deriveParticipantState(participant);
 
@@ -564,65 +492,40 @@ private validateParticipants(
           .filter(Boolean)
           .join(" ") || "Unknown Student";
 
-      const selectedRole =
-        participant.selected_roles[0];
+      const selectedRole = participant.selected_roles[0];
 
       result.selectedCandidates.push({
-        executionParticipantId:
-          participant.execution_participant_id,
+        executionParticipantId: participant.execution_participant_id,
 
-        applicationId:
-          participant.application_id,
+        applicationId: participant.application_id,
 
-        studentId:
-          participant.student_id,
+        studentId: participant.student_id,
 
-        enrollmentNumber:
-          participant.student.enrollment_no,
+        enrollmentNumber: participant.student.enrollment_no,
 
         studentName,
 
         instituteName: "",
 
-        branchName:
-          selectedRole?.drive_role_name ?? "",
+        branchName: selectedRole?.drive_role_name ?? "",
 
-        selectedAtStage:
-          this.getStageNumber(
-            state.history!.execution_round_id,
-          ) ?? 0,
+        selectedAtStage: this.getStageNumber(state.history!.execution_round_id) ?? 0,
 
-        selectedStageName:
-          this.getStageName(
-            state.history!.execution_round_id,
-          ) ?? "",
+        selectedStageName: this.getStageName(state.history!.execution_round_id) ?? "",
 
-        companyId:
-          this.workspace.series.company_id,
+        companyId: this.workspace.series.company_id,
 
         companyName:
-          (
-            this.workspace.series
-              .series_snapshot
-              ?.company_name as string | undefined
-          ) ?? "",
+          (this.workspace.series.series_snapshot?.company_name as string | undefined) ?? "",
 
-        opportunityId:
-          this.workspace.series.opportunity_id,
+        opportunityId: this.workspace.series.opportunity_id,
 
-        driveId:
-          this.workspace.series.drive_id,
-
-        packageLpa: null,
-
-        placementType: null,
+        driveId: this.workspace.series.drive_id,
       });
     }
   }
 
-  private buildPipelineBlockers(
-    result: FinalizationPreparationResult,
-  ): void {
+  private buildPipelineBlockers(result: FinalizationPreparationResult): void {
     if (result.pendingParticipants.length > 0) {
       result.blockers.push(
         this.createBlocker(
@@ -643,43 +546,36 @@ private validateParticipants(
       );
     }
 
-    result.statistics.blockingIssues =
-      result.blockers.length;
+    result.statistics.blockingIssues = result.blockers.length;
   }
 
-    // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // Finalization Preparation
   // --------------------------------------------------------------------------
 
-  private finalizeStatistics(
-    result: FinalizationPreparationResult,
-  ): void {
-    result.statistics.pendingParticipants =
-      result.pendingParticipants.length;
+  private finalizeStatistics(result: FinalizationPreparationResult): void {
+    result.statistics.pendingParticipants = result.pendingParticipants.length;
 
-    result.statistics.blockingIssues =
-      result.blockers.length;
+    result.statistics.blockingIssues = result.blockers.length;
 
-    result.canFinalize =
-      result.blockers.length === 0;
+    result.canFinalize = result.blockers.length === 0;
   }
 
   private buildPreparationResult(): FinalizationPreparationResult {
-    const result =
-      this.createPreparationResult();
+    const result = this.createPreparationResult();
 
-this.validateParticipants(result);
+    this.validateParticipants(result);
 
-this.buildSelectedCandidates(result);
+    this.buildSelectedCandidates(result);
 
-this.buildPipelineBlockers(result);
+    this.buildPipelineBlockers(result);
 
     this.finalizeStatistics(result);
 
     return result;
   }
 
-    // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // RPC Payload Builders
   // --------------------------------------------------------------------------
 
@@ -687,77 +583,55 @@ this.buildPipelineBlockers(result);
     preparation: FinalizationPreparationResult,
   ): FinalizationRpcPayload {
     return {
-      finalSelectionRows: preparation.selectedCandidates.map(
-  (candidate) => ({
-    execution_id: this.workspace.execution.execution_id,
+      finalSelectionRows: preparation.selectedCandidates.map((candidate) => ({
+        execution_id: this.workspace.execution.execution_id,
 
-    execution_participant_id:
-      candidate.executionParticipantId,
+        execution_participant_id: candidate.executionParticipantId,
 
-    application_id:
-      candidate.applicationId,
+        application_id: candidate.applicationId,
 
-    student_id:
-      candidate.studentId,
-  }),
-),
+        student_id: candidate.studentId,
+      })),
 
-placementHistoryRows: [],
+      placementHistoryRows: [],
 
-      studentIds:
-        preparation.selectedCandidates.map(
-          (candidate) => candidate.studentId,
-        ),
+      studentIds: preparation.selectedCandidates.map((candidate) => candidate.studentId),
     };
   }
 
-    // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // Finalization RPC
   // --------------------------------------------------------------------------
 
-private async executeFinalization({
-  finalizedBy,
-  preparation,
-  placementRows,
-  notes,
-}: {
-  finalizedBy: string;
-
-  preparation: FinalizationPreparationResult;
-
-  placementRows: FinalizationPlacementRow[];
-
-  notes: string;
-
-}) {
-    const payload =
-      this.buildFinalizationPayload(
-        preparation,
-      );
-
-    const { data, error } =
-      await this.supabase.rpc(
-        "finalize_recruitment_execution",
-        {
-          p_execution_id:
-           this.workspace.execution.execution_id,
-
-       p_finalized_by:
+  private async executeFinalization({
     finalizedBy,
-
-          p_finalization_notes:
-            notes || null,
-
-          p_final_selection_rows:
-            payload.finalSelectionRows,
-
-p_placement_history_rows:
+    preparation,
     placementRows,
+    notes,
+  }: {
+    finalizedBy: string;
 
-          p_student_ids:
-            payload.studentIds,
-        },
-      );
+    preparation: FinalizationPreparationResult;
+
+    placementRows: FinalizationPlacementRow[];
+
+    notes: string;
+  }) {
+    const payload = this.buildFinalizationPayload(preparation);
+
+    const { data, error } = await this.supabase.rpc("finalize_recruitment_execution", {
+      p_execution_id: this.workspace.execution.execution_id,
+
+      p_finalized_by: finalizedBy,
+
+      p_finalization_notes: notes || null,
+
+      p_final_selection_rows: payload.finalSelectionRows,
+
+      p_placement_history_rows: placementRows,
+
+      p_student_ids: payload.studentIds,
+    });
 
     if (error) {
       throw error;
@@ -765,4 +639,4 @@ p_placement_history_rows:
 
     return data;
   }
-
+}

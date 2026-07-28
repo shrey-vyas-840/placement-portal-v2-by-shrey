@@ -95,7 +95,7 @@ export default function FinalizationVerificationDialog({
 
         placementType: DEFAULT_PLACEMENT_TYPE,
 
-        packageLpa: candidate.packageLpa ?? DEFAULT_PACKAGE,
+        packageLpa: DEFAULT_PACKAGE,
 
         placementNotes: "",
       };
