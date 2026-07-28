@@ -360,7 +360,6 @@ class RecruitmentExecutionService {
     const rounds = await this.loadRounds(input.executionId);
     const transition = await this.getRoundTransition(input.executionId);
 
-   
     let stageNumber = 1;
 
     if (rounds.length > 0) {
@@ -370,17 +369,14 @@ class RecruitmentExecutionService {
     }
 
     if (
-  input.scope === "COMMON" &&
-  transition.requiresSynchronization &&
-  !(await this.canCreateCommonStage(
-    input.executionId,
-    stageNumber,
-  ))
-) {
-  throw new Error(
-    "A Common stage cannot be created because one or more roles have already configured this stage.",
-  );
-}
+      input.scope === "COMMON" &&
+      transition.requiresSynchronization &&
+      !(await this.canCreateCommonStage(input.executionId, stageNumber))
+    ) {
+      throw new Error(
+        "A Common stage cannot be created because one or more roles have already configured this stage.",
+      );
+    }
 
     const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
       p_execution_id: input.executionId,
@@ -429,17 +425,14 @@ class RecruitmentExecutionService {
     }
 
     if (
-  input.scope === "COMMON" &&
-  transition.requiresSynchronization &&
-  !(await this.canCreateCommonStage(
-    input.executionId,
-    stageNumber,
-  ))
-) {
-  throw new Error(
-    "A Common stage cannot be created because one or more roles have already configured this stage.",
-  );
-}
+      input.scope === "COMMON" &&
+      transition.requiresSynchronization &&
+      !(await this.canCreateCommonStage(input.executionId, stageNumber))
+    ) {
+      throw new Error(
+        "A Common stage cannot be created because one or more roles have already configured this stage.",
+      );
+    }
 
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -1842,64 +1835,80 @@ history_revision
     };
   }
 
-private async canCreateCommonStage(
-  executionId: string,
-  targetStageNumber: number,
-): Promise<boolean>{
-  const rounds = await this.loadRounds(executionId);
+  private async getActiveRoleIdsForStage(
+    executionId: string,
+    stageNumber: number,
+  ): Promise<Set<string>> {
+    const rounds = await this.loadRounds(executionId);
 
-  const mappings = await this.loadRoundRoleMappings(executionId);
+    const mappings = await this.loadRoundRoleMappings(executionId);
 
-  const previousStage = targetStageNumber - 1;
+    const activeRoleIds = new Set<string>();
 
-  const previousStageRoleSpecificRounds = rounds.filter(
-    (round) =>
-      round.stage_number === previousStage &&
-      round.scope === "ROLE_SPECIFIC",
-  );
+    rounds
+      .filter((round) => round.stage_number === stageNumber && round.scope === "ROLE_SPECIFIC")
+      .forEach((round) => {
+        mappings
+          .filter((mapping) => mapping.execution_round_id === round.execution_round_id)
+          .forEach((mapping) => {
+            activeRoleIds.add(mapping.drive_role_id);
+          });
+      });
 
-  if (previousStageRoleSpecificRounds.length === 0) {
+    return activeRoleIds;
+  }
+
+  private async canCreateCommonStage(
+    executionId: string,
+    targetStageNumber: number,
+  ): Promise<boolean> {
+    const rounds = await this.loadRounds(executionId);
+
+    const mappings = await this.loadRoundRoleMappings(executionId);
+
+    const previousStage = targetStageNumber - 1;
+
+    const activeRoleIds = await this.getActiveRoleIdsForStage(executionId, previousStage);
+
+
+    const previousStageRoleSpecificRounds = rounds.filter(
+      (round) => round.stage_number === previousStage && round.scope === "ROLE_SPECIFIC",
+    );
+
+    if (previousStageRoleSpecificRounds.length === 0) {
+      return true;
+    }
+
+    const previousStageRoleIds = new Set<string>();
+
+    previousStageRoleSpecificRounds.forEach((round) => {
+      mappings
+        .filter((mapping) => mapping.execution_round_id === round.execution_round_id)
+        .forEach((mapping) => {
+          previousStageRoleIds.add(mapping.drive_role_id);
+        });
+    });
+
+    const nextStageRoleSpecificRounds = rounds.filter(
+      (round) => round.stage_number === targetStageNumber && round.scope === "ROLE_SPECIFIC",
+    );
+
+    for (const round of nextStageRoleSpecificRounds) {
+      const configuredRoleIds = mappings
+        .filter((mapping) => mapping.execution_round_id === round.execution_round_id)
+        .map((mapping) => mapping.drive_role_id);
+
+      if (
+        configuredRoleIds.some(
+          (roleId) => previousStageRoleIds.has(roleId) && activeRoleIds.has(roleId),
+        )
+      ) {
+        return false;
+      }
+    }
+
     return true;
   }
-
-  const previousStageRoleIds = new Set<string>();
-
-  previousStageRoleSpecificRounds.forEach((round) => {
-    mappings
-      .filter(
-        (mapping) =>
-          mapping.execution_round_id === round.execution_round_id,
-      )
-      .forEach((mapping) => {
-        previousStageRoleIds.add(mapping.drive_role_id);
-      });
-  });
-
-  const nextStageRoleSpecificRounds = rounds.filter(
-    (round) =>
-      round.stage_number === targetStageNumber &&
-      round.scope === "ROLE_SPECIFIC",
-  );
-
-  for (const round of nextStageRoleSpecificRounds) {
-    const configuredRoleIds = mappings
-      .filter(
-        (mapping) =>
-          mapping.execution_round_id === round.execution_round_id,
-      )
-      .map((mapping) => mapping.drive_role_id);
-
-    if (
-      configuredRoleIds.some((roleId) =>
-        previousStageRoleIds.has(roleId),
-      )
-    ) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
   private async calculatePendingRoles(
     executionId: string,

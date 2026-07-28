@@ -19,6 +19,10 @@ interface CreateRoundDialogProps {
 
   loading?: boolean;
 
+  commonStageLocked?: boolean;
+
+  commonStageLockReason?: string;
+
   onCreate(data: {
     roundName: string;
     roundType: ExecutionRoundType;
@@ -38,12 +42,20 @@ export default function CreateRoundDialog({
   nextRoundOrder,
   activeRoles,
   loading = false,
+  commonStageLocked = false,
+  commonStageLockReason,
   onCreate,
   onCancel,
 }: CreateRoundDialogProps) {
   const [roundName, setRoundName] = useState("");
 
   const [roundType, setRoundType] = useState<ExecutionRoundType>("COMMON");
+
+  useEffect(() => {
+    if (commonStageLocked && roundType === "COMMON") {
+      setRoundType("ROLE_SPECIFIC");
+    }
+  }, [commonStageLocked, roundType]);
 
   const [scheduledDate, setScheduledDate] = useState("");
 
@@ -152,15 +164,24 @@ export default function CreateRoundDialog({
             <label className="mb-3 block text-sm font-medium">Round Type</label>
 
             <div className="flex gap-6">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={roundType === "COMMON"}
-                  onChange={() => setRoundType("COMMON")}
-                />
-                Common
-              </label>
+              <div className="flex flex-col">
+  <label className="flex items-center gap-2">
+    <input
+      type="radio"
+      checked={roundType === "COMMON"}
+      disabled={commonStageLocked}
+      onChange={() => setRoundType("COMMON")}
+    />
+    Common
+  </label>
 
+  {commonStageLocked && (
+    <p className="ml-6 mt-1 text-xs text-amber-600">
+      {commonStageLockReason ??
+        "Complete the configured role-specific stage before merging into a Common stage."}
+    </p>
+  )}
+</div>
               <label className="flex items-center gap-2">
                 <input
                   type="radio"

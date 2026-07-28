@@ -1209,25 +1209,28 @@ export function RecruitmentExecutionWorkspacePage() {
                   {isCurrentRoundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
                 </button>
 
-                {(workspace?.remainingActiveRoles.length ?? 0) > 0 && (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-                    <div className="font-medium text-amber-800">Current stage is not complete.</div>
+                {workspace.transition.requiresRoleAssignment &&
+                  workspace.remainingActiveRoles.length > 0 && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                      <div className="font-medium text-amber-800">
+                        Assign shortlisted candidates to role-specific execution rounds.
+                      </div>
 
-                    <div className="mt-1 text-sm text-amber-700">
-                      {workspace?.remainingActiveRoles.length} active role(s) still need to be
-                      assigned to a round before the next stage can begin.
+                      <div className="mt-1 text-sm text-amber-700">
+                        Before Stage {workspace.transition.nextStage} can begin, shortlisted
+                        candidates must be routed into the correct role-specific round.
+                      </div>
+
+                      <ul className="mt-3 list-disc pl-5 text-sm text-amber-700">
+                        {workspace.remainingActiveRoles.map((role) => (
+                          <li key={role.drive_role_id}>
+                            {role.drive_role_name} ({role.candidate_count} candidate
+                            {role.candidate_count !== 1 ? "s" : ""})
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-
-                    <ul className="mt-3 list-disc pl-5 text-sm text-amber-700">
-                      {workspace?.remainingActiveRoles.map((role) => (
-                        <li key={role.drive_role_id}>
-                          {role.drive_role_name} ({role.candidate_count} candidate
-                          {role.candidate_count !== 1 ? "s" : ""})
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  )}
                 {showExecutionBatchPanel && !allExecutionBatchesCompleted && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                     Complete all execution batches and assign every shortlisted participant before
@@ -1242,7 +1245,8 @@ export function RecruitmentExecutionWorkspacePage() {
                     roundDirty ||
                     hasUnsavedChanges ||
                     !isCurrentRoundSaved ||
-                    (workspace?.remainingActiveRoles.length ?? 0) > 0 ||
+                    (workspace.transition.requiresRoleAssignment &&
+                      workspace.remainingActiveRoles.length > 0) ||
                     !allExecutionBatchesCompleted
                   }
                   className="rounded-md border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
@@ -1370,6 +1374,13 @@ export function RecruitmentExecutionWorkspacePage() {
           setCreateRoundOpen(false);
           setProgressToNextRound(false);
         }}
+        commonStageLocked={workspace?.transition.requiresSynchronization === true}
+
+        commonStageLockReason={
+          workspace?.transition.requiresSynchronization
+            ? "One or more role-specific pipelines have already configured their next stage. Complete those configured stages before creating a Common stage."
+            : undefined
+        }
         onCreate={async (data) => {
           if (!workspace) {
             return;
