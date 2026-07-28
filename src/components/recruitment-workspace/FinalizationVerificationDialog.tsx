@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -114,6 +115,11 @@ export default function FinalizationVerificationDialog({
 
   const totalSelected = selectedCandidates.length;
 
+  const [defaultPlacementType, setDefaultPlacementType] =
+    useState<PlacementType>(DEFAULT_PLACEMENT_TYPE);
+
+  const [defaultPackage, setDefaultPackage] = useState<number>(DEFAULT_PACKAGE);
+
   const placementRows = useMemo(
     () =>
       selectedCandidates.map((candidate) => ({
@@ -133,65 +139,55 @@ export default function FinalizationVerificationDialog({
     }));
   };
 
-  const updatePackage = (
-  studentId: string,
-  packageLpa: number,
-) => {
-  setPlacements((previous) => ({
-    ...previous,
-    [studentId]: {
-      ...previous[studentId],
-      packageLpa,
-    },
-  }));
-};
-
-const updatePlacementNotes = (
-  studentId: string,
-  placementNotes: string,
-) => {
-  setPlacements((previous) => ({
-    ...previous,
-    [studentId]: {
-      ...previous[studentId],
-      placementNotes,
-    },
-  }));
-};
-
-const applyPlacementTypeToAll = (
-  placementType: PlacementType,
-) => {
-  setPlacements((previous) => {
-    const next = { ...previous };
-
-    Object.keys(next).forEach((studentId) => {
-      next[studentId] = {
-        ...next[studentId],
-        placementType,
-      };
-    });
-
-    return next;
-  });
-};
-
-const applyPackageToAll = (
-  packageLpa: number,
-) => {
-  setPlacements((previous) => {
-    const next = { ...previous };
-
-    Object.keys(next).forEach((studentId) => {
-      next[studentId] = {
-        ...next[studentId],
+  const updatePackage = (studentId: string, packageLpa: number) => {
+    setPlacements((previous) => ({
+      ...previous,
+      [studentId]: {
+        ...previous[studentId],
         packageLpa,
-      };
-    });
+      },
+    }));
+  };
 
-    return next;
-  });
-};
+  const updatePlacementNotes = (studentId: string, placementNotes: string) => {
+    setPlacements((previous) => ({
+      ...previous,
+      [studentId]: {
+        ...previous[studentId],
+        placementNotes,
+      },
+    }));
+  };
+
+  const applyPlacementTypeToAll = (placementType: PlacementType) => {
+    setPlacements((previous) => {
+      const next = { ...previous };
+
+      Object.keys(next).forEach((studentId) => {
+        next[studentId] = {
+          ...next[studentId],
+          placementType,
+        };
+      });
+
+      return next;
+    });
+  };
+
+  const applyPackageToAll = (packageLpa: number) => {
+    setPlacements((previous) => {
+      const next = { ...previous };
+
+      Object.keys(next).forEach((studentId) => {
+        next[studentId] = {
+          ...next[studentId],
+          packageLpa,
+        };
+      });
+
+      return next;
+    });
+  };
 
   const submit = async () => {
     if (!preparation || !canFinalize) {
@@ -322,6 +318,77 @@ const applyPackageToAll = (
 
             <div className="space-y-4">
               <div>
+                <Card>
+                  <CardContent className="space-y-5 p-5">
+                    <div className="text-lg font-semibold">Default Placement Details</div>
+
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Placement Type</Label>
+
+                        <Select
+                          value={defaultPlacementType}
+                          onValueChange={(value) => setDefaultPlacementType(value as PlacementType)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+
+                          <SelectContent>
+                            <SelectItem value="On Campus Placement">On Campus Placement</SelectItem>
+
+                            <SelectItem value="On Campus Internship">
+                              On Campus Internship
+                            </SelectItem>
+
+                            <SelectItem value="On Campus Internship + PPO">
+                              On Campus Internship + PPO
+                            </SelectItem>
+
+                            <SelectItem value="Off Campus Placement">
+                              Off Campus Placement
+                            </SelectItem>
+
+                            <SelectItem value="Off Campus Internship">
+                              Off Campus Internship
+                            </SelectItem>
+
+                            <SelectItem value="Off Campus Internship + PPO">
+                              Off Campus Internship + PPO
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          variant="secondary"
+                          onClick={() => applyPlacementTypeToAll(defaultPlacementType)}
+                        >
+                          Apply Placement Type to All
+                        </Button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Package (LPA)</Label>
+
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={defaultPackage}
+                          onChange={(event) => setDefaultPackage(Number(event.target.value))}
+                        />
+
+                        <Button
+                          variant="secondary"
+                          onClick={() => applyPackageToAll(defaultPackage)}
+                        >
+                          Apply Package to All
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <h3 className="text-lg font-semibold">Selected Candidates</h3>
 
                 <p className="text-sm text-muted-foreground">
@@ -342,6 +409,10 @@ const applyPackageToAll = (
                       <th className="px-4 py-3 text-left">Stage</th>
 
                       <th className="px-4 py-3 text-left">Placement Type</th>
+
+                      <th className="px-4 py-3 text-left">Package (LPA)</th>
+
+                      <th className="px-4 py-3 text-left">Placement Notes</th>
                     </tr>
                   </thead>
 
@@ -376,19 +447,52 @@ const applyPackageToAll = (
                             </SelectTrigger>
 
                             <SelectContent>
-                              <SelectItem value="ON_CAMPUS_PLACEMENT">
-                                On-Campus Placement
+                              <SelectItem value="On Campus Placement">
+                                On Campus Placement
                               </SelectItem>
 
-                              <SelectItem value="ON_CAMPUS_INTERNSHIP">
-                                On-Campus Internship
+                              <SelectItem value="On Campus Internship">
+                                On Campus Internship
                               </SelectItem>
 
-                              <SelectItem value="ON_CAMPUS_INTERNSHIP_PPO">
-                                On-Campus Internship + PPO
+                              <SelectItem value="On Campus Internship + PPO">
+                                On Campus Internship + PPO
+                              </SelectItem>
+
+                              <SelectItem value="Off Campus Placement">
+                                Off Campus Placement
+                              </SelectItem>
+
+                              <SelectItem value="Off Campus Internship">
+                                Off Campus Internship
+                              </SelectItem>
+
+                              <SelectItem value="Off Campus Internship + PPO">
+                                Off Campus Internship + PPO
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={configuration?.packageLpa ?? DEFAULT_PACKAGE}
+                            onChange={(event) =>
+                              updatePackage(candidate.studentId, Number(event.target.value))
+                            }
+                          />
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <Input
+                            value={configuration?.placementNotes ?? ""}
+                            placeholder="Optional"
+                            onChange={(event) =>
+                              updatePlacementNotes(candidate.studentId, event.target.value)
+                            }
+                          />
                         </td>
                       </tr>
                     ))}
