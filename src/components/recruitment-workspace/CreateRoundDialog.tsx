@@ -165,23 +165,23 @@ export default function CreateRoundDialog({
 
             <div className="flex gap-6">
               <div className="flex flex-col">
-  <label className="flex items-center gap-2">
-    <input
-      type="radio"
-      checked={roundType === "COMMON"}
-      disabled={commonStageLocked}
-      onChange={() => setRoundType("COMMON")}
-    />
-    Common
-  </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    checked={roundType === "COMMON"}
+                    disabled={commonStageLocked}
+                    onChange={() => setRoundType("COMMON")}
+                  />
+                  Common
+                </label>
 
-  {commonStageLocked && (
-    <p className="ml-6 mt-1 text-xs text-amber-600">
-      {commonStageLockReason ??
-        "Complete the configured role-specific stage before merging into a Common stage."}
-    </p>
-  )}
-</div>
+                {commonStageLocked && (
+                  <p className="ml-6 mt-1 text-xs text-amber-600">
+                    {commonStageLockReason ??
+                      "Complete the configured role-specific stage before merging into a Common stage."}
+                  </p>
+                )}
+              </div>
               <label className="flex items-center gap-2">
                 <input
                   type="radio"

@@ -96,6 +96,8 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [pendingExecutionRoundId, setPendingExecutionRoundId] = useState<string | null>(null);
 
+  const [selectedExecutionBatchId, setSelectedExecutionBatchId] = useState<string | null>(null);
+
   const [showExecutionBatchPanel, setShowExecutionBatchPanel] = useState(false);
 
   const [createExecutionBatchOpen, setCreateExecutionBatchOpen] = useState(false);
@@ -136,6 +138,14 @@ export function RecruitmentExecutionWorkspacePage() {
 
       setSelectedStage(selectedRound.stage_number);
       setSelectedRoundId(selectedRound.execution_round_id);
+
+      const stageBatches = data.executionBatches
+        .filter((batch) => batch.parent_execution_round_id === selectedRound.execution_round_id)
+        .sort((a, b) => a.round_order - b.round_order);
+
+      setSelectedExecutionBatchId(
+        navigationRestore?.executionBatchId ?? stageBatches[0]?.execution_round_id ?? null,
+      );
 
       if (selectedRound.scope === "COMMON") {
         setSelectedTimeline("COMMON");
@@ -255,18 +265,16 @@ export function RecruitmentExecutionWorkspacePage() {
   }, [workspace, selectedRoundId]);
 
   const selectedExecutionBatch = useMemo(() => {
-    if (!workspace || selectedStage === null) {
+    if (!workspace || !selectedExecutionBatchId) {
       return null;
     }
 
     return (
       workspace.executionBatches.find(
-        (batch) =>
-          batch.stage_number === selectedStage &&
-          batch.parent_execution_round_id === selectedRoundId,
+        (batch) => batch.execution_round_id === selectedExecutionBatchId,
       ) ?? null
     );
-  }, [workspace, selectedStage, selectedRoundId]);
+  }, [workspace, selectedExecutionBatchId]);
 
   const isMultipleExecutionStage = useMemo(() => {
     if (!workspace || selectedStage === null) {
@@ -891,6 +899,12 @@ export function RecruitmentExecutionWorkspacePage() {
 
                   setSelectedRoundId(firstRound.execution_round_id);
 
+                  const firstBatch = workspace.executionBatches
+                    .filter((b) => b.parent_execution_round_id === firstRound.execution_round_id)
+                    .sort((a, b) => a.round_order - b.round_order)[0];
+
+                  setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
+
                   if (firstRound.scope === "COMMON") {
                     setSelectedTimeline("COMMON");
                     return;
@@ -935,6 +949,12 @@ export function RecruitmentExecutionWorkspacePage() {
                     type="button"
                     onClick={() => {
                       setSelectedRoundId(round.execution_round_id);
+
+                      const firstBatch = workspace.executionBatches
+                        .filter((b) => b.parent_execution_round_id === round.execution_round_id)
+                        .sort((a, b) => a.round_order - b.round_order)[0];
+
+                      setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
 
                       if (round.scope === "COMMON") {
                         setSelectedTimeline("COMMON");
@@ -1000,9 +1020,17 @@ export function RecruitmentExecutionWorkspacePage() {
 
                           <div className="mt-3 space-y-2">
                             {currentStageBatches.map((batch) => (
-                              <div
+                              <button
+                                type="button"
                                 key={batch.execution_round_id}
-                                className="flex items-center justify-between rounded border bg-background px-3 py-2"
+                                onClick={() => {
+                                  setSelectedExecutionBatchId(batch.execution_round_id);
+                                }}
+                                className={`flex w-full items-center justify-between rounded border px-3 py-2 transition ${
+                                  selectedExecutionBatchId === batch.execution_round_id
+                                    ? "border-primary bg-primary/10"
+                                    : "bg-background hover:bg-muted"
+                                }`}
                               >
                                 <div>
                                   <div className="font-medium">{batch.round_name}</div>
@@ -1033,7 +1061,7 @@ export function RecruitmentExecutionWorkspacePage() {
                                     </span>
                                   )}
                                 </div>
-                              </div>
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -1458,6 +1486,7 @@ export function RecruitmentExecutionWorkspacePage() {
               }))
         }
         loading={saving}
+
         // configurationStage={currentConfigurationStage}
         // configurationRoleId={currentConfigurationRoleId}
         onCancel={() => {
@@ -1473,20 +1502,21 @@ export function RecruitmentExecutionWorkspacePage() {
 
         commonStageLockReason={workspace.commonStageLockReason ?? undefined}
         onCreate={async (data) => {
-          if (!workspace) {
+          if (saving || !workspace) {
             return;
           }
-          try {
-            setSaving(true);
 
+          setSaving(true);
+
+          try {
             const round = await recruitmentExecutionService.createExecutionBatch({
               executionId: workspace.execution.execution_id,
 
               creationMode: progressToNextRound ? "NEXT_STAGE" : "PARALLEL_STAGE",
 
-              roundOrder: Math.max(...workspace.rounds.map((r) => r.round_order), 0) + 1,
+              roundOrder: Math.max(0, ...workspace.rounds.map((r) => r.round_order)) + 1,
 
-              roundName: data.roundName,
+              roundName: data.roundName.trim(),
 
               scope: data.roundType === "COMMON" ? "COMMON" : "ROLE_SPECIFIC",
 
@@ -1500,34 +1530,32 @@ export function RecruitmentExecutionWorkspacePage() {
               remarks: data.remarks,
             });
 
+            setCreateRoundOpen(false);
+
             setCurrentConfigurationStage(round.stage_number);
 
-            if (data.roundType === "ROLE_SPECIFIC") {
-              setCurrentConfigurationRoleId(data.roleIds[0] ?? null);
-            }
-
-            //
-            // First round of a stage.
-            // Do NOT reload the workspace yet.
-            // Ask the admin how this stage should execute.
-            //
-            setCreateRoundOpen(false);
+            setCurrentConfigurationRoleId(
+              data.roundType === "ROLE_SPECIFIC" ? (data.roleIds[0] ?? null) : null,
+            );
 
             setSelectedStage(round.stage_number);
 
+            setSelectedRoundId(round.execution_round_id);
+
             setPendingExecutionRoundId(round.execution_round_id);
-
-            setExecutionModeDialogOpen(true);
-
-            setProgressSummaryOpen(false);
 
             setNavigationRestore({
               stageNumber: round.stage_number,
               executionRoundId: round.execution_round_id,
             });
+
+            setProgressSummaryOpen(false);
+
+            setExecutionModeDialogOpen(true);
           } catch (error) {
             console.error(error);
             setProgressToNextRound(false);
+
             toast.error(error instanceof Error ? error.message : "Unable to create round.");
           } finally {
             setSaving(false);
@@ -1632,6 +1660,7 @@ export function RecruitmentExecutionWorkspacePage() {
             setNavigationRestore({
               stageNumber: selectedStage ?? undefined,
               executionRoundId: pendingExecutionRoundId ?? undefined,
+              executionBatchId: batch.execution_round_id,
             });
 
             await loadWorkspace();
@@ -1798,7 +1827,7 @@ export function RecruitmentExecutionWorkspacePage() {
           setManageExecutionBatchesOpen(false);
 
           setViewingExecutionBatchId(executionRoundId);
-
+          setSelectedExecutionBatchId(executionRoundId);
           const batch = workspace.executionBatches.find(
             (b) => b.execution_round_id === executionRoundId,
           );
