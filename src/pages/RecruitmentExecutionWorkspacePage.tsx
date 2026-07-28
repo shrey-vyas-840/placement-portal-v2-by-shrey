@@ -1180,31 +1180,31 @@ export function RecruitmentExecutionWorkspacePage() {
           <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
             <div className="max-h-[72vh] overflow-auto">
               <table className="min-w-full border-collapse text-sm">
-                <thead className="sticky top-0 z-10 bg-slate-50">
+                <thead className="sticky top-0 z-30 bg-slate-50 shadow-sm">
                   <tr className="border-b border-slate-200">
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Student
-                    </th>
+                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+  Student
+</th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Enrollment
-                    </th>
+                <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+  Enrollment
+</th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Selected Roles
-                    </th>
+                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+  Selected Roles
+</th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Attendance
-                    </th>
+                  <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+  Attendance
+</th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Gate
-                    </th>
+              <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+ Gate
+</th>
 
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Progression
-                    </th>
+     <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+Progression
+</th>
 
                     {isMultipleExecutionStage && (
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -1237,25 +1237,25 @@ export function RecruitmentExecutionWorkspacePage() {
                     const canProgress = effectiveAttendanceAllowed && effectiveGateAllowed;
 
                     return (
-                      <tr
-                        key={participant.execution_participant_id}
-                        className="border-b border-slate-100 transition-colors hover:bg-slate-50"
-                      >
-                        <td className="px-4 py-3 align-top">
-                          <div className="font-medium text-slate-900">
+               <tr
+  key={participant.execution_participant_id}
+  className="border-b border-slate-200 odd:bg-white even:bg-slate-50/50 transition-colors hover:bg-blue-50/60"
+>
+                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                          <div className="truncate font-semibold text-slate-900">
                             {`${participant.student.first_name} ${participant.student.last_name}`}
                           </div>
 
-                          <div className="mt-1 text-xs text-slate-500">
+                          <div className="mt-1 truncate text-xs text-slate-500">
                             {participant.student.institute_email}
                           </div>
                         </td>
 
-                        <td className="px-4 py-3 align-top text-slate-700">
+                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
                           {participant.student.enrollment_no}
                         </td>
 
-                        <td className="px-4 py-3 align-top">
+                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
                           <div className="flex flex-wrap gap-1.5">
                             {participant.selected_roles.map((role) => (
                               <span
@@ -1268,7 +1268,7 @@ export function RecruitmentExecutionWorkspacePage() {
                           </div>
                         </td>
 
-                        <td className="px-4 py-3 align-top">
+                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
                           <select
                             className={`w-full min-w-37.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
                               editedRow?.attendanceStatus === "PRESENT"
@@ -1310,7 +1310,7 @@ export function RecruitmentExecutionWorkspacePage() {
                             )}
                         </td>
 
-                        <td className="px-4 py-3 align-top">
+                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
                           <div className="space-y-2">
                             {effectiveGateStatus === "RESTRICTED" ? (
                               <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
@@ -1334,7 +1334,7 @@ export function RecruitmentExecutionWorkspacePage() {
                           </div>
                         </td>
 
-                        <td className="px-4 py-3 align-top">
+                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
                           <select
                             className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
                             value={
@@ -1372,7 +1372,7 @@ export function RecruitmentExecutionWorkspacePage() {
                         </td>
 
                         {isMultipleExecutionStage && (
-                          <td className="px-4 py-3 align-top">
+                          <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
                             {editedRow?.progressionStatus === "SHORTLISTED" ? (
                               <select
                                 className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
