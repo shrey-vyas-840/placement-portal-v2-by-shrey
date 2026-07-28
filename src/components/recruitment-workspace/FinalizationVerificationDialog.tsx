@@ -31,14 +31,21 @@ import type {
 } from "@/services/recruitment/recruitmentExecutionFinalizationEngine";
 
 export type PlacementType =
-  "ON_CAMPUS_PLACEMENT" | "ON_CAMPUS_INTERNSHIP" | "ON_CAMPUS_INTERNSHIP_PPO";
+  | "On Campus Placement"
+  | "On Campus Internship"
+  | "On Campus Internship + PPO"
+  | "Off Campus Placement"
+  | "Off Campus Internship"
+  | "Off Campus Internship + PPO";
 
 export interface CandidatePlacementConfiguration {
   studentId: string;
 
   placementType: PlacementType;
 
-  packageLpa: number | null;
+  packageLpa: number;
+
+  placementNotes: string;
 }
 
 export interface FinalizationVerificationResult {
@@ -59,7 +66,9 @@ interface FinalizationVerificationDialogProps {
   onConfirm: (result: FinalizationVerificationResult) => Promise<void> | void;
 }
 
-const DEFAULT_PLACEMENT_TYPE: PlacementType = "ON_CAMPUS_PLACEMENT";
+const DEFAULT_PLACEMENT_TYPE: PlacementType = "On Campus Internship + PPO";
+
+const DEFAULT_PACKAGE = 4.0;
 
 export default function FinalizationVerificationDialog({
   open,
@@ -82,8 +91,12 @@ export default function FinalizationVerificationDialog({
     for (const candidate of preparation.selectedCandidates) {
       next[candidate.studentId] = {
         studentId: candidate.studentId,
+
         placementType: DEFAULT_PLACEMENT_TYPE,
-        packageLpa: candidate.packageLpa,
+
+        packageLpa: candidate.packageLpa ?? DEFAULT_PACKAGE,
+
+        placementNotes: "",
       };
     }
 
@@ -119,6 +132,66 @@ export default function FinalizationVerificationDialog({
       },
     }));
   };
+
+  const updatePackage = (
+  studentId: string,
+  packageLpa: number,
+) => {
+  setPlacements((previous) => ({
+    ...previous,
+    [studentId]: {
+      ...previous[studentId],
+      packageLpa,
+    },
+  }));
+};
+
+const updatePlacementNotes = (
+  studentId: string,
+  placementNotes: string,
+) => {
+  setPlacements((previous) => ({
+    ...previous,
+    [studentId]: {
+      ...previous[studentId],
+      placementNotes,
+    },
+  }));
+};
+
+const applyPlacementTypeToAll = (
+  placementType: PlacementType,
+) => {
+  setPlacements((previous) => {
+    const next = { ...previous };
+
+    Object.keys(next).forEach((studentId) => {
+      next[studentId] = {
+        ...next[studentId],
+        placementType,
+      };
+    });
+
+    return next;
+  });
+};
+
+const applyPackageToAll = (
+  packageLpa: number,
+) => {
+  setPlacements((previous) => {
+    const next = { ...previous };
+
+    Object.keys(next).forEach((studentId) => {
+      next[studentId] = {
+        ...next[studentId],
+        packageLpa,
+      };
+    });
+
+    return next;
+  });
+};
 
   const submit = async () => {
     if (!preparation || !canFinalize) {
