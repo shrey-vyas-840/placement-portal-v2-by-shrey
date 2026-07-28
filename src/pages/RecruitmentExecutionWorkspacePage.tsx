@@ -66,7 +66,13 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [selectedStage, setSelectedStage] = useState<number | null>(null);
 
-  const [pendingRoundId, setPendingRoundId] = useState("");
+  type WorkspaceNavigationState = {
+    stageNumber?: number;
+    executionRoundId?: string;
+    executionBatchId?: string;
+  };
+
+  const [navigationRestore, setNavigationRestore] = useState<WorkspaceNavigationState | null>(null);
 
   const [attendanceReviewOpen, setAttendanceReviewOpen] = useState(false);
 
@@ -109,6 +115,42 @@ export function RecruitmentExecutionWorkspacePage() {
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
   const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
+
+  const restoreWorkspaceNavigation = useCallback(
+    (data: RecruitmentExecutionWorkspace) => {
+      if (data.rounds.length === 0) {
+        return;
+      }
+
+      const stageNumber =
+        navigationRestore?.stageNumber ?? selectedStage ?? data.rounds[0].stage_number;
+
+      const stageRounds = data.rounds
+        .filter((r) => r.stage_number === stageNumber)
+        .sort((a, b) => a.round_order - b.round_order);
+
+      const selectedRound =
+        stageRounds.find((r) => r.execution_round_id === navigationRestore?.executionRoundId) ??
+        stageRounds[0] ??
+        data.rounds[0];
+
+      setSelectedStage(selectedRound.stage_number);
+      setSelectedRoundId(selectedRound.execution_round_id);
+
+      if (selectedRound.scope === "COMMON") {
+        setSelectedTimeline("COMMON");
+      } else {
+        const mapping = data.roundRoleMappings.find(
+          (m) => m.execution_round_id === selectedRound.execution_round_id,
+        );
+
+        setSelectedTimeline(mapping?.drive_role_id ?? "COMMON");
+      }
+
+      setNavigationRestore(null);
+    },
+    [navigationRestore, selectedStage],
+  );
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -156,12 +198,6 @@ export function RecruitmentExecutionWorkspacePage() {
         setCreateRoundOpen(false);
       }
 
-      if (!pendingRoundId) {
-        setSelectedRoundId((current) => current || data.rounds[0]?.execution_round_id || "");
-
-        setSelectedStage((current) => current ?? data.rounds[0]?.stage_number ?? null);
-      }
-
       const historyLookup = new Map(
         data.historySummary.map((item) => [item.execution_participant_id, item]),
       );
@@ -193,15 +229,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
       setEditedRows(initialState);
 
-      const selectedRound = data.rounds.find(
-        (r) => r.execution_round_id === (data.rounds[0]?.execution_round_id ?? ""),
-      );
-
-      const hasSavedHistory =
-        !!selectedRound &&
-        data.historySummary.some(
-          (history) => history.execution_round_id === selectedRound.execution_round_id,
-        );
+      restoreWorkspaceNavigation(data);
 
       setRoundDirty(false);
       setHasUnsavedChanges(false);
@@ -212,26 +240,11 @@ export function RecruitmentExecutionWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [executionId, pendingRoundId]);
+  }, [executionId, restoreWorkspaceNavigation, selectedStage]);
 
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
-
-  useEffect(() => {
-    if (!workspace || !pendingRoundId) {
-      return;
-    }
-
-    const exists = workspace.rounds.some((round) => round.execution_round_id === pendingRoundId);
-
-    if (!exists) {
-      return;
-    }
-
-    setSelectedRoundId(pendingRoundId);
-    setPendingRoundId("");
-  }, [workspace, pendingRoundId]);
 
   const selectedRound = useMemo<RecruitmentExecutionRoundRow | null>(() => {
     if (!workspace) {
@@ -410,7 +423,7 @@ export function RecruitmentExecutionWorkspacePage() {
   }, [
     workspace,
     selectedRound,
-    selectedExecutionBatch?.execution_round_id,
+    selectedExecutionBatch,
     showExecutionBatchPanel,
     isMultipleExecutionStage,
   ]);
@@ -1487,8 +1500,6 @@ export function RecruitmentExecutionWorkspacePage() {
               remarks: data.remarks,
             });
 
-            setPendingRoundId(round.execution_round_id);
-
             setCurrentConfigurationStage(round.stage_number);
 
             if (data.roundType === "ROLE_SPECIFIC") {
@@ -1510,7 +1521,10 @@ export function RecruitmentExecutionWorkspacePage() {
 
             setProgressSummaryOpen(false);
 
-            setPendingRoundId(round.execution_round_id);
+            setNavigationRestore({
+              stageNumber: round.stage_number,
+              executionRoundId: round.execution_round_id,
+            });
           } catch (error) {
             console.error(error);
             setProgressToNextRound(false);
@@ -1615,10 +1629,12 @@ export function RecruitmentExecutionWorkspacePage() {
               remarks: data.remarks,
             });
 
-            await loadWorkspace();
+            setNavigationRestore({
+              stageNumber: selectedStage ?? undefined,
+              executionRoundId: pendingExecutionRoundId ?? undefined,
+            });
 
-            // Keep pointing to the parent stage.
-            // The selected batch is the newly created child batch.
+            await loadWorkspace();
 
             setShowExecutionBatchPanel(true);
 
