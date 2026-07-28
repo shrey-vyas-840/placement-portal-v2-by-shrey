@@ -1022,14 +1022,24 @@ export function RecruitmentExecutionWorkspacePage() {
               </div>
 
               {isMultipleExecutionStage && (
-                <div className="mt-6 rounded-xl border bg-card p-5">
-                  <div className="flex items-start justify-between">
+                <div className="mt-5 rounded-lg border bg-muted/30 p-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Execution Batches</h3>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold">Execution Batches</h3>
+                      <div className="font-medium">
+                        {currentStageBatches.filter((b) => b.participant_count > 0).length} of{" "}
+                        {currentStageBatches.length} Batches In Use
+                      </div>
 
-                      <p className="text-sm text-muted-foreground">
-                        Configure batches for this stage.
-                      </p>
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        {currentStageBatches.reduce(
+                          (sum, batch) => sum + batch.participant_count,
+                          0,
+                        )}{" "}
+                        student(s) assigned
+                      </div>
                     </div>
 
                     <button
@@ -1044,70 +1054,6 @@ export function RecruitmentExecutionWorkspacePage() {
                         ? "Create Execution Batches"
                         : "Manage Execution Batches"}
                     </button>
-                  </div>
-
-                  <div className="mt-5">
-                    {currentStageBatches.length === 0 ? (
-                      <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                        No execution batches have been configured for this stage.
-                      </div>
-                    ) : (
-                      <>
-                        <div className="rounded-lg border bg-muted/30 p-4">
-                          <div className="font-medium">
-                            {currentStageBatches.length} Batch
-                            {currentStageBatches.length === 1 ? "" : "es"} Configured
-                          </div>
-
-                          <div className="mt-3 space-y-2">
-                            {currentStageBatches.map((batch) => (
-                              <button
-                                type="button"
-                                key={batch.execution_round_id}
-                                onClick={() => {
-                                  setSelectedExecutionBatchId(batch.execution_round_id);
-                                }}
-                                className={`flex w-full items-center justify-between rounded border px-3 py-2 transition ${
-                                  selectedExecutionBatchId === batch.execution_round_id
-                                    ? "border-primary bg-primary/10"
-                                    : "bg-background hover:bg-muted"
-                                }`}
-                              >
-                                <div>
-                                  <div className="font-medium">{batch.round_name}</div>
-
-                                  <div className="text-xs text-muted-foreground">
-                                    {batch.scheduled_date ?? "No Date"} •{" "}
-                                    {batch.scheduled_time ?? "No Time"}
-                                  </div>
-
-                                  <div className="mt-1 text-xs text-muted-foreground">
-                                    {
-                                      Object.entries(executionBatchAssignments).filter(
-                                        ([, value]) => value === batch.execution_round_id,
-                                      ).length
-                                    }{" "}
-                                    student(s) assigned
-                                  </div>
-                                </div>
-
-                                <div className="text-right">
-                                  {batch.completed ? (
-                                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                                      Completed
-                                    </span>
-                                  ) : (
-                                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                                      Pending
-                                    </span>
-                                  )}
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
               )}
