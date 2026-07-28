@@ -1092,6 +1092,91 @@ export function RecruitmentExecutionWorkspacePage() {
             </div>
           )}
 
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+  <div className="flex items-center gap-3 overflow-x-auto">
+
+    {/* Search */}
+
+    <div className="flex min-w-[320px] flex-1 items-center">
+      <div className="flex h-11 items-center rounded-l-xl border border-r-0 border-slate-300 bg-slate-100 px-4 font-semibold">
+        IU
+      </div>
+
+      <input
+        type="text"
+        placeholder="Search Student / Enrollment"
+        className="h-11 w-full rounded-r-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+      />
+    </div>
+
+    {/* Attendance */}
+
+    <select className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
+      <option>All Attendance</option>
+      <option>Present</option>
+      <option>Absent</option>
+      <option>Pending</option>
+    </select>
+
+    {/* Progress */}
+
+    <select className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
+      <option>All Progress</option>
+      <option>Shortlisted</option>
+      <option>Selected</option>
+      <option>No Progress</option>
+    </select>
+
+    {/* Batch */}
+
+    {isMultipleExecutionStage && (
+      <select className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
+        <option>All Batches</option>
+
+        {currentStageBatches.map((batch) => (
+          <option
+            key={batch.execution_round_id}
+            value={batch.execution_round_id}
+          >
+            {batch.round_name}
+          </option>
+        ))}
+      </select>
+    )}
+
+   {/* Import Attendance Excel */}
+
+<button
+  type="button"
+  onClick={() => toast.info("Coming Soon")}
+  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md"
+>
+  📥 Import Excel
+</button>
+
+{/* Download Pre-Attendance Sheet */}
+
+<button
+  type="button"
+  onClick={() => toast.info("Coming Soon")}
+  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200"
+>
+  ⬇ Pre-Attendance
+</button>
+
+{/* Download Post-Attendance Report */}
+
+<button
+  type="button"
+  onClick={() => toast.info("Coming Soon")}
+  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md"
+>
+  📊 Post-Attendance
+</button>
+
+  </div>
+</div>
+
           <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
             <div className="max-h-[72vh] overflow-auto">
               <table className="min-w-full border-collapse text-sm">
