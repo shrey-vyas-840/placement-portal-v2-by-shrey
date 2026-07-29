@@ -140,7 +140,7 @@ export default function CreateRoundDialog({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-6">
       <div className="mx-auto my-8 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-        <div className="relative overflow-hidden bg-gradient-to-r from-blue-800 via-blue-700 to-cyan-600 px-8 py-5 text-white">
+        <div className="relative border-t border-slate-400 bg-gradient-to-r from-blue-800 via-blue-700 to-cyan-600 px-8 py-5 text-white">
           <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/10 blur-xl" />
 
           <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-cyan-300/10 blur-xl" />
@@ -154,10 +154,6 @@ export default function CreateRoundDialog({
               <h2 className="mt-1 text-3xl font-bold">
                 {nextRoundOrder === 1 ? "Create First Round" : `Create Round ${nextRoundOrder}`}
               </h2>
-
-              <p className="mt-1 text-sm text-white/80">
-                Configure scheduling, execution type and participating roles.
-              </p>
             </div>
 
             <span className="rounded-full bg-white/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm">
@@ -351,7 +347,7 @@ export default function CreateRoundDialog({
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-8 py-5">
+        <div className="  ">
           {!mandatory && (
             <button
               type="button"
