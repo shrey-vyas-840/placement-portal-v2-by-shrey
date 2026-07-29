@@ -432,6 +432,28 @@ export function RecruitmentExecutionWorkspacePage() {
     [],
   );
 
+  // -----------------------------------------------------------------------------
+  // Participant Filters
+  // -----------------------------------------------------------------------------
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [attendanceFilter, setAttendanceFilter] = useState<
+    "ALL" | "PRESENT" | "ABSENT" | "PENDING"
+  >("ALL");
+
+  const [progressFilter, setProgressFilter] = useState<"ALL" | "NONE" | "SHORTLISTED" | "SELECTED">(
+    "ALL",
+  );
+
+  const [gateFilter, setGateFilter] = useState<"ALL" | "ALLOWED" | "RESTRICTED" | "OVERRIDE">(
+    "ALL",
+  );
+
+  const [roleFilter, setRoleFilter] = useState("ALL");
+
+  const [batchFilter, setBatchFilter] = useState("ALL");
+
   useEffect(() => {
     let cancelled = false;
 
@@ -700,6 +722,117 @@ export function RecruitmentExecutionWorkspacePage() {
       })
       .sort((a, b) => a.round_order - b.round_order);
   }, [workspace, selectedStage, selectedExecutionBatch?.execution_round_id, editedRows]);
+
+  const filteredParticipants = useMemo(() => {
+    let rows = [...participants];
+
+    // ------------------------------------------------------------
+    // Search
+    // ------------------------------------------------------------
+
+    const query = searchQuery.trim().toLowerCase();
+
+    if (query) {
+      rows = rows.filter((participant) => {
+        const fullName =
+          `${participant.student.first_name} ${participant.student.last_name}`.toLowerCase();
+
+        const enrollment = participant.student.enrollment_no.toLowerCase();
+
+        const email = participant.student.institute_email.toLowerCase();
+
+        const roles = participant.selected_roles
+          .map((role) => role.drive_role_name)
+          .join(" ")
+          .toLowerCase();
+
+        return (
+          fullName.includes(query) ||
+          enrollment.includes(query) ||
+          email.includes(query) ||
+          roles.includes(query)
+        );
+      });
+    }
+
+    // ------------------------------------------------------------
+    // Attendance
+    // ------------------------------------------------------------
+
+    if (attendanceFilter !== "ALL") {
+      rows = rows.filter((participant) => {
+        const row = getEditedRow(currentExecutionRoundId!, participant.execution_participant_id);
+
+        if (attendanceFilter === "PENDING") {
+          return row?.attendanceStatus == null;
+        }
+
+        return row?.attendanceStatus === attendanceFilter;
+      });
+    }
+
+    // ------------------------------------------------------------
+    // Progress
+    // ------------------------------------------------------------
+
+    if (progressFilter !== "ALL") {
+      rows = rows.filter((participant) => {
+        const row = getEditedRow(currentExecutionRoundId!, participant.execution_participant_id);
+
+        return (row?.progressionStatus ?? "NONE") === progressFilter;
+      });
+    }
+
+    // ------------------------------------------------------------
+    // Gate
+    // ------------------------------------------------------------
+
+    if (gateFilter !== "ALL") {
+      rows = rows.filter((participant) => {
+        const row = getEditedRow(currentExecutionRoundId!, participant.execution_participant_id);
+
+        if (gateFilter === "OVERRIDE") {
+          return row?.restrictionOverride === true;
+        }
+
+        return (row?.gateStatus ?? "ALLOWED") === gateFilter;
+      });
+    }
+
+    // ------------------------------------------------------------
+    // Role
+    // ------------------------------------------------------------
+
+    if (roleFilter !== "ALL") {
+      rows = rows.filter((participant) =>
+        participant.selected_roles.some((role) => role.drive_role_id === roleFilter),
+      );
+    }
+
+    // ------------------------------------------------------------
+    // Batch
+    // ------------------------------------------------------------
+
+    if (batchFilter !== "ALL") {
+      rows = rows.filter(
+        (participant) =>
+          executionBatchAssignments[participant.execution_participant_id] === batchFilter,
+      );
+    }
+
+    return rows;
+  }, [
+    participants,
+    searchQuery,
+    attendanceFilter,
+    progressFilter,
+    gateFilter,
+    roleFilter,
+    batchFilter,
+    executionBatchAssignments,
+    currentExecutionRoundId,
+    editedRows,
+  ]);
 
   const stageCompletionSummary = useMemo(() => {
     if (!workspace) {
@@ -1223,34 +1356,52 @@ export function RecruitmentExecutionWorkspacePage() {
 
                 <input
                   type="text"
-                  placeholder="Search Student / Enrollment"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search Name, Enrollment, Email or Role"
                   className="h-11 w-full rounded-r-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 />
               </div>
 
               {/* Attendance */}
 
-              <select className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
-                <option>All Attendance</option>
-                <option>Present</option>
-                <option>Absent</option>
-                <option>Pending</option>
+              <select
+                value={attendanceFilter}
+                onChange={(e) =>
+                  setAttendanceFilter(e.target.value as "ALL" | "PRESENT" | "ABSENT" | "PENDING")
+                }
+                className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              >
+                <option value="ALL">All Attendance</option>
+                <option value="PRESENT">Present</option>
+                <option value="ABSENT">Absent</option>
+                <option value="PENDING">Pending</option>
               </select>
 
               {/* Progress */}
 
-              <select className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
-                <option>All Progress</option>
-                <option>Shortlisted</option>
-                <option>Selected</option>
-                <option>No Progress</option>
+              <select
+                value={progressFilter}
+                onChange={(e) =>
+                  setProgressFilter(e.target.value as "ALL" | "NONE" | "SHORTLISTED" | "SELECTED")
+                }
+                className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              >
+                <option value="ALL">All Progress</option>
+                <option value="NONE">No Progress</option>
+                <option value="SHORTLISTED">Shortlisted</option>
+                <option value="SELECTED">Selected</option>
               </select>
 
               {/* Batch */}
 
               {isMultipleExecutionStage && (
-                <select className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
-                  <option>All Batches</option>
+                <select
+                  value={batchFilter}
+                  onChange={(e) => setBatchFilter(e.target.value)}
+                  className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                >
+                  <option value="ALL">All Batches</option>
 
                   {currentStageBatches.map((batch) => (
                     <option key={batch.execution_round_id} value={batch.execution_round_id}>
@@ -1259,6 +1410,22 @@ export function RecruitmentExecutionWorkspacePage() {
                   ))}
                 </select>
               )}
+
+              {/* Role Filter*/}
+
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              >
+                <option value="ALL">All Roles</option>
+
+                {shortlistedRoleSummary.map((role) => (
+                  <option key={role.driveRoleId} value={role.driveRoleId}>
+                    {role.roleName}
+                  </option>
+                ))}
+              </select>
 
               {/* Import Attendance Excel */}
 
@@ -1330,7 +1497,7 @@ export function RecruitmentExecutionWorkspacePage() {
                 </thead>
 
                 <tbody>
-                  {participants.map((participant) => {
+                  {filteredParticipants.map((participant) => {
                     const editedRow = getEditedRow(
                       currentExecutionRoundId!,
                       participant.execution_participant_id,
