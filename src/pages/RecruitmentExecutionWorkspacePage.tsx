@@ -554,7 +554,7 @@ export function RecruitmentExecutionWorkspacePage() {
     [participants, editedRows],
   );
 
-  const unassignedShortlistedParticipants = useMemo(() => {
+  const unassignedStageParticipants = useMemo(() => {
     if (!workspace || !isMultipleExecutionStage || selectedStage === null) {
       return [];
     }
@@ -571,10 +571,10 @@ export function RecruitmentExecutionWorkspacePage() {
         .map((assignment) => assignment.execution_participant_id),
     );
 
-    return shortlistedParticipants.filter(
+    return participants.filter(
       (participant) => !assignedParticipantIds.has(participant.execution_participant_id),
     );
-  }, [workspace, isMultipleExecutionStage, selectedStage, shortlistedParticipants]);
+  }, [workspace, participants, isMultipleExecutionStage, selectedStage]);
 
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
@@ -798,7 +798,7 @@ export function RecruitmentExecutionWorkspacePage() {
       return true;
     }
 
-    if (unassignedShortlistedParticipants.length > 0) {
+    if (unassignedStageParticipants.length > 0) {
       return false;
     }
 
@@ -809,7 +809,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
       return batch.completed;
     });
-  }, [isMultipleExecutionStage, currentStageBatches, unassignedShortlistedParticipants]);
+  }, [isMultipleExecutionStage, currentStageBatches, unassignedStageParticipants]);
 
   const executionFinalized = workspace?.execution.execution_status === "FINALIZED";
 
@@ -1494,7 +1494,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
                         {isMultipleExecutionStage && (
                           <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                            {editedRow?.progressionStatus === "SHORTLISTED" ? (
+                            {isMultipleExecutionStage ? (
                               <select
                                 className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                 value={
@@ -1804,7 +1804,7 @@ export function RecruitmentExecutionWorkspacePage() {
         participantCount={
           editingExecutionBatchId
             ? workspace.participants.length
-            : unassignedShortlistedParticipants.length
+            : unassignedStageParticipants.length
         }
         defaultBatchName={`Batch ${currentStageBatches.length + 1}`}
         editingBatch={
