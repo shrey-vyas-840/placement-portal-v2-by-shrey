@@ -35,9 +35,7 @@
         v_student_id UUID;
         v_application_id UUID;
 
-        v_existing_institute UUID;
-        v_existing_degree UUID;
-        v_existing_branch UUID;
+v_current_branch TEXT;
 
         i INTEGER;
 
@@ -110,23 +108,6 @@
                 v_drive_id;
 
         END IF;
-
-        ----------------------------------------------------------------------
-        -- Find one Academic Mapping
-        -- (Used as template for fake students)
-        ----------------------------------------------------------------------
-
-        SELECT
-            institute_id,
-            degree_id,
-            branch_id
-        INTO
-            v_existing_institute,
-            v_existing_degree,
-            v_existing_branch
-        FROM student_academic_details
-        WHERE institute_id IS NOT NULL
-        LIMIT 1;
 
         ----------------------------------------------------------------------
         -- Remove previous DEV data
@@ -291,44 +272,101 @@ WHERE execution_participant_id IN
         TRUE
     );
 
+
+        ------------------------------------------------------------------
+        -- Branch Assignment (IITE B.Tech)
+        ------------------------------------------------------------------
+
+        CASE floor(random() * 10)::INTEGER
+
+            WHEN 0 THEN
+                v_current_branch := 'Computer Science Engineering';
+
+            WHEN 1 THEN
+                v_current_branch := 'Computer Science Engineering';
+
+            WHEN 2 THEN
+                v_current_branch := 'Computer Science Engineering';
+
+            WHEN 3 THEN
+                v_current_branch := 'Information Technology';
+
+            WHEN 4 THEN
+                v_current_branch := 'Electrical Engineering';
+
+            WHEN 5 THEN
+                v_current_branch := 'Computer Engineering';
+
+            WHEN 6 THEN
+                v_current_branch := 'Computer Engineering';
+
+            WHEN 7 THEN
+                v_current_branch := 'Cyber Security';
+
+            WHEN 8 THEN
+                v_current_branch := 'Electronics & Communication Engineering';
+
+            ELSE
+                v_current_branch := 'Mechanical Engineering';
+
+        END CASE;
+
             ------------------------------------------------------------------
             -- Academic Details
             ------------------------------------------------------------------
 
-            INSERT INTO student_academic_details
-            (
-                student_id,
-                institute_id,
-                degree_id,
-                branch_id,
-                current_semester,
-                current_cgpa,
-                tenth_percentage,
-                twelfth_percentage,
-                diploma_percentage,
-                active_backlogs,
-                year_gap_count,
-                graduation_year,
-                created_by_type,
-                is_active
-            )
-            VALUES
-            (
-                v_student_id,
-                v_existing_institute,
-                v_existing_degree,
-                v_existing_branch,
-                7,
-                ROUND((7.00 + random()*2.5)::numeric,2),
-                ROUND((70 + random()*25)::numeric,2),
-                ROUND((70 + random()*25)::numeric,2),
-                NULL,
-                0,
-                0,
-                2027,
-                'Auto Generated',
-                TRUE
-            );
+          INSERT INTO student_academic_details
+(
+    student_id,
+    current_semester,
+    current_cgpa,
+    tenth_percentage,
+    twelfth_percentage,
+    diploma_percentage,
+    active_backlogs,
+    year_gap_count,
+    graduation_year,
+    education_path,
+    current_degree_name,
+    current_institute_name,
+    current_branch_name,
+    created_by_type,
+    is_active
+)
+VALUES
+(
+    v_student_id,
+    7,
+
+    CASE
+        WHEN random() < 0.70
+            THEN ROUND((8.00 + random()*2.00)::numeric,2)
+        ELSE
+            ROUND((6.50 + random()*1.49)::numeric,2)
+    END,
+
+    ROUND((75 + random()*25)::numeric,2),
+    ROUND((75 + random()*25)::numeric,2),
+
+    NULL,
+
+    0,
+    0,
+
+    2027,
+
+    'HSC',
+
+    'B.Tech',
+
+    'IITE',
+
+    v_current_branch,
+
+    'Auto Generated',
+
+    TRUE
+);
 
             ------------------------------------------------------------------
             -- Skill Profile
