@@ -200,152 +200,189 @@ export default function CreateExecutionBatchDialog({
         }
       }}
     >
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {editingBatch ? "Update Execution Batch" : "Create Execution Batch"}
-          </DialogTitle>
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 p-0 shadow-2xl">
+        <DialogHeader className="relative overflow-hidden bg-gradient-to-r from-blue-800 via-blue-700 to-cyan-600 px-8 py-6 text-white">
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/10 blur-xl" />
 
-          <DialogDescription>
-            {editingBatch
-              ? "Update the configuration of this execution batch."
-              : "Schedule an execution batch for the shortlisted students of this stage."}
-          </DialogDescription>
-        </DialogHeader>
+          <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-cyan-300/10 blur-xl" />
 
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium">Stage {stageNumber}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
+                Recruitment Execution
+              </p>
 
-              <p className="text-xs text-muted-foreground">Configure the execution schedule.</p>
+              <DialogTitle className="mt-2 text-3xl font-bold text-white">
+                {editingBatch ? "Update Execution Batch" : "Create Execution Batch"}
+              </DialogTitle>
+
+              <DialogDescription className="mt-2 text-sm text-white/80">
+                {editingBatch
+                  ? "Update the execution schedule for this batch."
+                  : "Schedule an execution batch for shortlisted candidates."}
+              </DialogDescription>
             </div>
 
-            <Badge variant="secondary">
-              {participantCount} Student
-              {participantCount === 1 ? "" : "s"}
+            <Badge className="rounded-full border border-white/20 bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
+              {participantCount} Student{participantCount === 1 ? "" : "s"}
             </Badge>
           </div>
-        </div>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Stage {stageNumber}</p>
 
-        <Separator className="my-1" />
+                <p className="text-xs text-muted-foreground">Configure the execution schedule.</p>
+              </div>
 
-        <div className="grid gap-5">
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="batch-name">
-                Batch Name <span className="text-destructive">*</span>
-              </Label>
-
-              <Input
-                id="batch-name"
-                value={form.batchName}
-                onChange={(event) => updateField("batchName", event.target.value)}
-                placeholder="Morning Batch"
-              />
-
-              {errors.batchName && <p className="text-xs text-destructive">{errors.batchName}</p>}
+              <Badge variant="secondary">
+                {participantCount} Student
+                {participantCount === 1 ? "" : "s"}
+              </Badge>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label>Students</Label>
+          <Separator className="my-1" />
 
-              <div className="flex h-10 items-center rounded-md border bg-muted/30 px-3">
-                <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+          <div className="space-y-6">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="batch-name">
+                  Batch Name <span className="text-destructive">*</span>
+                </Label>
 
-                <span className="text-sm">
-                  {participantCount} Student
-                  {participantCount === 1 ? "" : "s"}
-                </span>
+                <Input
+                  id="batch-name"
+                  value={form.batchName}
+                  onChange={(event) => updateField("batchName", event.target.value)}
+                  placeholder="Morning Batch"
+                  className="rounded-xl"
+                />
+
+                {errors.batchName && <p className="text-xs text-destructive">{errors.batchName}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Students</Label>
+
+                <div className="flex h-10 items-center rounded-md border bg-muted/30 px-3">
+                  <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+
+                  <span className="text-sm">
+                    {participantCount} Student
+                    {participantCount === 1 ? "" : "s"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="batch-date">
-                <Calendar className="mr-1 inline h-4 w-4" />
-                Execution Date
-                <span className="text-destructive">*</span>
-              </Label>
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="batch-date">
+                  <Calendar className="mr-1 inline h-4 w-4" />
+                  Execution Date
+                  <span className="text-destructive">*</span>
+                </Label>
 
-              <Input
-                id="batch-date"
-                type="date"
-                value={form.scheduledDate}
-                onChange={(event) => updateField("scheduledDate", event.target.value)}
-              />
+                <Input
+                  id="batch-date"
+                  type="date"
+                  value={form.scheduledDate}
+                  onChange={(event) => updateField("scheduledDate", event.target.value)}
+                />
 
-              {errors.scheduledDate && (
-                <p className="text-xs text-destructive">{errors.scheduledDate}</p>
-              )}
+                {errors.scheduledDate && (
+                  <p className="text-xs text-destructive">{errors.scheduledDate}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="batch-time">
+                  <Clock3 className="mr-1 inline h-4 w-4" />
+                  Execution Time
+                  <span className="text-destructive">*</span>
+                </Label>
+
+                <Input
+                  id="batch-time"
+                  type="time"
+                  value={form.scheduledTime}
+                  onChange={(event) => updateField("scheduledTime", event.target.value)}
+                  className="rounded-xl"
+                />
+
+                {errors.scheduledTime && (
+                  <p className="text-xs text-destructive">{errors.scheduledTime}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="batch-time">
-                <Clock3 className="mr-1 inline h-4 w-4" />
-                Execution Time
-                <span className="text-destructive">*</span>
+              <Label htmlFor="batch-venue">
+                <MapPin className="mr-1 inline h-4 w-4" />
+                Venue
               </Label>
 
               <Input
-                id="batch-time"
-                type="time"
-                value={form.scheduledTime}
-                onChange={(event) => updateField("scheduledTime", event.target.value)}
+                id="batch-venue"
+                value={form.venue}
+                onChange={(event) => updateField("venue", event.target.value)}
+                placeholder="MBA Seminar Hall"
+                className="rounded-xl"
               />
-
-              {errors.scheduledTime && (
-                <p className="text-xs text-destructive">{errors.scheduledTime}</p>
-              )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="batch-venue">
-              <MapPin className="mr-1 inline h-4 w-4" />
-              Venue
-            </Label>
+            <div className="space-y-2">
+              <Label htmlFor="batch-remarks">
+                <ClipboardList className="mr-1 inline h-4 w-4" />
+                Remarks
+              </Label>
 
-            <Input
-              id="batch-venue"
-              value={form.venue}
-              onChange={(event) => updateField("venue", event.target.value)}
-              placeholder="Interview Lab - Block A"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="batch-remarks">
-              <ClipboardList className="mr-1 inline h-4 w-4" />
-              Remarks
-            </Label>
-
-            <Textarea
-              id="batch-remarks"
-              rows={4}
-              value={form.remarks}
-              onChange={(event) => updateField("remarks", event.target.value)}
-              placeholder="Optional notes for this execution batch..."
-            />
+              <Textarea
+                id="batch-remarks"
+                rows={4}
+                value={form.remarks}
+                onChange={(event) => updateField("remarks", event.target.value)}
+                placeholder="Optional notes for this execution batch..."
+                className="rounded-xl"
+              />
+            </div>
           </div>
         </div>
+        <DialogFooter className="flex items-center justify-between border-t border-slate-200 bg-white px-8 py-5">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Execution Batch Configuration</p>
 
-        <DialogFooter className="mt-2 flex items-center justify-between">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-            Cancel
-          </Button>
+            <p className="text-xs text-slate-500">Complete the scheduling details before saving.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+              className="rounded-xl border-slate-300 px-5"
+            >
+              Cancel
+            </Button>
 
-          <Button type="button" onClick={handleSave} disabled={!isValid || loading}>
-            {loading
-              ? editingBatch
-                ? "Updating..."
-                : "Creating..."
-              : editingBatch
-                ? "Update Execution Batch"
-                : "Create Execution Batch"}
-          </Button>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={!isValid || loading}
+              className="rounded-xl bg-gradient-to-r from-blue-700 to-cyan-600 px-6 shadow-lg"
+            >
+              {loading
+                ? editingBatch
+                  ? "Updating..."
+                  : "Creating..."
+                : editingBatch
+                  ? "Update Execution Batch"
+                  : "Create Execution Batch"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
