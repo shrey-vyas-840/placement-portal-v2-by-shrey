@@ -239,10 +239,10 @@ export async function getRecruitmentWorkspaceSummary(
   }[] = [];
 
   if (opportunity?.opportunity_id) {
-    const { data: latestApplications } = await (supabase as any)
-      .from("student_opportunity_applications")
-      .select(
-        `
+const { data: allApplications } = await (supabase as any)
+  .from("student_opportunity_applications")
+  .select(
+    `
 application_id,
 student_id,
 applied_at,
@@ -254,12 +254,13 @@ student_master!inner(
   last_name
 )
 `,
-      )
-      .eq("opportunity_id", opportunity.opportunity_id)
-      .order("applied_at", {
-        ascending: false,
-      })
-      .limit(5);
+  )
+  .eq("opportunity_id", opportunity.opportunity_id)
+  .order("applied_at", {
+    ascending: false,
+  });
+
+  const latestApplications = (allApplications ?? []).slice(0, 5);
 
     recentApplications =
       latestApplications?.map((application: any) => {
@@ -299,32 +300,42 @@ student_master!inner(
 
     const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    applicationsToday = recentApplications.filter(
-      (application) => new Date(application.appliedAt) >= today,
-    ).length;
+applicationsToday = (allApplications ?? []).filter(
+  (application: any) => new Date(application.applied_at) >= today,
+).length;
 
-    applicationsLast24Hours = recentApplications.filter(
-      (application) => new Date(application.appliedAt) >= last24,
-    ).length;
+applicationsLast24Hours = (allApplications ?? []).filter(
+  (application: any) => new Date(application.applied_at) >= last24,
+).length;
 
-    applicationsLast7Days = recentApplications.filter(
-      (application) => new Date(application.appliedAt) >= last7,
-    ).length;
+applicationsLast7Days = (allApplications ?? []).filter(
+  (application: any) => new Date(application.applied_at) >= last7,
+).length;
 
-    const trendMap = new Map<string, number>();
+const trendMap = new Map<string, number>();
 
-    (latestApplications ?? []).forEach((application: any) => {
-      const day = new Date(application.applied_at).toISOString().slice(0, 10);
+(allApplications ?? []).forEach((application: any) => {
+  const appliedAt = new Date(application.applied_at);
 
-      trendMap.set(day, (trendMap.get(day) ?? 0) + 1);
-    });
+  const hourLabel =
+    appliedAt.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+    }) +
+    " " +
+    appliedAt.getHours().toString().padStart(2, "0") +
+    ":00";
 
-    applicationTrend = Array.from(trendMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, applications]) => ({
-        date,
-        applications,
-      }));
+  trendMap.set(hourLabel, (trendMap.get(hourLabel) ?? 0) + 1);
+});
+
+applicationTrend = Array.from(trendMap.entries()).map(
+  ([date, applications]) => ({
+    date,
+    applications,
+  }),
+);
+
   }
 
   if (driveId) {
