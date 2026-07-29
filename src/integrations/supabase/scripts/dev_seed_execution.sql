@@ -37,6 +37,17 @@
 
 v_current_branch TEXT;
 
+v_first_names TEXT[] := ARRAY[
+    'Aarav','Vivaan','Aditya','Arjun','Harsh','Dhruv','Krish','Yash','Parth','Rohan','Aryan','Dev','Jay','Meet','Priyansh','Riya','Diya','Khushi','Ananya','Aditi','Mahi','Kavya','Nidhi','Pooja','Sneha','Darsh','Kavish','Vansh','Aayush','Manan','Moksh','Shlok','Tirth','Vedant','Zeel','Drashti','Hiral','Janki','Mitri','Niyati','Prisha','Riddhi','Siddhi','Twisha','Vrunda','Ranveer','Devraj','Gaurav','Jaivardhan','Pratap','Rudransh','Siddharth','Suryansh','Vikram','Yuvraj','Banni','Divya','Garima','Kriti','Meera','Nandini','Pallavi','Payal','Rhea','Sucheta'
+];
+
+v_last_names TEXT[] := ARRAY[
+    'Patel','Shah','Mehta','Joshi','Trivedi','Desai','Prajapati','Vyas','Modi','Soni','Bhatt','Pandya','Dave','Parmar','Rathod','Patel','Patel','Shah','Patel','Patel','Solanki','Chauhan','Jadeja','Vaghela','Gohil','Chudasama','Jhala','Thakor','Barot','Ravall','Shekhawat','Rathore','Choudhary','Sharma','Singh','Gahlot','Chouhan','Meena','Jat','Gahlot'
+];
+
+v_first_name TEXT;
+v_last_name TEXT;
+
         i INTEGER;
 
     BEGIN
@@ -194,6 +205,20 @@ WHERE execution_participant_id IN
 
         RAISE NOTICE 'Creating student %', i;
 
+        ------------------------------------------------------------------
+        -- Generate Student Name
+        ------------------------------------------------------------------
+
+        v_first_name :=
+            v_first_names[
+                floor(random() * array_length(v_first_names, 1) + 1)::INTEGER
+            ];
+
+        v_last_name :=
+            v_last_names[
+                floor(random() * array_length(v_last_names, 1) + 1)::INTEGER
+            ];
+
                 ------------------------------------------------------------------
             -- Generate IDs
             ------------------------------------------------------------------
@@ -219,9 +244,12 @@ WHERE execution_participant_id IN
             (
                 v_user_id,
                 lower(
-        'student'
-        || LPAD(i::text,4,'0')
-        || '.23.cse@iite.indusuni.ac.in'
+lower(
+    regexp_replace(v_first_name,'\s','','g')
+)
+|| '.'
+|| LPAD(i::text,4,'0')
+|| '.23.cse@iite.indusuni.ac.in'
     ),
                 'Active',
                 TRUE,
@@ -256,12 +284,15 @@ WHERE execution_participant_id IN
         v_student_id,
         v_user_id,
         'IU234123' || LPAD(i::text,4,'0'),
-        'Execution',
-        NULL,
-        'Student ' || LPAD(i::text, 2, '0'),
-        'student'
-    || LPAD(i::text,4,'0')
-    || '.23.cse@iite.indusuni.ac.in',
+        v_first_name,
+NULL,
+v_last_name,
+lower(
+    regexp_replace(v_first_name,'\s','','g')
+)
+|| '.'
+|| LPAD(i::text,4,'0')
+|| '.23.cse@iite.indusuni.ac.in',
         'devexec.personal' || LPAD(i::text, 2, '0') || '@gmail.com',
         LPAD((9000000000 + i)::text, 10, '0'),
         NULL,
