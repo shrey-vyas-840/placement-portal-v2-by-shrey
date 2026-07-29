@@ -313,26 +313,27 @@ export function SummaryTab({ draft, summary, loading }: SummaryTabProps) {
           </div>
 
           <div className="mt-6">
-            <AnalyticsStackedProgressChart
-              title="Department Participation"
-              subtitle="Applied students compared to total eligible students"
-              data={(coverageRows ?? []).map((row) => {
-                const label =
-                  "branchName" in row
-                    ? row.branchName
-                    : "instituteName" in row
-                      ? row.instituteName
-                      : "degreeName" in row
-                        ? row.degreeName
-                        : String(row.graduationYear);
+           <AnalyticsHorizontalBarChart
+  title="Department Participation"
+  subtitle="Applications received department wise"
+  data={(coverageRows ?? [])
+    .map((row) => {
+      const label =
+        "branchName" in row
+          ? row.branchName
+          : "instituteName" in row
+            ? row.instituteName
+            : "degreeName" in row
+              ? row.degreeName
+              : String(row.graduationYear);
 
-                return {
-                  label,
-                  applied: row.applied,
-                  remaining: Math.max(row.eligible - row.applied, 0),
-                };
-              })}
-            />
+      return {
+        label,
+        value: row.applied,
+      };
+    })
+    .sort((a, b) => b.value - a.value)}
+/>
           </div>
 
           <div className="mt-8 overflow-hidden rounded-xl border">
