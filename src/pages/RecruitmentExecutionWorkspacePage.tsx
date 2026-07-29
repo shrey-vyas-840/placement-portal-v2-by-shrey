@@ -671,6 +671,99 @@ export function RecruitmentExecutionWorkspacePage() {
       .sort((a, b) => a.round_order - b.round_order);
   }, [workspace, selectedStage, selectedExecutionBatch?.execution_round_id, editedRows]);
 
+ const stageCompletionSummary = useMemo(() => {
+  if (!workspace) {
+    return {};
+  }
+
+  const summary: Record<
+    number,
+    {
+      completed: boolean;
+      totalParticipants: number;
+      markedAttendance: number;
+      pendingAttendance: number;
+    }
+  > = {};
+
+  const stageNumbers = [...new Set(workspace.rounds.map(r => r.stage_number))];
+
+  stageNumbers.forEach((stageNumber) => {
+    const participantIds = new Set<string>();
+
+    //
+    // Stage 1
+    // Everyone in execution
+    //
+    if (stageNumber === 1) {
+      workspace.participants.forEach(p =>
+        participantIds.add(p.execution_participant_id)
+      );
+    }
+
+    //
+    // Stage 2+
+    // Everyone progressed into this stage
+    //
+    else {
+      workspace.rounds
+        .filter(r => r.stage_number === stageNumber)
+        .forEach(round => {
+
+          if (round.scope === "COMMON") {
+            workspace.participants.forEach(p =>
+              participantIds.add(p.execution_participant_id)
+            );
+            return;
+          }
+
+          workspace.roundRoleMappings
+            .filter(m => m.execution_round_id === round.execution_round_id)
+            .forEach(mapping => {
+
+              workspace.participants.forEach(participant => {
+
+                if (
+                  participant.selected_roles.some(
+                    role => role.drive_role_id === mapping.drive_role_id
+                  )
+                ) {
+                  participantIds.add(
+                    participant.execution_participant_id
+                  );
+                }
+
+              });
+
+            });
+
+        });
+    }
+
+    const ids = [...participantIds];
+
+    const markedAttendance = ids.filter(id => {
+      const row = editedRows[id];
+      return row?.attendanceStatus !== null;
+    }).length;
+
+    const pendingAttendance =
+      ids.length - markedAttendance;
+
+summary[stageNumber] = {
+  completed: pendingAttendance === 0,
+  totalParticipants: ids.length,
+  markedAttendance,
+  pendingAttendance,
+};
+  });
+
+  return summary;
+}, [
+  workspace,
+  editedRows,
+]);
+
   const metrics = useMemo(
     () => ({
       totalParticipants: isMultipleExecutionStage
@@ -966,6 +1059,7 @@ export function RecruitmentExecutionWorkspacePage() {
             roundRoleMappings={workspace.roundRoleMappings}
             timelines={executionTimelines}
             remainingActiveRoles={workspace.remainingActiveRoles}
+            stageCompletionSummary={stageCompletionSummary}
             selectedStage={selectedStage}
             onStageSelect={(stageNumber) => {
               setViewingExecutionBatchId(null);
