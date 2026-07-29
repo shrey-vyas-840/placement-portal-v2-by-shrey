@@ -108,11 +108,19 @@ export default function ExecutionBatchParticipantDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="flex h-[80vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border bg-background shadow-2xl">
-        <div className="border-b px-6 py-5">
-          <div className="flex items-start justify-between">
+      <div className="flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-800 via-blue-700 to-cyan-600 px-8 py-6 text-white">
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/10 blur-xl" />
+
+          <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-cyan-300/10 blur-xl" />
+
+          <div className="relative flex items-start justify-between">
             <div>
-              <h2 className="text-xl font-semibold">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
+                Recruitment Execution
+              </p>
+
+              <h2 className="mt-2 text-3xl font-bold">
                 {mode === "VIEW"
                   ? assignedBatchName
                     ? `${assignedBatchName} • Students`
@@ -120,28 +128,20 @@ export default function ExecutionBatchParticipantDialog({
                   : "Assign Students to Execution Batch"}
               </h2>
 
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-2 text-sm text-white/80">
                 Stage {stageNumber} • {roleName}
-              </p>
-
-              <p className="mt-2 text-sm text-muted-foreground">
-                {mode === "VIEW"
-                  ? "Students currently assigned to this execution batch."
-                  : "Select the shortlisted students that should attend this execution batch."}
               </p>
             </div>
 
-            {mode === "ASSIGN" && (
-              <div className="rounded-lg border px-4 py-2 text-center">
-                <div className="text-lg font-semibold">{selectedIds.length}</div>
-
-                <div className="text-xs text-muted-foreground">Selected</div>
-              </div>
-            )}
+            <div className="rounded-full border border-white/20 bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur-sm">
+              {mode === "ASSIGN"
+                ? `${selectedIds.length} Selected`
+                : `${filteredParticipants.length} Students`}
+            </div>
           </div>
         </div>
 
-        <div className="border-b p-4">
+        <div className="border-b bg-slate-50 px-8 py-5">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
 
@@ -149,7 +149,7 @@ export default function ExecutionBatchParticipantDialog({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by name or enrollment number..."
-              className="w-full rounded-lg border py-2 pl-10 pr-3"
+              className="w-full rounded-xl border py-2 pl-10 pr-3"
             />
           </div>
 
@@ -157,7 +157,7 @@ export default function ExecutionBatchParticipantDialog({
             <button
               type="button"
               onClick={selectAllVisible}
-              className="rounded-lg border px-3 py-2 text-sm hover:bg-muted"
+              className="rounded-xl border px-3 py-2 text-sm hover:bg-muted"
             >
               Select All Visible
             </button>
@@ -165,7 +165,7 @@ export default function ExecutionBatchParticipantDialog({
             <button
               type="button"
               onClick={clearSelection}
-              className="rounded-lg border px-3 py-2 text-sm hover:bg-muted"
+              className="rounded-xl border px-3 py-2 text-sm hover:bg-muted"
             >
               Clear Selection
             </button>
@@ -190,7 +190,7 @@ export default function ExecutionBatchParticipantDialog({
               </div>
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="space-y-3 p-6">
               {filteredParticipants.map((participant) => {
                 const student = participant.student;
 
@@ -201,44 +201,47 @@ export default function ExecutionBatchParticipantDialog({
                   .join(" ");
 
                 return (
-                  <label
-                    key={participant.execution_participant_id}
-                    className={`flex items-center gap-4 px-6 py-4 transition ${
-                      mode === "ASSIGN" ? "cursor-pointer hover:bg-muted/40" : ""
-                    }`}
-                  >
-                    {mode === "ASSIGN" && (
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleParticipant(participant.execution_participant_id)}
-                        className="h-4 w-4"
-                      />
-                    )}
-
-                    <div className="flex-1">
-                      <div className="font-medium">{fullName || "Unknown Student"}</div>
-
-                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        <span>{student?.enrollment_no}</span>
-
-                        <span>•</span>
-
-                        <span>{student?.institute_email}</span>
-                      </div>
-
-                      {participant.selected_roles.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {participant.selected_roles.map((role) => (
-                            <span
-                              key={role.selected_role_id}
-                              className="rounded-full border bg-muted px-2 py-1 text-xs"
-                            >
-                              {role.drive_role_name}
-                            </span>
-                          ))}
-                        </div>
+                  <label key={participant.execution_participant_id} className="block px-6 py-2">
+                    <div
+                      className={`flex items-start gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-all ${
+                        mode === "ASSIGN"
+                          ? "cursor-pointer hover:border-blue-300 hover:shadow-md"
+                          : ""
+                      }`}
+                    >
+                      {mode === "ASSIGN" && (
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleParticipant(participant.execution_participant_id)}
+                          className="h-4 w-4"
+                        />
                       )}
+
+                      <div className="flex-1">
+                        <div className="font-medium">{fullName || "Unknown Student"}</div>
+
+                        <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span>{student?.enrollment_no}</span>
+
+                          <span>•</span>
+
+                          <span>{student?.institute_email}</span>
+                        </div>
+
+                        {participant.selected_roles.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {participant.selected_roles.map((role) => (
+                              <span
+                                key={role.selected_role_id}
+                                className="rounded-full bg-blue-50 text-blue-700 px-2 py-1 text-xs"
+                              >
+                                {role.drive_role_name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </label>
                 );
@@ -247,7 +250,7 @@ export default function ExecutionBatchParticipantDialog({
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t px-6 py-4">
+        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-8 py-5">
           {mode === "ASSIGN" ? (
             <div className="text-sm text-muted-foreground">
               {selectedIds.length} student
@@ -265,7 +268,7 @@ export default function ExecutionBatchParticipantDialog({
               type="button"
               onClick={onCancel}
               disabled={loading}
-              className="rounded-lg border px-4 py-2 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border-slate-300 px-5 border py-2 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
             >
               {mode === "VIEW" ? "Close" : "Cancel"}
             </button>
@@ -275,7 +278,7 @@ export default function ExecutionBatchParticipantDialog({
                 type="button"
                 disabled={loading || selectedIds.length === 0}
                 onClick={() => onContinue(selectedIds)}
-                className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-blue-700 to-cyan-600 px-6 shadow-lg py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Creating..." : `Continue (${selectedIds.length})`}
               </button>
