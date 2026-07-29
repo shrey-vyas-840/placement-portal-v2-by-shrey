@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
+import { CheckCircle2, Clock3, AlertTriangle, Circle } from "lucide-react";
 
 import type {
   RecruitmentExecutionRoundRow,
@@ -47,6 +48,21 @@ const statusClasses: Record<StageStatus, string> = {
   ACTION_REQUIRED: "border-red-600 bg-red-600 text-white",
 
   NOT_CONFIGURED: "border-gray-300 bg-gray-100 text-gray-500",
+};
+
+const statusIcon = {
+  COMPLETED: CheckCircle2,
+  IN_PROGRESS: Clock3,
+  ACTION_REQUIRED: AlertTriangle,
+  NOT_CONFIGURED: Circle,
+};
+
+const connectorClasses = {
+  COMPLETED: "bg-green-600",
+  IN_PROGRESS:
+    "bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-[length:200%_100%] animate-pulse",
+  ACTION_REQUIRED: "bg-red-600",
+  NOT_CONFIGURED: "bg-slate-300",
 };
 
 export default function ExecutionProgressBar({
@@ -138,6 +154,18 @@ export default function ExecutionProgressBar({
     [stages, selectedStage],
   );
 
+  const stageRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    if (selectedStage == null) return;
+
+    stageRefs.current[selectedStage]?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [selectedStage]);
+
   return (
     <div className="rounded-xl border bg-background p-5">
       <div className="mb-5">
@@ -146,22 +174,115 @@ export default function ExecutionProgressBar({
         <p className="text-sm text-muted-foreground">Navigate directly to any execution stage.</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        {stages.map((stage, index) => (
-          <div key={stage.stageNumber} className="flex items-center">
-            <button
-              type="button"
-              onClick={() => onStageSelect(stage.stageNumber)}
-              className={`flex h-12 w-12 items-center justify-center rounded-full border-2 font-semibold transition ${
-                selectedStage === stage.stageNumber ? "scale-110 shadow-lg" : ""
-              } ${statusClasses[stage.status]}`}
-            >
-              {stage.stageNumber}
-            </button>
+      <div className="overflow-x-auto pb-2">
+        <div className="flex min-w-max items-start px-2">
+          {stages.map((stage, index) => {
+            const Icon = statusIcon[stage.status];
 
-            {index < stages.length - 1 && <div className="mx-2 h-1 w-16 rounded bg-border" />}
-          </div>
-        ))}
+            return (
+              <div key={stage.stageNumber} className="group relative flex items-start">
+                <div className="flex flex-col items-center">
+                  <button
+                    ref={(el) => {
+                      stageRefs.current[stage.stageNumber] = el;
+                    }}
+                    type="button"
+                    onClick={() => onStageSelect(stage.stageNumber)}
+                    className={`
+                relative flex h-14 w-14 items-center justify-center
+                rounded-full border-2 transition-all duration-300
+                hover:-translate-y-1 hover:shadow-xl
+                ${
+                  selectedStage === stage.stageNumber
+                    ? "scale-110 ring-4 ring-blue-200 shadow-2xl"
+                    : ""
+                }
+                ${statusClasses[stage.status]}
+              `}
+                  >
+                    <Icon className="h-6 w-6" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onStageSelect(stage.stageNumber)}
+                    className="mt-3 text-sm font-semibold text-slate-700 hover:text-blue-700"
+                  >
+                    Round {stage.stageNumber}
+                  </button>
+
+                  <p className="mt-1 text-xs text-slate-500">
+                    {stage.rounds.length} Round
+                    {stage.rounds.length === 1 ? "" : "s"}
+                  </p>
+                </div>
+
+                {index < stages.length - 1 && (
+                  <div className="mx-5 mt-7 h-1 w-24 overflow-hidden rounded-full bg-slate-200">
+                    <div className={`h-full w-full ${connectorClasses[stage.status]}`} />
+                  </div>
+                )}
+
+                <div
+                  className="
+              pointer-events-none absolute left-1/2 top-20 z-50
+              hidden w-72 -translate-x-1/2 rounded-2xl
+              border border-slate-200 bg-white p-4 shadow-2xl
+              group-hover:block
+            "
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Round {stage.stageNumber}</h4>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${statusClasses[stage.status]}`}
+                    >
+                      {stage.status.replaceAll("_", " ")}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Execution Rounds</span>
+
+                      <span className="font-medium">{stage.rounds.length}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Configured Roles</span>
+
+                      <span className="font-medium">
+                        {stage.configuredRoles.filter((r) => r.configured).length}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Pending Candidates</span>
+
+                      <span className="font-medium">
+                        {stage.configuredRoles.reduce((sum, role) => sum + role.candidateCount, 0)}
+                      </span>
+                    </div>
+
+                    {stage.warnings.length > 0 && (
+                      <>
+                        <div className="my-2 border-t" />
+
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                          Attention
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-600 line-clamp-3">
+                          {stage.warnings[0]}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-6">
