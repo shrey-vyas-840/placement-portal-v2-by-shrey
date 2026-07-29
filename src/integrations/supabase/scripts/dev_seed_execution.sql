@@ -31,6 +31,15 @@
         v_drive_role_ids UUID[];
         v_selected_drive_role UUID;
 
+v_role_selection_enabled BOOLEAN;
+v_minimum_role_selection INTEGER;
+v_maximum_role_selection INTEGER;
+
+v_roles_to_select INTEGER;
+v_selected_role_ids UUID[];
+v_random_index INTEGER;
+v_preference_order INTEGER;
+
         v_user_id UUID;
         v_student_id UUID;
         v_application_id UUID;
@@ -119,6 +128,21 @@ v_last_name TEXT;
                 v_drive_id;
 
         END IF;
+
+----------------------------------------------------------------------
+-- Load Role Selection Configuration
+----------------------------------------------------------------------
+
+SELECT
+    role_selection_enabled,
+    COALESCE(minimum_role_selection,1),
+    COALESCE(maximum_role_selection,1)
+INTO
+    v_role_selection_enabled,
+    v_minimum_role_selection,
+    v_maximum_role_selection
+FROM drive_master
+WHERE drive_id = v_drive_id;
 
         ----------------------------------------------------------------------
         -- Remove previous DEV data
@@ -458,39 +482,78 @@ VALUES
                 'Applied'
             );
 
-            ------------------------------------------------------------------
-            -- Random Role Selection
-            ------------------------------------------------------------------
+------------------------------------------------------------------
+-- Selected Roles
+------------------------------------------------------------------
 
-            v_selected_drive_role :=
-                v_drive_role_ids[
-                    floor(
-                        random() *
-                        array_length(v_drive_role_ids,1)
-                        + 1
-                    )::INTEGER
-                ];
-            
-            ------------------------------------------------------------------
-            -- Selected Role
-            ------------------------------------------------------------------
+IF v_role_selection_enabled THEN
 
-            INSERT INTO student_application_selected_roles
+    v_roles_to_select :=
+        floor(
+            random() *
             (
-                application_id,
-                drive_role_id,
-                preference_order
+                v_maximum_role_selection
+                -
+                v_minimum_role_selection
+                + 1
             )
-            VALUES
-            (
-                v_application_id,
-                v_selected_drive_role,
-                1
-            );
+        )::INTEGER
+        +
+        v_minimum_role_selection;
 
-            ------------------------------------------------------------------
-            -- Execution Participant
-            ------------------------------------------------------------------
+ELSE
+
+    v_roles_to_select := 1;
+
+END IF;
+
+IF v_roles_to_select > array_length(v_drive_role_ids,1) THEN
+    v_roles_to_select := array_length(v_drive_role_ids,1);
+END IF;
+
+v_selected_role_ids := ARRAY[]::UUID[];
+
+FOR v_preference_order IN 1..v_roles_to_select LOOP
+
+    LOOP
+
+        v_random_index :=
+            floor(random() * array_length(v_drive_role_ids,1) + 1)::INTEGER;
+
+        v_selected_drive_role :=
+            v_drive_role_ids[v_random_index];
+
+        EXIT
+        WHEN NOT (
+            v_selected_drive_role = ANY(v_selected_role_ids)
+        );
+
+    END LOOP;
+
+    v_selected_role_ids :=
+        array_append(
+            v_selected_role_ids,
+            v_selected_drive_role
+        );
+
+    INSERT INTO student_application_selected_roles
+    (
+        application_id,
+        drive_role_id,
+        preference_order
+    )
+    VALUES
+    (
+        v_application_id,
+        v_selected_drive_role,
+        v_preference_order
+    );
+
+END LOOP;
+            
+    ------------------------------------------------------------------
+    -- Execution Participant
+    ------------------------------------------------------------------
 
         INSERT INTO recruitment_execution_participants
     (

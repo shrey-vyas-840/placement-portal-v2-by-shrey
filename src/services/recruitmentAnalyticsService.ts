@@ -550,7 +550,8 @@ student_master!inner(
       const applicationIds = (applications ?? []).map(
         (application: any) => application.application_id,
       );
-
+      console.log("APPLICATION IDS");
+      console.log(applicationIds);
       let selectedRoles: any[] = [];
 
       if (applicationIds.length > 0) {
@@ -575,75 +576,73 @@ student_master!inner(
   }
 
   if (opportunity?.opportunity_id) {
-const { data: executionSeries } = await (supabase as any)
-  .from("recruitment_execution_series")
-  .select(`
+    const { data: executionSeries } = await (supabase as any)
+      .from("recruitment_execution_series")
+      .select(
+        `
     series_id,
     current_revision_number,
     series_status
-  `)
-  .eq("opportunity_id", opportunity.opportunity_id)
-  .maybeSingle();
+  `,
+      )
+      .eq("opportunity_id", opportunity.opportunity_id)
+      .maybeSingle();
 
-if (executionSeries) {
-  const { data: latestExecution } = await (supabase as any)
-    .from("recruitment_executions")
-    .select(`
+    if (executionSeries) {
+      const { data: latestExecution } = await (supabase as any)
+        .from("recruitment_executions")
+        .select(
+          `
       execution_id,
       revision_number,
       execution_status
-    `)
-    .eq("series_id", executionSeries.series_id)
-    .order("revision_number", {
-      ascending: false,
-    })
-    .limit(1)
-    .maybeSingle();
+    `,
+        )
+        .eq("series_id", executionSeries.series_id)
+        .order("revision_number", {
+          ascending: false,
+        })
+        .limit(1)
+        .maybeSingle();
 
-  if (latestExecution) {
-    executionSummary = {
-      exists: true,
+      if (latestExecution) {
+        executionSummary = {
+          exists: true,
 
-      latestExecutionId: latestExecution.execution_id,
+          latestExecutionId: latestExecution.execution_id,
 
-      latestRevision:
-        latestExecution.revision_number ?? 1,
+          latestRevision: latestExecution.revision_number ?? 1,
 
-      status:
-        latestExecution.execution_status === "FINALIZED"
-          ? "FINALIZED"
-          : "ACTIVE",
+          status: latestExecution.execution_status === "FINALIZED" ? "FINALIZED" : "ACTIVE",
 
-      canStartExecution: false,
+          canStartExecution: false,
 
-      canResumeExecution:
-        latestExecution.execution_status !== "FINALIZED",
+          canResumeExecution: latestExecution.execution_status !== "FINALIZED",
 
-      canViewExecution: true,
+          canViewExecution: true,
 
-      canReopenExecution:
-        latestExecution.execution_status === "FINALIZED",
-    };
-  }
-} else {
-  executionSummary = {
-    exists: false,
+          canReopenExecution: latestExecution.execution_status === "FINALIZED",
+        };
+      }
+    } else {
+      executionSummary = {
+        exists: false,
 
-    latestExecutionId: null,
+        latestExecutionId: null,
 
-    latestRevision: null,
+        latestRevision: null,
 
-    status: "NOT_STARTED",
+        status: "NOT_STARTED",
 
-    canStartExecution: true,
+        canStartExecution: true,
 
-    canResumeExecution: false,
+        canResumeExecution: false,
 
-    canViewExecution: false,
+        canViewExecution: false,
 
-    canReopenExecution: false,
-  };
-}
+        canReopenExecution: false,
+      };
+    }
   }
 
   return {
@@ -750,24 +749,16 @@ export async function getRecruitmentApplicants(
     .from("student_opportunity_applications")
     .select(
       `
-  application_id,
-  student_id,
-  application_status,
-  applied_at,
+      application_id,
+      student_id,
+      application_status,
+      applied_at,
 
-  student_master!inner (
-    first_name,
-    last_name
-  ),
-
-  student_application_selected_roles (
-    preference_order,
-
-    drive_roles (
-      drive_role_name
-    )
-  )
-`,
+      student_master!inner(
+          first_name,
+          last_name
+      )
+  `,
     )
     .eq("opportunity_id", opportunityId)
     .order("applied_at", {
@@ -775,6 +766,88 @@ export async function getRecruitmentApplicants(
     });
 
   if (error) throw error;
+
+  const applicationIds = (data ?? []).map((application: any) => application.application_id);
+
+  console.log("APPLICATION IDS");
+  console.log(applicationIds);
+
+  const { data: selectedRoles, error: selectedRolesError } = await (supabase as any)
+    .from("student_application_selected_roles")
+    .select("*")
+    .in("application_id", applicationIds);
+
+  if (selectedRolesError) {
+    throw selectedRolesError;
+  }
+
+  console.table(
+    (selectedRoles ?? []).map((r: any) => ({
+      application_id: r.application_id,
+      drive_role_id: r.drive_role_id,
+      preference_order: r.preference_order,
+    })),
+  );
+
+  const driveRoleIds = [...new Set((selectedRoles ?? []).map((row: any) => row.drive_role_id))];
+
+  const { data: driveRoles, error: driveRolesError } = await (supabase as any)
+    .from("drive_roles")
+    .select(
+      `
+      drive_role_id,
+      drive_role_name
+  `,
+    )
+    .in("drive_role_id", driveRoleIds);
+
+  if (driveRolesError) {
+    throw driveRolesError;
+  }
+
+  console.log("========== DRIVE ROLES ==========");
+  console.log(driveRoles);
+
+  const roleNameMap = new Map<string, string>();
+
+  (driveRoles ?? []).forEach((role: any) => {
+    roleNameMap.set(role.drive_role_id, role.drive_role_name);
+  });
+
+  const roleMap = new Map<string, string[]>();
+
+  (selectedRoles ?? [])
+    .sort((a: any, b: any) => a.preference_order - b.preference_order)
+    .forEach((row: any) => {
+      const current = roleMap.get(row.application_id) ?? [];
+
+      current.push(roleNameMap.get(row.drive_role_id) ?? "Unknown Role");
+
+      roleMap.set(row.application_id, current);
+    });
+
+  console.table(
+    Array.from(roleMap.entries()).map(([applicationId, roles]) => ({
+      application_id: applicationId,
+      roles: roles.join(", "),
+    })),
+  );
+
+  const selectedApplicationIds = new Set((selectedRoles ?? []).map((r: any) => r.application_id));
+
+  const missing = applicationIds.filter((id: string) => !selectedApplicationIds.has(id));
+
+  console.log("Applications from UI:", applicationIds.length);
+  console.log("Applications with selected roles:", selectedApplicationIds.size);
+  console.log("Missing IDs:", missing);
+
+  console.log("========== RAW APPLICATIONS ==========");
+  console.table(
+    (data ?? []).map((a: any) => ({
+      application_id: a.application_id,
+      student: `${a.student_master?.first_name} ${a.student_master?.last_name}`,
+    })),
+  );
 
   const studentIds = (data ?? []).map((application: any) => application.student_id);
 
@@ -797,8 +870,10 @@ export async function getRecruitmentApplicants(
   const academicMap = new Map(
     (academics ?? []).map((academic: any) => [academic.student_id, academic]),
   );
+  console.log("========== ACADEMICS ==========");
+  console.table(academics ?? []);
 
-  return (
+  const applicants =
     data?.map((application: any) => ({
       applicationId: application.application_id,
 
@@ -825,12 +900,19 @@ export async function getRecruitmentApplicants(
 
       appliedAt: application.applied_at,
 
-      roles: (application.student_application_selected_roles ?? [])
-        .sort((a: any, b: any) => a.preference_order - b.preference_order)
-        .map((role: any) => role.drive_roles?.drive_role_name)
-        .filter(Boolean),
-    })) ?? []
+      roles: roleMap.get(application.application_id) ?? [],
+    })) ?? [];
+
+  console.log("========== FINAL APPLICANTS ==========");
+  console.table(
+    applicants.map((a: any) => ({
+      application_id: a.applicationId,
+      name: a.fullName,
+      roles: a.roles.join(", "),
+    })),
   );
+
+  return applicants;
 }
 
 export async function getApplicantQuestionAnswers(
