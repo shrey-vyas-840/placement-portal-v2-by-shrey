@@ -112,7 +112,42 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const hasRounds = (workspace?.rounds.length ?? 0) > 0;
 
-  const [editedRows, setEditedRows] = useState<Record<string, RecruitmentExecutionEditedRow>>({});
+  const [editedRows, setEditedRows] = useState<
+    Record<string, Record<string, RecruitmentExecutionEditedRow>>
+  >({});
+
+  const getEditedRow = (
+    executionRoundId: string,
+    executionParticipantId: string,
+  ): RecruitmentExecutionEditedRow | undefined => {
+    return editedRows[executionRoundId]?.[executionParticipantId];
+  };
+
+  const setEditedRow = (
+    executionRoundId: string,
+    executionParticipantId: string,
+    updates: Partial<RecruitmentExecutionEditedRow>,
+  ) => {
+    setEditedRows((previous) => ({
+      ...previous,
+      [executionRoundId]: {
+        ...(previous[executionRoundId] ?? {}),
+        [executionParticipantId]: {
+          ...(previous[executionRoundId]?.[executionParticipantId] ?? {
+            attendanceStatus: null,
+            gateStatus: "ALLOWED",
+            progressionStatus: "NONE",
+            remarks: "",
+            absenceDisposition: null,
+            absenceReason: "",
+            restrictionOverride: false,
+            overrideReason: "",
+          }),
+          ...updates,
+        },
+      },
+    }));
+  };
 
   const restoreWorkspaceNavigation = useCallback(
     (data: RecruitmentExecutionWorkspace) => {
@@ -217,32 +252,43 @@ export function RecruitmentExecutionWorkspacePage() {
       }
 
       const historyLookup = new Map(
-        data.historySummary.map((item) => [item.execution_participant_id, item]),
+        data.historySummary.map((item) => [
+          `${item.execution_round_id}:${item.execution_participant_id}`,
+          item,
+        ]),
       );
-      const initialState: Record<string, RecruitmentExecutionEditedRow> = {};
 
-      data.participants.forEach((participant) => {
-        const history = historyLookup.get(participant.execution_participant_id);
+      const initialState: Record<string, Record<string, RecruitmentExecutionEditedRow>> = {};
 
-        initialState[participant.execution_participant_id] = {
-          attendanceStatus: history?.attendance_status ?? null,
+      data.rounds.forEach((round) => {
+        initialState[round.execution_round_id] = {};
 
-          gateStatus: history?.restriction_override
-            ? "ALLOWED"
-            : (history?.gate_status ??
-              (participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED")),
+        data.participants.forEach((participant) => {
+          const history = historyLookup.get(
+            `${round.execution_round_id}:${participant.execution_participant_id}`,
+          );
 
-          progressionStatus: history?.progression_status ?? "NONE",
-          remarks: history?.remarks ?? "",
+          initialState[round.execution_round_id][participant.execution_participant_id] = {
+            attendanceStatus: history?.attendance_status ?? null,
 
-          absenceDisposition: history?.absence_disposition ?? null,
+            gateStatus: history?.restriction_override
+              ? "ALLOWED"
+              : (history?.gate_status ??
+                (participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED")),
 
-          absenceReason: history?.absence_reason ?? "",
+            progressionStatus: history?.progression_status ?? "NONE",
 
-          restrictionOverride: history?.restriction_override ?? false,
+            remarks: history?.remarks ?? "",
 
-          overrideReason: history?.restriction_override_reason ?? "",
-        };
+            absenceDisposition: history?.absence_disposition ?? null,
+
+            absenceReason: history?.absence_reason ?? "",
+
+            restrictionOverride: history?.restriction_override ?? false,
+
+            overrideReason: history?.restriction_override_reason ?? "",
+          };
+        });
       });
 
       setEditedRows(initialState);
@@ -530,8 +576,10 @@ export function RecruitmentExecutionWorkspacePage() {
   const shortlistedParticipants = useMemo(
     () =>
       participants.filter((participant) => {
-        const row = editedRows[participant.execution_participant_id];
-
+        const row = getEditedRow(
+          selectedRound!.execution_round_id,
+          participant.execution_participant_id,
+        );
         const attendanceAllowed =
           row?.attendanceStatus === "PRESENT" ||
           (row?.attendanceStatus === "ABSENT" && row?.absenceDisposition === "ALLOWED");
@@ -621,7 +669,7 @@ export function RecruitmentExecutionWorkspacePage() {
         );
 
         const completed = assignedRows.every((participant) => {
-          const row = editedRows[participant.execution_participant_id];
+          const row = getEditedRow(batch.execution_round_id, participant.execution_participant_id);
 
           return row?.attendanceStatus !== null;
         });
@@ -632,25 +680,37 @@ export function RecruitmentExecutionWorkspacePage() {
           participant_count: assignedRows.length,
 
           present_count: assignedRows.filter((participant) => {
-            const row = editedRows[participant.execution_participant_id];
+            const row = getEditedRow(
+              batch.execution_round_id,
+              participant.execution_participant_id,
+            );
 
             return row?.attendanceStatus === "PRESENT";
           }).length,
 
           absent_count: assignedRows.filter((participant) => {
-            const row = editedRows[participant.execution_participant_id];
+            const row = getEditedRow(
+              batch.execution_round_id,
+              participant.execution_participant_id,
+            );
 
             return row?.attendanceStatus === "ABSENT";
           }).length,
 
           shortlisted_count: assignedRows.filter((participant) => {
-            const row = editedRows[participant.execution_participant_id];
+            const row = getEditedRow(
+              batch.execution_round_id,
+              participant.execution_participant_id,
+            );
 
             return row?.progressionStatus === "SHORTLISTED";
           }).length,
 
           selected_count: assignedRows.filter((participant) => {
-            const row = editedRows[participant.execution_participant_id];
+            const row = getEditedRow(
+              batch.execution_round_id,
+              participant.execution_participant_id,
+            );
 
             return row?.progressionStatus === "SELECTED";
           }).length,
@@ -660,7 +720,10 @@ export function RecruitmentExecutionWorkspacePage() {
           pending:
             assignedRows.length -
             assignedRows.filter((participant) => {
-              const row = editedRows[participant.execution_participant_id];
+              const row = getEditedRow(
+                batch.execution_round_id,
+                participant.execution_participant_id,
+              );
 
               return row?.attendanceStatus !== null;
             }).length,
@@ -671,98 +734,86 @@ export function RecruitmentExecutionWorkspacePage() {
       .sort((a, b) => a.round_order - b.round_order);
   }, [workspace, selectedStage, selectedExecutionBatch?.execution_round_id, editedRows]);
 
- const stageCompletionSummary = useMemo(() => {
-  if (!workspace) {
-    return {};
-  }
-
-  const summary: Record<
-    number,
-    {
-      completed: boolean;
-      totalParticipants: number;
-      markedAttendance: number;
-      pendingAttendance: number;
-    }
-  > = {};
-
-  const stageNumbers = [...new Set(workspace.rounds.map(r => r.stage_number))];
-
-  stageNumbers.forEach((stageNumber) => {
-    const participantIds = new Set<string>();
-
-    //
-    // Stage 1
-    // Everyone in execution
-    //
-    if (stageNumber === 1) {
-      workspace.participants.forEach(p =>
-        participantIds.add(p.execution_participant_id)
-      );
+  const stageCompletionSummary = useMemo(() => {
+    if (!workspace) {
+      return {};
     }
 
-    //
-    // Stage 2+
-    // Everyone progressed into this stage
-    //
-    else {
-      workspace.rounds
-        .filter(r => r.stage_number === stageNumber)
-        .forEach(round => {
+    const summary: Record<
+      number,
+      {
+        completed: boolean;
+        totalParticipants: number;
+        markedAttendance: number;
+        pendingAttendance: number;
+      }
+    > = {};
 
-          if (round.scope === "COMMON") {
-            workspace.participants.forEach(p =>
-              participantIds.add(p.execution_participant_id)
-            );
-            return;
-          }
+    const stageNumbers = [...new Set(workspace.rounds.map((r) => r.stage_number))];
 
-          workspace.roundRoleMappings
-            .filter(m => m.execution_round_id === round.execution_round_id)
-            .forEach(mapping => {
+    stageNumbers.forEach((stageNumber) => {
+      const participantIds = new Set<string>();
 
-              workspace.participants.forEach(participant => {
+      //
+      // Stage 1
+      // Everyone in execution
+      //
+      if (stageNumber === 1) {
+        workspace.participants.forEach((p) => participantIds.add(p.execution_participant_id));
+      }
 
-                if (
-                  participant.selected_roles.some(
-                    role => role.drive_role_id === mapping.drive_role_id
-                  )
-                ) {
-                  participantIds.add(
-                    participant.execution_participant_id
-                  );
-                }
+      //
+      // Stage 2+
+      // Everyone progressed into this stage
+      //
+      else {
+        workspace.rounds
+          .filter((r) => r.stage_number === stageNumber)
+          .forEach((round) => {
+            if (round.scope === "COMMON") {
+              workspace.participants.forEach((p) => participantIds.add(p.execution_participant_id));
+              return;
+            }
 
+            workspace.roundRoleMappings
+              .filter((m) => m.execution_round_id === round.execution_round_id)
+              .forEach((mapping) => {
+                workspace.participants.forEach((participant) => {
+                  if (
+                    participant.selected_roles.some(
+                      (role) => role.drive_role_id === mapping.drive_role_id,
+                    )
+                  ) {
+                    participantIds.add(participant.execution_participant_id);
+                  }
+                });
               });
+          });
+      }
 
-            });
+      const ids = [...participantIds];
 
-        });
-    }
+      const stageRounds = workspace.rounds.filter((r) => r.stage_number === stageNumber);
 
-    const ids = [...participantIds];
+      const markedAttendance = ids.filter((id) =>
+        stageRounds.some((round) => {
+          const row = getEditedRow(round.execution_round_id, id);
+          return row?.attendanceStatus !== null;
+        }),
+      ).length;
 
-    const markedAttendance = ids.filter(id => {
-      const row = editedRows[id];
-      return row?.attendanceStatus !== null;
-    }).length;
+      const pendingAttendance = ids.length - markedAttendance;
 
-    const pendingAttendance =
-      ids.length - markedAttendance;
+      summary[stageNumber] = {
+        completed: pendingAttendance === 0,
+        totalParticipants: ids.length,
+        markedAttendance,
+        pendingAttendance,
+      };
+    });
 
-summary[stageNumber] = {
-  completed: pendingAttendance === 0,
-  totalParticipants: ids.length,
-  markedAttendance,
-  pendingAttendance,
-};
-  });
-
-  return summary;
-}, [
-  workspace,
-  editedRows,
-]);
+    return summary;
+  }, [workspace, editedRows]);
 
   const metrics = useMemo(
     () => ({
@@ -824,7 +875,10 @@ summary[stageNumber] = {
             executionRoundId,
           })),
         rows: participants.map((participant) => {
-          const row = editedRows[participant.execution_participant_id];
+          const row = getEditedRow(
+            selectedRound.execution_round_id,
+            participant.execution_participant_id,
+          );
 
           return {
             executionParticipantId: participant.execution_participant_id,
@@ -872,8 +926,10 @@ summary[stageNumber] = {
 
   const handleProgressToNextRound = async () => {
     const shortlistedParticipants = participants.filter((participant) => {
-      const row = editedRows[participant.execution_participant_id];
-
+      const row = getEditedRow(
+        selectedRound!.execution_round_id,
+        participant.execution_participant_id,
+      );
       return row?.progressionStatus === "SHORTLISTED";
     });
 
@@ -1310,7 +1366,10 @@ summary[stageNumber] = {
 
                 <tbody>
                   {participants.map((participant) => {
-                    const editedRow = editedRows[participant.execution_participant_id];
+                    const editedRow = getEditedRow(
+                      selectedRound!.execution_round_id,
+                      participant.execution_participant_id,
+                    );
 
                     const effectiveGateStatus: ExecutionGateStatus | "ALLOWED_OVERRIDE" =
                       editedRow?.restrictionOverride
@@ -1373,23 +1432,16 @@ summary[stageNumber] = {
                                   ? "border-amber-300 bg-amber-50 text-amber-700"
                                   : "border-slate-300 bg-white text-slate-700"
                             }`}
-                            value={
-                              editedRows[participant.execution_participant_id]?.attendanceStatus ??
-                              ""
-                            }
+                            value={editedRow?.attendanceStatus ?? ""}
                             onChange={(e) => {
-                              setEditedRows((prev) => {
-                                const next = {
-                                  ...prev,
-                                  [participant.execution_participant_id]: {
-                                    ...prev[participant.execution_participant_id],
-                                    attendanceStatus: (e.target.value ||
-                                      null) as ExecutionAttendanceStatus | null,
-                                  },
-                                };
-
-                                return next;
-                              });
+                              setEditedRow(
+                                selectedRound!.execution_round_id,
+                                participant.execution_participant_id,
+                                {
+                                  attendanceStatus: (e.target.value ||
+                                    null) as ExecutionAttendanceStatus | null,
+                                },
+                              );
 
                               setRoundDirty(true);
                               setHasUnsavedChanges(true);
@@ -1433,21 +1485,18 @@ summary[stageNumber] = {
                         <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
                           <select
                             className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                            value={
-                              editedRows[participant.execution_participant_id]?.progressionStatus ??
-                              "NONE"
-                            }
+                            value={editedRow?.progressionStatus ?? "NONE"}
                             onChange={(e) => {
                               setHasUnsavedChanges(true);
                               setRoundDirty(true);
 
-                              setEditedRows((prev) => ({
-                                ...prev,
-                                [participant.execution_participant_id]: {
-                                  ...prev[participant.execution_participant_id],
+                              setEditedRow(
+                                selectedRound!.execution_round_id,
+                                participant.execution_participant_id,
+                                {
                                   progressionStatus: e.target.value as ExecutionProgressionStatus,
                                 },
-                              }));
+                              );
                             }}
                           >
                             <option value="NONE">⬜ No Progress</option>
@@ -2064,31 +2113,35 @@ summary[stageNumber] = {
         open={attendanceReviewOpen}
         onOpenChange={setAttendanceReviewOpen}
         participants={participants}
-        editedRows={editedRows}
+        editedRows={selectedRound ? (editedRows[selectedRound.execution_round_id] ?? {}) : {}}
         onEditedRowChange={(participantId, changes) => {
-          setEditedRows((prev) => {
-            const current = prev[participantId];
+          const current = getEditedRow(selectedRound!.execution_round_id, participantId) ?? {
+            attendanceStatus: null,
+            gateStatus: "ALLOWED",
+            progressionStatus: "NONE",
+            remarks: "",
+            absenceDisposition: null,
+            absenceReason: "",
+            restrictionOverride: false,
+            overrideReason: "",
+          };
 
-            const next = {
-              ...current,
-              ...changes,
-            };
+          const next = {
+            ...current,
+            ...changes,
+          };
 
-            const attendanceAllowed =
-              next.attendanceStatus === "PRESENT" ||
-              (next.attendanceStatus === "ABSENT" && next.absenceDisposition === "ALLOWED");
+          const attendanceAllowed =
+            next.attendanceStatus === "PRESENT" ||
+            (next.attendanceStatus === "ABSENT" && next.absenceDisposition === "ALLOWED");
 
-            const gateAllowed = next.restrictionOverride === true || next.gateStatus === "ALLOWED";
+          const gateAllowed = next.restrictionOverride || next.gateStatus === "ALLOWED";
 
-            if (!attendanceAllowed || !gateAllowed) {
-              next.progressionStatus = "NONE";
-            }
+          if (!attendanceAllowed || !gateAllowed) {
+            next.progressionStatus = "NONE";
+          }
 
-            return {
-              ...prev,
-              [participantId]: next,
-            };
-          });
+          setEditedRow(selectedRound!.execution_round_id, participantId, next);
 
           setHasUnsavedChanges(true);
           setRoundDirty(true);
