@@ -335,6 +335,8 @@ export function RecruitmentExecutionWorkspacePage() {
     return selectedStageRounds[0];
   }, [selectedStageRounds, selectedRoundId]);
 
+  const currentExecutionRoundId = selectedRound?.execution_round_id ?? null;
+
   const selectedExecutionBatch = useMemo(() => {
     if (!workspace || !selectedExecutionBatchId) {
       return null;
@@ -424,90 +426,54 @@ export function RecruitmentExecutionWorkspacePage() {
     );
   }, [workspace, selectedRound]);
 
-  const participants = useMemo<RecruitmentExecutionParticipantWithStudent[]>(() => {
-    if (!workspace || !selectedRound) {
-      return [];
-    }
-    console.log("Selected Round", selectedRound);
-    console.log("Selected Round Scope", selectedRound.scope);
-    console.log("Selected Batch", selectedExecutionBatch?.execution_round_id);
+  //---------------------------------------------------------------------------------------------------------Participant Memo ---------------------------------------------------------------------------------------------------------
 
-    console.log("Assignments", workspace.executionBatchParticipants);
+  const [participants, setParticipants] = useState<RecruitmentExecutionParticipantWithStudent[]>(
+    [],
+  );
 
-    console.log(
-      "Participant IDs",
-      workspace.executionBatchParticipants.map((p) => ({
-        batch: p.execution_round_id,
-        participant: p.execution_participant_id,
-      })),
-    );
+  useEffect(() => {
+    let cancelled = false;
 
-    console.log(
-      "Workspace Participants",
-      workspace.participants.map((p) => p.execution_participant_id),
-    );
-    console.log("Show Batch Panel", showExecutionBatchPanel);
-    //
-    // COMMON rounds always operate on the full participant set.
-    //
-
-    if (selectedRound.scope === "COMMON") {
-      console.log("COMMON ROUND");
-
-      console.log(
-        "Returning Participants",
-        !showExecutionBatchPanel || !selectedExecutionBatch?.execution_round_id
-          ? workspace.participants.length
-          : workspace.participants.filter((participant) =>
-              new Set(
-                workspace.executionBatchParticipants
-                  .filter(
-                    (assignment) =>
-                      assignment.execution_round_id === selectedExecutionBatch?.execution_round_id,
-                  )
-                  .map((a) => a.execution_participant_id),
-              ).has(participant.execution_participant_id),
-            ).length,
-      );
-
-      if (!isMultipleExecutionStage || !selectedExecutionBatch) {
-        return workspace.participants;
+    const syncParticipants = async () => {
+      if (!workspace || !selectedRound) {
+        setParticipants([]);
+        return;
       }
 
-      const assignedIds = new Set(
-        workspace.executionBatchParticipants
-          .filter(
-            (assignment) =>
-              assignment.execution_round_id === selectedExecutionBatch?.execution_round_id,
-          )
-          .map((assignment) => assignment.execution_participant_id),
-      );
+      if (selectedRound.stage_number === 1) {
+        setParticipants(workspace.participants);
+        return;
+      }
 
-      return workspace.participants.filter((participant) =>
-        assignedIds.has(participant.execution_participant_id),
-      );
-    }
+      try {
+        const data = await recruitmentExecutionService.loadRoundParticipants(
+          selectedRound.execution_round_id,
+        );
 
-    //
-    // ROLE_SPECIFIC rounds operate only on participants that selected
-    // at least one role mapped to the current round.
-    //
-    const mappedRoleIds = new Set(
-      workspace.roundRoleMappings
-        .filter((mapping) => mapping.execution_round_id === selectedRound.execution_round_id)
-        .map((mapping) => mapping.drive_role_id),
-    );
+        if (!cancelled) {
+          setParticipants(data);
+        }
+      } catch (error) {
+        console.error(error);
 
-    return workspace.participants.filter((participant) =>
-      participant.selected_roles.some((role) => mappedRoleIds.has(role.drive_role_id)),
-    );
-  }, [
-    workspace,
-    selectedRound,
-    selectedExecutionBatch,
-    showExecutionBatchPanel,
-    isMultipleExecutionStage,
-  ]);
+        if (!cancelled) {
+          setParticipants([]);
+          toast.error(
+            error instanceof Error ? error.message : "Unable to load stage participants.",
+          );
+        }
+      }
+    };
+
+    void syncParticipants();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workspace, selectedRound?.execution_round_id, selectedRound?.stage_number]);
+
+  //---------------------------------------------------------------------------------------Completed Participant Memo----------------------------------------------------------------------------------------------
 
   const finalizationEngine = useMemo(() => {
     if (!workspace) {
@@ -576,10 +542,7 @@ export function RecruitmentExecutionWorkspacePage() {
   const shortlistedParticipants = useMemo(
     () =>
       participants.filter((participant) => {
-        const row = getEditedRow(
-          selectedRound!.execution_round_id,
-          participant.execution_participant_id,
-        );
+        const row = getEditedRow(currentExecutionRoundId!, participant.execution_participant_id);
         const attendanceAllowed =
           row?.attendanceStatus === "PRESENT" ||
           (row?.attendanceStatus === "ABSENT" && row?.absenceDisposition === "ALLOWED");
@@ -592,22 +555,26 @@ export function RecruitmentExecutionWorkspacePage() {
   );
 
   const unassignedShortlistedParticipants = useMemo(() => {
-    if (!workspace) {
+    if (!workspace || !isMultipleExecutionStage || selectedStage === null) {
       return [];
     }
 
-    if (!isMultipleExecutionStage) {
-      return [];
-    }
-
-    const assigned = new Set(
-      workspace.executionBatchParticipants.map((assignment) => assignment.execution_participant_id),
+    const currentStageBatchIds = new Set(
+      workspace.executionBatches
+        .filter((batch) => batch.stage_number === selectedStage)
+        .map((batch) => batch.execution_round_id),
     );
 
-    return workspace.participants.filter(
-      (participant) => !assigned.has(participant.execution_participant_id),
+    const assignedParticipantIds = new Set(
+      workspace.executionBatchParticipants
+        .filter((assignment) => currentStageBatchIds.has(assignment.execution_round_id))
+        .map((assignment) => assignment.execution_participant_id),
     );
-  }, [workspace, isMultipleExecutionStage]);
+
+    return shortlistedParticipants.filter(
+      (participant) => !assignedParticipantIds.has(participant.execution_participant_id),
+    );
+  }, [workspace, isMultipleExecutionStage, selectedStage, shortlistedParticipants]);
 
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
@@ -868,6 +835,7 @@ export function RecruitmentExecutionWorkspacePage() {
         executionId: workspace.execution.execution_id,
         executionRoundId: selectedRound.execution_round_id,
         executionRevision: workspace.execution.revision_number,
+
         batchAssignments: Object.entries(executionBatchAssignments)
           .filter(([, executionRoundId]) => Boolean(executionRoundId))
           .map(([executionParticipantId, executionRoundId]) => ({
@@ -926,10 +894,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const handleProgressToNextRound = async () => {
     const shortlistedParticipants = participants.filter((participant) => {
-      const row = getEditedRow(
-        selectedRound!.execution_round_id,
-        participant.execution_participant_id,
-      );
+      const row = getEditedRow(currentExecutionRoundId!, participant.execution_participant_id);
       return row?.progressionStatus === "SHORTLISTED";
     });
 
@@ -1367,7 +1332,7 @@ export function RecruitmentExecutionWorkspacePage() {
                 <tbody>
                   {participants.map((participant) => {
                     const editedRow = getEditedRow(
-                      selectedRound!.execution_round_id,
+                      currentExecutionRoundId!,
                       participant.execution_participant_id,
                     );
 
@@ -1435,7 +1400,7 @@ export function RecruitmentExecutionWorkspacePage() {
                             value={editedRow?.attendanceStatus ?? ""}
                             onChange={(e) => {
                               setEditedRow(
-                                selectedRound!.execution_round_id,
+                                currentExecutionRoundId!,
                                 participant.execution_participant_id,
                                 {
                                   attendanceStatus: (e.target.value ||
@@ -1491,7 +1456,7 @@ export function RecruitmentExecutionWorkspacePage() {
                               setRoundDirty(true);
 
                               setEditedRow(
-                                selectedRound!.execution_round_id,
+                                currentExecutionRoundId!,
                                 participant.execution_participant_id,
                                 {
                                   progressionStatus: e.target.value as ExecutionProgressionStatus,
@@ -1789,7 +1754,9 @@ export function RecruitmentExecutionWorkspacePage() {
 
               roleIds: data.roundType === "COMMON" ? [] : data.roleIds,
 
-              executionParticipantIds: [],
+              executionParticipantIds: shortlistedParticipants.map(
+                (participant) => participant.execution_participant_id,
+              ),
 
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
@@ -1933,7 +1900,25 @@ export function RecruitmentExecutionWorkspacePage() {
             await loadWorkspace();
 
             setEditingExecutionBatchId(null);
+            console.log("========================================");
+            console.log("AFTER loadWorkspace()");
+            console.log("selectedStage:", selectedStage);
 
+            console.log(
+              "workspace.executionBatches.length:",
+              workspace?.executionBatches?.length ?? 0,
+            );
+
+            console.log("workspace.executionBatches:", workspace?.executionBatches ?? []);
+
+            const debugCurrentStageBatches = (workspace?.executionBatches ?? []).filter(
+              (batch) => batch.stage_number === selectedStage,
+            );
+
+            console.log("currentStageBatches:", debugCurrentStageBatches);
+
+            console.log("Opening ManageExecutionBatchesDialog...");
+            console.log("========================================");
             /*
              * If this stage supports multiple batches,
              * immediately open Batch Management first.
@@ -2019,7 +2004,25 @@ export function RecruitmentExecutionWorkspacePage() {
             setBatchParticipantDialogOpen(false);
 
             setViewingExecutionBatchId(null);
+            console.log("========================================");
+            console.log("AFTER loadWorkspace()");
+            console.log("selectedStage:", selectedStage);
 
+            console.log(
+              "workspace.executionBatches.length:",
+              workspace?.executionBatches?.length ?? 0,
+            );
+
+            console.log("workspace.executionBatches:", workspace?.executionBatches ?? []);
+
+            const debugCurrentStageBatches = (workspace?.executionBatches ?? []).filter(
+              (batch) => batch.stage_number === selectedStage,
+            );
+
+            console.log("currentStageBatches:", debugCurrentStageBatches);
+
+            console.log("Opening ManageExecutionBatchesDialog...");
+            console.log("========================================");
             /*
              * Return to Batch Management so the admin can:
              * - review assignments
@@ -2115,7 +2118,7 @@ export function RecruitmentExecutionWorkspacePage() {
         participants={participants}
         editedRows={selectedRound ? (editedRows[selectedRound.execution_round_id] ?? {}) : {}}
         onEditedRowChange={(participantId, changes) => {
-          const current = getEditedRow(selectedRound!.execution_round_id, participantId) ?? {
+          const current = getEditedRow(currentExecutionRoundId!, participantId) ?? {
             attendanceStatus: null,
             gateStatus: "ALLOWED",
             progressionStatus: "NONE",
@@ -2141,7 +2144,7 @@ export function RecruitmentExecutionWorkspacePage() {
             next.progressionStatus = "NONE";
           }
 
-          setEditedRow(selectedRound!.execution_round_id, participantId, next);
+          setEditedRow(currentExecutionRoundId!, participantId, next);
 
           setHasUnsavedChanges(true);
           setRoundDirty(true);

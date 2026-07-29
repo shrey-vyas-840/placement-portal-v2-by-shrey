@@ -1067,48 +1067,50 @@ class RecruitmentExecutionService {
       throw new Error("Execution round not found.");
     }
 
-    let participantIds: string[];
-
-    if (round.parent_execution_round_id) {
-      // Child execution batch
-      participantIds = await this.loadRoundParticipantIds(executionRoundId);
-    } else {
-      // Parent stage
-      const childBatches = await this.loadExecutionBatches(round.execution_id);
-
-      const childIds = childBatches
-        .filter((batch) => batch.parent_execution_round_id === round.execution_round_id)
-        .map((batch) => batch.execution_round_id);
-
-      if (childIds.length === 0) {
-        participantIds = await this.loadRoundParticipantIds(executionRoundId);
-      } else {
-        const { data, error } = await (supabase as any)
-          .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-          .select("execution_participant_id")
-          .in("execution_round_id", childIds);
-
-        if (error) {
-          throw error;
-        }
-
-        participantIds = Array.from(
-          new Set(
-            (data ?? []).map(
-              (row: { execution_participant_id: string }) => row.execution_participant_id,
-            ),
-          ),
-        ) as string[];
-      }
-    }
-
-    if (participantIds.length === 0) {
-      return [];
-    }
-
     const participants = await this.loadParticipants(round.execution_id);
 
-    const participantIdSet = new Set(participantIds);
+    // Child execution batches always load their own persisted membership.
+    if (round.parent_execution_round_id) {
+      const participantIds = await this.loadRoundParticipantIds(executionRoundId);
+
+      if (participantIds.length === 0) {
+        return [];
+      }
+
+      const participantIdSet = new Set(participantIds);
+
+      return participants.filter((participant) =>
+        participantIdSet.has(participant.execution_participant_id),
+      );
+    }
+
+    // Parent execution stage
+    const childBatches = (await this.loadExecutionBatches(round.execution_id)).filter(
+      (batch) => batch.parent_execution_round_id === round.execution_round_id,
+    );
+
+    // If the stage has not yet been split into execution batches,
+    // preserve the existing Stage 1 behaviour by showing every
+    // execution participant.
+    if (childBatches.length === 0) {
+      return participants;
+    }
+
+    // Once execution batches exist, the union of all child batch
+    // memberships becomes the source of truth for the stage.
+    const participantIdSet = new Set<string>();
+
+    for (const batch of childBatches) {
+      const batchParticipantIds = await this.loadRoundParticipantIds(batch.execution_round_id);
+
+      batchParticipantIds.forEach((participantId) => {
+        participantIdSet.add(participantId);
+      });
+    }
+
+    if (participantIdSet.size === 0) {
+      return [];
+    }
 
     return participants.filter((participant) =>
       participantIdSet.has(participant.execution_participant_id),
@@ -1559,12 +1561,18 @@ history_revision
 
     let progressedParticipants = 0;
 
+    console.log("NEXT ROUND ID:", input.nextRoundId);
+
     if (input.nextRoundId) {
+      console.log("CALLING populateNextRoundParticipants");
+
       progressedParticipants = await this.populateNextRoundParticipants({
         executionId: input.executionId,
         currentRoundId: input.executionRoundId,
         nextRoundId: input.nextRoundId,
       });
+    } else {
+      console.log("NO NEXT ROUND ID PASSED TO saveRound()");
     }
 
     return {
@@ -1627,33 +1635,120 @@ history_revision
     currentRoundId: string;
     nextRoundId: string;
   }): Promise<RecruitmentExecutionParticipantWithStudent[]> {
-    const [nextRound, history] = await Promise.all([
-      this.getRound(input.nextRoundId),
-      this.loadHistorySummary(input.executionId),
-    ]);
+    const [currentRound, nextRound, history, participants, rounds, roundRoleMappings] =
+      await Promise.all([
+        this.getRound(input.currentRoundId),
+        this.getRound(input.nextRoundId),
+        this.loadHistorySummary(input.executionId),
+        this.loadParticipants(input.executionId),
+        this.loadRounds(input.executionId),
+        this.loadRoundRoleMappings(input.executionId),
+      ]);
+
+    if (!currentRound) {
+      throw new Error("Current round not found.");
+    }
 
     if (!nextRound) {
       throw new Error("Next round not found.");
     }
 
-    //
-    // IMPORTANT
-    //
-    // Progression must originate from the current execution batch,
-    // not from every participant in the execution.
-    //
-    const participants = await this.loadRoundParticipants(input.currentRoundId);
-
     const allowedRoleIds =
       nextRound.scope === "ROLE_SPECIFIC" ? await this.getRoundRoleIds(input.nextRoundId) : [];
 
-    return this.filterParticipantsForNextRound({
-      participants,
-      history,
-      allowedRoleIds,
-      scope: nextRound.scope,
-      currentRoundId: input.currentRoundId,
+    const allowedRoleSet = new Set(allowedRoleIds);
+    const roundById = new Map(rounds.map((round) => [round.execution_round_id, round]));
+    const rolesByRound = new Map<string, string[]>();
+
+    roundRoleMappings.forEach((mapping) => {
+      const existing = rolesByRound.get(mapping.execution_round_id) ?? [];
+      existing.push(mapping.drive_role_id);
+      rolesByRound.set(mapping.execution_round_id, existing);
     });
+
+    const eligibleRoundIds = new Set(
+      rounds
+        .filter((round) => round.stage_number <= currentRound.stage_number)
+        .map((round) => round.execution_round_id),
+    );
+
+    const historyByParticipant = new Map<string, RecruitmentExecutionHistorySummary[]>();
+
+    history.forEach((row) => {
+      if (!eligibleRoundIds.has(row.execution_round_id)) {
+        return;
+      }
+
+      const rows = historyByParticipant.get(row.execution_participant_id) ?? [];
+      rows.push(row);
+      historyByParticipant.set(row.execution_participant_id, rows);
+    });
+
+    const progressed = participants.filter((participant) => {
+      const roleState = new Map<string, { active: boolean; terminal: boolean }>();
+
+      participant.selected_roles.forEach((role) => {
+        roleState.set(role.drive_role_id, { active: false, terminal: false });
+      });
+
+      const participantHistories = (
+        historyByParticipant.get(participant.execution_participant_id) ?? []
+      ).sort((a, b) => {
+        const roundA = roundById.get(a.execution_round_id);
+        const roundB = roundById.get(b.execution_round_id);
+
+        const stageDiff = (roundA?.stage_number ?? 0) - (roundB?.stage_number ?? 0);
+        if (stageDiff !== 0) {
+          return stageDiff;
+        }
+
+        const orderDiff = (roundA?.round_order ?? 0) - (roundB?.round_order ?? 0);
+        if (orderDiff !== 0) {
+          return orderDiff;
+        }
+
+        return (a.changed_at ?? "").localeCompare(b.changed_at ?? "");
+      });
+
+      participantHistories.forEach((row) => {
+        const round = roundById.get(row.execution_round_id);
+
+        if (!round) {
+          return;
+        }
+
+        const affectedRoleIds =
+          round.scope === "COMMON"
+            ? participant.selected_roles.map((role) => role.drive_role_id)
+            : row.drive_role_id
+              ? [row.drive_role_id]
+              : (rolesByRound.get(round.execution_round_id) ?? []);
+
+        affectedRoleIds.forEach((roleId) => {
+          const state = roleState.get(roleId);
+
+          if (!state) {
+            return;
+          }
+
+          if (row.progression_status === "SHORTLISTED") {
+            if (!state.terminal) {
+              state.active = true;
+            }
+            return;
+          }
+
+          state.active = false;
+          state.terminal = true;
+        });
+      });
+
+      return [...roleState.entries()].some(([roleId, state]) => {
+        return state.active && (nextRound.scope === "COMMON" || allowedRoleSet.has(roleId));
+      });
+    });
+
+    return progressed;
   }
 
   private async populateNextRoundParticipants(input: {
@@ -1666,6 +1761,18 @@ history_revision
       currentRoundId: input.currentRoundId,
       nextRoundId: input.nextRoundId,
     });
+
+    console.log("========== NEXT ROUND ==========");
+    console.log("Current Round:", input.currentRoundId);
+    console.log("Next Round:", input.nextRoundId);
+    console.log("Progressed Count:", participants.length);
+    console.log(
+      participants.map((p) => ({
+        id: p.execution_participant_id,
+        name: `${p.student.first_name} ${p.student.last_name}`,
+        roles: p.selected_roles.map((r) => r.drive_role_name),
+      })),
+    );
 
     await this.removeRoundParticipants(input.nextRoundId);
 
@@ -2156,17 +2263,38 @@ history_revision
 
     const historySummary = await this.loadHistorySummary(executionId);
 
-    const executionBatches = (await this.loadExecutionBatches(executionId)).filter((batch) => {
+    const allExecutionBatches = await this.loadExecutionBatches(executionId);
+
+    const executionBatches = allExecutionBatches.filter((batch) => {
       const parent = rounds.find(
         (round) => round.execution_round_id === batch.parent_execution_round_id,
       );
 
+      // Ignore orphaned child batches.
       if (!parent) {
         return false;
       }
 
-      // Hide the automatically-created child batch for COMMON stages.
-      return parent.scope !== "COMMON";
+      // Role-specific execution batches are always administrator-managed.
+      if (parent.scope !== "COMMON") {
+        return true;
+      }
+
+      const siblingBatches = allExecutionBatches.filter(
+        (candidate) => candidate.parent_execution_round_id === parent.execution_round_id,
+      );
+
+      // Legacy COMMON execution model:
+      // A single automatically-created execution batch exists only to own
+      // participant membership. Keep it hidden from the workspace.
+      if (siblingBatches.length <= 1) {
+        return false;
+      }
+
+      // Multiple execution batches:
+      // Keep the automatically-created default execution batch hidden while
+      // exposing administrator-created execution batches.
+      return batch.round_name !== parent.round_name;
     });
 
     const executionBatchParticipants = await this.loadExecutionBatchParticipants(executionId);
