@@ -40,6 +40,10 @@ v_selected_role_ids UUID[];
 v_random_index INTEGER;
 v_preference_order INTEGER;
 
+v_application_start TIMESTAMPTZ;
+v_application_end TIMESTAMPTZ;
+v_applied_at TIMESTAMPTZ;   
+
         v_user_id UUID;
         v_student_id UUID;
         v_application_id UUID;
@@ -467,74 +471,128 @@ VALUES
             -- Opportunity Application
             ------------------------------------------------------------------
 
-            INSERT INTO student_opportunity_applications
-            (
-                application_id,
-                opportunity_id,
-                student_id,
-                application_status
-            )
-            VALUES
-            (
-                v_application_id,
-                v_opportunity_id,
-                v_student_id,
-                'Applied'
-            );
+SELECT
+    application_start_date,
+    application_end_date
+INTO
+    v_application_start,
+    v_application_end
+FROM opportunity_master
+WHERE opportunity_id = v_opportunity_id;
 
-------------------------------------------------------------------
--- Selected Roles
-------------------------------------------------------------------
+IF v_application_start IS NOT NULL
+AND v_application_end IS NOT NULL
+AND v_application_end > v_application_start THEN
 
-IF v_role_selection_enabled THEN
-
-    v_roles_to_select :=
-        floor(
+    v_applied_at :=
+        v_application_start +
+        (
             random() *
-            (
-                v_maximum_role_selection
-                -
-                v_minimum_role_selection
-                + 1
+            EXTRACT(
+                EPOCH FROM
+                (v_application_end - v_application_start)
             )
-        )::INTEGER
-        +
-        v_minimum_role_selection;
+        ) * INTERVAL '1 second';
 
 ELSE
 
+    v_applied_at :=
+        now() - (random() * INTERVAL '48 hours');
+
+END IF;
+
+INSERT INTO student_opportunity_applications
+(
+    application_id,
+    opportunity_id,
+    student_id,
+    application_status,
+    applied_at
+)
+VALUES
+(
+    v_application_id,
+    v_opportunity_id,
+    v_student_id,
+    'Applied',
+    v_applied_at
+);
+
+-----------------------------------------------------------------------
+-- Random Role Selection
+----------------------------------------------------------------------
+
+IF array_length(v_drive_role_ids, 1) = 1 THEN
+
+    -- Only one role exists
     v_roles_to_select := 1;
 
+ELSIF NOT COALESCE(v_role_selection_enabled, FALSE) THEN
+
+    -- Role selection disabled
+    v_roles_to_select := 1;
+
+ELSE
+
+    -- Clamp configuration to available roles
+    v_minimum_role_selection :=
+        LEAST(
+            GREATEST(v_minimum_role_selection, 1),
+            array_length(v_drive_role_ids, 1)
+        );
+
+    v_maximum_role_selection :=
+        LEAST(
+            GREATEST(v_maximum_role_selection, v_minimum_role_selection),
+            array_length(v_drive_role_ids, 1)
+        );
+
+    -- Random number of selected roles
+    v_roles_to_select :=
+        floor(
+            random() *
+            (v_maximum_role_selection - v_minimum_role_selection + 1)
+        )::INTEGER
+        + v_minimum_role_selection;
+
 END IF;
 
-IF v_roles_to_select > array_length(v_drive_role_ids,1) THEN
-    v_roles_to_select := array_length(v_drive_role_ids,1);
-END IF;
+----------------------------------------------------------------------
+-- Shuffle roles
+----------------------------------------------------------------------
 
 v_selected_role_ids := ARRAY[]::UUID[];
 
-FOR v_preference_order IN 1..v_roles_to_select LOOP
+WHILE array_length(v_selected_role_ids, 1) IS NULL
+   OR array_length(v_selected_role_ids, 1) < v_roles_to_select
+LOOP
 
-    LOOP
+    v_random_index :=
+        floor(random() * array_length(v_drive_role_ids,1) + 1)::INTEGER;
 
-        v_random_index :=
-            floor(random() * array_length(v_drive_role_ids,1) + 1)::INTEGER;
+    v_selected_drive_role :=
+        v_drive_role_ids[v_random_index];
 
-        v_selected_drive_role :=
-            v_drive_role_ids[v_random_index];
+    IF NOT (
+        v_selected_drive_role = ANY(v_selected_role_ids)
+    ) THEN
 
-        EXIT
-        WHEN NOT (
-            v_selected_drive_role = ANY(v_selected_role_ids)
-        );
+        v_selected_role_ids :=
+            array_append(
+                v_selected_role_ids,
+                v_selected_drive_role
+            );
 
-    END LOOP;
+    END IF;
 
-    v_selected_role_ids :=
-        array_append(
-            v_selected_role_ids,
-            v_selected_drive_role
-        );
+END LOOP;
+
+----------------------------------------------------------------------
+-- Insert in random preference order
+----------------------------------------------------------------------
+
+FOR v_preference_order IN 1..array_length(v_selected_role_ids,1)
+LOOP
 
     INSERT INTO student_application_selected_roles
     (
@@ -545,7 +603,7 @@ FOR v_preference_order IN 1..v_roles_to_select LOOP
     VALUES
     (
         v_application_id,
-        v_selected_drive_role,
+        v_selected_role_ids[v_preference_order],
         v_preference_order
     );
 
