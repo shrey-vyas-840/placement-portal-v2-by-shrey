@@ -38,6 +38,7 @@ import { recruitmentExecutionSelectionService } from "./recruitmentExecutionSele
 import { recruitmentExecutionContextService } from "./recruitmentExecutionContextService";
 import { RecruitmentExecutionProgressionService } from "./recruitmentExecutionProgressionService";
 import { RecruitmentExecutionRoundService } from "./recruitmentExecutionRoundService";
+import { RecruitmentExecutionParticipantAssignmentService } from "./recruitmentExecutionParticipantAssignmentService";
 
 /**
  * Recruitment Execution Service
@@ -104,6 +105,13 @@ class RecruitmentExecutionService {
 
     getExecutionGraphResolver: () => this.executionGraphResolver,
   });
+
+  private readonly participantAssignmentService =
+    new RecruitmentExecutionParticipantAssignmentService({
+      getRound: (executionRoundId) => this.getRound(executionRoundId),
+
+      loadExecutionBatches: (executionId) => this.loadExecutionBatches(executionId),
+    });
 
   private readonly progressionService = new RecruitmentExecutionProgressionService({
     getRound: (executionRoundId) => this.getRound(executionRoundId),
@@ -345,83 +353,76 @@ class RecruitmentExecutionService {
 
   private readonly DRIVE_ROLES_TABLE = "drive_roles";
 
-async createExecutionBatch(input: {
-  executionId: string;
-  creationMode: ExecutionRoundCreationMode;
-  roundOrder: number;
-  roundName: string;
-  scope: ExecutionScope;
-  roleIds: string[];
-  executionParticipantIds: string[];
-  scheduledDate?: string | null;
-  scheduledTime?: string | null;
-  venue?: string | null;
-  remarks?: string | null;
-  createdBy?: string | null;
-}): Promise<RecruitmentExecutionRoundRow> {
-  return this.roundService.createExecutionBatch(input);
-}
+  async createExecutionBatch(input: {
+    executionId: string;
+    creationMode: ExecutionRoundCreationMode;
+    roundOrder: number;
+    roundName: string;
+    scope: ExecutionScope;
+    roleIds: string[];
+    executionParticipantIds: string[];
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    return this.roundService.createExecutionBatch(input);
+  }
 
-async createExecutionChildBatch(input: {
-  executionId: string;
-  parentExecutionRoundId: string;
-  batchName: string;
-  scheduledDate?: string | null;
-  scheduledTime?: string | null;
-  venue?: string | null;
-  remarks?: string | null;
-  createdBy?: string | null;
-}): Promise<RecruitmentExecutionRoundRow> {
-  return this.roundService.createExecutionChildBatch(input);
-}
+  async createExecutionChildBatch(input: {
+    executionId: string;
+    parentExecutionRoundId: string;
+    batchName: string;
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    return this.roundService.createExecutionChildBatch(input);
+  }
 
-async createRound(input: {
-  executionId: string;
-  creationMode: ExecutionRoundCreationMode;
-  roundOrder: number;
-  roundName: string;
-  scope: ExecutionScope;
-  scheduledDate?: string | null;
-  scheduledTime?: string | null;
-  venue?: string | null;
-  remarks?: string | null;
-  createdBy?: string | null;
-}): Promise<RecruitmentExecutionRoundRow> {
-  return this.roundService.createRound(input);
-}
+  async createRound(input: {
+    executionId: string;
+    creationMode: ExecutionRoundCreationMode;
+    roundOrder: number;
+    roundName: string;
+    scope: ExecutionScope;
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    return this.roundService.createRound(input);
+  }
 
-async assignRolesToRound(
-  executionRoundId: string,
-  roleIds: string[],
-): Promise<void> {
-  return this.roundService.assignRolesToRound(
-    executionRoundId,
-    roleIds,
-  );
-}
+  async assignRolesToRound(executionRoundId: string, roleIds: string[]): Promise<void> {
+    return this.roundService.assignRolesToRound(executionRoundId, roleIds);
+  }
 
-async updateExecutionBatch(input: {
-  executionRoundId: string;
-  batchName: string;
-  scheduledDate?: string | null;
-  scheduledTime?: string | null;
-  venue?: string | null;
-  remarks?: string | null;
-}): Promise<RecruitmentExecutionRoundRow> {
-  return this.roundService.updateExecutionBatch(input);
-}
+  async updateExecutionBatch(input: {
+    executionRoundId: string;
+    batchName: string;
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    return this.roundService.updateExecutionBatch(input);
+  }
 
-async updateRound(input: {
-  executionRoundId: string;
-  roundName: string;
-  scheduledDate?: string | null;
-  scheduledTime?: string | null;
-  venue?: string | null;
-  remarks?: string | null;
-}): Promise<RecruitmentExecutionRoundRow> {
-  return this.roundService.updateRound(input);
-}
-
+  async updateRound(input: {
+    executionRoundId: string;
+    roundName: string;
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    return this.roundService.updateRound(input);
+  }
 
   async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
     const { data, error } = await (supabase as any)
@@ -493,8 +494,6 @@ async updateRound(input: {
 
     return participants.length;
   }
-
-
 
   async getRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow | null> {
     const { data, error } = await (supabase as any)
@@ -605,112 +604,25 @@ async updateRound(input: {
   }
 
   private async loadRoundParticipantIds(executionRoundId: string): Promise<string[]> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-      .select("execution_participant_id")
-      .eq("execution_round_id", executionRoundId);
-
-    if (error) {
-      throw error;
-    }
-
-    return (data ?? []).map((row: any) => row.execution_participant_id as string);
+    return this.participantAssignmentService.loadRoundParticipantIds(executionRoundId);
   }
 
   async assignExecutionBatchParticipants(input: {
     executionRoundId: string;
     executionParticipantIds: string[];
   }): Promise<void> {
-    console.log("ASSIGN BATCH", {
-      executionRoundId: input.executionRoundId,
-      participantCount: input.executionParticipantIds.length,
-      participantIds: input.executionParticipantIds,
-    });
-
-    await this.removeRoundParticipants(input.executionRoundId);
-
-    await this.assignParticipantsToRound(input);
+    return this.participantAssignmentService.assignExecutionBatchParticipants(input);
   }
 
   private async assignParticipantsToRound(input: {
     executionRoundId: string;
     executionParticipantIds: string[];
   }): Promise<void> {
-    if (input.executionParticipantIds.length === 0) {
-      return;
-    }
-
-    const round = await this.getRound(input.executionRoundId);
-
-    if (!round) {
-      throw new Error("Execution round not found.");
-    }
-
-    //
-    // A participant may belong to only ONE execution batch
-    // within the same stage.
-    //
-    const parentRoundId = round.parent_execution_round_id ?? round.execution_round_id;
-
-    const siblingRounds = (await this.loadExecutionBatches(round.execution_id)).filter(
-      (candidate) =>
-        candidate.parent_execution_round_id === parentRoundId &&
-        candidate.execution_round_id !== input.executionRoundId,
-    );
-
-    if (siblingRounds.length > 0 && input.executionParticipantIds.length > 0) {
-      const siblingRoundIds = siblingRounds.map((candidate) => candidate.execution_round_id);
-
-      const { error: deleteError } = await (supabase as any)
-        .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-        .delete()
-        .in("execution_round_id", siblingRoundIds)
-        .in("execution_participant_id", input.executionParticipantIds);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-    }
-
-    const rows = input.executionParticipantIds.map((executionParticipantId) => ({
-      execution_round_id: input.executionRoundId,
-      execution_participant_id: executionParticipantId,
-    }));
-
-    console.log("INSERTING ROUND PARTICIPANTS", {
-      executionRoundId: input.executionRoundId,
-      rows,
-    });
-
-    const { data: inserted, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-      .insert(rows)
-      .select();
-
-    console.log("INSERT RESULT", inserted);
-
-    if (error) {
-      console.error("INSERT ERROR", error);
-      throw error;
-    }
-
-    const { data: verify } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-      .select("*")
-      .eq("execution_round_id", input.executionRoundId);
-
-    console.log("VERIFY AFTER INSERT", verify);
+    return this.participantAssignmentService.assignParticipantsToRound(input);
   }
 
   private async removeRoundParticipants(executionRoundId: string): Promise<void> {
-    const { error } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-      .delete()
-      .eq("execution_round_id", executionRoundId);
-
-    if (error) {
-      throw error;
-    }
+    return this.participantAssignmentService.removeRoundParticipants(executionRoundId);
   }
 
   // --------------------------------------------------------------------------
