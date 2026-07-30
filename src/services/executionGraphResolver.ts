@@ -59,6 +59,14 @@ export interface ValidateExecutionBatchPlanInput {
   requiresSynchronization: boolean;
 }
 
+export interface ResolveExecutionBatchValidationInput {
+  executionId: string;
+
+  stageNumber: number;
+
+  scope: ExecutionScope;
+}
+
 export interface ExecutionBatchValidationResult {
   requiresSynchronization?: boolean;
 
@@ -74,10 +82,7 @@ export interface RoundTransitionProvider {
 }
 
 export interface ExecutionValidationProvider {
-  canCreateCommonStage(
-    executionId: string,
-    stageNumber: number,
-  ): Promise<boolean>;
+  canCreateCommonStage(executionId: string, stageNumber: number): Promise<boolean>;
 }
 
 /**
@@ -95,22 +100,23 @@ export interface ExecutionGraphResolverContract {
     input: ValidateExecutionBatchPlanInput,
   ): Promise<ExecutionBatchValidationResult>;
 
+  resolveExecutionBatchValidation(
+    input: ResolveExecutionBatchValidationInput,
+  ): Promise<ExecutionBatchValidationResult>;
 }
 
 class ExecutionGraphResolver implements ExecutionGraphResolverContract {
   private transitionProvider?: RoundTransitionProvider;
 
-private validationProvider?: ExecutionValidationProvider;
+  private validationProvider?: ExecutionValidationProvider;
 
   setTransitionProvider(provider: RoundTransitionProvider) {
     this.transitionProvider = provider;
   }
 
-  setValidationProvider(
-  provider: ExecutionValidationProvider,
-) {
-  this.validationProvider = provider;
-}
+  setValidationProvider(provider: ExecutionValidationProvider) {
+    this.validationProvider = provider;
+  }
 
   async resolveExecutionBatchCreation(
     input: ResolveExecutionBatchCreationInput,
@@ -139,41 +145,50 @@ private validationProvider?: ExecutionValidationProvider;
       requiresSynchronization: undefined,
     };
   }
-async validateExecutionBatchPlan(
-  input: ValidateExecutionBatchPlanInput,
-): Promise<ExecutionBatchValidationResult> {
-  if (
-    input.scope === "COMMON" &&
-    input.requiresSynchronization
-  ) {
-    if (!this.validationProvider) {
-      throw new Error(
-        "ExecutionValidationProvider has not been registered.",
-      );
-    }
 
-    const allowed =
-      await this.validationProvider.canCreateCommonStage(
+  async validateExecutionBatchPlan(
+    input: ValidateExecutionBatchPlanInput,
+  ): Promise<ExecutionBatchValidationResult> {
+    if (input.scope === "COMMON" && input.requiresSynchronization) {
+      if (!this.validationProvider) {
+        throw new Error("ExecutionValidationProvider has not been registered.");
+      }
+
+      const allowed = await this.validationProvider.canCreateCommonStage(
         input.executionId,
         input.stageNumber,
       );
 
-    if (!allowed) {
-      throw new Error(
-        "A Common stage cannot be created because one or more roles have already configured this stage.",
-      );
+      if (!allowed) {
+        throw new Error(
+          "A Common stage cannot be created because one or more roles have already configured this stage.",
+        );
+      }
     }
+
+    return {
+      requiresSynchronization: input.requiresSynchronization,
+
+      shouldValidateCommonStage: input.scope === "COMMON" && input.requiresSynchronization,
+    };
   }
 
-  return {
-    requiresSynchronization:
-      input.requiresSynchronization,
+  async resolveExecutionBatchValidation(
+    input: ResolveExecutionBatchValidationInput,
+  ): Promise<ExecutionBatchValidationResult> {
+    if (!this.transitionProvider) {
+      throw new Error("RoundTransitionProvider has not been registered.");
+    }
 
-    shouldValidateCommonStage:
-      input.scope === "COMMON" &&
-      input.requiresSynchronization,
-  };
-}
+    const transition = await this.transitionProvider.getRoundTransition(input.executionId);
+
+    return this.validateExecutionBatchPlan({
+      executionId: input.executionId,
+      stageNumber: input.stageNumber,
+      scope: input.scope,
+      requiresSynchronization: transition.requiresSynchronization,
+    });
+  }
 }
 
 export const executionGraphResolver = new ExecutionGraphResolver();

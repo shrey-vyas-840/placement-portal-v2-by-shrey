@@ -379,16 +379,12 @@ class RecruitmentExecutionService {
     });
 
     const nextRoundOrder = creationPlan.nextRoundOrder!;
-
-    const transition = await this.getRoundTransition(input.executionId);
-
     const stageNumber = creationPlan.stageNumber!;
 
-    await executionGraphResolver.validateExecutionBatchPlan({
+    await executionGraphResolver.resolveExecutionBatchValidation({
       executionId: input.executionId,
       stageNumber,
       scope: input.scope,
-      requiresSynchronization: transition.requiresSynchronization,
     });
 
     const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
@@ -509,13 +505,10 @@ class RecruitmentExecutionService {
 
     const stageNumber = creationPlan.stageNumber!;
 
-    const transition = await this.getRoundTransition(input.executionId);
-
-    await executionGraphResolver.validateExecutionBatchPlan({
+    await executionGraphResolver.resolveExecutionBatchValidation({
       executionId: input.executionId,
       stageNumber,
       scope: input.scope,
-      requiresSynchronization: transition.requiresSynchronization,
     });
 
     const { data, error } = await (supabase as any)
@@ -2012,7 +2005,7 @@ history_revision
   // Workspace Facade
   // --------------------------------------------------------------------------
 
-  private async getRoundTransition(executionId: string): Promise<{
+  async getRoundTransition(executionId: string): Promise<{
     currentStage: number | null;
     currentScope: ExecutionScope | null;
     nextStage: number | null;
@@ -2332,4 +2325,8 @@ export const recruitmentExecutionService = new RecruitmentExecutionService();
 executionGraphResolver.setValidationProvider({
   canCreateCommonStage: (executionId, stageNumber) =>
     recruitmentExecutionService.canCreateCommonStage(executionId, stageNumber),
+});
+
+executionGraphResolver.setTransitionProvider({
+  getRoundTransition: (executionId) => recruitmentExecutionService.getRoundTransition(executionId),
 });
