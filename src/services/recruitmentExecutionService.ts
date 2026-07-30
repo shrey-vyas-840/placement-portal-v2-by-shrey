@@ -1,14 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { recruitmentExecutionRestrictionService } from "./recruitmentExecutionRestrictionService";
 import { canCreateCommonStage } from "./executionValidation";
-
+import type { ExecutionSeriesService } from "./recruitmentExecutionSeriesService";
 import {
   ExecutionGraphResolver,
   DefaultStagePlanningProvider,
   DefaultRoundTransitionProvider,
   createExecutionBatchValidationProvider,
 } from "./executionGraphResolver";
-
+import { recruitmentExecutionSeriesService } from "./recruitmentExecutionSeriesService";
 import type { ExecutionBatchValidationProvider } from "./executionGraphResolver";
 import { ExecutionBatchPlanner } from "./executionBatchPlanner";
 import { ExecutionBatchValidator } from "./executionBatchValidator";
@@ -73,6 +73,8 @@ class RecruitmentExecutionService {
 
   private executionGraphResolver!: ExecutionGraphResolver;
 
+  private executionSeriesService?: ExecutionSeriesService;
+
   registerExecutionBatchValidationProvider(provider?: ExecutionBatchValidationProvider) {
     this.executionBatchValidationProvider =
       provider ??
@@ -110,6 +112,10 @@ class RecruitmentExecutionService {
     );
   }
 
+  registerExecutionSeriesService(service: ExecutionSeriesService) {
+    this.executionSeriesService = service;
+  }
+
   getSupabaseClient() {
     return supabase;
   }
@@ -121,17 +127,11 @@ class RecruitmentExecutionService {
    */
 
   async getExecutionSeries(seriesId: string): Promise<RecruitmentExecutionSeriesRow | null> {
-    const { data, error } = await (supabase as any)
-      .from(EXECUTION_SERIES_TABLE)
-      .select("*")
-      .eq("series_id", seriesId)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
     }
 
-    return data as RecruitmentExecutionSeriesRow | null;
+    return this.executionSeriesService.getExecutionSeries(seriesId);
   }
 
   async createExecutionSeries(input: {
@@ -141,23 +141,11 @@ class RecruitmentExecutionService {
     snapshot: RecruitmentExecutionSeriesSnapshot;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionSeriesRow> {
-    const { data, error } = await (supabase as any)
-      .from(EXECUTION_SERIES_TABLE)
-      .insert({
-        opportunity_id: input.opportunityId,
-        drive_id: input.driveId,
-        company_id: input.companyId,
-        series_snapshot: input.snapshot,
-        created_by: input.createdBy ?? null,
-      })
-      .select()
-      .single();
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
+    }
 
-    return requireData(
-      data as RecruitmentExecutionSeriesRow | null,
-      error,
-      "createExecutionSeries",
-    );
+    return this.executionSeriesService.createExecutionSeries(input);
   }
 
   /**
@@ -167,19 +155,11 @@ class RecruitmentExecutionService {
    */
 
   async getLatestExecution(seriesId: string): Promise<RecruitmentExecutionRow | null> {
-    const { data, error } = await (supabase as any)
-      .from(EXECUTIONS_TABLE)
-      .select("*")
-      .eq("series_id", seriesId)
-      .order("revision_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
     }
 
-    return data as RecruitmentExecutionRow | null;
+    return this.executionSeriesService.getLatestExecution(seriesId);
   }
 
   async createExecutionRevision(input: {
@@ -190,20 +170,11 @@ class RecruitmentExecutionService {
     startedBy?: string | null;
     reopenReason?: string | null;
   }): Promise<RecruitmentExecutionRow> {
-    const { data, error } = await (supabase as any)
-      .from(EXECUTIONS_TABLE)
-      .insert({
-        series_id: input.seriesId,
-        revision_number: input.revisionNumber,
-        execution_snapshot: input.snapshot,
-        reopened_from_execution_id: input.reopenedFromExecutionId ?? null,
-        started_by: input.startedBy ?? null,
-        reopen_reason: input.reopenReason ?? null,
-      })
-      .select()
-      .single();
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
+    }
 
-    return requireData(data as RecruitmentExecutionRow | null, error, "createExecutionRevision");
+    return this.executionSeriesService.createExecutionRevision(input);
   }
 
   async startExecutionWorkflow(input: {
@@ -292,19 +263,11 @@ class RecruitmentExecutionService {
     finalizedBy?: string | null;
     finalizationNotes?: string | null;
   }): Promise<RecruitmentExecutionRow> {
-    const { data, error } = await (supabase as any)
-      .from(EXECUTIONS_TABLE)
-      .update({
-        execution_status: "FINALIZED",
-        finalized_by: input.finalizedBy ?? null,
-        finalized_at: new Date().toISOString(),
-        finalization_notes: input.finalizationNotes ?? null,
-      })
-      .eq("execution_id", input.executionId)
-      .select()
-      .single();
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
+    }
 
-    return requireData(data as RecruitmentExecutionRow | null, error, "finalizeExecution");
+    return this.executionSeriesService.finalizeExecution(input);
   }
 
   async reopenExecution(input: {
@@ -313,44 +276,27 @@ class RecruitmentExecutionService {
     reopenReason: string;
     snapshot: RecruitmentExecutionSnapshot;
   }): Promise<RecruitmentExecutionRow> {
-    return this.createExecutionRevision({
-      seriesId: input.previousExecution.series_id,
-      revisionNumber: input.previousExecution.revision_number + 1,
-      snapshot: input.snapshot,
-      reopenedFromExecutionId: input.previousExecution.execution_id,
-      startedBy: input.startedBy,
-      reopenReason: input.reopenReason,
-    });
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
+    }
+
+    return this.executionSeriesService.reopenExecution(input);
   }
 
   async getExecutionRevision(executionId: string): Promise<RecruitmentExecutionRow | null> {
-    const { data, error } = await (supabase as any)
-      .from(EXECUTIONS_TABLE)
-      .select("*")
-      .eq("execution_id", executionId)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
     }
 
-    return data as RecruitmentExecutionRow | null;
+    return this.executionSeriesService.getExecutionRevision(executionId);
   }
 
   async listExecutionRevisions(seriesId: string): Promise<RecruitmentExecutionRow[]> {
-    const { data, error } = await (supabase as any)
-      .from(EXECUTIONS_TABLE)
-      .select("*")
-      .eq("series_id", seriesId)
-      .order("revision_number", {
-        ascending: false,
-      });
-
-    if (error) {
-      throw error;
+    if (!this.executionSeriesService) {
+      throw new Error("ExecutionSeriesService has not been registered.");
     }
 
-    return (data ?? []) as RecruitmentExecutionRow[];
+    return this.executionSeriesService.listExecutionRevisions(seriesId);
   }
 
   // --------------------------------------------------------------------------
@@ -2335,3 +2281,5 @@ class RecruitmentExecutionService {
 }
 
 export const recruitmentExecutionService = new RecruitmentExecutionService();
+
+recruitmentExecutionService.registerExecutionSeriesService(recruitmentExecutionSeriesService);
