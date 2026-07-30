@@ -37,6 +37,7 @@ import { recruitmentExecutionHistoryService } from "./recruitmentExecutionHistor
 import { recruitmentExecutionSelectionService } from "./recruitmentExecutionSelectionService";
 import { recruitmentExecutionContextService } from "./recruitmentExecutionContextService";
 import { RecruitmentExecutionProgressionService } from "./recruitmentExecutionProgressionService";
+import { RecruitmentExecutionRoundService } from "./recruitmentExecutionRoundService";
 
 /**
  * Recruitment Execution Service
@@ -79,6 +80,30 @@ class RecruitmentExecutionService {
   private executionGraphResolver!: ExecutionGraphResolver;
 
   private executionSeriesService?: ExecutionSeriesService;
+
+  private readonly roundService = new RecruitmentExecutionRoundService({
+    getRound: (executionRoundId) => this.getRound(executionRoundId),
+
+    loadRounds: (executionId) => this.loadRounds(executionId),
+
+    loadExecutionRounds: (executionId) => this.loadExecutionRounds(executionId),
+
+    loadRoundRoleMappings: (executionId) => this.loadRoundRoleMappings(executionId),
+
+    getRoundTransition: (executionId) => this.getRoundTransition(executionId),
+
+    getActiveRoleIdsForStage: (executionId, stageNumber) =>
+      this.getActiveRoleIdsForStage(executionId, stageNumber),
+
+    getRoundRoleIds: (executionRoundId) => this.getRoundRoleIds(executionRoundId),
+
+    canCreateCommonStage: (executionId: string, targetStageNumber: number) =>
+      this.canCreateCommonStage(executionId, targetStageNumber),
+
+    getExecutionBatches: (executionId) => this.loadExecutionBatches(executionId),
+
+    getExecutionGraphResolver: () => this.executionGraphResolver,
+  });
 
   private readonly progressionService = new RecruitmentExecutionProgressionService({
     getRound: (executionRoundId) => this.getRound(executionRoundId),
@@ -320,6 +345,84 @@ class RecruitmentExecutionService {
 
   private readonly DRIVE_ROLES_TABLE = "drive_roles";
 
+async createExecutionBatch(input: {
+  executionId: string;
+  creationMode: ExecutionRoundCreationMode;
+  roundOrder: number;
+  roundName: string;
+  scope: ExecutionScope;
+  roleIds: string[];
+  executionParticipantIds: string[];
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  venue?: string | null;
+  remarks?: string | null;
+  createdBy?: string | null;
+}): Promise<RecruitmentExecutionRoundRow> {
+  return this.roundService.createExecutionBatch(input);
+}
+
+async createExecutionChildBatch(input: {
+  executionId: string;
+  parentExecutionRoundId: string;
+  batchName: string;
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  venue?: string | null;
+  remarks?: string | null;
+  createdBy?: string | null;
+}): Promise<RecruitmentExecutionRoundRow> {
+  return this.roundService.createExecutionChildBatch(input);
+}
+
+async createRound(input: {
+  executionId: string;
+  creationMode: ExecutionRoundCreationMode;
+  roundOrder: number;
+  roundName: string;
+  scope: ExecutionScope;
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  venue?: string | null;
+  remarks?: string | null;
+  createdBy?: string | null;
+}): Promise<RecruitmentExecutionRoundRow> {
+  return this.roundService.createRound(input);
+}
+
+async assignRolesToRound(
+  executionRoundId: string,
+  roleIds: string[],
+): Promise<void> {
+  return this.roundService.assignRolesToRound(
+    executionRoundId,
+    roleIds,
+  );
+}
+
+async updateExecutionBatch(input: {
+  executionRoundId: string;
+  batchName: string;
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  venue?: string | null;
+  remarks?: string | null;
+}): Promise<RecruitmentExecutionRoundRow> {
+  return this.roundService.updateExecutionBatch(input);
+}
+
+async updateRound(input: {
+  executionRoundId: string;
+  roundName: string;
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  venue?: string | null;
+  remarks?: string | null;
+}): Promise<RecruitmentExecutionRoundRow> {
+  return this.roundService.updateRound(input);
+}
+
+
   async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -337,115 +440,6 @@ class RecruitmentExecutionService {
     return (data ?? []) as RecruitmentExecutionRoundRow[];
   }
 
-  async createExecutionBatch(input: {
-    executionId: string;
-    creationMode: ExecutionRoundCreationMode;
-    roundOrder: number;
-    roundName: string;
-    scope: ExecutionScope;
-    roleIds: string[];
-    executionParticipantIds: string[];
-    scheduledDate?: string | null;
-    scheduledTime?: string | null;
-    venue?: string | null;
-    remarks?: string | null;
-    createdBy?: string | null;
-  }): Promise<RecruitmentExecutionRoundRow> {
-    const rounds = await this.loadExecutionRounds(input.executionId);
-
-    const creationPlan = await this.executionGraphResolver.resolveExecutionBatchCreation({
-      executionId: input.executionId,
-      creationMode: input.creationMode,
-      scope: input.scope,
-      existingRounds: rounds,
-    });
-
-    const nextRoundOrder = creationPlan.nextRoundOrder!;
-    const stageNumber = creationPlan.stageNumber!;
-
-    await this.executionGraphResolver.resolveExecutionBatchValidation({
-      executionId: input.executionId,
-      stageNumber,
-      scope: input.scope,
-    });
-
-    const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
-      p_execution_id: input.executionId,
-      p_creation_mode: input.creationMode,
-      p_round_order: nextRoundOrder,
-      p_round_name: input.roundName,
-      p_scope: input.scope,
-      p_stage_number: stageNumber,
-      p_scheduled_date: input.scheduledDate ?? null,
-      p_scheduled_time: input.scheduledTime ?? null,
-      p_venue: input.venue ?? null,
-      p_remarks: input.remarks ?? null,
-      p_created_by: input.createdBy ?? null,
-      p_role_ids: input.roleIds,
-      p_execution_participant_ids: input.executionParticipantIds,
-    });
-
-    return requireData(data as RecruitmentExecutionRoundRow | null, error, "createExecutionBatch");
-  }
-
-  async createExecutionChildBatch(input: {
-    executionId: string;
-    parentExecutionRoundId: string;
-    batchName: string;
-    scheduledDate?: string | null;
-    scheduledTime?: string | null;
-    venue?: string | null;
-    remarks?: string | null;
-    createdBy?: string | null;
-  }): Promise<RecruitmentExecutionRoundRow> {
-    const parent = await this.getRound(input.parentExecutionRoundId);
-
-    if (!parent) {
-      throw new Error("Parent execution stage not found.");
-    }
-
-    //
-    // Every execution_round row must have a unique round_order.
-    //
-    const rounds = await this.loadExecutionRounds(input.executionId);
-
-    const nextRoundOrder = Math.max(...rounds.map((r) => r.round_order), 0) + 1;
-
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .insert({
-        execution_id: input.executionId,
-
-        stage_number: parent.stage_number,
-
-        round_order: nextRoundOrder,
-
-        round_name: input.batchName,
-
-        scope: parent.scope,
-
-        scheduled_date: input.scheduledDate ?? parent.scheduled_date,
-
-        scheduled_time: input.scheduledTime ?? parent.scheduled_time,
-
-        venue: input.venue ?? parent.venue,
-
-        remarks: input.remarks ?? parent.remarks,
-
-        created_by: input.createdBy ?? null,
-
-        parent_execution_round_id: parent.execution_round_id,
-      })
-      .select()
-      .single();
-
-    return requireData(
-      data as RecruitmentExecutionRoundRow | null,
-      error,
-      "createExecutionChildBatch",
-    );
-  }
-
   private async loadExecutionRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -460,127 +454,6 @@ class RecruitmentExecutionService {
     }
 
     return (data ?? []) as RecruitmentExecutionRoundRow[];
-  }
-
-  async createRound(input: {
-    executionId: string;
-    creationMode: ExecutionRoundCreationMode;
-    roundOrder: number;
-    roundName: string;
-    scope: ExecutionScope;
-    scheduledDate?: string | null;
-    scheduledTime?: string | null;
-    venue?: string | null;
-    remarks?: string | null;
-    createdBy?: string | null;
-  }): Promise<RecruitmentExecutionRoundRow> {
-    const rounds = await this.loadExecutionRounds(input.executionId);
-
-    const creationPlan = await this.executionGraphResolver.resolveExecutionBatchCreation({
-      executionId: input.executionId,
-      creationMode: input.creationMode,
-      scope: input.scope,
-      existingRounds: rounds,
-    });
-
-    const nextRoundOrder = creationPlan.nextRoundOrder!;
-
-    const stageNumber = creationPlan.stageNumber!;
-
-    await this.executionGraphResolver.resolveExecutionBatchValidation({
-      executionId: input.executionId,
-      stageNumber,
-      scope: input.scope,
-    });
-
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .insert({
-        execution_id: input.executionId,
-        stage_number: stageNumber,
-        round_order: nextRoundOrder,
-        round_name: input.roundName,
-        scope: input.scope,
-        scheduled_date: input.scheduledDate ?? null,
-        scheduled_time: input.scheduledTime ?? null,
-        venue: input.venue ?? null,
-        remarks: input.remarks ?? null,
-        created_by: input.createdBy ?? null,
-        parent_execution_round_id: null,
-      })
-      .select()
-      .single();
-
-    return requireData(data as RecruitmentExecutionRoundRow | null, error, "createRound");
-  }
-
-  async assignRolesToRound(executionRoundId: string, roleIds: string[]): Promise<void> {
-    if (roleIds.length === 0) {
-      return;
-    }
-
-    const round = await this.getRound(executionRoundId);
-
-    if (!round) {
-      throw new Error("Execution round not found.");
-    }
-
-    const rounds = await this.loadRounds(round.execution_id);
-
-    const siblingRounds = rounds.filter(
-      (r) => r.stage_number === round.stage_number && r.execution_round_id !== executionRoundId,
-    );
-
-    if (siblingRounds.length === 0) {
-      const rows = roleIds.map((roleId) => ({
-        execution_round_id: executionRoundId,
-        drive_role_id: roleId,
-      }));
-
-      const { error } = await (supabase as any)
-        .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-        .insert(rows);
-
-      if (error) {
-        throw error;
-      }
-
-      return;
-    }
-
-    const siblingRoundIds = siblingRounds.map((r) => r.execution_round_id);
-
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-      .select("drive_role_id")
-      .in("execution_round_id", siblingRoundIds);
-
-    if (error) {
-      throw error;
-    }
-
-    const assignedRoleIds = new Set((data ?? []).map((row: any) => row.drive_role_id));
-
-    const duplicateRole = roleIds.find((id) => assignedRoleIds.has(id));
-
-    if (duplicateRole) {
-      throw new Error(
-        "One or more selected roles are already assigned to another round in this stage.",
-      );
-    }
-
-    const rows = roleIds.map((roleId) => ({
-      execution_round_id: executionRoundId,
-      drive_role_id: roleId,
-    }));
-
-    const { error: insertError } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-      .insert(rows);
-
-    if (insertError) {
-      throw insertError;
-    }
   }
 
   async populateRoundParticipants(input: {
@@ -621,54 +494,7 @@ class RecruitmentExecutionService {
     return participants.length;
   }
 
-  async updateExecutionBatch(input: {
-    executionRoundId: string;
-    batchName: string;
-    scheduledDate?: string | null;
-    scheduledTime?: string | null;
-    venue?: string | null;
-    remarks?: string | null;
-  }): Promise<RecruitmentExecutionRoundRow> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .update({
-        round_name: input.batchName,
-        scheduled_date: input.scheduledDate ?? null,
-        scheduled_time: input.scheduledTime ?? null,
-        venue: input.venue ?? null,
-        remarks: input.remarks ?? null,
-      })
-      .eq("execution_round_id", input.executionRoundId)
-      .not("parent_execution_round_id", "is", null)
-      .select()
-      .single();
 
-    return requireData(data as RecruitmentExecutionRoundRow | null, error, "updateExecutionBatch");
-  }
-
-  async updateRound(input: {
-    executionRoundId: string;
-    roundName: string;
-    scheduledDate?: string | null;
-    scheduledTime?: string | null;
-    venue?: string | null;
-    remarks?: string | null;
-  }): Promise<RecruitmentExecutionRoundRow> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .update({
-        round_name: input.roundName,
-        scheduled_date: input.scheduledDate ?? null,
-        scheduled_time: input.scheduledTime ?? null,
-        venue: input.venue ?? null,
-        remarks: input.remarks ?? null,
-      })
-      .eq("execution_round_id", input.executionRoundId)
-      .select()
-      .single();
-
-    return requireData(data as RecruitmentExecutionRoundRow | null, error, "updateRound");
-  }
 
   async getRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow | null> {
     const { data, error } = await (supabase as any)

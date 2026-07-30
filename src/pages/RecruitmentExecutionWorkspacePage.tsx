@@ -1028,28 +1028,26 @@ export function RecruitmentExecutionWorkspacePage() {
     }
   };
 
- const handlePreAttendanceExport = async () => {
-  if (!currentExecutionRoundId) return;
+  const handlePreAttendanceExport = async () => {
+    if (!currentExecutionRoundId) return;
 
-  try {
-    const data =
-      await recruitmentExecutionAttendanceExportService.getAttendanceExportData(
+    try {
+      const data = await recruitmentExecutionAttendanceExportService.getAttendanceExportData(
         executionId,
         currentExecutionRoundId,
       );
 
-    const configuration =
-      buildAttendanceExportConfiguration(data, "PRE");
+      const configuration = buildAttendanceExportConfiguration(data, "PRE");
 
-    await exportExcelBuilder.export(
-      configuration,
-      configuration.dataset.columns.map((column) => column.key),
-    );
-  } catch (error) {
-    console.error(error);
-    toast.error("Unable to export attendance sheet.");
-  }
-};
+      await exportExcelBuilder.export(
+        configuration,
+        configuration.dataset.columns.map((column) => column.key),
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to export attendance sheet.");
+    }
+  };
 
   const handlePostAttendanceExport = async () => {
     if (!currentExecutionRoundId) return;
@@ -1490,7 +1488,7 @@ export function RecruitmentExecutionWorkspacePage() {
                 type="button"
                 onClick={handlePreAttendanceExport}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200"
-              > 
+              >
                 ⬇ Pre-Attendance
               </button>
 
