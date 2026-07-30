@@ -127,11 +127,7 @@ class RecruitmentExecutionService {
    */
 
   async getExecutionSeries(seriesId: string): Promise<RecruitmentExecutionSeriesRow | null> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.getExecutionSeries(seriesId);
+    return this.executionSeriesService!.getExecutionSeries(seriesId);
   }
 
   async createExecutionSeries(input: {
@@ -141,11 +137,7 @@ class RecruitmentExecutionService {
     snapshot: RecruitmentExecutionSeriesSnapshot;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionSeriesRow> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.createExecutionSeries(input);
+    return this.executionSeriesService!.createExecutionSeries(input);
   }
 
   /**
@@ -155,11 +147,7 @@ class RecruitmentExecutionService {
    */
 
   async getLatestExecution(seriesId: string): Promise<RecruitmentExecutionRow | null> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.getLatestExecution(seriesId);
+    return this.executionSeriesService!.getLatestExecution(seriesId);
   }
 
   async createExecutionRevision(input: {
@@ -170,11 +158,7 @@ class RecruitmentExecutionService {
     startedBy?: string | null;
     reopenReason?: string | null;
   }): Promise<RecruitmentExecutionRow> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.createExecutionRevision(input);
+    return this.executionSeriesService!.createExecutionRevision(input);
   }
 
   async startExecutionWorkflow(input: {
@@ -263,11 +247,7 @@ class RecruitmentExecutionService {
     finalizedBy?: string | null;
     finalizationNotes?: string | null;
   }): Promise<RecruitmentExecutionRow> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.finalizeExecution(input);
+    return this.executionSeriesService!.finalizeExecution(input);
   }
 
   async reopenExecution(input: {
@@ -276,27 +256,15 @@ class RecruitmentExecutionService {
     reopenReason: string;
     snapshot: RecruitmentExecutionSnapshot;
   }): Promise<RecruitmentExecutionRow> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.reopenExecution(input);
+    return this.executionSeriesService!.reopenExecution(input);
   }
 
   async getExecutionRevision(executionId: string): Promise<RecruitmentExecutionRow | null> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.getExecutionRevision(executionId);
+    return this.executionSeriesService!.getExecutionRevision(executionId);
   }
 
   async listExecutionRevisions(seriesId: string): Promise<RecruitmentExecutionRow[]> {
-    if (!this.executionSeriesService) {
-      throw new Error("ExecutionSeriesService has not been registered.");
-    }
-
-    return this.executionSeriesService.listExecutionRevisions(seriesId);
+    return this.executionSeriesService!.listExecutionRevisions(seriesId);
   }
 
   // --------------------------------------------------------------------------
