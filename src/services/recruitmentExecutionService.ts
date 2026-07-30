@@ -1,13 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 import { recruitmentExecutionRestrictionService } from "./recruitmentExecutionRestrictionService";
+import { canCreateCommonStage } from "./executionValidation";
+
 import {
-  executionGraphResolver,
+  ExecutionGraphResolver,
+  DefaultStagePlanningProvider,
+  DefaultRoundTransitionProvider,
   createExecutionBatchValidationProvider,
 } from "./executionGraphResolver";
-import type {
-  ExecutionValidationProvider,
-  ExecutionBatchValidationProvider,
-} from "./executionGraphResolver";
+
+import type { ExecutionBatchValidationProvider } from "./executionGraphResolver";
+import { ExecutionBatchPlanner } from "./executionBatchPlanner";
+import { ExecutionBatchValidator } from "./executionBatchValidator";
 import type {
   RecruitmentExecutionSeriesRow,
   RecruitmentExecutionRow,
@@ -65,37 +69,45 @@ function requireData<T>(data: T | null, error: unknown, operation: string): T {
 }
 
 class RecruitmentExecutionService {
-  private executionValidationProvider?: ExecutionValidationProvider;
   private executionBatchValidationProvider?: ExecutionBatchValidationProvider;
 
-  setExecutionValidationProvider(provider: ExecutionValidationProvider) {
-    this.executionValidationProvider = provider;
-
-    if (!this.executionBatchValidationProvider) {
-      this.executionBatchValidationProvider = createExecutionBatchValidationProvider(provider);
-    }
-
-    this.initializeExecutionGraphResolver();
-  }
+  private executionGraphResolver!: ExecutionGraphResolver;
 
   registerExecutionBatchValidationProvider(provider?: ExecutionBatchValidationProvider) {
     this.executionBatchValidationProvider =
       provider ??
-      (this.executionValidationProvider
-        ? createExecutionBatchValidationProvider(this.executionValidationProvider)
-        : undefined);
+      createExecutionBatchValidationProvider(
+        {
+          loadRounds: (executionId: string) => this.loadRounds(executionId),
 
+          loadRoundRoleMappings: (executionId: string) => this.loadRoundRoleMappings(executionId),
+
+          getActiveRoleIdsForStage: (executionId: string, stageNumber: number) =>
+            this.getActiveRoleIdsForStage(executionId, stageNumber),
+        },
+        {
+          canCreateCommonStage,
+        },
+      );
     this.initializeExecutionGraphResolver();
   }
 
   private initializeExecutionGraphResolver() {
-    if (this.executionValidationProvider && this.executionBatchValidationProvider) {
-      executionGraphResolver.setValidationProvider(this.executionValidationProvider);
-
-      executionGraphResolver.setExecutionBatchValidationProvider(
-        this.executionBatchValidationProvider,
-      );
+    if (!this.executionBatchValidationProvider) {
+      return;
     }
+
+    this.executionGraphResolver = new ExecutionGraphResolver(
+      new ExecutionBatchPlanner(new DefaultStagePlanningProvider()),
+
+      new ExecutionBatchValidator(
+        {
+          getRoundTransition: (executionId: string) => this.getRoundTransition(executionId),
+        },
+
+        this.executionBatchValidationProvider,
+      ),
+    );
   }
 
   getSupabaseClient() {
@@ -402,16 +414,9 @@ class RecruitmentExecutionService {
     remarks?: string | null;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
-    //informed to remove this code -
-    // await executionGraphResolver.resolveExecutionBatchCreation({
-    //   executionId: input.executionId,
-    //   creationMode: input.creationMode,
-    //   scope: input.scope,
-    // });
-
     const rounds = await this.loadExecutionRounds(input.executionId);
 
-    const creationPlan = await executionGraphResolver.resolveExecutionBatchCreation({
+    const creationPlan = await this.executionGraphResolver.resolveExecutionBatchCreation({
       executionId: input.executionId,
       creationMode: input.creationMode,
       scope: input.scope,
@@ -421,7 +426,7 @@ class RecruitmentExecutionService {
     const nextRoundOrder = creationPlan.nextRoundOrder!;
     const stageNumber = creationPlan.stageNumber!;
 
-    await executionGraphResolver.resolveExecutionBatchValidation({
+    await this.executionGraphResolver.resolveExecutionBatchValidation({
       executionId: input.executionId,
       stageNumber,
       scope: input.scope,
@@ -534,7 +539,7 @@ class RecruitmentExecutionService {
   }): Promise<RecruitmentExecutionRoundRow> {
     const rounds = await this.loadExecutionRounds(input.executionId);
 
-    const creationPlan = await executionGraphResolver.resolveExecutionBatchCreation({
+    const creationPlan = await this.executionGraphResolver.resolveExecutionBatchCreation({
       executionId: input.executionId,
       creationMode: input.creationMode,
       scope: input.scope,
@@ -545,7 +550,7 @@ class RecruitmentExecutionService {
 
     const stageNumber = creationPlan.stageNumber!;
 
-    await executionGraphResolver.resolveExecutionBatchValidation({
+    await this.executionGraphResolver.resolveExecutionBatchValidation({
       executionId: input.executionId,
       stageNumber,
       scope: input.scope,
@@ -755,15 +760,15 @@ class RecruitmentExecutionService {
       .from(this.DRIVE_ROLE_TIMELINE_TABLE)
       .select(
         `
-        drive_role_id,
-        stage_name,
-        stage_date,
-        description,
-        display_order,
-        drive_roles!inner(
-          drive_id
-        )
-      `,
+          drive_role_id,
+          stage_name,
+          stage_date,
+          description,
+          display_order,
+          drive_roles!inner(
+            drive_id
+          )
+        `,
       )
       .eq("drive_roles.drive_id", driveId)
       .order("display_order", {
@@ -956,30 +961,30 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_PARTICIPANTS_TABLE)
       .select(
         `
-        *,
-        student_opportunity_applications (
-          application_status,
-          student_master (
-            student_id,
-            enrollment_no,
-            first_name,
-            middle_name,
-            last_name,
-            institute_email,
-            contact_number,
-            placement_status,
-            placement_preference
-          ),
-          student_application_selected_roles (
-            selected_role_id,
-            drive_role_id,
-            preference_order,
-            drive_roles (
-              drive_role_name
+          *,
+          student_opportunity_applications (
+            application_status,
+            student_master (
+              student_id,
+              enrollment_no,
+              first_name,
+              middle_name,
+              last_name,
+              institute_email,
+              contact_number,
+              placement_status,
+              placement_preference
+            ),
+            student_application_selected_roles (
+              selected_role_id,
+              drive_role_id,
+              preference_order,
+              drive_roles (
+                drive_role_name
+              )
             )
           )
-        )
-      `,
+        `,
       )
       .eq("execution_id", executionId);
 
@@ -1013,15 +1018,15 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
       .select(
         `
-        execution_participant_id,
-      recruitment_execution_rounds (
-        execution_round_id,
-        parent_execution_round_id,
-        round_name,
-        scheduled_date,
-        scheduled_time
-      )
-    `,
+          execution_participant_id,
+        recruitment_execution_rounds (
+          execution_round_id,
+          parent_execution_round_id,
+          round_name,
+          scheduled_date,
+          scheduled_time
+        )
+      `,
       );
 
     if (batchAssignmentError) {
@@ -1162,12 +1167,12 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_ROUND_ROLES_TABLE)
       .select(
         `
-      *,
-      drive_roles (
-        drive_role_id,
-        drive_role_name
-      )
-    `,
+        *,
+        drive_roles (
+          drive_role_id,
+          drive_role_name
+        )
+      `,
       )
       .in("execution_round_id", roundIds);
 
@@ -1228,9 +1233,9 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
       .select(
         `
-      execution_round_id,
-      execution_participant_id
-    `,
+        execution_round_id,
+        execution_participant_id
+      `,
       )
       .in("execution_round_id", roundIds);
 
@@ -1253,21 +1258,21 @@ class RecruitmentExecutionService {
       .from(this.EXECUTION_HISTORY_TABLE)
       .select(
         `
-execution_history_id,
-execution_participant_id,
-execution_round_id,
-drive_role_id,
-attendance_status,
-gate_status,
-progression_status,
-remarks,
-absence_disposition,
-absence_reason,
-restriction_override,
-restriction_override_reason,
-changed_at,
-history_revision
-      `,
+  execution_history_id,
+  execution_participant_id,
+  execution_round_id,
+  drive_role_id,
+  attendance_status,
+  gate_status,
+  progression_status,
+  remarks,
+  absence_disposition,
+  absence_reason,
+  restriction_override,
+  restriction_override_reason,
+  changed_at,
+  history_revision
+        `,
       )
       .eq("execution_id", executionId)
       .order("history_revision", { ascending: false });
@@ -1338,9 +1343,9 @@ history_revision
       .from(this.APPLICATIONS_TABLE)
       .select(
         `
-          application_id,
-          student_id
-        `,
+            application_id,
+            student_id
+          `,
       )
       .eq("opportunity_id", series.opportunity_id);
 
@@ -2133,43 +2138,12 @@ history_revision
 
     const activeRoleIds = await this.getActiveRoleIdsForStage(executionId, previousStage);
 
-    const previousStageRoleSpecificRounds = rounds.filter(
-      (round) => round.stage_number === previousStage && round.scope === "ROLE_SPECIFIC",
-    );
-
-    if (previousStageRoleSpecificRounds.length === 0) {
-      return true;
-    }
-
-    const previousStageRoleIds = new Set<string>();
-
-    previousStageRoleSpecificRounds.forEach((round) => {
-      mappings
-        .filter((mapping) => mapping.execution_round_id === round.execution_round_id)
-        .forEach((mapping) => {
-          previousStageRoleIds.add(mapping.drive_role_id);
-        });
+    return canCreateCommonStage({
+      targetStageNumber,
+      rounds,
+      mappings,
+      activeRoleIds,
     });
-
-    const nextStageRoleSpecificRounds = rounds.filter(
-      (round) => round.stage_number === targetStageNumber && round.scope === "ROLE_SPECIFIC",
-    );
-
-    for (const round of nextStageRoleSpecificRounds) {
-      const configuredRoleIds = mappings
-        .filter((mapping) => mapping.execution_round_id === round.execution_round_id)
-        .map((mapping) => mapping.drive_role_id);
-
-      if (
-        configuredRoleIds.some(
-          (roleId) => previousStageRoleIds.has(roleId) && activeRoleIds.has(roleId),
-        )
-      ) {
-        return false;
-      }
-    }
-
-    return true;
   }
 
   private async calculatePendingRoles(
@@ -2361,12 +2335,3 @@ history_revision
 }
 
 export const recruitmentExecutionService = new RecruitmentExecutionService();
-
-executionGraphResolver.setValidationProvider({
-  canCreateCommonStage: (executionId, stageNumber) =>
-    recruitmentExecutionService.canCreateCommonStage(executionId, stageNumber),
-});
-
-executionGraphResolver.setTransitionProvider({
-  getRoundTransition: (executionId) => recruitmentExecutionService.getRoundTransition(executionId),
-});

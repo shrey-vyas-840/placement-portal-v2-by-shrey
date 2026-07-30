@@ -1,5 +1,5 @@
 import type { ExecutionRoundCreationMode, ExecutionScope } from "@/types/recruitmentExecution";
-
+import { ExecutionBatchPlanner } from "./executionBatchPlanner";
 /**
  * ============================================================================
  * Execution Graph Resolver
@@ -22,8 +22,12 @@ import type { ExecutionRoundCreationMode, ExecutionScope } from "@/types/recruit
  *
  * Those will be introduced incrementally in later phases.
  */
-
-import type { RecruitmentExecutionRoundRow } from "@/types/recruitmentExecution";
+import type { ValidateCommonStageInput } from "./executionValidation";
+import type {
+  RecruitmentExecutionRoundRow,
+  RecruitmentExecutionRoundRoleMapping,
+} from "@/types/recruitmentExecution";
+import { ExecutionBatchValidator } from "./executionBatchValidator";
 
 export interface ResolveExecutionBatchCreationInput {
   executionId: string;
@@ -95,8 +99,16 @@ export interface RoundTransitionProvider {
   getRoundTransition(executionId: string): Promise<RoundTransition>;
 }
 
-export interface ExecutionValidationProvider {
-  canCreateCommonStage(executionId: string, stageNumber: number): Promise<boolean>;
+export interface ExecutionStageDataProvider {
+  loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]>;
+
+  loadRoundRoleMappings(executionId: string): Promise<RecruitmentExecutionRoundRoleMapping[]>;
+
+  getActiveRoleIdsForStage(executionId: string, stageNumber: number): Promise<Set<string>>;
+}
+
+export interface ExecutionCommonStageValidator {
+  canCreateCommonStage(input: ValidateCommonStageInput): boolean;
 }
 
 export interface StagePlanningProvider {
@@ -114,11 +126,10 @@ export interface ExecutionBatchValidationProvider {
 }
 
 export function createExecutionBatchValidationProvider(
-  validationProvider: ExecutionValidationProvider,
+  stageDataProvider: ExecutionStageDataProvider,
+  commonStageValidator: ExecutionCommonStageValidator,
 ): ExecutionBatchValidationProvider {
-  return new DefaultExecutionBatchValidationProvider(
-    validationProvider,
-  );
+  return new DefaultExecutionBatchValidationProvider(stageDataProvider, commonStageValidator);
 }
 
 /**
@@ -132,142 +143,39 @@ export interface ExecutionGraphResolverContract {
     input: ResolveExecutionBatchCreationInput,
   ): Promise<ExecutionBatchCreationPlan>;
 
-  validateExecutionBatchPlan(
-    input: ValidateExecutionBatchPlanInput,
-  ): Promise<ExecutionBatchValidationResult>;
-
   resolveExecutionBatchValidation(
     input: ResolveExecutionBatchValidationInput,
   ): Promise<ExecutionBatchValidationResult>;
 }
 
-class ExecutionGraphResolver implements ExecutionGraphResolverContract {
-  private transitionProvider?: RoundTransitionProvider;
-
-  private validationProvider?: ExecutionValidationProvider;
-
-  private stagePlanningProvider?: StagePlanningProvider;
-
-  private executionBatchValidationProvider?: ExecutionBatchValidationProvider;
-
-  setExecutionBatchValidationProvider(provider: ExecutionBatchValidationProvider) {
-    this.executionBatchValidationProvider = provider;
-  }
-
-  setStagePlanningProvider(provider: StagePlanningProvider) {
-    this.stagePlanningProvider = provider;
-  }
-
-  setTransitionProvider(provider: RoundTransitionProvider) {
-    this.transitionProvider = provider;
-  }
-
-  setValidationProvider(provider: ExecutionValidationProvider) {
-    this.validationProvider = provider;
-  }
-
-  private resolveExecutionBatchPlanning(
-    creationMode: ExecutionRoundCreationMode,
-    existingRounds: RecruitmentExecutionRoundRow[],
-  ): ExecutionBatchPlanningResult {
-    if (!this.stagePlanningProvider) {
-      throw new Error("StagePlanningProvider has not been registered.");
-    }
-
-    return {
-      stagePlanning: this.stagePlanningProvider.resolveStagePlanning(creationMode, existingRounds),
-    };
-  }
-
-  private resolveExecutionBatchCreationPlanning(
-    planning: ExecutionBatchPlanningResult,
-  ): ExecutionBatchCreationPlanningResult {
-    return {
-      nextRoundOrder: planning.stagePlanning.nextRoundOrder,
-
-      stageNumber: planning.stagePlanning.stageNumber,
-    };
-  }
-
-  private buildExecutionBatchCreationPlan(
-    planning: ExecutionBatchCreationPlanningResult,
-  ): ExecutionBatchCreationPlan {
-    return {
-      nextRoundOrder: planning.nextRoundOrder,
-
-      stageNumber: planning.stageNumber,
-
-      requiresSynchronization: undefined,
-    };
-  }
-
-  private buildExecutionBatchCreation(
-    creationMode: ExecutionRoundCreationMode,
-    existingRounds: RecruitmentExecutionRoundRow[],
-  ): ExecutionBatchCreationPlan {
-    const planning = this.resolveExecutionBatchPlanning(creationMode, existingRounds);
-
-    const creationPlanning = this.resolveExecutionBatchCreationPlanning(planning);
-
-    return this.buildExecutionBatchCreationPlan(creationPlanning);
-  }
+export class ExecutionGraphResolver implements ExecutionGraphResolverContract {
+  constructor(
+    private readonly executionBatchPlanner: ExecutionBatchPlanner,
+    private readonly executionBatchValidator: ExecutionBatchValidator,
+  ) {}
 
   async resolveExecutionBatchCreation(
     input: ResolveExecutionBatchCreationInput,
   ): Promise<ExecutionBatchCreationPlan> {
-    return this.buildExecutionBatchCreation(input.creationMode, input.existingRounds);
-  }
-
-  private buildExecutionBatchValidationResult(
-    planning: ExecutionBatchValidationPlanningResult,
-  ): ExecutionBatchValidationResult {
-    return {
-      requiresSynchronization: planning.requiresSynchronization,
-
-      shouldValidateCommonStage: planning.shouldValidateCommonStage,
-    };
-  }
-
-  async validateExecutionBatchPlan(
-    input: ValidateExecutionBatchPlanInput,
-  ): Promise<ExecutionBatchValidationResult> {
-    if (input.scope === "COMMON" && input.requiresSynchronization) {
-      await this.executionBatchValidationProvider!.validateCommonStageCreation(
-        input.executionId,
-        input.stageNumber,
-      );
+    if (!this.executionBatchPlanner) {
+      throw new Error("ExecutionBatchPlanner has not been registered.");
     }
 
-    if (!this.executionBatchValidationProvider) {
-      throw new Error("ValidationPlanningProvider has not been registered.");
-    }
-
-    const planning = this.executionBatchValidationProvider.resolveValidationPlanning(input);
-
-    return this.buildExecutionBatchValidationResult(planning);
-  }
-
-  private async buildExecutionBatchValidation(
-    input: ResolveExecutionBatchValidationInput,
-  ): Promise<ExecutionBatchValidationResult> {
-    const transition = await this.transitionProvider!.getRoundTransition(input.executionId);
-
-    return this.validateExecutionBatchPlan({
-      executionId: input.executionId,
-      stageNumber: input.stageNumber,
-      scope: input.scope,
-      requiresSynchronization: transition.requiresSynchronization,
-    });
+    return this.executionBatchPlanner.buildCreationPlan(input);
   }
 
   async resolveExecutionBatchValidation(
     input: ResolveExecutionBatchValidationInput,
   ): Promise<ExecutionBatchValidationResult> {
-    return this.buildExecutionBatchValidation(input);
+    if (!this.executionBatchValidator) {
+      throw new Error("ExecutionBatchValidator has not been registered.");
+    }
+
+    return this.executionBatchValidator.validate(input);
   }
 }
 
-class DefaultStagePlanningProvider implements StagePlanningProvider {
+export class DefaultStagePlanningProvider implements StagePlanningProvider {
   resolveStagePlanning(
     creationMode: ExecutionRoundCreationMode,
     existingRounds: RecruitmentExecutionRoundRow[],
@@ -294,7 +202,10 @@ class DefaultStagePlanningProvider implements StagePlanningProvider {
 }
 
 class DefaultExecutionBatchValidationProvider implements ExecutionBatchValidationProvider {
-  constructor(private readonly validationProvider: ExecutionValidationProvider) {}
+  constructor(
+    private readonly stageDataProvider: ExecutionStageDataProvider,
+    private readonly commonStageValidator: ExecutionCommonStageValidator,
+  ) {}
 
   resolveValidationPlanning(
     input: ValidateExecutionBatchPlanInput,
@@ -306,7 +217,21 @@ class DefaultExecutionBatchValidationProvider implements ExecutionBatchValidatio
   }
 
   async validateCommonStageCreation(executionId: string, stageNumber: number): Promise<void> {
-    const allowed = await this.validationProvider.canCreateCommonStage(executionId, stageNumber);
+    const rounds = await this.stageDataProvider.loadRounds(executionId);
+
+    const mappings = await this.stageDataProvider.loadRoundRoleMappings(executionId);
+
+    const activeRoleIds = await this.stageDataProvider.getActiveRoleIdsForStage(
+      executionId,
+      stageNumber - 1,
+    );
+
+    const allowed = this.commonStageValidator.canCreateCommonStage({
+      targetStageNumber: stageNumber,
+      rounds,
+      mappings,
+      activeRoleIds,
+    });
 
     if (!allowed) {
       throw new Error(
@@ -316,7 +241,7 @@ class DefaultExecutionBatchValidationProvider implements ExecutionBatchValidatio
   }
 }
 
-class DefaultRoundTransitionProvider implements RoundTransitionProvider {
+export class DefaultRoundTransitionProvider implements RoundTransitionProvider {
   constructor(
     private readonly transitionResolver: (executionId: string) => Promise<RoundTransition>,
   ) {}
@@ -325,11 +250,3 @@ class DefaultRoundTransitionProvider implements RoundTransitionProvider {
     return this.transitionResolver(executionId);
   }
 }
-
-export const executionGraphResolver = new ExecutionGraphResolver();
-
-executionGraphResolver.setStagePlanningProvider(new DefaultStagePlanningProvider());
-
-// ExecutionBatchValidationProvider is registered by the
-// RecruitmentExecutionService bootstrap after the
-// ExecutionValidationProvider has been created.
