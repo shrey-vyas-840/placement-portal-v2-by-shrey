@@ -27,6 +27,44 @@ export class RecruitmentExecutionContextService {
       opportunity,
     };
   }
+
+  async validateOpportunityClosed(input: {
+  execution: RecruitmentExecutionRow;
+  series: RecruitmentExecutionSeriesRow;
+}) {
+  const context = await this.getExecutionContext(input);
+
+  if (context.opportunity.application_status !== "Closed") {
+    throw new Error(
+      "Recruitment execution cannot be finalized while applications are still accepting submissions.",
+    );
+  }
+
+  return context;
+}
+
+async getCompanyName(input: {
+  execution: RecruitmentExecutionRow;
+  series: RecruitmentExecutionSeriesRow;
+}) {
+  const context = await this.getExecutionContext(input);
+
+  return context.opportunity.company_name ?? "";
+}
+
+
+async getOpportunity(input: {
+  execution: RecruitmentExecutionRow;
+  series: RecruitmentExecutionSeriesRow;
+}) {
+  const context = await this.getExecutionContext(input);
+
+  return context.opportunity;
+}
+
+
+
+
 }
 
 export const recruitmentExecutionContextService =
