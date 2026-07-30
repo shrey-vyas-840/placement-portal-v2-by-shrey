@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { recruitmentExecutionRestrictionService } from "./recruitmentExecutionRestrictionService";
-
+import { executionGraphResolver } from "./executionGraphResolver";
 import type {
   RecruitmentExecutionSeriesRow,
   RecruitmentExecutionRow,
@@ -362,30 +362,34 @@ class RecruitmentExecutionService {
     remarks?: string | null;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
+    //informed to remove this code -
+    // await executionGraphResolver.resolveExecutionBatchCreation({
+    //   executionId: input.executionId,
+    //   creationMode: input.creationMode,
+    //   scope: input.scope,
+    // });
+
     const rounds = await this.loadExecutionRounds(input.executionId);
 
-    const nextRoundOrder =
-      rounds.length === 0 ? 1 : Math.max(...rounds.map((r) => r.round_order)) + 1;
+    const creationPlan = await executionGraphResolver.resolveExecutionBatchCreation({
+      executionId: input.executionId,
+      creationMode: input.creationMode,
+      scope: input.scope,
+      existingRounds: rounds,
+    });
+
+    const nextRoundOrder = creationPlan.nextRoundOrder!;
 
     const transition = await this.getRoundTransition(input.executionId);
 
-    let stageNumber = 1;
+    const stageNumber = creationPlan.stageNumber!;
 
-    if (rounds.length > 0) {
-      const highestStage = Math.max(...rounds.map((r) => r.stage_number));
-
-      stageNumber = input.creationMode === "NEXT_STAGE" ? highestStage + 1 : highestStage;
-    }
-
-    if (
-      input.scope === "COMMON" &&
-      transition.requiresSynchronization &&
-      !(await this.canCreateCommonStage(input.executionId, stageNumber))
-    ) {
-      throw new Error(
-        "A Common stage cannot be created because one or more roles have already configured this stage.",
-      );
-    }
+    await executionGraphResolver.validateExecutionBatchPlan({
+      executionId: input.executionId,
+      stageNumber,
+      scope: input.scope,
+      requiresSynchronization: transition.requiresSynchronization,
+    });
 
     const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
       p_execution_id: input.executionId,
@@ -494,32 +498,25 @@ class RecruitmentExecutionService {
   }): Promise<RecruitmentExecutionRoundRow> {
     const rounds = await this.loadExecutionRounds(input.executionId);
 
-    const nextRoundOrder =
-      rounds.length === 0 ? 1 : Math.max(...rounds.map((r) => r.round_order)) + 1;
+    const creationPlan = await executionGraphResolver.resolveExecutionBatchCreation({
+      executionId: input.executionId,
+      creationMode: input.creationMode,
+      scope: input.scope,
+      existingRounds: rounds,
+    });
+
+    const nextRoundOrder = creationPlan.nextRoundOrder!;
+
+    const stageNumber = creationPlan.stageNumber!;
 
     const transition = await this.getRoundTransition(input.executionId);
 
-    let stageNumber = 1;
-
-    if (rounds.length > 0) {
-      const highestStage = Math.max(...rounds.map((r) => r.stage_number));
-
-      if (input.creationMode === "NEXT_STAGE") {
-        stageNumber = highestStage + 1;
-      } else {
-        stageNumber = highestStage;
-      }
-    }
-
-    if (
-      input.scope === "COMMON" &&
-      transition.requiresSynchronization &&
-      !(await this.canCreateCommonStage(input.executionId, stageNumber))
-    ) {
-      throw new Error(
-        "A Common stage cannot be created because one or more roles have already configured this stage.",
-      );
-    }
+    await executionGraphResolver.validateExecutionBatchPlan({
+      executionId: input.executionId,
+      stageNumber,
+      scope: input.scope,
+      requiresSynchronization: transition.requiresSynchronization,
+    });
 
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -2094,10 +2091,7 @@ history_revision
     return activeRoleIds;
   }
 
-  private async canCreateCommonStage(
-    executionId: string,
-    targetStageNumber: number,
-  ): Promise<boolean> {
+  async canCreateCommonStage(executionId: string, targetStageNumber: number): Promise<boolean> {
     const rounds = await this.loadRounds(executionId);
 
     const mappings = await this.loadRoundRoleMappings(executionId);
@@ -2334,3 +2328,8 @@ history_revision
 }
 
 export const recruitmentExecutionService = new RecruitmentExecutionService();
+
+executionGraphResolver.setValidationProvider({
+  canCreateCommonStage: (executionId, stageNumber) =>
+    recruitmentExecutionService.canCreateCommonStage(executionId, stageNumber),
+});
