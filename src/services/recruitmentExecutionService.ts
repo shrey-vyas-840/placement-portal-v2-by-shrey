@@ -1,6 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { recruitmentExecutionRestrictionService } from "./recruitmentExecutionRestrictionService";
-import { executionGraphResolver } from "./executionGraphResolver";
+import {
+  executionGraphResolver,
+  createExecutionBatchValidationProvider,
+} from "./executionGraphResolver";
+import type {
+  ExecutionValidationProvider,
+  ExecutionBatchValidationProvider,
+} from "./executionGraphResolver";
 import type {
   RecruitmentExecutionSeriesRow,
   RecruitmentExecutionRow,
@@ -58,6 +65,39 @@ function requireData<T>(data: T | null, error: unknown, operation: string): T {
 }
 
 class RecruitmentExecutionService {
+  private executionValidationProvider?: ExecutionValidationProvider;
+  private executionBatchValidationProvider?: ExecutionBatchValidationProvider;
+
+  setExecutionValidationProvider(provider: ExecutionValidationProvider) {
+    this.executionValidationProvider = provider;
+
+    if (!this.executionBatchValidationProvider) {
+      this.executionBatchValidationProvider = createExecutionBatchValidationProvider(provider);
+    }
+
+    this.initializeExecutionGraphResolver();
+  }
+
+  registerExecutionBatchValidationProvider(provider?: ExecutionBatchValidationProvider) {
+    this.executionBatchValidationProvider =
+      provider ??
+      (this.executionValidationProvider
+        ? createExecutionBatchValidationProvider(this.executionValidationProvider)
+        : undefined);
+
+    this.initializeExecutionGraphResolver();
+  }
+
+  private initializeExecutionGraphResolver() {
+    if (this.executionValidationProvider && this.executionBatchValidationProvider) {
+      executionGraphResolver.setValidationProvider(this.executionValidationProvider);
+
+      executionGraphResolver.setExecutionBatchValidationProvider(
+        this.executionBatchValidationProvider,
+      );
+    }
+  }
+
   getSupabaseClient() {
     return supabase;
   }
