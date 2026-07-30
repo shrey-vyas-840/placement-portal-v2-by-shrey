@@ -39,7 +39,7 @@ import { recruitmentExecutionContextService } from "./recruitmentExecutionContex
 import { RecruitmentExecutionProgressionService } from "./recruitmentExecutionProgressionService";
 import { RecruitmentExecutionRoundService } from "./recruitmentExecutionRoundService";
 import { RecruitmentExecutionParticipantAssignmentService } from "./recruitmentExecutionParticipantAssignmentService";
-
+import { RecruitmentExecutionReadService } from "./recruitmentExecutionReadService";
 /**
  * Recruitment Execution Service
  *
@@ -112,6 +112,8 @@ class RecruitmentExecutionService {
 
       loadExecutionBatches: (executionId) => this.loadExecutionBatches(executionId),
     });
+
+  private readonly readService = new RecruitmentExecutionReadService();
 
   private readonly progressionService = new RecruitmentExecutionProgressionService({
     getRound: (executionRoundId) => this.getRound(executionRoundId),
@@ -425,36 +427,11 @@ class RecruitmentExecutionService {
   }
 
   async loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .select("*")
-      .eq("execution_id", executionId)
-      .is("parent_execution_round_id", null)
-      .order("round_order", {
-        ascending: true,
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    return (data ?? []) as RecruitmentExecutionRoundRow[];
+    return this.readService.loadRounds(executionId);
   }
 
   private async loadExecutionRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .select("*")
-      .eq("execution_id", executionId)
-      .order("round_order", {
-        ascending: true,
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    return (data ?? []) as RecruitmentExecutionRoundRow[];
+    return this.readService.loadExecutionRounds(executionId);
   }
 
   async populateRoundParticipants(input: {
@@ -496,17 +473,7 @@ class RecruitmentExecutionService {
   }
 
   async getRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow | null> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .select("*")
-      .eq("execution_round_id", executionRoundId)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    return data as RecruitmentExecutionRoundRow | null;
+    return this.readService.getRound(executionRoundId);
   }
 
   private async loadPublishedTimeline(driveId: string): Promise<
@@ -518,89 +485,7 @@ class RecruitmentExecutionService {
       display_order: number;
     }>
   > {
-    const { data, error } = await (supabase as any)
-      .from(this.DRIVE_ROLE_TIMELINE_TABLE)
-      .select(
-        `
-          drive_role_id,
-          stage_name,
-          stage_date,
-          description,
-          display_order,
-          drive_roles!inner(
-            drive_id
-          )
-        `,
-      )
-      .eq("drive_roles.drive_id", driveId)
-      .order("display_order", {
-        ascending: true,
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    return (data ?? []).map((row: any) => ({
-      drive_role_id: row.drive_role_id,
-      stage_name: row.stage_name,
-      stage_date: row.stage_date,
-      description: row.description,
-      display_order: row.display_order,
-    }));
-  }
-
-  private buildExecutionRounds(
-    timeline: Array<{
-      drive_role_id: string;
-      stage_name: string;
-      stage_date: string | null;
-      description: string | null;
-      display_order: number;
-    }>,
-  ): Array<{
-    roundOrder: number;
-    roundName: string;
-    scheduledDate: string | null;
-    remarks: string | null;
-    roleIds: string[];
-  }> {
-    const grouped = new Map<
-      string,
-      {
-        roundOrder: number;
-        roundName: string;
-        scheduledDate: string | null;
-        remarks: string | null;
-        roleIds: Set<string>;
-      }
-    >();
-
-    for (const stage of timeline) {
-      const key = `${stage.display_order}::${stage.stage_name.trim().toLowerCase()}`;
-
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          roundOrder: stage.display_order,
-          roundName: stage.stage_name,
-          scheduledDate: stage.stage_date,
-          remarks: stage.description,
-          roleIds: new Set(),
-        });
-      }
-
-      grouped.get(key)!.roleIds.add(stage.drive_role_id);
-    }
-
-    return [...grouped.values()]
-      .sort((a, b) => a.roundOrder - b.roundOrder)
-      .map((round) => ({
-        roundOrder: round.roundOrder,
-        roundName: round.roundName,
-        scheduledDate: round.scheduledDate,
-        remarks: round.remarks,
-        roleIds: [...round.roleIds],
-      }));
+    return this.readService.loadPublishedTimeline(driveId);
   }
 
   private async loadRoundParticipantIds(executionRoundId: string): Promise<string[]> {
@@ -866,31 +751,7 @@ class RecruitmentExecutionService {
   }
 
   private async loadExecutionBatches(executionId: string): Promise<RecruitmentExecutionBatch[]> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .select("*")
-      .eq("execution_id", executionId)
-      .not("parent_execution_round_id", "is", null)
-      .order("stage_number", { ascending: true })
-      .order("round_order", { ascending: true });
-
-    if (error) {
-      throw error;
-    }
-
-    return (data ?? []).map((batch: any) => ({
-      execution_round_id: batch.execution_round_id,
-      parent_execution_round_id: batch.parent_execution_round_id,
-      stage_number: batch.stage_number,
-      round_order: batch.round_order,
-      round_name: batch.round_name,
-      scope: batch.scope,
-      scheduled_date: batch.scheduled_date,
-      scheduled_time: batch.scheduled_time,
-      venue: batch.venue,
-      remarks: batch.remarks,
-      participant_count: 0,
-    }));
+    return this.readService.loadExecutionBatches(executionId);
   }
 
   private async loadExecutionBatchParticipants(
@@ -1072,17 +933,9 @@ class RecruitmentExecutionService {
   // --------------------------------------------------------------------------
 
   private async getRoundRoleIds(executionRoundId: string): Promise<string[]> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
-      .select("drive_role_id")
-      .eq("execution_round_id", executionRoundId);
-
-    if (error) {
-      throw error;
-    }
-
-    return (data ?? []).map((row: any) => row.drive_role_id);
+    return this.readService.getRoundRoleIds(executionRoundId);
   }
+
   private async getExecutionContext(executionId: string) {
     const execution = await this.getExecutionRevision(executionId);
 
