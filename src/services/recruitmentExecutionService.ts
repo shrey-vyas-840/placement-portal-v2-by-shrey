@@ -40,6 +40,8 @@ import { RecruitmentExecutionProgressionService } from "./recruitmentExecutionPr
 import { RecruitmentExecutionRoundService } from "./recruitmentExecutionRoundService";
 import { RecruitmentExecutionParticipantAssignmentService } from "./recruitmentExecutionParticipantAssignmentService";
 import { RecruitmentExecutionReadService } from "./recruitmentExecutionReadService";
+import { RecruitmentExecutionRoundSaveService } from "./recruitmentExecutionRoundSaveService";
+
 /**
  * Recruitment Execution Service
  *
@@ -132,6 +134,15 @@ class RecruitmentExecutionService {
 
     removeRoundParticipants: (executionRoundId) => this.removeRoundParticipants(executionRoundId),
   });
+
+  private readonly roundSaveService = new RecruitmentExecutionRoundSaveService(
+    {
+      getRound: (executionRoundId) => this.getRound(executionRoundId),
+
+      getRoundRoleIds: (executionRoundId) => this.getRoundRoleIds(executionRoundId),
+    },
+    this.progressionService,
+  );
 
   registerExecutionBatchValidationProvider(provider?: ExecutionBatchValidationProvider) {
     this.executionBatchValidationProvider =
@@ -806,19 +817,12 @@ class RecruitmentExecutionService {
   // --------------------------------------------------------------------------
 
   private async validateRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow> {
-    const round = await this.getRound(executionRoundId);
-
-    if (!round) {
-      throw new Error("Execution round not found.");
-    }
-
-    return round;
+    return this.roundSaveService.validateRound(executionRoundId);
   }
 
   // --------------------------------------------------------------------------
   // Round Save
   // --------------------------------------------------------------------------
-
   async saveRound(input: {
     executionId: string;
     executionRoundId: string;
@@ -844,90 +848,8 @@ class RecruitmentExecutionService {
     savedEvents: number;
     progressedParticipants: number;
   }> {
-    const round = await this.validateRound(input.executionRoundId);
-
-    const latestState = await recruitmentExecutionHistoryService.getLatestParticipantState(
-      input.executionId,
-      input.executionRoundId,
-    );
-
-    const historyRevision = await recruitmentExecutionHistoryService.getNextHistoryRevision(
-      input.executionId,
-    );
-
-    let driveRoleId: string | null = null;
-
-    if (round.scope === "ROLE_SPECIFIC") {
-      const roleIds = await this.getRoundRoleIds(input.executionRoundId);
-
-      if (roleIds.length > 1) {
-        throw new Error("A role-specific execution batch cannot be mapped to multiple roles.");
-      }
-
-      driveRoleId = roleIds.length === 1 ? roleIds[0] : null;
-    }
-
-    const historyEvents = recruitmentExecutionHistoryService.buildHistoryEvents({
-      executionId: input.executionId,
-      executionRoundId: input.executionRoundId,
-      executionRevision: input.executionRevision,
-      historyRevision,
-      driveRoleId,
-      changedBy: input.changedBy,
-      rows: input.rows.map((row) => {
-        const previous = latestState.get(row.executionParticipantId);
-
-        return {
-          executionParticipantId: row.executionParticipantId,
-          attendanceStatus: row.attendanceStatus,
-          gateStatus: row.gateStatus,
-          progressionStatus: row.progressionStatus,
-          remarks: row.remarks,
-          absenceDisposition: row.absenceDisposition,
-          absenceReason: row.absenceReason,
-          restrictionOverride: row.restrictionOverride,
-          restrictionOverrideReason: row.restrictionOverrideReason,
-          previousHistoryId: previous?.execution_history_id ?? null,
-        };
-      }),
-    });
-
-    const { data, error } = await (supabase as any).rpc("save_round_transaction", {
-      p_execution_id: input.executionId,
-      p_execution_round_id: input.executionRoundId,
-      p_execution_revision: input.executionRevision,
-      p_changed_by: input.changedBy ?? null,
-      p_history_rows: historyEvents,
-      p_batch_assignments: input.batchAssignments ?? [],
-      p_next_round_id: input.nextRoundId ?? null,
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    let progressedParticipants = 0;
-
-    console.log("NEXT ROUND ID:", input.nextRoundId);
-
-    if (input.nextRoundId) {
-      console.log("CALLING populateNextRoundParticipants");
-
-      progressedParticipants = await this.progressionService.populateNextRoundParticipants({
-        executionId: input.executionId,
-        currentRoundId: input.executionRoundId,
-        nextRoundId: input.nextRoundId,
-      });
-    } else {
-      console.log("NO NEXT ROUND ID PASSED TO saveRound()");
-    }
-
-    return {
-      savedEvents: data.savedEvents ?? 0,
-      progressedParticipants,
-    };
+    return this.roundSaveService.saveRound(input);
   }
-
   // --------------------------------------------------------------------------
   // Progression Engine
   // --------------------------------------------------------------------------
