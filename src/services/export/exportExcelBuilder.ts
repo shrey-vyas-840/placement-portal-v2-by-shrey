@@ -80,7 +80,7 @@ export const exportExcelBuilder = {
 
     const subtitleCell = sheet.getCell("A2");
 
-    subtitleCell.value = dataset.title;
+    subtitleCell.value = dataset.subtitle ? `${dataset.title}\n${dataset.subtitle}` : dataset.title;
 
     subtitleCell.font = {
       bold: true,
@@ -94,8 +94,8 @@ export const exportExcelBuilder = {
 
     subtitleCell.alignment = {
       horizontal: "center",
-
       vertical: "middle",
+      wrapText: true,
     };
 
     subtitleCell.fill = {
@@ -110,11 +110,28 @@ export const exportExcelBuilder = {
 
     sheet.getRow(1).height = 30;
 
-    sheet.getRow(2).height = 24;
+    sheet.getRow(2).height = 38;
 
     sheet.getRow(3).height = 34;
 
-    const header = sheet.getRow(3);
+    if (dataset.summary?.length) {
+      let summaryRow = 3;
+
+      dataset.summary.forEach((item) => {
+        sheet.getCell(`A${summaryRow}`).value = item.label;
+        sheet.getCell(`B${summaryRow}`).value = item.value;
+
+        sheet.getCell(`A${summaryRow}`).font = {
+          bold: true,
+        };
+
+        summaryRow++;
+      });
+    }
+
+    const headerRow = (dataset.summary?.length ?? 0) + 4;
+
+    const header = sheet.getRow(headerRow);
 
     header.values = selectedColumns;
 
@@ -155,7 +172,7 @@ export const exportExcelBuilder = {
       };
     });
 
-    let excelRowIndex = 4;
+    let excelRowIndex = headerRow + 1;
 
     dataset.rows.forEach((row) => {
       const values: ExcelJS.CellValue[] = selectedColumns.map((columnKey) => {
@@ -272,18 +289,18 @@ export const exportExcelBuilder = {
       {
         state: "frozen",
 
-        ySplit: 3,
+        ySplit: headerRow,
       },
     ];
 
     sheet.autoFilter = {
-      from: "A3",
+      from: `A${headerRow}`,
 
-      to: `${String.fromCharCode(64 + selectedColumns.length)}3`,
+      to: `${String.fromCharCode(64 + selectedColumns.length)}${headerRow}`,
     };
 
     sheet.eachRow((row, rowNumber) => {
-      if (rowNumber >= 4 && rowNumber % 2 === 0) {
+      if (rowNumber > headerRow && rowNumber % 2 === 0) {
         row.eachCell((cell) => {
           cell.fill = {
             type: "pattern",
@@ -316,10 +333,15 @@ export const exportExcelBuilder = {
           },
         };
 
+        const columnIndex = typeof cell.col === "number" ? cell.col : Number(cell.col);
+
         cell.alignment = {
-          horizontal: "center",
           vertical: "middle",
           wrapText: true,
+          horizontal:
+            columnIndex <= 5
+              ? "left"
+              : "center",
         };
       });
     });

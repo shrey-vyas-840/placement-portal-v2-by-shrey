@@ -37,6 +37,9 @@ import type {
   ExecutionProgressionStatus,
   RecruitmentExecutionEditedRow,
 } from "@/types/recruitmentExecution";
+import { recruitmentExecutionAttendanceExportService } from "@/services/recruitmentExecutionAttendanceExportService";
+import { exportExcelBuilder } from "@/services/export/exportExcelBuilder";
+import { buildAttendanceExportConfiguration } from "@/services/recruitmentExecution/attendanceExportConfig";
 
 export function RecruitmentExecutionWorkspacePage() {
   const { executionId } = useSearch({
@@ -1025,6 +1028,50 @@ export function RecruitmentExecutionWorkspacePage() {
     }
   };
 
+ const handlePreAttendanceExport = async () => {
+  if (!currentExecutionRoundId) return;
+
+  try {
+    const data =
+      await recruitmentExecutionAttendanceExportService.getAttendanceExportData(
+        executionId,
+        currentExecutionRoundId,
+      );
+
+    const configuration =
+      buildAttendanceExportConfiguration(data, "PRE");
+
+    await exportExcelBuilder.export(
+      configuration,
+      configuration.dataset.columns.map((column) => column.key),
+    );
+  } catch (error) {
+    console.error(error);
+    toast.error("Unable to export attendance sheet.");
+  }
+};
+
+  const handlePostAttendanceExport = async () => {
+    if (!currentExecutionRoundId) return;
+
+    try {
+      const data = await recruitmentExecutionAttendanceExportService.getAttendanceExportData(
+        executionId,
+        currentExecutionRoundId,
+      );
+
+      const configuration = buildAttendanceExportConfiguration(data, "POST");
+
+      await exportExcelBuilder.export(
+        configuration,
+        configuration.dataset.columns.map((column) => column.key),
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to export attendance report.");
+    }
+  };
+
   const handleProgressToNextRound = async () => {
     const shortlistedParticipants = participants.filter((participant) => {
       const row = getEditedRow(currentExecutionRoundId!, participant.execution_participant_id);
@@ -1441,9 +1488,9 @@ export function RecruitmentExecutionWorkspacePage() {
 
               <button
                 type="button"
-                onClick={() => toast.info("Coming Soon")}
+                onClick={handlePreAttendanceExport}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200"
-              >
+              > 
                 ⬇ Pre-Attendance
               </button>
 
@@ -1451,7 +1498,7 @@ export function RecruitmentExecutionWorkspacePage() {
 
               <button
                 type="button"
-                onClick={() => toast.info("Coming Soon")}
+                onClick={handlePostAttendanceExport}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md"
               >
                 📊 Post-Attendance
