@@ -36,17 +36,19 @@ export interface ResolveExecutionBatchCreationInput {
 export interface ExecutionBatchCreationPlan {
   nextRoundOrder?: number;
 
-  /**
-   * Current highest persisted stage.
-   *
-   * The resolver only discovers it.
-   * The service still decides whether to increment it.
-   */
-  highestStage?: number;
-
   stageNumber?: number;
 
   requiresSynchronization?: boolean;
+}
+
+interface StagePlanningResult {
+  nextRoundOrder: number;
+  highestStage: number;
+  stageNumber: number;
+}
+
+interface ExecutionBatchPlanningResult {
+  stagePlanning: StagePlanningResult;
 }
 
 export interface ValidateExecutionBatchPlanInput {
@@ -118,23 +120,20 @@ class ExecutionGraphResolver implements ExecutionGraphResolverContract {
     this.validationProvider = provider;
   }
 
-  async resolveExecutionBatchCreation(
-    input: ResolveExecutionBatchCreationInput,
-  ): Promise<ExecutionBatchCreationPlan> {
+  private resolveStagePlanning(
+    creationMode: ExecutionRoundCreationMode,
+    existingRounds: RecruitmentExecutionRoundRow[],
+  ): StagePlanningResult {
     const nextRoundOrder =
-      input.existingRounds.length === 0
-        ? 1
-        : Math.max(...input.existingRounds.map((r) => r.round_order)) + 1;
+      existingRounds.length === 0 ? 1 : Math.max(...existingRounds.map((r) => r.round_order)) + 1;
 
     const highestStage =
-      input.existingRounds.length === 0
-        ? 0
-        : Math.max(...input.existingRounds.map((r) => r.stage_number));
+      existingRounds.length === 0 ? 0 : Math.max(...existingRounds.map((r) => r.stage_number));
 
     const stageNumber =
-      input.existingRounds.length === 0
+      existingRounds.length === 0
         ? 1
-        : input.creationMode === "NEXT_STAGE"
+        : creationMode === "NEXT_STAGE"
           ? highestStage + 1
           : highestStage;
 
@@ -142,8 +141,35 @@ class ExecutionGraphResolver implements ExecutionGraphResolverContract {
       nextRoundOrder,
       highestStage,
       stageNumber,
+    };
+  }
+
+  private resolveExecutionBatchPlanning(
+    creationMode: ExecutionRoundCreationMode,
+    existingRounds: RecruitmentExecutionRoundRow[],
+  ): ExecutionBatchPlanningResult {
+    return {
+      stagePlanning: this.resolveStagePlanning(creationMode, existingRounds),
+    };
+  }
+
+  private buildExecutionBatchCreationPlan(
+    planning: ExecutionBatchPlanningResult,
+  ): ExecutionBatchCreationPlan {
+    return {
+      nextRoundOrder: planning.stagePlanning.nextRoundOrder,
+
+      stageNumber: planning.stagePlanning.stageNumber,
+
       requiresSynchronization: undefined,
     };
+  }
+
+  async resolveExecutionBatchCreation(
+    input: ResolveExecutionBatchCreationInput,
+  ): Promise<ExecutionBatchCreationPlan> {
+    const planning = this.resolveExecutionBatchPlanning(input.creationMode, input.existingRounds);
+    return this.buildExecutionBatchCreationPlan(planning);
   }
 
   async validateExecutionBatchPlan(
