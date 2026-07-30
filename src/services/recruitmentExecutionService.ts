@@ -34,6 +34,7 @@ import type {
 } from "@/types/recruitmentExecution";
 import { recruitmentExecutionParticipantInitializationService } from "./recruitmentExecutionParticipantInitializationService";
 import { recruitmentExecutionHistoryService } from "./recruitmentExecutionHistoryService";
+import { recruitmentExecutionSelectionService } from "./recruitmentExecutionSelectionService";
 
 /**
  * Recruitment Execution Service
@@ -1513,79 +1514,6 @@ class RecruitmentExecutionService {
     return participants.length;
   }
 
-  private async getSelectedParticipants(executionId: string) {
-    const [history, participants] = await Promise.all([
-      this.loadHistorySummary(executionId),
-      this.loadParticipants(executionId),
-    ]);
-
-    const selectedIds = new Set<string>();
-
-    history.forEach((row) => {
-      if (row.progression_status === "SELECTED") {
-        selectedIds.add(row.execution_participant_id);
-      }
-    });
-
-    return participants.filter((participant) =>
-      selectedIds.has(participant.execution_participant_id),
-    );
-  }
-
-  private async validateExecutionCompletion(executionId: string): Promise<void> {
-    const [participants, history] = await Promise.all([
-      this.loadParticipants(executionId),
-      this.loadHistorySummary(executionId),
-    ]);
-
-    const latestHistory = new Map<string, RecruitmentExecutionHistorySummary>();
-
-    history.forEach((row) => {
-      latestHistory.set(row.execution_participant_id, row);
-    });
-
-    const pending = participants.filter((participant) => {
-      const latest = latestHistory.get(participant.execution_participant_id);
-
-      if (!latest) {
-        // Participant never entered any round.
-        // Treat as pending.
-        return true;
-      }
-
-      if (latest.progression_status === "SHORTLISTED") {
-        // Still moving through the recruitment pipeline.
-        return true;
-      }
-
-      // SELECTED and every other persisted state are treated as
-      // terminal for the current pipeline.
-      return false;
-      // NO_PROGRESS
-      // Present / Absent / Allowed Absent
-      // means this participant's pipeline has ended for now.
-
-      return false;
-    });
-
-    if (pending.length > 0) {
-      throw new Error(
-        "Recruitment execution cannot be finalized because one or more participant pipelines are still active.",
-      );
-    }
-  }
-
-  private async buildFinalSelectionRows(executionId: string) {
-    const participants = await this.getSelectedParticipants(executionId);
-
-    return participants.map((participant) => ({
-      execution_id: executionId,
-      execution_participant_id: participant.execution_participant_id,
-      application_id: participant.application_id,
-      student_id: participant.student_id,
-    }));
-  }
-
   private async getExecutionContext(executionId: string) {
     const execution = await this.getExecutionRevision(executionId);
 
@@ -1626,36 +1554,6 @@ class RecruitmentExecutionService {
     }
   }
 
-  private async buildPlacementHistoryRows(executionId: string) {
-    const participants = await this.getSelectedParticipants(executionId);
-
-    if (participants.length === 0) {
-      return [];
-    }
-
-    const { series, opportunity } = await this.getExecutionContext(executionId);
-
-    return participants.map((participant) => ({
-      student_id: participant.student_id,
-      opportunity_id: series.opportunity_id,
-      drive_id: series.drive_id,
-      company_id: series.company_id,
-      company_name: opportunity.company_name ?? "",
-      package_lpa: 0,
-      placement_type: "On Campus Placement",
-      placed_at: new Date().toISOString().slice(0, 10),
-      is_current: true,
-    }));
-  }
-
-  private async buildStudentPlacementUpdates(executionId: string) {
-    const participants = await this.getSelectedParticipants(executionId);
-    if (participants.length === 0) {
-      return [];
-    }
-    return participants.map((participant) => participant.student_id);
-  }
-
   // --------------------------------------------------------------------------
   // Round Progression
   // --------------------------------------------------------------------------
@@ -1686,11 +1584,41 @@ class RecruitmentExecutionService {
     finalizedBy?: string | null;
     finalizationNotes?: string | null;
   }) {
-    await this.validateExecutionCompletion(input.executionId);
+    const [participants, history] = await Promise.all([
+      this.loadParticipants(input.executionId),
+      this.loadHistorySummary(input.executionId),
+    ]);
+
+    recruitmentExecutionSelectionService.validateExecutionCompletion({
+      participants,
+      history,
+    });
     await this.validateOpportunityClosed(input.executionId);
-    const finalSelectionRows = await this.buildFinalSelectionRows(input.executionId);
-    const placementHistoryRows = await this.buildPlacementHistoryRows(input.executionId);
-    const studentIds = await this.buildStudentPlacementUpdates(input.executionId);
+
+    const selectedParticipants = recruitmentExecutionSelectionService.getSelectedParticipants({
+      history,
+      participants,
+    });
+
+    const finalSelectionRows = recruitmentExecutionSelectionService.buildFinalSelectionRows({
+      executionId: input.executionId,
+      participants: selectedParticipants,
+    });
+
+    const { series, opportunity } = await this.getExecutionContext(input.executionId);
+
+    const placementHistoryRows = recruitmentExecutionSelectionService.buildPlacementHistoryRows({
+      participants: selectedParticipants,
+      opportunityId: series.opportunity_id,
+      driveId: series.drive_id,
+      companyId: series.company_id,
+      companyName: opportunity.company_name ?? "",
+    });
+
+    const studentIds = recruitmentExecutionSelectionService.buildStudentPlacementUpdates({
+      participants: selectedParticipants,
+    });
+
     const { data: execution, error } = await (supabase as any).rpc(
       "finalize_recruitment_execution",
       {
