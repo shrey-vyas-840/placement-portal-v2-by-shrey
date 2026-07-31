@@ -218,11 +218,18 @@ export function RecruitmentExecutionWorkspacePage() {
 
         setSelectedStage(existingRound.stage_number);
 
-        const firstBatch = data.executionBatches
+        const stageBatches = data.executionBatches
           .filter((b) => b.parent_execution_round_id === existingRound.execution_round_id)
-          .sort((a, b) => a.round_order - b.round_order)[0];
+          .sort((a, b) => a.round_order - b.round_order);
 
-        setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
+        const preservedBatch =
+          selectedExecutionBatchId != null
+            ? stageBatches.find((batch) => batch.execution_round_id === selectedExecutionBatchId)
+            : undefined;
+
+        setSelectedExecutionBatchId(
+          preservedBatch?.execution_round_id ?? stageBatches[0]?.execution_round_id ?? null,
+        );
       } else {
         restoreWorkspaceNavigation(data);
       }
@@ -304,7 +311,13 @@ export function RecruitmentExecutionWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [executionId, navigationRestore, restoreWorkspaceNavigation, selectedRoundId]);
+  }, [
+    executionId,
+    navigationRestore,
+    restoreWorkspaceNavigation,
+    selectedRoundId,
+    selectedExecutionBatchId,
+  ]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -564,9 +577,13 @@ export function RecruitmentExecutionWorkspacePage() {
       .filter((stage) => (selectedStage === null ? true : stage.stageNumber === selectedStage));
   }, [workspace, selectedTimeline, selectedStage]);
 
+  const stageParticipants = useMemo(() => {
+    return participants;
+  }, [participants]);
+
   const shortlistedParticipants = useMemo(
     () =>
-      participants.filter((participant) => {
+      stageParticipants.filter((participant) => {
         const row = getEditedRow(currentExecutionRoundId!, participant.execution_participant_id);
         const attendanceAllowed =
           row?.attendanceStatus === "PRESENT" ||
@@ -596,10 +613,10 @@ export function RecruitmentExecutionWorkspacePage() {
         .map((assignment) => assignment.execution_participant_id),
     );
 
-    return participants.filter(
+    return stageParticipants.filter(
       (participant) => !assignedParticipantIds.has(participant.execution_participant_id),
     );
-  }, [workspace, participants, isMultipleExecutionStage, selectedStage]);
+  }, [workspace, stageParticipants, isMultipleExecutionStage, selectedStage]);
 
   const shortlistedRoleSummary = useMemo<ActiveRoleOption[]>(() => {
     const roleMap = new Map<string, ActiveRoleOption>();
@@ -967,6 +984,16 @@ export function RecruitmentExecutionWorkspacePage() {
             executionRoundId,
           })),
       );
+
+      if (isMultipleExecutionStage) {
+        const unassigned = unassignedStageParticipants.length;
+
+        if (unassigned > 0) {
+          toast.error(`${unassigned} participant(s) have not been assigned to an execution batch.`);
+          return;
+        }
+      }
+
       const result = await recruitmentExecutionService.saveRound({
         executionId: workspace.execution.execution_id,
         executionRoundId: selectedRound.execution_round_id,
@@ -2014,9 +2041,7 @@ export function RecruitmentExecutionWorkspacePage() {
         loading={saving}
         stageNumber={selectedStage ?? 1}
         participantCount={
-          editingExecutionBatchId
-            ? workspace.participants.length
-            : unassignedStageParticipants.length
+          editingExecutionBatchId ? stageParticipants.length : unassignedStageParticipants.length
         }
         defaultBatchName={`Batch ${currentStageBatches.length + 1}`}
         editingBatch={
@@ -2165,7 +2190,7 @@ export function RecruitmentExecutionWorkspacePage() {
               )?.round_name
             : undefined
         }
-        participants={shortlistedParticipants}
+        participants={unassignedStageParticipants}
         alreadyAssignedParticipantIds={
           workspace?.executionBatchParticipants
             .filter((assignment) => {
@@ -2259,7 +2284,7 @@ export function RecruitmentExecutionWorkspacePage() {
         open={manageExecutionBatchesOpen}
         batches={currentStageBatches as unknown as ManageExecutionBatch[]}
         students={
-          participants.map((participant) => ({
+          stageParticipants.map((participant) => ({
             execution_participant_id: participant.execution_participant_id,
 
             execution_round_id:

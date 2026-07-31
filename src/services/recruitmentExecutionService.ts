@@ -1087,6 +1087,8 @@ export const recruitmentExecutionService = new RecruitmentExecutionService();
 
 recruitmentExecutionService.registerExecutionSeriesService(recruitmentExecutionSeriesService);
 
+recruitmentExecutionService.registerExecutionBatchValidationProvider();
+
 recruitmentExecutionParticipantInitializationService.registerProviders({
   getExecutionRevision: recruitmentExecutionService.getExecutionRevision.bind(
     recruitmentExecutionService,
