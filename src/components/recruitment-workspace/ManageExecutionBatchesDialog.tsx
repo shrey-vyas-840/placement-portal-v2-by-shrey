@@ -100,7 +100,7 @@ export default function ManageExecutionBatchesDialog({
               </DialogTitle>
 
               <p className="mt-2 text-sm text-white/80">
-                Review execution batches, assigned students and update batch configuration.
+                Review execution batches, update batch settings and assign participants.
               </p>
             </div>
 
@@ -344,7 +344,7 @@ export default function ManageExecutionBatchesDialog({
 
                 <div className="flex items-center gap-3">
                   <Button className="rounded-xl border-slate-300 px-5" onClick={onContinue}>
-                    Continue
+                    👥 Assign Participants
                   </Button>
 
                   <Button

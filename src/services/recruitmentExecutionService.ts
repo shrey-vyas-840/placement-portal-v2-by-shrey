@@ -1044,7 +1044,11 @@ class RecruitmentExecutionService {
       // Multiple execution batches:
       // Keep the automatically-created default execution batch hidden while
       // exposing administrator-created execution batches.
-      return batch.round_name !== parent.round_name;
+      const hiddenDefaultBatch = siblingBatches.reduce((earliest, current) =>
+        current.round_order < earliest.round_order ? current : earliest,
+      );
+
+      return batch.execution_round_id !== hiddenDefaultBatch.execution_round_id;
     });
 
     const executionBatchParticipants = await this.loadExecutionBatchParticipants(executionId);

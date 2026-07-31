@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { RecruitmentExecutionParticipantWithStudent } from "@/types/recruitmentExecution";
 
 export interface ExecutionBatchParticipantSelection {
@@ -26,7 +34,12 @@ interface ExecutionBatchParticipantDialogProps {
 
   onCancel: () => void;
 
-  onContinue: (selectedParticipantIds: string[]) => void;
+  availableBatches: {
+    execution_round_id: string;
+    round_name: string;
+  }[];
+
+  onContinue: (data: { executionRoundId: string; participantIds: string[] }) => void;
 }
 
 export default function ExecutionBatchParticipantDialog({
@@ -38,6 +51,7 @@ export default function ExecutionBatchParticipantDialog({
   stageNumber,
   participants,
   alreadyAssignedParticipantIds,
+  availableBatches,
   onCancel,
   onContinue,
 }: ExecutionBatchParticipantDialogProps) {
@@ -45,10 +59,13 @@ export default function ExecutionBatchParticipantDialog({
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  const [selectedExecutionRoundId, setSelectedExecutionRoundId] = useState<string>("");
+
   useEffect(() => {
     if (!open) {
       setSearch("");
       setSelectedIds([]);
+      setSelectedExecutionRoundId("");
     }
   }, [open]);
 
@@ -176,7 +193,6 @@ export default function ExecutionBatchParticipantDialog({
             </div>
           </div>
         </div>
-
         <div className="flex-1 overflow-y-auto">
           {filteredParticipants.length === 0 ? (
             <div className="flex h-full items-center justify-center">
@@ -274,14 +290,24 @@ export default function ExecutionBatchParticipantDialog({
             </button>
 
             {mode === "ASSIGN" && (
-              <button
-                type="button"
-                disabled={loading || selectedIds.length === 0}
-                onClick={() => onContinue(selectedIds)}
-                className="rounded-xl bg-gradient-to-r from-blue-700 to-cyan-600 px-6 shadow-lg py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? "Creating..." : `Continue (${selectedIds.length})`}
-              </button>
+              <div className="space-y-2">
+                <Select
+                  value={selectedExecutionRoundId}
+                  onValueChange={setSelectedExecutionRoundId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select execution batch" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {availableBatches.map((batch) => (
+                      <SelectItem key={batch.execution_round_id} value={batch.execution_round_id}>
+                        {batch.round_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
         </div>
