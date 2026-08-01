@@ -18,22 +18,53 @@ export class RecruitmentExecutionSnapshotService {
 
     if (error) throw error;
 
-    return (
-      data.execution_snapshot ?? {
-        version: 1,
-        participants: {},
-      }
-    );
+    const snapshot = data?.execution_snapshot ?? {};
+
+    // New contract
+    if (snapshot.runtime) {
+      return snapshot.runtime;
+    }
+
+    // Backward compatibility for early runtime-only rows
+    if (snapshot.version) {
+      return snapshot;
+    }
+
+    return {
+      version: 1,
+      participants: {},
+    };
   }
 
   async persistSnapshot(
     executionId: string,
-    snapshot: RecruitmentExecutionRuntimeSnapshot,
+    runtime: RecruitmentExecutionRuntimeSnapshot,
   ): Promise<void> {
+    const { data, error: readError } = await (supabase as any)
+      .from(this.EXECUTIONS_TABLE)
+      .select("execution_snapshot")
+      .eq("execution_id", executionId)
+      .single();
+
+    if (readError) throw readError;
+
+    const current = data?.execution_snapshot ?? {};
+
+    const next =
+      current.metadata || current.runtime
+        ? {
+            ...current,
+            runtime,
+          }
+        : {
+            metadata: current,
+            runtime,
+          };
+
     const { error } = await (supabase as any)
       .from(this.EXECUTIONS_TABLE)
       .update({
-        execution_snapshot: snapshot,
+        execution_snapshot: next,
       })
       .eq("execution_id", executionId);
 

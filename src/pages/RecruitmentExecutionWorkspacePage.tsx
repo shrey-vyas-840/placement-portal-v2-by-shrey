@@ -272,7 +272,9 @@ export function RecruitmentExecutionWorkspacePage() {
       );
 
       const runtimeSnapshot = data.runtimeSnapshot;
-
+console.log("Runtime Snapshot", runtimeSnapshot);
+console.log("Runtime Snapshot Participants", runtimeSnapshot?.participants);
+console.log("History Summary", data.historySummary);
       const initialState: Record<string, Record<string, RecruitmentExecutionEditedRow>> = {};
 
       data.rounds.forEach((round) => {
@@ -1229,173 +1231,196 @@ export function RecruitmentExecutionWorkspacePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-[1750px] px-6 py-6">
-        <div className="relative overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-800 via-blue-700 to-cyan-600 text-white shadow-xl">
-          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-white/10 blur-sm" />
+      <div className="mx-auto flex w-full max-w-[3000px] gap-4 px-0 xl:px-4 2xl:px-8">
+        {/* Future Admin Menu */}
+        <aside className="hidden xl:block w-[220px] shrink-0 border-r bg-background">
+          {/* Reserved for Admin Sidebar */}
+        </aside>
 
-          <div className="absolute bottom-0 right-20 h-28 w-28 rounded-full bg-white/10 blur-sm" />
+        <div className="min-w-0 flex-1">
+          <div className="relative overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-r from-blue-800 via-blue-700 to-cyan-600 text-white shadow-xl">
+            <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-white/10 blur-sm" />
 
-          <div className="absolute -left-10 top-10 h-32 w-32 rounded-full bg-cyan-300/10 blur-xl" />
-          <div className="relative z-10 flex flex-col gap-5 px-8 py-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.30em] text-white/70">
-                  Execution Workspace
-                </p>
-                <h1 className="mt-2 text-4xl font-bold tracking-tight text-white">
-                  Recruitment Execution
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/85">
-                  Execute recruitment rounds, shortlist candidates and finalize selections.
-                </p>
+            <div className="absolute bottom-0 right-20 h-28 w-28 rounded-full bg-white/10 blur-sm" />
+
+            <div className="absolute -left-10 top-10 h-32 w-32 rounded-full bg-cyan-300/10 blur-xl" />
+            <div className="relative z-10 flex flex-col gap-5 px-8 py-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.30em] text-white/70">
+                    Execution Workspace
+                  </p>
+                  <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
+                    Recruitment Execution
+                  </h1>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-white/85">
+                    Execute recruitment rounds, shortlist candidates and finalize selections.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                    Revision {workspace.execution.revision_number}
+                  </span>
+
+                  <span className="inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                    {metrics.totalRounds} Rounds
+                  </span>
+
+                  <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+                    {executionFinalized ? "Finalized" : "In Progress"}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
-                  Revision {workspace.execution.revision_number}
-                </span>
-
-                <span className="inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
-                  {metrics.totalRounds} Rounds
-                </span>
-
-                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
-                  {executionFinalized ? "Finalized" : "In Progress"}
-                </span>
-              </div>
+              <Link
+                to="/admin/recruitment"
+                className="inline-flex h-16 w-56 items-center justify-center rounded-full border border-white/80 bg-white/15 px-5 text-[24px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25"
+              >
+                Back
+              </Link>
             </div>
 
-            <Link
-              to="/admin/recruitment"
-              className="inline-flex h-16 w-56 items-center justify-center rounded-full border border-white/80 bg-white/15 px-5 text-[24px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25"
-            >
-              Back
-            </Link>
-          </div>
-
-          <div className="grid gap-4 border-t border-white/20 bg-white/10 px-8 py-6 backdrop-blur-sm md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-blue-400 bg-white p-5 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600">
-                Participants
-              </div>
-              <div className="mt-2 text-5xl font-bold tracking-tight text-slate-900">
-                {metrics.totalParticipants}
-              </div>
-              <div className="mt-1 text-sm text-slate-500">Active in this execution</div>
-            </div>
-
-            <div className="rounded-2xl border border-violet-400 bg-white p-4 shadow-sm">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-600">
-                Rounds
-              </div>
-              <div className="mt-2 text-5xl font-bold tracking-tight text-slate-900">
-                {metrics.totalRounds}
-              </div>
-              <div className="mt-1 text-sm text-slate-500">Available in this stage flow</div>
-            </div>
-
-            <div className="rounded-2xl border border-emerald-400 bg-white p-4 shadow-sm">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
-                Finalized
-              </div>
-              <div className="mt-2 text-5xl font-bold tracking-tight text-slate-900">
-                {metrics.finalizedRounds}
-              </div>
-              <div className="mt-1 text-sm text-slate-500">Saved rounds so far</div>
-            </div>
-
-            <div className="rounded-2xl border border-amber-400 bg-white p-4 shadow-sm">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-600">
-                Revision
-              </div>
-              <div className="mt-2 text-5xl font-bold tracking-tight text-slate-900">
-                {workspace.execution.revision_number}
-              </div>
-              <div className="mt-1 text-sm text-slate-500">Current execution revision</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-          <ExecutionProgressBar
-            rounds={workspace.rounds}
-            roundRoleMappings={workspace.roundRoleMappings}
-            timelines={executionTimelines}
-            remainingActiveRoles={workspace.remainingActiveRoles}
-            stageCompletionSummary={stageCompletionSummary}
-            selectedStage={selectedStage}
-            onStageSelect={(stageNumber) => {
-              setViewingExecutionBatchId(null);
-              setPendingExecutionRoundId(null);
-              setSelectedStage(stageNumber);
-
-              const firstRound = workspace.rounds
-                .filter((r) => r.stage_number === stageNumber)
-                .sort((a, b) => a.round_order - b.round_order)[0];
-
-              if (!firstRound) {
-                return;
-              }
-
-              setSelectedRoundId(firstRound.execution_round_id);
-
-              const firstBatch = workspace.executionBatches
-                .filter((b) => b.parent_execution_round_id === firstRound.execution_round_id)
-                .sort((a, b) => a.round_order - b.round_order)[0];
-
-              setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
-
-              if (firstRound.scope === "COMMON") {
-                setSelectedTimeline("COMMON");
-                return;
-              }
-
-              const mapping = workspace.roundRoleMappings.find(
-                (m) => m.execution_round_id === firstRound.execution_round_id,
-              );
-
-              if (mapping) {
-                setSelectedTimeline(mapping.drive_role_id);
-              }
-            }}
-          />
-        </div>
-
-        <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900">
-                  Stage {selectedStage}
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  {selectedStageRounds.length} Round
-                  {selectedStageRounds.length === 1 ? "" : "s"}
-                </p>
+            <div className="grid gap-4 border-t border-white/20 bg-white/10 px-8 py-6 backdrop-blur-sm md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-blue-400 bg-white px-5 py-3 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600">
+                  Participants
+                </div>
+                <div className="mt-2 text-5xl font-bold tracking-tight text-slate-900">
+                  {metrics.totalParticipants}
+                </div>
+                <div className="mt-1 text-sm text-slate-500">Active in this execution</div>
               </div>
 
-              <p className="text-sm text-slate-600">
-                Manage attendance, gate status and progression.
-              </p>
-            </div>
+              <div className="rounded-2xl border border-violet-400 bg-white p-4 shadow-sm">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-600">
+                  Rounds
+                </div>
+                <div className="mt-1 text-4xl font-bold tracking-tight text-slate-900">
+                  {metrics.totalRounds}
+                </div>
+                <div className="mt-0.5 text-xs text-slate-500">Available in this stage flow</div>
+              </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
-              <span className="font-medium text-slate-900">{participants.length}</span>
-              Participants
+              <div className="rounded-2xl border border-emerald-400 bg-white p-4 shadow-sm">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
+                  Finalized
+                </div>
+                <div className="mt-1 text-4xl font-bold tracking-tight text-slate-900">
+                  {metrics.finalizedRounds}
+                </div>
+                <div className="mt-0.5 text-xs text-slate-500">Saved rounds so far</div>
+              </div>
+
+              <div className="rounded-2xl border border-amber-400 bg-white p-4 shadow-sm">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-600">
+                  Revision
+                </div>
+                <div className="mt-2 text-5xl font-bold tracking-tight text-slate-900">
+                  {workspace.execution.revision_number}
+                </div>
+                <div className="mt-1 text-sm text-slate-500">Current execution revision</div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-            {selectedStageRounds.map((round) => (
-              <button
-                key={round.execution_round_id}
-                type="button"
-                onClick={() => {
-                  setSelectedRoundId(round.execution_round_id);
+          <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+            <ExecutionProgressBar
+              rounds={workspace.rounds}
+              roundRoleMappings={workspace.roundRoleMappings}
+              timelines={executionTimelines}
+              remainingActiveRoles={workspace.remainingActiveRoles}
+              stageCompletionSummary={stageCompletionSummary}
+              selectedStage={selectedStage}
+              onStageSelect={(stageNumber) => {
+                setViewingExecutionBatchId(null);
+                setPendingExecutionRoundId(null);
+                setSelectedStage(stageNumber);
+
+                const firstRound = workspace.rounds
+                  .filter((r) => r.stage_number === stageNumber)
+                  .sort((a, b) => a.round_order - b.round_order)[0];
+
+                if (!firstRound) {
+                  return;
+                }
+
+                setSelectedRoundId(firstRound.execution_round_id);
+
+                const firstBatch = workspace.executionBatches
+                  .filter((b) => b.parent_execution_round_id === firstRound.execution_round_id)
+                  .sort((a, b) => a.round_order - b.round_order)[0];
+
+                setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
+
+                if (firstRound.scope === "COMMON") {
+                  setSelectedTimeline("COMMON");
+                  return;
+                }
+
+                const mapping = workspace.roundRoleMappings.find(
+                  (m) => m.execution_round_id === firstRound.execution_round_id,
+                );
+
+                if (mapping) {
+                  setSelectedTimeline(mapping.drive_role_id);
+                }
+              }}
+            />
+          </div>
+          <div className="h-3" />
+          <div className="mt-5 grid grid-cols-[340px_minmax(0,1fr)] gap-6">
+            <div className="sticky top-6 self-start rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+              <ExecutionNavigator
+                workspace={workspace}
+                selectedStage={selectedStage}
+                selectedRoundId={selectedRoundId}
+                selectedTimeline={selectedTimeline}
+                selectedExecutionBatchId={selectedExecutionBatchId}
+                onStageSelect={(stageNumber) => {
+                  setViewingExecutionBatchId(null);
+                  setPendingExecutionRoundId(null);
+
+                  setSelectedStage(stageNumber);
+
+                  const firstRound = workspace.rounds
+                    .filter((r) => r.stage_number === stageNumber)
+                    .sort((a, b) => a.round_order - b.round_order)[0];
+
+                  if (!firstRound) return;
+
+                  setSelectedRoundId(firstRound.execution_round_id);
 
                   const firstBatch = workspace.executionBatches
-                    .filter((b) => b.parent_execution_round_id === round.execution_round_id)
+                    .filter((b) => b.parent_execution_round_id === firstRound.execution_round_id)
+                    .sort((a, b) => a.round_order - b.round_order)[0];
+
+                  setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
+
+                  if (firstRound.scope === "COMMON") {
+                    setSelectedTimeline("COMMON");
+                    return;
+                  }
+
+                  const mapping = workspace.roundRoleMappings.find(
+                    (m) => m.execution_round_id === firstRound.execution_round_id,
+                  );
+
+                  if (mapping) {
+                    setSelectedTimeline(mapping.drive_role_id);
+                  }
+                }}
+                onRoundSelect={(executionRoundId) => {
+                  setSelectedRoundId(executionRoundId);
+
+                  const round = workspace.rounds.find(
+                    (r) => r.execution_round_id === executionRoundId,
+                  );
+
+                  if (!round) return;
+
+                  const firstBatch = workspace.executionBatches
+                    .filter((b) => b.parent_execution_round_id === executionRoundId)
                     .sort((a, b) => a.round_order - b.round_order)[0];
 
                   setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
@@ -1405,536 +1430,617 @@ export function RecruitmentExecutionWorkspacePage() {
                     return;
                   }
 
-                  const mapping = workspace?.roundRoleMappings.find(
-                    (m) => m.execution_round_id === round.execution_round_id,
+                  const mapping = workspace.roundRoleMappings.find(
+                    (m) => m.execution_round_id === executionRoundId,
                   );
 
                   if (mapping) {
                     setSelectedTimeline(mapping.drive_role_id);
                   }
                 }}
-                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                  selectedRoundId === round.execution_round_id
-                    ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                {round.round_name}
-              </button>
-            ))}
-          </div>
 
-          {isMultipleExecutionStage && (
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="space-y-1">
-                  <h3 className="text-base font-semibold text-slate-900">Execution Batches</h3>
-
-                  <p className="text-sm text-slate-600">
-                    {currentStageBatches.filter((b) => b.participant_count > 0).length} of{" "}
-                    {currentStageBatches.length} batches in use ·{" "}
-                    {currentStageBatches.reduce((sum, batch) => sum + batch.participant_count, 0)}{" "}
-                    students assigned
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    className="inline-flex h-10 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                    onClick={() => {
-                      setManageExecutionBatchesOpen(true);
-                    }}
-                  >
-                    ⚙ Manage Batch Settings
-                  </button>
-
-                  <button
-                    type="button"
-                    className="inline-flex h-10 items-center rounded-full bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700"
-                    onClick={() => {
-                      setViewingExecutionBatchId(null);
-                      setBatchParticipantDialogOpen(true);
-                    }}
-                  >
-                    👥 Assign Participants
-                  </button>
-                </div>
-              </div>
+                onTimelineSelect={setSelectedTimeline}
+                onBatchSelect={(executionBatchId) => {
+                  setSelectedExecutionBatchId(executionBatchId);
+                }}
+              />
             </div>
-          )}
 
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-3 overflow-x-auto">
-              {/* Search */}
+            <div className="min-w-0">
+              <div className="min-w-0 flex-1">
+                <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-2">
+                      <div>
+                        <h2 className="text-xl font-bold tracking-tight text-slate-900">
+                          Stage {selectedStage}
+                        </h2>
 
-              <div className="flex min-w-[320px] flex-1 items-center">
-                <div className="flex h-11 items-center rounded-l-xl border border-r-0 border-slate-300 bg-slate-100 px-4 font-semibold">
-                  IU
-                </div>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {selectedStageRounds.length} Round
+                          {selectedStageRounds.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
 
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search Name, Enrollment, Email or Role"
-                  className="h-11 w-full rounded-r-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                />
-              </div>
+                      <p className="text-sm text-slate-600">
+                        Manage attendance, gate status and progression.
+                      </p>
+                    </div>
 
-              {/* Attendance */}
+                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
+                      <span className="font-medium text-slate-900">{participants.length}</span>
+                      Participants
+                    </div>
+                  </div>
 
-              <select
-                value={attendanceFilter}
-                onChange={(e) =>
-                  setAttendanceFilter(e.target.value as "ALL" | "PRESENT" | "ABSENT" | "PENDING")
-                }
-                className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
-              >
-                <option value="ALL">All Attendance</option>
-                <option value="PRESENT">Present</option>
-                <option value="ABSENT">Absent</option>
-                <option value="PENDING">Pending</option>
-              </select>
+                  <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+                    {selectedStageRounds.map((round) => (
+                      <button
+                        key={round.execution_round_id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedRoundId(round.execution_round_id);
 
-              {/* Progress */}
+                          const firstBatch = workspace.executionBatches
+                            .filter((b) => b.parent_execution_round_id === round.execution_round_id)
+                            .sort((a, b) => a.round_order - b.round_order)[0];
 
-              <select
-                value={progressFilter}
-                onChange={(e) =>
-                  setProgressFilter(e.target.value as "ALL" | "NONE" | "SHORTLISTED" | "SELECTED")
-                }
-                className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
-              >
-                <option value="ALL">All Progress</option>
-                <option value="NONE">No Progress</option>
-                <option value="SHORTLISTED">Shortlisted</option>
-                <option value="SELECTED">Selected</option>
-              </select>
+                          setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
 
-              {/* Batch */}
+                          if (round.scope === "COMMON") {
+                            setSelectedTimeline("COMMON");
+                            return;
+                          }
 
-              {isMultipleExecutionStage && (
-                <select
-                  value={batchFilter}
-                  onChange={(e) => setBatchFilter(e.target.value)}
-                  className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                  <option value="ALL">All Batches</option>
+                          const mapping = workspace?.roundRoleMappings.find(
+                            (m) => m.execution_round_id === round.execution_round_id,
+                          );
 
-                  {currentStageBatches.map((batch) => (
-                    <option key={batch.execution_round_id} value={batch.execution_round_id}>
-                      {batch.round_name}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              {/* Role Filter*/}
-
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
-              >
-                <option value="ALL">All Roles</option>
-
-                {shortlistedRoleSummary.map((role) => (
-                  <option key={role.driveRoleId} value={role.driveRoleId}>
-                    {role.roleName}
-                  </option>
-                ))}
-              </select>
-
-              {/* Import Attendance Excel */}
-
-              <button
-                type="button"
-                onClick={() => toast.info("Coming Soon")}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md"
-              >
-                📥 Import Excel
-              </button>
-
-              {/* Download Pre-Attendance Sheet */}
-
-              <button
-                type="button"
-                onClick={handlePreAttendanceExport}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200"
-              >
-                ⬇ Pre-Attendance
-              </button>
-
-              {/* Download Post-Attendance Report */}
-
-              <button
-                type="button"
-                onClick={handlePostAttendanceExport}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md"
-              >
-                📊 Post-Attendance
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
-            <div className="max-h-[72vh] overflow-auto">
-              <table className="min-w-full border-collapse text-sm">
-                <thead className="sticky top-0 z-30 bg-slate-50 shadow-sm">
-                  <tr className="border-b border-slate-200">
-                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                      Student
-                    </th>
-
-                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                      Enrollment
-                    </th>
-
-                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                      Selected Roles
-                    </th>
-
-                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                      Attendance
-                    </th>
-
-                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                      Gate
-                    </th>
-
-                    <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                      Progression
-                    </th>
-
-                    {isMultipleExecutionStage && (
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Execution Batch
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredParticipants.map((participant) => {
-                    const editedRow = getEditedRow(
-                      currentExecutionRoundId!,
-                      participant.execution_participant_id,
-                    );
-
-                    const effectiveGateStatus: ExecutionGateStatus | "ALLOWED_OVERRIDE" =
-                      editedRow?.restrictionOverride
-                        ? "ALLOWED_OVERRIDE"
-                        : editedRow?.gateStatus === "RESTRICTED"
-                          ? "RESTRICTED"
-                          : "ALLOWED";
-
-                    const effectiveAttendanceStatus = editedRow?.attendanceStatus ?? null;
-
-                    const attendanceRecorded = effectiveAttendanceStatus !== null;
-
-                    const attendanceEligible =
-                      effectiveAttendanceStatus === "PRESENT" ||
-                      (effectiveAttendanceStatus === "ABSENT" &&
-                        editedRow?.absenceDisposition === "ALLOWED");
-
-                    const effectiveGateAllowed = effectiveGateStatus !== "RESTRICTED";
-
-                    const canProgress = attendanceEligible && effectiveGateAllowed;
-
-                    return (
-                      <tr
-                        key={participant.execution_participant_id}
-                        className="border-b border-slate-200 odd:bg-white even:bg-slate-50/50 transition-colors hover:bg-blue-50/60"
+                          if (mapping) {
+                            setSelectedTimeline(mapping.drive_role_id);
+                          }
+                        }}
+                        className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                          selectedRoundId === round.execution_round_id
+                            ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
                       >
-                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                          <div className="truncate font-semibold text-slate-900">
-                            {`${participant.student.first_name} ${participant.student.last_name}`}
-                          </div>
+                        {round.round_name}
+                      </button>
+                    ))}
+                  </div>
 
-                          <div className="mt-1 truncate text-xs text-slate-500">
-                            {participant.student.institute_email}
-                          </div>
-                        </td>
+                  {isMultipleExecutionStage && (
+                    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="space-y-1">
+                          <h3 className="text-base font-semibold text-slate-900">
+                            Execution Batches
+                          </h3>
 
-                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                          {participant.student.enrollment_no}
-                        </td>
+                          <p className="text-sm text-slate-600">
+                            {currentStageBatches.filter((b) => b.participant_count > 0).length} of{" "}
+                            {currentStageBatches.length} batches in use ·{" "}
+                            {currentStageBatches.reduce(
+                              (sum, batch) => sum + batch.participant_count,
+                              0,
+                            )}{" "}
+                            students assigned
+                          </p>
+                        </div>
 
-                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                          <div className="flex flex-wrap gap-1.5">
-                            {participant.selected_roles.map((role) => (
-                              <span
-                                key={role.drive_role_id}
-                                className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xg font-semibold text-blue-700"
-                              >
-                                💼 {role.drive_role_name}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-
-                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                          <select
-                            className={`w-full min-w-37.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-                              editedRow?.attendanceStatus === "PRESENT"
-                                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                                : editedRow?.attendanceStatus === "ABSENT"
-                                  ? "border-amber-300 bg-amber-50 text-amber-700"
-                                  : "border-slate-300 bg-white text-slate-700"
-                            }`}
-                            value={editedRow?.attendanceStatus ?? ""}
-                            onChange={(e) => {
-                              setEditedRow(
-                                currentExecutionRoundId!,
-                                participant.execution_participant_id,
-                                {
-                                  attendanceStatus: (e.target.value ||
-                                    null) as ExecutionAttendanceStatus | null,
-                                },
-                              );
-
-                              setRoundDirty(true);
-                              setHasUnsavedChanges(true);
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            className="inline-flex h-10 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                            onClick={() => {
+                              setManageExecutionBatchesOpen(true);
                             }}
                           >
-                            <option value="">—</option>
-                            <option value="PRESENT">🟢 Present</option>
-                            <option value="ABSENT">🟠 Absent</option>
-                          </select>
+                            ⚙ Manage Batch Settings
+                          </button>
 
-                          {editedRow?.attendanceStatus === "ABSENT" &&
-                            editedRow?.absenceDisposition === "ALLOWED" && (
-                              <p className="mt-1 text-xs text-emerald-600">Allowed Absence</p>
-                            )}
-                        </td>
-
-                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                          <div className="space-y-2">
-                            {effectiveGateStatus === "RESTRICTED" ? (
-                              <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
-                                ⛔ Restricted
-                              </span>
-                            ) : effectiveGateStatus === "ALLOWED_OVERRIDE" ? (
-                              <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                                ⚠ Allowed (Override)
-                              </span>
-                            ) : (
-                              <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                ✔ Allowed
-                              </span>
-                            )}
-
-                            {participant.restriction_reason && (
-                              <p className="max-w-xs text-xs text-slate-500">
-                                {participant.restriction_reason}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                          <select
-                            className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                            value={editedRow?.progressionStatus ?? "NONE"}
-                            onChange={(e) => {
-                              setHasUnsavedChanges(true);
-                              setRoundDirty(true);
-
-                              setEditedRow(
-                                currentExecutionRoundId!,
-                                participant.execution_participant_id,
-                                {
-                                  progressionStatus: e.target.value as ExecutionProgressionStatus,
-                                },
-                              );
+                          <button
+                            type="button"
+                            className="inline-flex h-10 items-center rounded-full bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700"
+                            onClick={() => {
+                              setViewingExecutionBatchId(null);
+                              setBatchParticipantDialogOpen(true);
                             }}
                           >
-                            <option value="NONE">⬜ No Progress</option>
-
-                            <option value="SHORTLISTED" disabled={!canProgress}>
-                              🔵 Shortlisted
-                            </option>
-
-                            <option value="SELECTED" disabled={!canProgress}>
-                              🟢 Selected
-                            </option>
-                          </select>
-
-                          {!canProgress && (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {!attendanceRecorded && (
-                                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-                                  ⚠ Attendance Required
-                                </span>
-                              )}
-
-                              {!effectiveGateAllowed && (
-                                <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700">
-                                  ⛔ Restriction Pending
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </td>
-
-                        {isMultipleExecutionStage && (
-                          <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
-                            {isMultipleExecutionStage ? (
-                              <select
-                                className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                                value={
-                                  executionBatchAssignments[participant.execution_participant_id] ??
-                                  ""
-                                }
-                                onChange={(e) => {
-                                  const batchId = e.target.value;
-
-                                  if (!batchId) {
-                                    return;
-                                  }
-
-                                  setExecutionBatchAssignments((prev) => ({
-                                    ...prev,
-                                    [participant.execution_participant_id]: batchId,
-                                  }));
-
-                                  setRoundDirty(true);
-                                  setHasUnsavedChanges(true);
-                                }}
-                              >
-                                <option value="">Assign Batch</option>
-
-                                {currentStageBatches.map((batch) => (
-                                  <option
-                                    key={batch.execution_round_id}
-                                    value={batch.execution_round_id}
-                                  >
-                                    {batch.round_name}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-xs text-slate-500">—</span>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-semibold text-slate-900">Attendance Review</div>
-
-                  <span className="inline-flex rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700">
-                    Required before save
-                  </span>
-                </div>
-
-                <div className="text-sm text-slate-600">
-                  Review absentees and restriction overrides before saving.
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAttendanceReviewOpen(true)}
-                  disabled={saving || executionFinalized}
-                  className="inline-flex h-11 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isCurrentRoundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
-                </button>
-
-                {workspace.transition.requiresRoleAssignment &&
-                  workspace.remainingActiveRoles.length > 0 && (
-                    <button
-                      type="button"
-                      disabled
-                      className="inline-flex h-11 items-center rounded-full border border-amber-200 bg-amber-50 px-4 text-sm font-medium text-amber-800"
-                    >
-                      Role assignment pending
-                    </button>
+                            👥 Assign Participants
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   )}
 
-                <button
-                  type="button"
-                  onClick={handleProgressToNextRound}
-                  disabled={
-                    saving ||
-                    executionFinalized ||
-                    hasUnsavedChanges ||
-                    !isCurrentRoundSaved ||
-                    !canProgressToNextStage ||
-                    (workspace.transition.requiresRoleAssignment &&
-                      workspace.remainingActiveRoles.length > 0) ||
-                    !allExecutionBatchesCompleted
-                  }
-                  className="inline-flex h-11 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Progress to Next Stage
-                </button>
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Search */}
 
-                <button
-                  type="button"
-                  onClick={handleFinalizeExecution}
-                  disabled={
-                    saving ||
-                    executionFinalized ||
-                    !isCurrentRoundSaved ||
-                    roundDirty ||
-                    hasUnsavedChanges ||
-                    !allExecutionBatchesCompleted
-                  }
-                  className="inline-flex h-11 items-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Final Save
-                </button>
-              </div>
-            </div>
+                      <div className="flex min-w-[320px] flex-1 items-center">
+                        <div className="flex h-11 items-center rounded-l-xl border border-r-0 border-slate-300 bg-slate-100 px-4 font-semibold">
+                          IU
+                        </div>
 
-            <div className="mt-4 grid gap-3">
-              {workspace.transition.requiresRoleAssignment &&
-                workspace.remainingActiveRoles.length > 0 && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                    <div className="font-medium text-amber-800">
-                      Assign shortlisted candidates to role-specific execution rounds.
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search Name, Enrollment, Email or Role"
+
+                          className="h-11 w-full rounded-r-xl border border-slate-300 bg-white px-4 text-sm shadow-sm transition-all focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                        />
+                      </div>
+
+                      {/* Attendance */}
+
+                      <select
+                        value={attendanceFilter}
+                        onChange={(e) =>
+                          setAttendanceFilter(
+                            e.target.value as "ALL" | "PRESENT" | "ABSENT" | "PENDING",
+                          )
+                        }
+                        className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                      >
+                        <option value="ALL">All Attendance</option>
+                        <option value="PRESENT">Present</option>
+                        <option value="ABSENT">Absent</option>
+                        <option value="PENDING">Pending</option>
+                      </select>
+
+                      {/* Progress */}
+
+                      <select
+                        value={progressFilter}
+                        onChange={(e) =>
+                          setProgressFilter(
+                            e.target.value as "ALL" | "NONE" | "SHORTLISTED" | "SELECTED",
+                          )
+                        }
+                        className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                      >
+                        <option value="ALL">All Progress</option>
+                        <option value="NONE">No Progress</option>
+                        <option value="SHORTLISTED">Shortlisted</option>
+                        <option value="SELECTED">Selected</option>
+                      </select>
+
+                      {/* Batch */}
+
+                      {isMultipleExecutionStage && (
+                        <select
+                          value={batchFilter}
+                          onChange={(e) => setBatchFilter(e.target.value)}
+                          className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                        >
+                          <option value="ALL">All Batches</option>
+
+                          {currentStageBatches.map((batch) => (
+                            <option key={batch.execution_round_id} value={batch.execution_round_id}>
+                              {batch.round_name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {/* Role Filter*/}
+
+                      <select
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                        className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium shadow-sm transition-all hover:border-slate-500 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                      >
+                        <option value="ALL">All Roles</option>
+
+                        {shortlistedRoleSummary.map((role) => (
+                          <option key={role.driveRoleId} value={role.driveRoleId}>
+                            {role.roleName}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Import Attendance Excel */}
+
+                      <button
+                        type="button"
+                        onClick={() => toast.info("Coming Soon")}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md"
+                      >
+                        📥 Import Excel
+                      </button>
+
+                      {/* Download Pre-Attendance Sheet */}
+
+                      <button
+                        type="button"
+                        onClick={handlePreAttendanceExport}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200"
+                      >
+                        ⬇ Pre-Attendance
+                      </button>
+
+                      {/* Download Post-Attendance Report */}
+
+                      <button
+                        type="button"
+                        onClick={handlePostAttendanceExport}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md"
+                      >
+                        📊 Post-Attendance
+                      </button>
                     </div>
-
-                    <div className="mt-1 text-sm text-amber-700">
-                      Before Stage {workspace.transition.nextStage} can begin, shortlisted
-                      candidates must be routed into the correct role-specific round.
-                    </div>
-
-                    <ul className="mt-3 list-disc pl-5 text-sm text-amber-700">
-                      {workspace.remainingActiveRoles.map((role) => (
-                        <li key={role.drive_role_id}>
-                          💼 {role.drive_role_name} ({role.candidate_count} candidate
-                          {role.candidate_count !== 1 ? "s" : ""})
-                        </li>
-                      ))}
-                    </ul>
                   </div>
-                )}
 
-              {showExecutionBatchPanel && !allExecutionBatchesCompleted && (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  Complete all execution batches and assign every shortlisted participant before
-                  progressing to the next stage.
+                  <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+                    <div className="max-h-[78vh] overflow-auto">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead className="sticky top-0 z-30 bg-slate-50 shadow-sm">
+                          <tr className="border-b border-slate-200">
+                            <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                              Student
+                            </th>
+
+                            <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                              Enrollment
+                            </th>
+
+                            <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                              Selected Roles
+                            </th>
+
+                            <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                              Attendance
+                            </th>
+
+                            <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                              Gate
+                            </th>
+
+                            <th className="sticky left-0 z-40 border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                              Progression
+                            </th>
+
+                            {isMultipleExecutionStage && (
+                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Execution Batch
+                              </th>
+                            )}
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {filteredParticipants.map((participant) => {
+                            const editedRow = getEditedRow(
+                              currentExecutionRoundId!,
+                              participant.execution_participant_id,
+                            );
+
+                            const effectiveGateStatus: ExecutionGateStatus | "ALLOWED_OVERRIDE" =
+                              editedRow?.restrictionOverride
+                                ? "ALLOWED_OVERRIDE"
+                                : editedRow?.gateStatus === "RESTRICTED"
+                                  ? "RESTRICTED"
+                                  : "ALLOWED";
+
+                            const effectiveAttendanceStatus = editedRow?.attendanceStatus ?? null;
+
+                            const attendanceRecorded = effectiveAttendanceStatus !== null;
+
+                            const attendanceEligible =
+                              effectiveAttendanceStatus === "PRESENT" ||
+                              (effectiveAttendanceStatus === "ABSENT" &&
+                                editedRow?.absenceDisposition === "ALLOWED");
+
+                            const effectiveGateAllowed = effectiveGateStatus !== "RESTRICTED";
+
+                            const canProgress = attendanceEligible && effectiveGateAllowed;
+
+                            return (
+                              <tr
+                                key={participant.execution_participant_id}
+                                className="border-b border-slate-200 odd:bg-white even:bg-slate-50/50 transition-colors hover:bg-blue-50/60"
+                              >
+                                <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                                  <div className="truncate font-semibold text-slate-900">
+                                    {`${participant.student.first_name} ${participant.student.last_name}`}
+                                  </div>
+
+                                  <div className="mt-1 truncate text-xs text-slate-500">
+                                    {participant.student.institute_email}
+                                  </div>
+                                </td>
+
+                                <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                                  {participant.student.enrollment_no}
+                                </td>
+
+                                <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {participant.selected_roles.map((role) => (
+                                      <span
+                                        key={role.drive_role_id}
+                                        className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xg font-semibold text-blue-700"
+                                      >
+                                        💼 {role.drive_role_name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+
+                                <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                                  <select
+                                    className={`w-full min-w-37.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                                      editedRow?.attendanceStatus === "PRESENT"
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                        : editedRow?.attendanceStatus === "ABSENT"
+                                          ? "border-amber-300 bg-amber-50 text-amber-700"
+                                          : "border-slate-300 bg-white text-slate-700"
+                                    }`}
+                                    value={editedRow?.attendanceStatus ?? ""}
+                                    onChange={(e) => {
+                                      setEditedRow(
+                                        currentExecutionRoundId!,
+                                        participant.execution_participant_id,
+                                        {
+                                          attendanceStatus: (e.target.value ||
+                                            null) as ExecutionAttendanceStatus | null,
+                                        },
+                                      );
+
+                                      setRoundDirty(true);
+                                      setHasUnsavedChanges(true);
+                                    }}
+                                  >
+                                    <option value="">—</option>
+                                    <option value="PRESENT">🟢 Present</option>
+                                    <option value="ABSENT">🟠 Absent</option>
+                                  </select>
+
+                                  {editedRow?.attendanceStatus === "ABSENT" &&
+                                    editedRow?.absenceDisposition === "ALLOWED" && (
+                                      <p className="mt-1 text-xs text-emerald-600">
+                                        Allowed Absence
+                                      </p>
+                                    )}
+                                </td>
+
+                                <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                                  <div className="space-y-2">
+                                    {effectiveGateStatus === "RESTRICTED" ? (
+                                      <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                                        ⛔ Restricted
+                                      </span>
+                                    ) : effectiveGateStatus === "ALLOWED_OVERRIDE" ? (
+                                      <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                        ⚠ Allowed (Override)
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                        ✔ Allowed
+                                      </span>
+                                    )}
+
+                                    {participant.restriction_reason && (
+                                      <p className="max-w-xs text-xs text-slate-500">
+                                        {participant.restriction_reason}
+                                      </p>
+                                    )}
+                                  </div>
+                                </td>
+
+                                <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                                  <select
+                                    className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                    value={editedRow?.progressionStatus ?? "NONE"}
+                                    onChange={(e) => {
+                                      setHasUnsavedChanges(true);
+                                      setRoundDirty(true);
+
+                                      setEditedRow(
+                                        currentExecutionRoundId!,
+                                        participant.execution_participant_id,
+                                        {
+                                          progressionStatus: e.target
+                                            .value as ExecutionProgressionStatus,
+                                        },
+                                      );
+                                    }}
+                                  >
+                                    <option value="NONE">⬜ No Progress</option>
+
+                                    <option value="SHORTLISTED" disabled={!canProgress}>
+                                      🔵 Shortlisted
+                                    </option>
+
+                                    <option value="SELECTED" disabled={!canProgress}>
+                                      🟢 Selected
+                                    </option>
+                                  </select>
+
+                                  {!canProgress && (
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                      {!attendanceRecorded && (
+                                        <span className="inline-flex flex-wrap items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                                          ⚠ Attendance Required
+                                        </span>
+                                      )}
+
+                                      {!effectiveGateAllowed && (
+                                        <span className="inline-flex flex-wrap items-center gap-2 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700">
+                                          ⛔ Restriction Pending
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+
+                                {isMultipleExecutionStage && (
+                                  <td className="sticky left-0 z-20 border-r border-slate-200 bg-inherit px-4 py-3 align-top shadow-[6px_0_8px_-8px_rgba(15,23,42,0.18)]">
+                                    {isMultipleExecutionStage ? (
+                                      <select
+                                        className="w-full min-w-37.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                        value={
+                                          executionBatchAssignments[
+                                            participant.execution_participant_id
+                                          ] ?? ""
+                                        }
+                                        onChange={(e) => {
+                                          const batchId = e.target.value;
+
+                                          if (!batchId) {
+                                            return;
+                                          }
+
+                                          setExecutionBatchAssignments((prev) => ({
+                                            ...prev,
+                                            [participant.execution_participant_id]: batchId,
+                                          }));
+
+                                          setRoundDirty(true);
+                                          setHasUnsavedChanges(true);
+                                        }}
+                                      >
+                                        <option value="">Assign Batch</option>
+
+                                        {currentStageBatches.map((batch) => (
+                                          <option
+                                            key={batch.execution_round_id}
+                                            value={batch.execution_round_id}
+                                          >
+                                            {batch.round_name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <span className="text-xs text-slate-500">—</span>
+                                    )}
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-semibold text-slate-900">
+                            Attendance Review
+                          </div>
+
+                          <span className="inline-flex rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700">
+                            Required before save
+                          </span>
+                        </div>
+
+                        <div className="text-sm text-slate-600">
+                          Review absentees and restriction overrides before saving.
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setAttendanceReviewOpen(true)}
+                          disabled={saving || executionFinalized}
+                          className="inline-flex h-11 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isCurrentRoundSaved && !roundDirty ? "✓ Round Saved" : "Save Round"}
+                        </button>
+
+                        {workspace.transition.requiresRoleAssignment &&
+                          workspace.remainingActiveRoles.length > 0 && (
+                            <button
+                              type="button"
+                              disabled
+                              className="inline-flex h-11 items-center rounded-full border border-amber-200 bg-amber-50 px-4 text-sm font-medium text-amber-800"
+                            >
+                              Role assignment pending
+                            </button>
+                          )}
+
+                        <button
+                          type="button"
+                          onClick={handleProgressToNextRound}
+                          disabled={
+                            saving ||
+                            executionFinalized ||
+                            hasUnsavedChanges ||
+                            !isCurrentRoundSaved ||
+                            !canProgressToNextStage ||
+                            (workspace.transition.requiresRoleAssignment &&
+                              workspace.remainingActiveRoles.length > 0) ||
+                            !allExecutionBatchesCompleted
+                          }
+                          className="inline-flex h-11 items-center rounded-full border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Progress to Next Stage
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleFinalizeExecution}
+                          disabled={
+                            saving ||
+                            executionFinalized ||
+                            !isCurrentRoundSaved ||
+                            roundDirty ||
+                            hasUnsavedChanges ||
+                            !allExecutionBatchesCompleted
+                          }
+                          className="inline-flex h-11 items-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Final Save
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3">
+                      {workspace.transition.requiresRoleAssignment &&
+                        workspace.remainingActiveRoles.length > 0 && (
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                            <div className="font-medium text-amber-800">
+                              Assign shortlisted candidates to role-specific execution rounds.
+                            </div>
+
+                            <div className="mt-1 text-sm text-amber-700">
+                              Before Stage {workspace.transition.nextStage} can begin, shortlisted
+                              candidates must be routed into the correct role-specific round.
+                            </div>
+
+                            <ul className="mt-3 list-disc pl-5 text-sm text-amber-700">
+                              {workspace.remainingActiveRoles.map((role) => (
+                                <li key={role.drive_role_id}>
+                                  💼 {role.drive_role_name} ({role.candidate_count} candidate
+                                  {role.candidate_count !== 1 ? "s" : ""})
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                      {showExecutionBatchPanel && !allExecutionBatchesCompleted && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                          Complete all execution batches and assign every shortlisted participant
+                          before progressing to the next stage.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-
       <ProgressSummaryDialog
         open={progressSummaryOpen}
         shortlistedCount={shortlistedParticipants.length}
