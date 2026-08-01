@@ -13,6 +13,7 @@ import FinalizationVerificationDialog, {
   type FinalizationVerificationResult,
 } from "@/components/recruitment-workspace/FinalizationVerificationDialog";
 import ExecutionProgressBar from "@/components/recruitment-workspace/ExecutionProgressBar";
+import ExecutionNavigator from "@/components/recruitment-workspace/ExecutionNavigator";
 import CreateRoundDialog, {
   type ActiveRoleOption,
 } from "@/components/recruitment-workspace/CreateRoundDialog";
