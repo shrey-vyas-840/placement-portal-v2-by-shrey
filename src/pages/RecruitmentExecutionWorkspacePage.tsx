@@ -270,25 +270,34 @@ export function RecruitmentExecutionWorkspacePage() {
         ]),
       );
 
+      const runtimeSnapshot = data.runtimeSnapshot;
+
       const initialState: Record<string, Record<string, RecruitmentExecutionEditedRow>> = {};
 
       data.rounds.forEach((round) => {
         initialState[round.execution_round_id] = {};
 
         data.participants.forEach((participant) => {
+          const snapshotParticipant =
+            runtimeSnapshot.participants[participant.execution_participant_id];
+
           const history = historyLookup.get(
             `${round.execution_round_id}:${participant.execution_participant_id}`,
           );
 
           initialState[round.execution_round_id][participant.execution_participant_id] = {
-            attendanceStatus: history?.attendance_status ?? null,
+            attendanceStatus:
+              snapshotParticipant?.attendanceStatus ?? history?.attendance_status ?? null,
 
-            gateStatus: history?.restriction_override
-              ? "ALLOWED"
-              : (history?.gate_status ??
-                (participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED")),
+            gateStatus:
+              snapshotParticipant?.gateStatus ??
+              (history?.restriction_override
+                ? "ALLOWED"
+                : (history?.gate_status ??
+                  (participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED"))),
 
-            progressionStatus: history?.progression_status ?? "NONE",
+            progressionStatus:
+              snapshotParticipant?.progressionStatus ?? history?.progression_status ?? "NONE",
 
             remarks: history?.remarks ?? "",
 
