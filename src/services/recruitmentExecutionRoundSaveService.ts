@@ -9,7 +9,7 @@ import type {
 
 import { recruitmentExecutionHistoryService } from "./recruitmentExecutionHistoryService";
 import { RecruitmentExecutionProgressionService } from "./recruitmentExecutionProgressionService";
-
+import { recruitmentExecutionSnapshotService } from "./recruitmentExecutionSnapshotService";
 export interface RecruitmentExecutionRoundSaveProvider {
   getRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow | null>;
 
@@ -50,6 +50,13 @@ export class RecruitmentExecutionRoundSaveService {
       executionParticipantId: string;
       executionRoundId: string;
     }[];
+    participantRoles: Array<{
+      executionParticipantId: string;
+      roles: Array<{
+        driveRoleId: string;
+        driveRoleName: string;
+      }>;
+    }>;
     rows: Array<{
       executionParticipantId: string;
       attendanceStatus: ExecutionAttendanceStatus | null;
@@ -126,6 +133,20 @@ export class RecruitmentExecutionRoundSaveService {
     if (error) {
       throw error;
     }
+
+    const currentSnapshot = await recruitmentExecutionSnapshotService.loadSnapshot(
+      input.executionId,
+    );
+
+    const updatedSnapshot = recruitmentExecutionSnapshotService.applyRoundSave({
+      snapshot: currentSnapshot,
+      executionId: input.executionId,
+      roundId: input.executionRoundId,
+      historyRows: historyEvents,
+      participantRoles: input.participantRoles,
+    });
+
+    await recruitmentExecutionSnapshotService.persistSnapshot(input.executionId, updatedSnapshot);
 
     let progressedParticipants = 0;
 

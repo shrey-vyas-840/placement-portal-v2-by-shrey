@@ -986,6 +986,15 @@ export function RecruitmentExecutionWorkspacePage() {
             executionParticipantId,
             executionRoundId,
           })),
+
+        participantRoles: participants.map((participant) => ({
+          executionParticipantId: participant.execution_participant_id,
+          roles: participant.selected_roles.map((role) => ({
+            driveRoleId: role.drive_role_id,
+            driveRoleName: role.drive_role_name,
+          })),
+        })),
+
         rows: participants.map((participant) => {
           const row = getEditedRow(
             selectedRound.execution_round_id,

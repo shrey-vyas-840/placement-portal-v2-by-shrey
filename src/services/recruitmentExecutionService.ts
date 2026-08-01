@@ -605,6 +605,13 @@ class RecruitmentExecutionService {
       executionParticipantId: string;
       executionRoundId: string;
     }[];
+    participantRoles: Array<{
+      executionParticipantId: string;
+      roles: Array<{
+        driveRoleId: string;
+        driveRoleName: string;
+      }>;
+    }>;
     rows: Array<{
       executionParticipantId: string;
       attendanceStatus: ExecutionAttendanceStatus | null;
