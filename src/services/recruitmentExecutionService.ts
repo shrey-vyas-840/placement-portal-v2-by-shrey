@@ -138,6 +138,9 @@ class RecruitmentExecutionService {
 
     loadHistorySummary: (executionId) => this.loadHistorySummary(executionId),
 
+    loadRuntimeSnapshot: (executionId) =>
+      recruitmentExecutionSnapshotService.loadSnapshot(executionId),
+
     loadParticipants: (executionId) => this.loadParticipants(executionId),
 
     loadRounds: (executionId) => this.loadRounds(executionId),

@@ -5,6 +5,7 @@ import type {
   RecruitmentExecutionRoundRoleMapping,
   RecruitmentExecutionBatch,
   ExecutionScope,
+  RecruitmentExecutionRuntimeSnapshot,
 } from "@/types/recruitmentExecution";
 
 export class RecruitmentExecutionProgressionService {
@@ -13,6 +14,8 @@ export class RecruitmentExecutionProgressionService {
       getRound(executionRoundId: string): Promise<RecruitmentExecutionRoundRow | null>;
 
       loadHistorySummary(executionId: string): Promise<RecruitmentExecutionHistorySummary[]>;
+
+      loadRuntimeSnapshot(executionId: string): Promise<RecruitmentExecutionRuntimeSnapshot>;
 
       loadParticipants(executionId: string): Promise<RecruitmentExecutionParticipantWithStudent[]>;
 
@@ -31,7 +34,7 @@ export class RecruitmentExecutionProgressionService {
     },
   ) {}
 
-   filterParticipantsForNextRound(input: {
+  filterParticipantsForNextRound(input: {
     participants: RecruitmentExecutionParticipantWithStudent[];
     history: RecruitmentExecutionHistorySummary[];
     allowedRoleIds: string[];
@@ -63,20 +66,17 @@ export class RecruitmentExecutionProgressionService {
     });
   }
 
-   async deriveNextRoundParticipants(input: {
+  async deriveNextRoundParticipants(input: {
     executionId: string;
     currentRoundId: string;
     nextRoundId: string;
   }): Promise<RecruitmentExecutionParticipantWithStudent[]> {
-    const [currentRound, nextRound, history, participants, rounds, roundRoleMappings] =
-      await Promise.all([
-        this.provider.getRound(input.currentRoundId),
-        this.provider.getRound(input.nextRoundId),
-        this.provider.loadHistorySummary(input.executionId),
-        this.provider.loadParticipants(input.executionId),
-        this.provider.loadRounds(input.executionId),
-        this.provider.loadRoundRoleMappings(input.executionId),
-      ]);
+    const [currentRound, nextRound, runtimeSnapshot, participants] = await Promise.all([
+      this.provider.getRound(input.currentRoundId),
+      this.provider.getRound(input.nextRoundId),
+      this.provider.loadRuntimeSnapshot(input.executionId),
+      this.provider.loadParticipants(input.executionId),
+    ]);
 
     if (!currentRound) {
       throw new Error("Current round not found.");
@@ -92,101 +92,27 @@ export class RecruitmentExecutionProgressionService {
         : [];
 
     const allowedRoleSet = new Set(allowedRoleIds);
-    const roundById = new Map(rounds.map((round) => [round.execution_round_id, round]));
-    const rolesByRound = new Map<string, string[]>();
-
-    roundRoleMappings.forEach((mapping) => {
-      const existing = rolesByRound.get(mapping.execution_round_id) ?? [];
-      existing.push(mapping.drive_role_id);
-      rolesByRound.set(mapping.execution_round_id, existing);
-    });
-
-    const eligibleRoundIds = new Set(
-      rounds
-        .filter((round) => round.stage_number <= currentRound.stage_number)
-        .map((round) => round.execution_round_id),
-    );
-
-    const historyByParticipant = new Map<string, RecruitmentExecutionHistorySummary[]>();
-
-    history.forEach((row) => {
-      if (!eligibleRoundIds.has(row.execution_round_id)) {
-        return;
-      }
-
-      const rows = historyByParticipant.get(row.execution_participant_id) ?? [];
-      rows.push(row);
-      historyByParticipant.set(row.execution_participant_id, rows);
-    });
 
     const progressed = participants.filter((participant) => {
-      const roleState = new Map<string, { active: boolean; terminal: boolean }>();
+      const snapshot = runtimeSnapshot.participants[participant.execution_participant_id];
 
-      participant.selected_roles.forEach((role) => {
-        roleState.set(role.drive_role_id, { active: false, terminal: false });
-      });
+      if (!snapshot) {
+        return false;
+      }
 
-      const participantHistories = (
-        historyByParticipant.get(participant.execution_participant_id) ?? []
-      ).sort((a, b) => {
-        const roundA = roundById.get(a.execution_round_id);
-        const roundB = roundById.get(b.execution_round_id);
+      if (nextRound.scope === "COMMON") {
+        return snapshot.progressionStatus === "SHORTLISTED";
+      }
 
-        const stageDiff = (roundA?.stage_number ?? 0) - (roundB?.stage_number ?? 0);
-        if (stageDiff !== 0) {
-          return stageDiff;
-        }
-
-        const orderDiff = (roundA?.round_order ?? 0) - (roundB?.round_order ?? 0);
-        if (orderDiff !== 0) {
-          return orderDiff;
-        }
-
-        return (a.changed_at ?? "").localeCompare(b.changed_at ?? "");
-      });
-
-      participantHistories.forEach((row) => {
-        const round = roundById.get(row.execution_round_id);
-
-        if (!round) {
-          return;
-        }
-
-        const affectedRoleIds =
-          round.scope === "COMMON"
-            ? participant.selected_roles.map((role) => role.drive_role_id)
-            : row.drive_role_id
-              ? [row.drive_role_id]
-              : (rolesByRound.get(round.execution_round_id) ?? []);
-
-        affectedRoleIds.forEach((roleId) => {
-          const state = roleState.get(roleId);
-
-          if (!state) {
-            return;
-          }
-
-          if (row.progression_status === "SHORTLISTED") {
-            if (!state.terminal) {
-              state.active = true;
-            }
-            return;
-          }
-
-          state.active = false;
-          state.terminal = true;
-        });
-      });
-
-      return [...roleState.entries()].some(([roleId, state]) => {
-        return state.active && (nextRound.scope === "COMMON" || allowedRoleSet.has(roleId));
+      return Object.entries(snapshot.roles).some(([roleId, roleState]) => {
+        return allowedRoleSet.has(roleId) && roleState.status === "ACTIVE";
       });
     });
 
     return progressed;
   }
 
-   async populateNextRoundParticipants(input: {
+  async populateNextRoundParticipants(input: {
     executionId: string;
     currentRoundId: string;
     nextRoundId: string;
@@ -221,4 +147,3 @@ export class RecruitmentExecutionProgressionService {
     return participants.length;
   }
 }
-
