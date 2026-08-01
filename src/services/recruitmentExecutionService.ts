@@ -42,6 +42,7 @@ import { RecruitmentExecutionParticipantAssignmentService } from "./recruitmentE
 import { RecruitmentExecutionReadService } from "./recruitmentExecutionReadService";
 import { RecruitmentExecutionRoundSaveService } from "./recruitmentExecutionRoundSaveService";
 import { RecruitmentExecutionParticipantService } from "./recruitmentExecutionParticipantService";
+import { recruitmentExecutionSnapshotService } from "./recruitmentExecutionSnapshotService";
 
 /**
  * Recruitment Execution Service
@@ -1014,11 +1015,14 @@ class RecruitmentExecutionService {
     await this.initializeParticipants(executionId);
 
     const rounds = await this.loadRounds(executionId);
+
     const participants = await this.loadParticipants(executionId);
 
     const roundRoleMappings = await this.loadRoundRoleMappings(executionId);
 
     const historySummary = await this.loadHistorySummary(executionId);
+
+    const runtimeSnapshot = await recruitmentExecutionSnapshotService.loadSnapshot(executionId);
 
     const allExecutionBatches = await this.loadExecutionBatches(executionId);
 
@@ -1082,6 +1086,7 @@ class RecruitmentExecutionService {
       participants,
       roundRoleMappings,
       historySummary,
+      runtimeSnapshot,
 
       executionBatches,
       executionBatchParticipants,

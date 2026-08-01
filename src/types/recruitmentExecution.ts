@@ -298,6 +298,32 @@ export interface RecruitmentExecutionSnapshot {
   metadata?: Record<string, JsonValue>;
 }
 
+export interface RecruitmentExecutionRuntimeRoleState {
+  status: "ACTIVE" | "SHORTLISTED" | "SELECTED" | "REJECTED";
+  lastRoundId: string | null;
+  lastHistoryId: string | null;
+}
+
+export interface RecruitmentExecutionRuntimeParticipantState {
+  lastRoundId: string | null;
+  lastHistoryId: string | null;
+
+  attendanceStatus: ExecutionAttendanceStatus | null;
+  gateStatus: ExecutionGateStatus | null;
+  progressionStatus: ExecutionProgressionStatus;
+
+  roles: Record<string, RecruitmentExecutionRuntimeRoleState>;
+}
+
+export interface RecruitmentExecutionRuntimeSnapshot {
+  version: number;
+
+  participants: Record<
+    string,
+    RecruitmentExecutionRuntimeParticipantState
+  >;
+}
+
 export interface RecruitmentExecutionRoundParticipantState {
   execution_participant_id: string;
   application_id: string;
@@ -444,6 +470,8 @@ export interface RecruitmentExecutionWorkspace {
   roundRoleMappings: RecruitmentExecutionRoundRoleMapping[];
 
   historySummary: RecruitmentExecutionHistorySummary[];
+
+  runtimeSnapshot: RecruitmentExecutionRuntimeSnapshot;
 
   executionBatches: RecruitmentExecutionBatch[];
 

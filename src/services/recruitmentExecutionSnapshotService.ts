@@ -1,34 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import type {
   RecruitmentExecutionHistoryCreateInput,
-  RecruitmentExecutionParticipantWithStudent,
+  RecruitmentExecutionRuntimeSnapshot,
+  RecruitmentExecutionRuntimeParticipantState,
+  RecruitmentExecutionRuntimeRoleState,
 } from "@/types/recruitmentExecution";
-
-export interface ExecutionRoleSnapshot {
-  status: "ACTIVE" | "REJECTED" | "SELECTED";
-  lastRoundId: string | null;
-  lastHistoryRevision: number;
-  lastHistoryId: string | null;
-}
-
-export interface ExecutionParticipantSnapshot {
-  currentRoundId: string;
-  currentBatchId: string | null;
-
-  attendanceStatus: string | null;
-  gateStatus: string | null;
-  progressionStatus: string;
-
-  roles: Record<string, ExecutionRoleSnapshot>;
-
-  updatedAt: string;
-}
-
-export interface RecruitmentExecutionRuntimeSnapshot {
-  version: 1;
-
-  participants: Record<string, ExecutionParticipantSnapshot>;
-}
 
 export class RecruitmentExecutionSnapshotService {
   private readonly EXECUTIONS_TABLE = "recruitment_executions";
@@ -106,7 +82,7 @@ export class RecruitmentExecutionSnapshotService {
 
       const existing = next.participants[history.execution_participant_id];
 
-      const roles =
+      const roles: Record<string, RecruitmentExecutionRuntimeRoleState> =
         existing?.roles ??
         Object.fromEntries(
           participantRoles.map((roleId) => [
@@ -114,26 +90,23 @@ export class RecruitmentExecutionSnapshotService {
             {
               status: "ACTIVE",
               lastRoundId: null,
-              lastHistoryRevision: 0,
               lastHistoryId: null,
             },
           ]),
         );
 
-      next.participants[history.execution_participant_id] = {
-        currentRoundId: input.roundId,
-        currentBatchId: existing?.currentBatchId ?? null,
+      const participantState: RecruitmentExecutionRuntimeParticipantState = {
+        lastRoundId: input.roundId,
+        lastHistoryId: history.previous_history_id ?? null,
 
         attendanceStatus: history.attendance_status,
-
         gateStatus: history.gate_status,
-
         progressionStatus: history.progression_status,
 
         roles,
-
-        updatedAt: new Date().toISOString(),
       };
+
+      next.participants[history.execution_participant_id] = participantState;
     });
 
     return next;
