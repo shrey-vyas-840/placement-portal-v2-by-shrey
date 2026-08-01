@@ -95,6 +95,33 @@ export class RecruitmentExecutionSnapshotService {
           ]),
         );
 
+      for (const roleId of participantRoles) {
+        const roleState = roles[roleId] ?? {
+          status: "ACTIVE",
+          lastRoundId: null,
+          lastHistoryId: null,
+        };
+
+        switch (history.progression_status) {
+          case "SHORTLISTED":
+            roleState.status = "ACTIVE";
+            break;
+
+          case "SELECTED":
+            roleState.status = "SELECTED";
+            break;
+
+          default:
+            roleState.status = "REJECTED";
+            break;
+        }
+
+        roleState.lastRoundId = input.roundId;
+        roleState.lastHistoryId = history.previous_history_id ?? null;
+
+        roles[roleId] = roleState;
+      }
+
       const participantState: RecruitmentExecutionRuntimeParticipantState = {
         lastRoundId: input.roundId,
         lastHistoryId: history.previous_history_id ?? null,
