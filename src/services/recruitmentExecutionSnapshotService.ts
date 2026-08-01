@@ -78,6 +78,10 @@ export class RecruitmentExecutionSnapshotService {
 
     roundId: string;
 
+    roundScope: "COMMON" | "ROLE_SPECIFIC";
+
+    roundRoleIds: string[];
+
     historyRows: RecruitmentExecutionHistoryCreateInput[];
 
     participantRoles: Array<{
@@ -126,7 +130,12 @@ export class RecruitmentExecutionSnapshotService {
           ]),
         );
 
-      for (const roleId of participantRoles) {
+      const affectedRoles =
+        input.roundScope === "COMMON"
+          ? participantRoles
+          : participantRoles.filter((roleId) => input.roundRoleIds.includes(roleId));
+
+      for (const roleId of affectedRoles) {
         const roleState = roles[roleId] ?? {
           status: "ACTIVE",
           lastRoundId: null,

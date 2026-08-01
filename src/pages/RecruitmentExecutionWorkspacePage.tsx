@@ -272,9 +272,9 @@ export function RecruitmentExecutionWorkspacePage() {
       );
 
       const runtimeSnapshot = data.runtimeSnapshot;
-console.log("Runtime Snapshot", runtimeSnapshot);
-console.log("Runtime Snapshot Participants", runtimeSnapshot?.participants);
-console.log("History Summary", data.historySummary);
+      console.log("Runtime Snapshot", runtimeSnapshot);
+      console.log("Runtime Snapshot Participants", runtimeSnapshot?.participants);
+      console.log("History Summary", data.historySummary);
       const initialState: Record<string, Record<string, RecruitmentExecutionEditedRow>> = {};
 
       data.rounds.forEach((round) => {
@@ -491,7 +491,12 @@ console.log("History Summary", data.historySummary);
         setParticipants(workspace.participants);
         return;
       }
-
+      console.log("WORKSPACE SELECTION", {
+        selectedRoundId: selectedRound?.execution_round_id,
+        selectedRoundName: selectedRound?.round_name,
+        selectedExecutionBatchId,
+        currentExecutionRoundId: selectedExecutionBatchId ?? selectedRound?.execution_round_id,
+      });
       try {
         const data = await recruitmentExecutionService.loadRoundParticipants(
           selectedRound.execution_round_id,
@@ -992,6 +997,9 @@ console.log("History Summary", data.historySummary);
         executionRoundId: selectedRound.execution_round_id,
         executionRevision: workspace.execution.revision_number,
 
+        nextRoundId:
+          progressToNextRound && pendingExecutionRoundId ? pendingExecutionRoundId : undefined,
+
         batchAssignments: Object.entries(executionBatchAssignments)
           .filter(([, executionRoundId]) => Boolean(executionRoundId))
           .map(([executionParticipantId, executionRoundId]) => ({
@@ -1044,8 +1052,17 @@ console.log("History Summary", data.historySummary);
       }
 
       await loadWorkspace();
+
       console.log("SAVE ROUND - WORKSPACE RELOADED");
+
+      /*
+       * Progress has now been committed.
+       * Consume the pending destination round so a normal
+       * Save cannot trigger progression again.
+       */
+      setPendingExecutionRoundId(null);
       setProgressToNextRound(false);
+
       setRoundDirty(false);
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -2068,7 +2085,15 @@ console.log("History Summary", data.historySummary);
           setExecutionModeDialogOpen(false);
 
           if (mode === "SINGLE") {
-            setPendingExecutionRoundId(null);
+            /*
+             * Keep the progression context alive.
+             *
+             * The destination round has been created,
+             * but Stage 1 has not yet been saved.
+             *
+             * handleSaveRound() is responsible for consuming
+             * pendingExecutionRoundId after progression completes.
+             */
 
             setCreateRoundOpen(false);
 
@@ -2076,13 +2101,13 @@ console.log("History Summary", data.historySummary);
 
             setProgressSummaryOpen(false);
 
-            setProgressToNextRound(false);
-
             setStageConfigurationMode(false);
 
             await loadWorkspace();
 
-            toast.success("Stage created successfully.");
+            toast.success(
+              "Stage created. Save the current stage to progress shortlisted participants.",
+            );
 
             return;
           }

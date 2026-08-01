@@ -179,62 +179,53 @@ export class RecruitmentExecutionParticipantService {
   ): Promise<RecruitmentExecutionParticipantWithStudent[]> {
     const round = await this.provider.getRound(executionRoundId);
 
+    console.log("LOAD ROUND PARTICIPANTS", {
+      requestedExecutionRoundId: executionRoundId,
+      roundName: round?.round_name,
+      parentExecutionRoundId: round?.parent_execution_round_id,
+    });
+
     if (!round) {
       throw new Error("Execution round not found.");
     }
 
     const participants = await this.loadParticipants(round.execution_id);
 
-    // Child execution batches always load their own persisted membership.
-    if (round.parent_execution_round_id) {
-      const participantIds = await this.provider.loadRoundParticipantIds(executionRoundId);
+    let participantIds = await this.provider.loadRoundParticipantIds(executionRoundId);
 
-      if (participantIds.length === 0) {
-        return [];
+    console.log("DIRECT ROUND MEMBERSHIP", {
+      executionRoundId,
+      directParticipantCount: participantIds.length,
+      participantIds,
+    });
+
+    // Parent round with child batches
+    if (participantIds.length === 0 && !round.parent_execution_round_id) {
+      const rounds = await this.provider.loadRounds(round.execution_id);
+
+      const childRoundIds = rounds
+        .filter((r) => r.parent_execution_round_id === executionRoundId)
+        .map((r) => r.execution_round_id);
+
+      if (childRoundIds.length > 0) {
+        const childAssignments = await Promise.all(
+          childRoundIds.map((id) => this.provider.loadRoundParticipantIds(id)),
+        );
+
+        participantIds = [...new Set(childAssignments.flat())];
       }
-
-      const participantIdSet = new Set(participantIds);
-
-      return participants.filter((participant) =>
-        participantIdSet.has(participant.execution_participant_id),
-      );
     }
 
-    // Parent execution stage
-    const childBatches = (await this.provider.loadExecutionBatches(round.execution_id)).filter(
-      (batch) => batch.parent_execution_round_id === round.execution_round_id,
-    );
-
-    // If the stage has not yet been split into execution batches,
-    // preserve the existing Stage 1 behaviour by showing every
-    // execution participant.
-    if (childBatches.length === 0) {
-      return participants;
-    }
-
-    // Once execution batches exist, the union of all child batch
-    // memberships becomes the source of truth for the stage.
-    const participantIdSet = new Set<string>();
-
-    for (const batch of childBatches) {
-      const batchParticipantIds = await this.provider.loadRoundParticipantIds(
-        batch.execution_round_id,
-      );
-
-      batchParticipantIds.forEach((participantId) => {
-        participantIdSet.add(participantId);
-      });
-    }
-
-    if (participantIdSet.size === 0) {
+    if (participantIds.length === 0) {
       return [];
     }
+
+    const participantIdSet = new Set(participantIds);
 
     return participants.filter((participant) =>
       participantIdSet.has(participant.execution_participant_id),
     );
   }
-
   async loadRoundRoleMappings(
     executionId: string,
   ): Promise<RecruitmentExecutionRoundRoleMapping[]> {

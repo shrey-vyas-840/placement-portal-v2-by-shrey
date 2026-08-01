@@ -19,6 +19,12 @@ export class RecruitmentExecutionProgressionService {
 
       loadParticipants(executionId: string): Promise<RecruitmentExecutionParticipantWithStudent[]>;
 
+      loadRoundParticipants(
+        executionRoundId: string,
+      ): Promise<RecruitmentExecutionParticipantWithStudent[]>;
+
+      loadRoundParticipantIds(executionRoundId: string): Promise<string[]>;
+
       loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]>;
 
       loadRoundRoleMappings(executionId: string): Promise<RecruitmentExecutionRoundRoleMapping[]>;
@@ -75,8 +81,16 @@ export class RecruitmentExecutionProgressionService {
       this.provider.getRound(input.currentRoundId),
       this.provider.getRound(input.nextRoundId),
       this.provider.loadRuntimeSnapshot(input.executionId),
-      this.provider.loadParticipants(input.executionId),
+      this.provider.loadRoundParticipants(input.currentRoundId),
     ]);
+
+    console.log("Current Round Participants:", participants.length);
+    console.log(
+      participants.map((p) => ({
+        id: p.execution_participant_id,
+        name: `${p.student.first_name} ${p.student.last_name}`,
+      })),
+    );
 
     if (!currentRound) {
       throw new Error("Current round not found.");
@@ -117,10 +131,45 @@ export class RecruitmentExecutionProgressionService {
     currentRoundId: string;
     nextRoundId: string;
   }): Promise<number> {
+    console.log("========================================");
+    console.log("POPULATE NEXT ROUND - START");
+    console.log("executionId:", input.executionId);
+    console.log("currentRoundId:", input.currentRoundId);
+    console.log("nextRoundId:", input.nextRoundId);
+    console.log("========================================");
     const participants = await this.deriveNextRoundParticipants({
       executionId: input.executionId,
       currentRoundId: input.currentRoundId,
       nextRoundId: input.nextRoundId,
+    });
+    console.log("DERIVED PARTICIPANTS:", participants.length);
+
+    console.log(
+      participants.map((p) => ({
+        executionParticipantId: p.execution_participant_id,
+        student: `${p.student.first_name} ${p.student.last_name}`,
+      })),
+    );
+    const currentRound = await this.provider.getRound(input.currentRoundId);
+    const nextRound = await this.provider.getRound(input.nextRoundId);
+
+    console.log("========== PROGRESSION WRITER ==========");
+
+    console.log("CURRENT ROUND", {
+      executionRoundId: currentRound?.execution_round_id,
+      roundName: currentRound?.round_name,
+      parentExecutionRoundId: currentRound?.parent_execution_round_id,
+    });
+
+    console.log("NEXT ROUND", {
+      executionRoundId: nextRound?.execution_round_id,
+      roundName: nextRound?.round_name,
+      parentExecutionRoundId: nextRound?.parent_execution_round_id,
+    });
+
+    console.log("DERIVED PARTICIPANTS", {
+      count: participants.length,
+      participantIds: participants.map((p) => p.execution_participant_id),
     });
 
     console.log("========== NEXT ROUND ==========");
@@ -137,11 +186,37 @@ export class RecruitmentExecutionProgressionService {
 
     await this.provider.removeRoundParticipants(input.nextRoundId);
 
+    console.log("ASSIGN PARTICIPANTS", {
+      executionRoundId: input.nextRoundId,
+      participantCount: participants.length,
+      participantIds: participants.map((p) => p.execution_participant_id),
+    });
+
+    console.log("ASSIGNING TO ROUND", {
+      executionRoundId: input.nextRoundId,
+      participantCount: participants.length,
+    });
+
+    console.log("ASSIGN PARTICIPANTS TO ROUND");
+    console.log("executionRoundId:", input.nextRoundId);
+    console.log(
+      "participantIds:",
+      participants.map((p) => p.execution_participant_id),
+    );
+
     await this.provider.assignParticipantsToRound({
       executionRoundId: input.nextRoundId,
       executionParticipantIds: participants.map(
         (participant) => participant.execution_participant_id,
       ),
+    });
+    console.log("ASSIGN PARTICIPANTS COMPLETED");
+    const persisted = await this.provider.loadRoundParticipantIds(input.nextRoundId);
+
+    console.log("ASSIGNED MEMBERSHIP", {
+      executionRoundId: input.nextRoundId,
+      persistedParticipantCount: persisted.length,
+      persistedParticipantIds: persisted,
     });
 
     return participants.length;

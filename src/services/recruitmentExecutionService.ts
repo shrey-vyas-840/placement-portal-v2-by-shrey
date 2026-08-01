@@ -133,26 +133,38 @@ class RecruitmentExecutionService {
 
   private readonly readService = new RecruitmentExecutionReadService();
 
-  private readonly progressionService = new RecruitmentExecutionProgressionService({
-    getRound: (executionRoundId) => this.getRound(executionRoundId),
+private readonly progressionService = new RecruitmentExecutionProgressionService({
+  getRound: (executionRoundId) => this.getRound(executionRoundId),
 
-    loadHistorySummary: (executionId) => this.loadHistorySummary(executionId),
+  loadHistorySummary: (executionId) => this.loadHistorySummary(executionId),
 
-    loadRuntimeSnapshot: (executionId) =>
-      recruitmentExecutionSnapshotService.loadSnapshot(executionId),
+  loadRuntimeSnapshot: (executionId) =>
+    recruitmentExecutionSnapshotService.loadSnapshot(executionId),
 
-    loadParticipants: (executionId) => this.loadParticipants(executionId),
+  loadParticipants: (executionId) =>
+    this.loadParticipants(executionId),
 
-    loadRounds: (executionId) => this.loadRounds(executionId),
+  loadRoundParticipants: (executionRoundId) =>
+    this.loadRoundParticipants(executionRoundId),
 
-    loadRoundRoleMappings: (executionId) => this.loadRoundRoleMappings(executionId),
+  loadRounds: (executionId) =>
+    this.loadRounds(executionId),
 
-    getRoundRoleIds: (executionRoundId) => this.getRoundRoleIds(executionRoundId),
+  loadRoundRoleMappings: (executionId) =>
+    this.loadRoundRoleMappings(executionId),
 
-    assignParticipantsToRound: (input) => this.assignParticipantsToRound(input),
+  getRoundRoleIds: (executionRoundId) =>
+    this.getRoundRoleIds(executionRoundId),
 
-    removeRoundParticipants: (executionRoundId) => this.removeRoundParticipants(executionRoundId),
-  });
+  assignParticipantsToRound: (input) =>
+    this.assignParticipantsToRound(input),
+
+  removeRoundParticipants: (executionRoundId) =>
+    this.removeRoundParticipants(executionRoundId),
+
+  loadRoundParticipantIds: (executionRoundId) =>
+  this.loadRoundParticipantIds(executionRoundId),
+});
 
   private readonly roundSaveService = new RecruitmentExecutionRoundSaveService(
     {

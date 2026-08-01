@@ -84,15 +84,16 @@ export class RecruitmentExecutionRoundSaveService {
     );
 
     let driveRoleId: string | null = null;
+    let roundRoleIds: string[] = [];
 
     if (round.scope === "ROLE_SPECIFIC") {
-      const roleIds = await this.provider.getRoundRoleIds(input.executionRoundId);
+      roundRoleIds = await this.provider.getRoundRoleIds(input.executionRoundId);
 
-      if (roleIds.length > 1) {
+      if (roundRoleIds.length > 1) {
         throw new Error("A role-specific execution batch cannot be mapped to multiple roles.");
       }
 
-      driveRoleId = roleIds.length === 1 ? roleIds[0] : null;
+      driveRoleId = roundRoleIds.length === 1 ? roundRoleIds[0] : null;
     }
 
     const historyEvents = recruitmentExecutionHistoryService.buildHistoryEvents({
@@ -129,7 +130,7 @@ export class RecruitmentExecutionRoundSaveService {
       p_batch_assignments: input.batchAssignments ?? [],
       p_next_round_id: input.nextRoundId ?? null,
     });
-
+    console.log("SAVE ROUND RPC COMPLETED");
     if (error) {
       throw error;
     }
@@ -142,6 +143,10 @@ export class RecruitmentExecutionRoundSaveService {
       snapshot: currentSnapshot,
       executionId: input.executionId,
       roundId: input.executionRoundId,
+
+      roundScope: round.scope,
+      roundRoleIds,
+
       historyRows: historyEvents,
       participantRoles: input.participantRoles,
     });
@@ -155,11 +160,29 @@ export class RecruitmentExecutionRoundSaveService {
     if (input.nextRoundId) {
       console.log("CALLING populateNextRoundParticipants");
 
+      console.log("========== PROGRESSION ==========");
+      console.log("CURRENT ROUND", {
+        executionRoundId: input.executionRoundId,
+      });
+
+      if (input.nextRoundId) {
+        const nextRound = await this.provider.getRound(input.nextRoundId);
+
+        console.log("NEXT ROUND", {
+          executionRoundId: nextRound?.execution_round_id,
+          roundName: nextRound?.round_name,
+          parentExecutionRoundId: nextRound?.parent_execution_round_id,
+        });
+      } else {
+        console.log("NEXT ROUND = undefined");
+      }
+      console.log("SAVE ROUND -> CALLING populateNextRoundParticipants");
       progressedParticipants = await this.progressionService.populateNextRoundParticipants({
         executionId: input.executionId,
         currentRoundId: input.executionRoundId,
         nextRoundId: input.nextRoundId,
       });
+      console.log("SAVE ROUND -> populateNextRoundParticipants FINISHED");
     } else {
       console.log("NO NEXT ROUND ID PASSED TO saveRound()");
     }
