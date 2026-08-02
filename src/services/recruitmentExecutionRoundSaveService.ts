@@ -85,15 +85,26 @@ export class RecruitmentExecutionRoundSaveService {
     let driveRoleId: string | null = null;
     let roundRoleIds: string[] = [];
 
-    if (round.scope === "ROLE_SPECIFIC") {
-      roundRoleIds = await this.provider.getRoundRoleIds(input.executionRoundId);
+ if (round.scope === "ROLE_SPECIFIC") {
+  roundRoleIds = await this.provider.getRoundRoleIds(
+    input.executionRoundId,
+  );
 
-      if (roundRoleIds.length > 1) {
-        throw new Error("A role-specific execution batch cannot be mapped to multiple roles.");
-      }
-
-      driveRoleId = roundRoleIds.length === 1 ? roundRoleIds[0] : null;
-    }
+  /*
+   * A role-specific execution stage may represent
+   * one or more drive roles.
+   *
+   * History keeps the full role mapping in the
+   * runtime snapshot.
+   *
+   * driveRoleId is therefore populated only when
+   * exactly one role exists for backward compatibility.
+   */
+  driveRoleId =
+    roundRoleIds.length === 1
+      ? roundRoleIds[0]
+      : null;
+}
 
     const historyEvents = recruitmentExecutionHistoryService.buildHistoryEvents({
       executionId: input.executionId,

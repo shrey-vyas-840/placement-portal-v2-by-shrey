@@ -202,18 +202,18 @@ export function RecruitmentExecutionWorkspacePage() {
       const data = await recruitmentExecutionService.getExecutionDashboard(executionId);
 
       setWorkspace(data);
-console.log("========== EXECUTION BATCH DEBUG ==========");
-console.log("Execution Batches:", data.executionBatches);
-console.log("Execution Batch Count:", data.executionBatches.length);
+      console.log("========== EXECUTION BATCH DEBUG ==========");
+      console.log("Execution Batches:", data.executionBatches);
+      console.log("Execution Batch Count:", data.executionBatches.length);
 
-data.executionBatches.forEach((batch) => {
-    console.log({
-        id: batch.execution_round_id,
-        parent: batch.parent_execution_round_id,
-        stage: batch.stage_number,
-        name: batch.round_name,
-    });
-});
+      data.executionBatches.forEach((batch) => {
+        console.log({
+          id: batch.execution_round_id,
+          parent: batch.parent_execution_round_id,
+          stage: batch.stage_number,
+          name: batch.round_name,
+        });
+      });
       if (navigationRestore) {
         restoreWorkspaceNavigation(data);
       } else if (selectedRoundId) {
@@ -384,23 +384,8 @@ data.executionBatches.forEach((batch) => {
   const stageExecutionRoundId = selectedRound?.execution_round_id ?? null;
 
   const effectiveExecutionRoundId = useMemo(() => {
-    if (!selectedRound) {
-      return null;
-    }
-
-    if (
-      selectedExecutionBatchId &&
-      workspace?.executionBatches.some(
-        (batch) =>
-          batch.execution_round_id === selectedExecutionBatchId &&
-          batch.parent_execution_round_id === selectedRound.execution_round_id,
-      )
-    ) {
-      return selectedExecutionBatchId;
-    }
-
-    return selectedRound.execution_round_id;
-  }, [workspace, selectedRound, selectedExecutionBatchId]);
+    return selectedRound?.execution_round_id ?? null;
+  }, [selectedRound]);
 
   const isMultipleExecutionStage = useMemo(() => {
     if (!workspace || selectedStage === null) {
@@ -697,7 +682,7 @@ data.executionBatches.forEach((batch) => {
         );
 
         const completed = assignedRows.every((participant) => {
-          const row = getEditedRow(batch.execution_round_id, participant.execution_participant_id);
+          const row = getEditedRow(selectedRound!.execution_round_id, participant.execution_participant_id);
 
           return row?.attendanceStatus !== null;
         });
@@ -709,7 +694,7 @@ data.executionBatches.forEach((batch) => {
 
           present_count: assignedRows.filter((participant) => {
             const row = getEditedRow(
-              batch.execution_round_id,
+              selectedRound!.execution_round_id,
               participant.execution_participant_id,
             );
 
@@ -718,7 +703,7 @@ data.executionBatches.forEach((batch) => {
 
           absent_count: assignedRows.filter((participant) => {
             const row = getEditedRow(
-              batch.execution_round_id,
+              selectedRound!.execution_round_id,
               participant.execution_participant_id,
             );
 
@@ -727,7 +712,7 @@ data.executionBatches.forEach((batch) => {
 
           shortlisted_count: assignedRows.filter((participant) => {
             const row = getEditedRow(
-              batch.execution_round_id,
+              selectedRound!.execution_round_id,
               participant.execution_participant_id,
             );
 
@@ -736,7 +721,7 @@ data.executionBatches.forEach((batch) => {
 
           selected_count: assignedRows.filter((participant) => {
             const row = getEditedRow(
-              batch.execution_round_id,
+              selectedRound!.execution_round_id,
               participant.execution_participant_id,
             );
 
@@ -749,7 +734,7 @@ data.executionBatches.forEach((batch) => {
             assignedRows.length -
             assignedRows.filter((participant) => {
               const row = getEditedRow(
-                batch.execution_round_id,
+                selectedRound!.execution_round_id,
                 participant.execution_participant_id,
               );
 

@@ -143,45 +143,61 @@ export class RecruitmentExecutionProgressionService {
       throw new Error("Next round not found.");
     }
 
-//
-// TEMPORARY DIAGNOSTIC IMPLEMENTATION
-//
-// Purpose:
-// Prove that sequential stage progression works independently
-// of role-specific filtering.
-//
-// Business rule for this experiment:
-//
-// Current Stage Membership
-//        ↓
-// SHORTLISTED
-//        ↓
-// Immediate Next Stage
-//
-// Role filtering is intentionally disabled for this experiment.
-//
+    const nextRoundRoleIds =
+      nextRound.scope === "ROLE_SPECIFIC"
+        ? await this.provider.getRoundRoleIds(nextRound.execution_round_id)
+        : [];
 
-const progressed = participants.filter((participant) => {
-  const snapshot =
-    runtimeSnapshot.participants[
-      participant.execution_participant_id
-    ];
+    const progressed = participants.filter((participant) => {
+      const snapshot = runtimeSnapshot.participants[participant.execution_participant_id];
 
-  if (!snapshot) {
-    return false;
-  }
+      if (!snapshot) {
+        return false;
+      }
 
-  return snapshot.progressionStatus === "SHORTLISTED";
-});
+      /*
+       * Only shortlisted participants
+       * are eligible to progress.
+       */
+      if (snapshot.progressionStatus !== "SHORTLISTED") {
+        return false;
+      }
 
-console.group("=== TEMP PROGRESSION ===");
-console.log("Current Round:", currentRound.round_name);
-console.log("Next Round:", nextRound.round_name);
-console.log("Current Members:", participants.length);
-console.log("Shortlisted:", progressed.length);
-console.groupEnd();
+      /*
+       * Common stages accept every
+       * shortlisted participant.
+       */
+      if (nextRound.scope === "COMMON") {
+        return true;
+      }
 
-return progressed;
+      /*
+       * Role-specific stages accept
+       * participants having ANY
+       * configured execution role.
+       */
+      return participant.selected_roles.some((role) =>
+        nextRoundRoleIds.includes(role.drive_role_id),
+      );
+    });
+
+    console.group("=== ROLE FILTER PROGRESSION ===");
+
+    console.log("Current Round", currentRound.round_name);
+
+    console.log("Next Round", nextRound.round_name);
+
+    console.log("Next Round Scope", nextRound.scope);
+
+    console.log("Configured Roles", nextRoundRoleIds);
+
+    console.log("Current Members", participants.length);
+
+    console.log("Progressed Members", progressed.length);
+
+    console.groupEnd();
+
+    return progressed;
   }
 
   private async verifyRoundMembership(input: {

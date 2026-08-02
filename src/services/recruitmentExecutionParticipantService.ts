@@ -203,11 +203,43 @@ export class RecruitmentExecutionParticipantService {
       stageRound.execution_round_id,
     );
 
-    const participantIdSet = new Set(participantIds);
+const participantIdSet = new Set(participantIds);
 
-    return participants.filter((participant) =>
-      participantIdSet.has(participant.execution_participant_id),
-    );
+const stageParticipants = participants.filter((participant) =>
+  participantIdSet.has(participant.execution_participant_id),
+);
+
+/*
+ * Common rounds own every shortlisted participant.
+ */
+if (stageRound.scope !== "ROLE_SPECIFIC") {
+  return stageParticipants;
+}
+
+/*
+ * Role-specific rounds only contain shortlisted students
+ * whose selected roles intersect this round's configured roles.
+ */
+const mappings = await this.loadRoundRoleMappings(stageRound.execution_id);
+
+const allowedRoleIds = new Set(
+  mappings
+    .filter(
+      (mapping) =>
+        mapping.execution_round_id === stageRound.execution_round_id,
+    )
+    .map((mapping) => mapping.drive_role_id),
+);
+
+if (allowedRoleIds.size === 0) {
+  return [];
+}
+
+return stageParticipants.filter((participant) =>
+  participant.selected_roles.some((role) =>
+    allowedRoleIds.has(role.drive_role_id),
+  ),
+);
   }
 
   async loadRoundRoleMappings(
