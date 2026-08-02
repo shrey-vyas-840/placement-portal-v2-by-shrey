@@ -191,34 +191,19 @@ export class RecruitmentExecutionParticipantService {
 
     const participants = await this.loadParticipants(round.execution_id);
 
-    let participantIds = await this.provider.loadRoundParticipantIds(executionRoundId);
+const participantIds = await this.provider.loadRoundParticipantIds(
+  executionRoundId,
+);
 
-    console.log("DIRECT ROUND MEMBERSHIP", {
-      executionRoundId,
-      directParticipantCount: participantIds.length,
-      participantIds,
-    });
+console.log("STAGE MEMBERSHIP", {
+  executionRoundId,
+  participantCount: participantIds.length,
+  participantIds,
+});
 
-    // Parent round with child batches
-    if (participantIds.length === 0 && !round.parent_execution_round_id) {
-      const rounds = await this.provider.loadRounds(round.execution_id);
-
-      const childRoundIds = rounds
-        .filter((r) => r.parent_execution_round_id === executionRoundId)
-        .map((r) => r.execution_round_id);
-
-      if (childRoundIds.length > 0) {
-        const childAssignments = await Promise.all(
-          childRoundIds.map((id) => this.provider.loadRoundParticipantIds(id)),
-        );
-
-        participantIds = [...new Set(childAssignments.flat())];
-      }
-    }
-
-    if (participantIds.length === 0) {
-      return [];
-    }
+if (participantIds.length === 0) {
+  return [];
+}
 
     const participantIdSet = new Set(participantIds);
 

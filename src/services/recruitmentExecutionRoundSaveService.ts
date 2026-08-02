@@ -40,11 +40,10 @@ export class RecruitmentExecutionRoundSaveService {
   // Round Save
   // --------------------------------------------------------------------------
 
-  async saveRound(input: {
+    async saveRound(input: {
     executionId: string;
     executionRoundId: string;
     executionRevision: number;
-    nextRoundId?: string;
     changedBy?: string | null;
     batchAssignments?: {
       executionParticipantId: string;
@@ -128,9 +127,8 @@ export class RecruitmentExecutionRoundSaveService {
       p_changed_by: input.changedBy ?? null,
       p_history_rows: historyEvents,
       p_batch_assignments: input.batchAssignments ?? [],
-      p_next_round_id: input.nextRoundId ?? null,
     });
-    console.log("SAVE ROUND RPC COMPLETED");
+
     if (error) {
       throw error;
     }
@@ -143,53 +141,50 @@ export class RecruitmentExecutionRoundSaveService {
       snapshot: currentSnapshot,
       executionId: input.executionId,
       roundId: input.executionRoundId,
-
       roundScope: round.scope,
       roundRoleIds,
-
       historyRows: historyEvents,
       participantRoles: input.participantRoles,
     });
 
-    await recruitmentExecutionSnapshotService.persistSnapshot(input.executionId, updatedSnapshot);
+await recruitmentExecutionSnapshotService.persistSnapshot(
+  input.executionId,
+  updatedSnapshot,
+);
 
-    let progressedParticipants = 0;
+const persistedSnapshot =
+  await recruitmentExecutionSnapshotService.loadSnapshot(
+    input.executionId,
+  );
 
-    console.log("NEXT ROUND ID:", input.nextRoundId);
+const expectedParticipantIds = Object.keys(updatedSnapshot.participants);
 
-    if (input.nextRoundId) {
-      console.log("CALLING populateNextRoundParticipants");
+const missingParticipants = expectedParticipantIds.filter(
+  (participantId) => !(participantId in persistedSnapshot.participants),
+);
 
-      console.log("========== PROGRESSION ==========");
-      console.log("CURRENT ROUND", {
-        executionRoundId: input.executionRoundId,
-      });
+console.log("SNAPSHOT VERIFY", {
+  executionId: input.executionId,
+  expectedParticipants: expectedParticipantIds.length,
+  persistedParticipants: Object.keys(
+    persistedSnapshot.participants,
+  ).length,
+  missingParticipants,
+});
 
-      if (input.nextRoundId) {
-        const nextRound = await this.provider.getRound(input.nextRoundId);
+if (missingParticipants.length > 0) {
+  throw new Error(
+    [
+      "Runtime snapshot verification failed.",
+      `Missing participants: ${missingParticipants.length}`,
+      missingParticipants.join(", "),
+    ].join("\n"),
+  );
+}
 
-        console.log("NEXT ROUND", {
-          executionRoundId: nextRound?.execution_round_id,
-          roundName: nextRound?.round_name,
-          parentExecutionRoundId: nextRound?.parent_execution_round_id,
-        });
-      } else {
-        console.log("NEXT ROUND = undefined");
-      }
-      console.log("SAVE ROUND -> CALLING populateNextRoundParticipants");
-      progressedParticipants = await this.progressionService.populateNextRoundParticipants({
-        executionId: input.executionId,
-        currentRoundId: input.executionRoundId,
-        nextRoundId: input.nextRoundId,
-      });
-      console.log("SAVE ROUND -> populateNextRoundParticipants FINISHED");
-    } else {
-      console.log("NO NEXT ROUND ID PASSED TO saveRound()");
-    }
-
-    return {
-      savedEvents: data.savedEvents ?? 0,
-      progressedParticipants,
-    };
+return {
+  savedEvents: data.savedEvents ?? 0,
+  progressedParticipants: 0,
+};
   }
 }

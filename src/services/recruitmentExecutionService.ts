@@ -133,38 +133,30 @@ class RecruitmentExecutionService {
 
   private readonly readService = new RecruitmentExecutionReadService();
 
-private readonly progressionService = new RecruitmentExecutionProgressionService({
-  getRound: (executionRoundId) => this.getRound(executionRoundId),
+  private readonly progressionService = new RecruitmentExecutionProgressionService({
+    getRound: (executionRoundId) => this.getRound(executionRoundId),
 
-  loadHistorySummary: (executionId) => this.loadHistorySummary(executionId),
+    loadHistorySummary: (executionId) => this.loadHistorySummary(executionId),
 
-  loadRuntimeSnapshot: (executionId) =>
-    recruitmentExecutionSnapshotService.loadSnapshot(executionId),
+    loadRuntimeSnapshot: (executionId) =>
+      recruitmentExecutionSnapshotService.loadSnapshot(executionId),
 
-  loadParticipants: (executionId) =>
-    this.loadParticipants(executionId),
+    loadParticipants: (executionId) => this.loadParticipants(executionId),
 
-  loadRoundParticipants: (executionRoundId) =>
-    this.loadRoundParticipants(executionRoundId),
+    loadRoundParticipants: (executionRoundId) => this.loadRoundParticipants(executionRoundId),
 
-  loadRounds: (executionId) =>
-    this.loadRounds(executionId),
+    loadRounds: (executionId) => this.loadRounds(executionId),
 
-  loadRoundRoleMappings: (executionId) =>
-    this.loadRoundRoleMappings(executionId),
+    loadRoundRoleMappings: (executionId) => this.loadRoundRoleMappings(executionId),
 
-  getRoundRoleIds: (executionRoundId) =>
-    this.getRoundRoleIds(executionRoundId),
+    getRoundRoleIds: (executionRoundId) => this.getRoundRoleIds(executionRoundId),
 
-  assignParticipantsToRound: (input) =>
-    this.assignParticipantsToRound(input),
+    assignParticipantsToRound: (input) => this.assignParticipantsToRound(input),
 
-  removeRoundParticipants: (executionRoundId) =>
-    this.removeRoundParticipants(executionRoundId),
+    removeRoundParticipants: (executionRoundId) => this.removeRoundParticipants(executionRoundId),
 
-  loadRoundParticipantIds: (executionRoundId) =>
-  this.loadRoundParticipantIds(executionRoundId),
-});
+    loadRoundParticipantIds: (executionRoundId) => this.loadRoundParticipantIds(executionRoundId),
+  });
 
   private readonly roundSaveService = new RecruitmentExecutionRoundSaveService(
     {
@@ -615,7 +607,6 @@ private readonly progressionService = new RecruitmentExecutionProgressionService
     executionId: string;
     executionRoundId: string;
     executionRevision: number;
-    nextRoundId?: string;
     changedBy?: string | null;
     batchAssignments?: {
       executionParticipantId: string;
@@ -644,6 +635,72 @@ private readonly progressionService = new RecruitmentExecutionProgressionService
     progressedParticipants: number;
   }> {
     return this.roundSaveService.saveRound(input);
+  }
+
+  async executeStageProgression(input: {
+    executionId: string;
+    executionRoundId: string;
+    executionRevision: number;
+    nextRoundId: string;
+    changedBy?: string | null;
+    batchAssignments?: {
+      executionParticipantId: string;
+      executionRoundId: string;
+    }[];
+    participantRoles: Array<{
+      executionParticipantId: string;
+      roles: Array<{
+        driveRoleId: string;
+        driveRoleName: string;
+      }>;
+    }>;
+    rows: Array<{
+      executionParticipantId: string;
+      attendanceStatus: ExecutionAttendanceStatus | null;
+      gateStatus: ExecutionGateStatus | null;
+      progressionStatus: ExecutionProgressionStatus;
+      remarks?: string | null;
+      absenceDisposition?: "ALLOWED" | "UNALLOWED" | null;
+      absenceReason?: string | null;
+      restrictionOverride?: boolean;
+      restrictionOverrideReason?: string | null;
+    }>;
+  }): Promise<{
+    savedEvents: number;
+    progressedParticipants: number;
+  }> {
+    console.error("=== EXECUTE STAGE PROGRESSION CALLED ===", input);
+    
+    const saveResult = await this.roundSaveService.saveRound({
+      executionId: input.executionId,
+      executionRoundId: input.executionRoundId,
+      executionRevision: input.executionRevision,
+      changedBy: input.changedBy,
+      batchAssignments: input.batchAssignments,
+      participantRoles: input.participantRoles,
+      rows: input.rows,
+    });
+
+    const progressedParticipants = await this.progressionService.populateNextRoundParticipants({
+      executionId: input.executionId,
+      currentRoundId: input.executionRoundId,
+      nextRoundId: input.nextRoundId,
+    });
+
+    await this.reloadProgressionSnapshot({
+      executionId: input.executionId,
+    });
+
+    return {
+      savedEvents: saveResult.savedEvents,
+      progressedParticipants,
+    };
+  }
+
+  private async reloadProgressionSnapshot(input: { executionId: string }): Promise<void> {
+    const snapshot = await recruitmentExecutionSnapshotService.loadSnapshot(input.executionId);
+
+    await recruitmentExecutionSnapshotService.persistSnapshot(input.executionId, snapshot);
   }
   // --------------------------------------------------------------------------
   // Progression Engine
@@ -694,27 +751,6 @@ private readonly progressionService = new RecruitmentExecutionProgressionService
   // --------------------------------------------------------------------------
   // Round Progression
   // --------------------------------------------------------------------------
-
-  async progressToNextRound(input: {
-    executionId: string;
-    currentRoundId: string;
-    nextRoundId: string;
-  }): Promise<{
-    progressedParticipants: number;
-  }> {
-    await this.validateRound(input.currentRoundId);
-    await this.validateRound(input.nextRoundId);
-
-    const participants = await this.progressionService.deriveNextRoundParticipants({
-      executionId: input.executionId,
-      currentRoundId: input.currentRoundId,
-      nextRoundId: input.nextRoundId,
-    });
-
-    return {
-      progressedParticipants: participants.length,
-    };
-  }
 
   async finalizeExecutionWorkflow(input: {
     executionId: string;
