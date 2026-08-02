@@ -264,26 +264,26 @@ export function RecruitmentExecutionWorkspacePage() {
         initialState[round.execution_round_id] = {};
 
         data.participants.forEach((participant) => {
-          const snapshotParticipant =
-            runtimeSnapshot.participants[participant.execution_participant_id];
-
           const history = historyLookup.get(
             `${round.execution_round_id}:${participant.execution_participant_id}`,
           );
 
+          const snapshotParticipant =
+            round.stage_number === 1
+              ? runtimeSnapshot.participants[participant.execution_participant_id]
+              : undefined;
+
           initialState[round.execution_round_id][participant.execution_participant_id] = {
             attendanceStatus:
-              snapshotParticipant?.attendanceStatus ?? history?.attendance_status ?? null,
+              history?.attendance_status ?? snapshotParticipant?.attendanceStatus ?? null,
 
             gateStatus:
+              history?.gate_status ??
               snapshotParticipant?.gateStatus ??
-              (history?.restriction_override
-                ? "ALLOWED"
-                : (history?.gate_status ??
-                  (participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED"))),
+              (participant.effective_gate_status === "RESTRICTED" ? "RESTRICTED" : "ALLOWED"),
 
             progressionStatus:
-              snapshotParticipant?.progressionStatus ?? history?.progression_status ?? "NONE",
+              history?.progression_status ?? snapshotParticipant?.progressionStatus ?? "NONE",
 
             remarks: history?.remarks ?? "",
 
