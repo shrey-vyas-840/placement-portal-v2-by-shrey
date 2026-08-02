@@ -670,7 +670,7 @@ class RecruitmentExecutionService {
     progressedParticipants: number;
   }> {
     console.error("=== EXECUTE STAGE PROGRESSION CALLED ===", input);
-    
+
     const saveResult = await this.roundSaveService.saveRound({
       executionId: input.executionId,
       executionRoundId: input.executionRoundId,
@@ -1078,39 +1078,7 @@ class RecruitmentExecutionService {
     const allExecutionBatches = await this.loadExecutionBatches(executionId);
 
     const executionBatches = allExecutionBatches.filter((batch) => {
-      const parent = rounds.find(
-        (round) => round.execution_round_id === batch.parent_execution_round_id,
-      );
-
-      // Ignore orphaned child batches.
-      if (!parent) {
-        return false;
-      }
-
-      // Role-specific execution batches are always administrator-managed.
-      if (parent.scope !== "COMMON") {
-        return true;
-      }
-
-      const siblingBatches = allExecutionBatches.filter(
-        (candidate) => candidate.parent_execution_round_id === parent.execution_round_id,
-      );
-
-      // Legacy COMMON execution model:
-      // A single automatically-created execution batch exists only to own
-      // participant membership. Keep it hidden from the workspace.
-      if (siblingBatches.length <= 1) {
-        return false;
-      }
-
-      // Multiple execution batches:
-      // Keep the automatically-created default execution batch hidden while
-      // exposing administrator-created execution batches.
-      const hiddenDefaultBatch = siblingBatches.reduce((earliest, current) =>
-        current.round_order < earliest.round_order ? current : earliest,
-      );
-
-      return batch.execution_round_id !== hiddenDefaultBatch.execution_round_id;
+      return rounds.some((round) => round.execution_round_id === batch.parent_execution_round_id);
     });
 
     const executionBatchParticipants = await this.loadExecutionBatchParticipants(executionId);

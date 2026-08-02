@@ -177,33 +177,31 @@ export class RecruitmentExecutionParticipantService {
   async loadRoundParticipants(
     executionRoundId: string,
   ): Promise<RecruitmentExecutionParticipantWithStudent[]> {
-    const round = await this.provider.getRound(executionRoundId);
+    const requestedRound = await this.provider.getRound(executionRoundId);
 
-    console.log("LOAD ROUND PARTICIPANTS", {
-      requestedExecutionRoundId: executionRoundId,
-      roundName: round?.round_name,
-      parentExecutionRoundId: round?.parent_execution_round_id,
-    });
-
-    if (!round) {
+    if (!requestedRound) {
       throw new Error("Execution round not found.");
     }
 
-    const participants = await this.loadParticipants(round.execution_id);
+    /*
+     * Stage is the owner of participant membership.
+     *
+     * If a child execution batch is requested,
+     * resolve back to its parent stage.
+     */
+    const stageRound = requestedRound.parent_execution_round_id
+      ? await this.provider.getRound(requestedRound.parent_execution_round_id)
+      : requestedRound;
 
-const participantIds = await this.provider.loadRoundParticipantIds(
-  executionRoundId,
-);
+    if (!stageRound) {
+      throw new Error("Parent execution stage not found.");
+    }
 
-console.log("STAGE MEMBERSHIP", {
-  executionRoundId,
-  participantCount: participantIds.length,
-  participantIds,
-});
+    const participants = await this.loadParticipants(stageRound.execution_id);
 
-if (participantIds.length === 0) {
-  return [];
-}
+    const participantIds = await this.provider.loadRoundParticipantIds(
+      stageRound.execution_round_id,
+    );
 
     const participantIdSet = new Set(participantIds);
 
@@ -211,6 +209,7 @@ if (participantIds.length === 0) {
       participantIdSet.has(participant.execution_participant_id),
     );
   }
+
   async loadRoundRoleMappings(
     executionId: string,
   ): Promise<RecruitmentExecutionRoundRoleMapping[]> {
