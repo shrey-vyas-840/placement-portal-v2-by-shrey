@@ -36,6 +36,7 @@ interface ExecutionNavigatorProps {
 interface ExecutionNavigatorRoundNode {
   id: string;
   round: RecruitmentExecutionRoundRow;
+  roleNames: string[];
 }
 
 interface ExecutionNavigatorStageNode {
@@ -57,19 +58,34 @@ function sortRounds(rounds: RecruitmentExecutionRoundRow[]) {
 function buildNavigatorModel(
   workspace: RecruitmentExecutionWorkspace,
 ): ExecutionNavigatorStageNode[] {
-  const stageNumbers = [...new Set(workspace.rounds.map((round) => round.stage_number))].sort(
+  const roleLookup = new Map<string, string[]>();
+
+  workspace.roundRoleMappings.forEach((mapping) => {
+    const role = workspace.participants
+      .flatMap((p) => p.selected_roles)
+      .find((r) => r.drive_role_id === mapping.drive_role_id);
+
+    if (!role) return;
+
+    const existing = roleLookup.get(mapping.execution_round_id) ?? [];
+
+    existing.push(role.drive_role_name);
+
+    roleLookup.set(mapping.execution_round_id, existing);
+  });
+
+  const stageNumbers = [...new Set(workspace.rounds.map((r) => r.stage_number))].sort(
     (a, b) => a - b,
   );
 
   return stageNumbers.map((stageNumber) => {
     const rounds = workspace.rounds
-      .filter(
-        (round) => round.stage_number === stageNumber && round.parent_execution_round_id == null,
-      )
+      .filter((r) => r.stage_number === stageNumber)
       .sort((a, b) => a.round_order - b.round_order)
       .map((round) => ({
         id: round.execution_round_id,
         round,
+        roleNames: roleLookup.get(round.execution_round_id) ?? [],
       }));
 
     return {
@@ -79,6 +95,7 @@ function buildNavigatorModel(
     };
   });
 }
+
 function ExecutionNavigator({
   workspace,
   selectedStage,
@@ -116,16 +133,24 @@ function ExecutionNavigator({
   }, [workspace, selectedStage]);
 
   useEffect(() => {
-    if (!selectedRoundId) {
+    if (!selectedRoundId || !workspace) {
       return;
     }
 
+    const selectedRound = workspace.rounds.find((r) => r.execution_round_id === selectedRoundId);
+
+    if (!selectedRound) {
+      return;
+    }
+
+    const parentId = selectedRound.parent_execution_round_id ?? selectedRound.execution_round_id;
+
     setExpandedRounds((previous) => {
       const next = new Set(previous);
-      next.add(selectedRoundId);
+      next.add(parentId);
       return next;
     });
-  }, [selectedRoundId]);
+  }, [workspace, selectedRoundId]);
 
   const toggleStage = (stageNumber: number) => {
     setExpandedStages((previous) => {
@@ -174,7 +199,9 @@ function ExecutionNavigator({
             <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
               Execution Navigator
             </div>
-            <div className="text-sm font-semibold text-slate-900">Stages · Pipelines · Batches</div>
+            <div className="text-sm font-semibold text-slate-900">
+              Stages · Execution Workspaces
+            </div>
           </div>
         </div>
       </div>
@@ -226,7 +253,6 @@ function ExecutionNavigator({
                         {stage.rounds.map((round) => {
                           const roundExpanded =
                             expandedRounds.has(round.id) || selectedRoundId === round.id;
-
                           return (
                             <div
                               key={round.id}
@@ -256,12 +282,14 @@ function ExecutionNavigator({
                                 </span>
 
                                 <div className="min-w-0 flex-1">
-                                  <div className="truncate text-sm font-semibold text-slate-900">
-                                    {round.round.round_name}
+                                  <div className="truncate text-sm font-semibold">
+                                    {round.roleNames.length === 0
+                                      ? "Common Workspace"
+                                      : round.roleNames.join(" + ")}
                                   </div>
 
                                   <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                                    {round.round.scope === "COMMON" ? "Common Round" : "Role Round"}
+                                    Execution Workspace
                                   </div>
                                 </div>
 
@@ -273,7 +301,7 @@ function ExecutionNavigator({
                                       : "bg-violet-100 text-violet-700",
                                   ].join(" ")}
                                 >
-                                  {round.round.scope === "COMMON" ? "COMMON" : "ROLE"}
+                                  WORKSPACE
                                 </span>
                               </button>
                             </div>
