@@ -682,7 +682,10 @@ export function RecruitmentExecutionWorkspacePage() {
         );
 
         const completed = assignedRows.every((participant) => {
-          const row = getEditedRow(selectedRound!.execution_round_id, participant.execution_participant_id);
+          const row = getEditedRow(
+            selectedRound!.execution_round_id,
+            participant.execution_participant_id,
+          );
 
           return row?.attendanceStatus !== null;
         });
