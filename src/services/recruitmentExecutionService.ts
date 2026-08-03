@@ -391,6 +391,7 @@ class RecruitmentExecutionService {
 
   async createExecutionBatch(input: {
     executionId: string;
+    sourceStageNumber: number;
     creationMode: ExecutionRoundCreationMode;
     roundOrder: number;
     roundName: string;

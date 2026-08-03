@@ -73,6 +73,7 @@ export class RecruitmentExecutionRoundService {
 
   async createExecutionBatch(input: {
     executionId: string;
+    sourceStageNumber: number;
     creationMode: ExecutionRoundCreationMode;
     roundOrder: number;
     roundName: string;
@@ -87,15 +88,39 @@ export class RecruitmentExecutionRoundService {
   }): Promise<RecruitmentExecutionRoundRow> {
     const rounds = await this.provider.loadExecutionRounds(input.executionId);
 
-    const creationPlan = await this.provider.getExecutionGraphResolver().resolveExecutionBatchCreation({
-      executionId: input.executionId,
-      creationMode: input.creationMode,
+    const creationPlan = await this.provider
+      .getExecutionGraphResolver()
+      .resolveExecutionBatchCreation({
+        executionId: input.executionId,
+        sourceStageNumber: input.sourceStageNumber,
+        creationMode: input.creationMode,
+        scope: input.scope,
+        existingRounds: rounds,
+      });
+
+    console.log("=== STAGE REUSE PLAN ===", {
+      creationPlan,
+      roundOrder: input.roundOrder,
       scope: input.scope,
-      existingRounds: rounds,
+      creationMode: input.creationMode,
+      roleIds: input.roleIds,
     });
 
     const nextRoundOrder = creationPlan.nextRoundOrder!;
-    const stageNumber = creationPlan.stageNumber!;
+
+    const stageNumber =
+      creationPlan.reuseExistingStageRoundId != null
+        ? (await this.provider.getRound(creationPlan.reuseExistingStageRoundId))!.stage_number
+        : creationPlan.stageNumber!;
+
+    const existingStage =
+      creationPlan.reuseExistingStageRoundId != null
+        ? await this.provider.getRound(creationPlan.reuseExistingStageRoundId)
+        : null;
+
+    if (creationPlan.reuseExistingStageRoundId != null && !existingStage) {
+      throw new Error("Planner returned an invalid reusable stage.");
+    }
 
     await this.provider.getExecutionGraphResolver().resolveExecutionBatchValidation({
       executionId: input.executionId,
@@ -103,13 +128,23 @@ export class RecruitmentExecutionRoundService {
       scope: input.scope,
     });
 
+    /*
+     * Stage reuse will be implemented incrementally.
+     * For now simply keep a reference to the reusable stage
+     * so subsequent steps don't need to reload it.
+     */
+    const reusableStage =
+      creationPlan.reuseExistingStageRoundId != null
+        ? await this.provider.getRound(creationPlan.reuseExistingStageRoundId)
+        : null;
+
     const { data, error } = await (supabase as any).rpc("create_execution_batch_transaction", {
       p_execution_id: input.executionId,
       p_creation_mode: input.creationMode,
       p_round_order: nextRoundOrder,
       p_round_name: input.roundName,
       p_scope: input.scope,
-      p_stage_number: stageNumber,
+      p_stage_number: reusableStage?.stage_number ?? stageNumber,
       p_scheduled_date: input.scheduledDate ?? null,
       p_scheduled_time: input.scheduledTime ?? null,
       p_venue: input.venue ?? null,
@@ -117,6 +152,7 @@ export class RecruitmentExecutionRoundService {
       p_created_by: input.createdBy ?? null,
       p_role_ids: input.roleIds,
       p_execution_participant_ids: input.executionParticipantIds,
+      p_existing_execution_round_id: creationPlan.reuseExistingStageRoundId,
     });
 
     return requireData(data as RecruitmentExecutionRoundRow | null, error, "createExecutionBatch");
@@ -210,12 +246,25 @@ export class RecruitmentExecutionRoundService {
   }): Promise<RecruitmentExecutionRoundRow> {
     const rounds = await this.provider.loadExecutionRounds(input.executionId);
 
-    const creationPlan = await this.provider.getExecutionGraphResolver().resolveExecutionBatchCreation({
-      executionId: input.executionId,
-      creationMode: input.creationMode,
-      scope: input.scope,
-      existingRounds: rounds,
-    });
+    const currentHighestStage =
+      rounds.length === 0 ? 0 : Math.max(...rounds.map((r) => r.stage_number));
+
+    const creationPlan = await this.provider
+      .getExecutionGraphResolver()
+      .resolveExecutionBatchCreation({
+        executionId: input.executionId,
+        creationMode: input.creationMode,
+        scope: input.scope,
+        existingRounds: rounds,
+
+        /*
+         * Current stage from which the admin is progressing.
+         * For now we continue using the latest stage.
+         * The next step will replace this with the actual
+         * selected source stage.
+         */
+        sourceStageNumber: currentHighestStage,
+      });
 
     const nextRoundOrder = creationPlan.nextRoundOrder!;
 

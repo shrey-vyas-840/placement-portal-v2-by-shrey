@@ -122,12 +122,15 @@ export function RecruitmentExecutionWorkspacePage() {
     Record<string, Record<string, RecruitmentExecutionEditedRow>>
   >({});
 
-  const getEditedRow = (
-    executionRoundId: string,
-    executionParticipantId: string,
-  ): RecruitmentExecutionEditedRow | undefined => {
-    return editedRows[executionRoundId]?.[executionParticipantId];
-  };
+  const getEditedRow = useCallback(
+    (
+      executionRoundId: string,
+      executionParticipantId: string,
+    ): RecruitmentExecutionEditedRow | undefined => {
+      return editedRows[executionRoundId]?.[executionParticipantId];
+    },
+    [editedRows],
+  );
 
   const setEditedRow = (
     executionRoundId: string,
@@ -319,13 +322,7 @@ export function RecruitmentExecutionWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [
-    executionId,
-    navigationRestore,
-    restoreWorkspaceNavigation,
-    selectedRoundId,
-    selectedExecutionBatchId,
-  ]);
+  }, [executionId, navigationRestore, restoreWorkspaceNavigation, selectedRoundId]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -337,10 +334,18 @@ export function RecruitmentExecutionWorkspacePage() {
     }
 
     return workspace.rounds
-      .filter(
-        (round) => round.stage_number === selectedStage && round.parent_execution_round_id == null,
-      )
-      .sort((a, b) => a.round_order - b.round_order);
+      .filter((round) => round.stage_number === selectedStage)
+      .sort((a, b) => {
+        if (a.parent_execution_round_id == null && b.parent_execution_round_id != null) {
+          return -1;
+        }
+
+        if (a.parent_execution_round_id != null && b.parent_execution_round_id == null) {
+          return 1;
+        }
+
+        return a.round_order - b.round_order;
+      });
   }, [workspace, selectedStage]);
 
   const selectedRound = useMemo(() => {
@@ -380,12 +385,6 @@ export function RecruitmentExecutionWorkspacePage() {
 
     return batch;
   }, [workspace, selectedExecutionBatchId, selectedRound]);
-
-  const stageExecutionRoundId = selectedRound?.execution_round_id ?? null;
-
-  const effectiveExecutionRoundId = useMemo(() => {
-    return selectedRound?.execution_round_id ?? null;
-  }, [selectedRound]);
 
   const isMultipleExecutionStage = useMemo(() => {
     if (!workspace || selectedStage === null) {
@@ -492,19 +491,14 @@ export function RecruitmentExecutionWorkspacePage() {
         return;
       }
       console.log("WORKSPACE SELECTION", {
-        selectedRoundId: selectedRound?.execution_round_id,
-        selectedRoundName: selectedRound?.round_name,
+        selectedRoundId: selectedRound.execution_round_id,
+        selectedRoundName: selectedRound.round_name,
         selectedExecutionBatchId,
-        effectiveExecutionRoundId,
       });
       try {
-        if (!effectiveExecutionRoundId) {
-          setParticipants([]);
-          return;
-        }
-
-        const data =
-          await recruitmentExecutionService.loadRoundParticipants(effectiveExecutionRoundId);
+        const data = await recruitmentExecutionService.loadRoundParticipants(
+          selectedRound.execution_round_id,
+        );
 
         if (!cancelled) {
           setParticipants(data);
@@ -526,7 +520,7 @@ export function RecruitmentExecutionWorkspacePage() {
     return () => {
       cancelled = true;
     };
-  }, [workspace, effectiveExecutionRoundId, selectedRound]);
+  }, [workspace, selectedRound, selectedExecutionBatchId]);
 
   //---------------------------------------------------------------------------------------Completed Participant Memo----------------------------------------------------------------------------------------------
 
@@ -601,7 +595,10 @@ export function RecruitmentExecutionWorkspacePage() {
   const shortlistedParticipants = useMemo(
     () =>
       stageParticipants.filter((participant) => {
-        const row = getEditedRow(effectiveExecutionRoundId!, participant.execution_participant_id);
+        const row = getEditedRow(
+          selectedRound!.execution_round_id,
+          participant.execution_participant_id,
+        );
         const attendanceAllowed =
           row?.attendanceStatus === "PRESENT" ||
           (row?.attendanceStatus === "ABSENT" && row?.absenceDisposition === "ALLOWED");
@@ -659,6 +656,28 @@ export function RecruitmentExecutionWorkspacePage() {
     );
   }, [workspace, selectedRound]);
 
+  const roundRoleLookup = useMemo(() => {
+    const lookup = new Map<string, string[]>();
+
+    if (!workspace) {
+      return lookup;
+    }
+
+    workspace.roundRoleMappings.forEach((mapping) => {
+      const existing = lookup.get(mapping.execution_round_id) ?? [];
+
+      const role = workspace.participants
+        .flatMap((participant) => participant.selected_roles)
+        .find((r) => r.drive_role_id === mapping.drive_role_id);
+
+      existing.push(role?.drive_role_name ?? "Unknown Role");
+
+      lookup.set(mapping.execution_round_id, existing);
+    });
+
+    return lookup;
+  }, [workspace]);
+
   const currentRoundRoleSummary = useMemo(() => {
     if (!currentRoundRoleIds) {
       return shortlistedRoleSummary;
@@ -673,9 +692,9 @@ export function RecruitmentExecutionWorkspacePage() {
     }
 
     return workspace.executionBatches
-      .filter((batch) => batch.parent_execution_round_id === selectedRound?.execution_round_id)
+      .filter((batch) => batch.parent_execution_round_id === selectedRound!.execution_round_id)
       .map((batch) => {
-        const assignedRows = workspace.participants.filter(
+        const assignedRows = participants.filter(
           (participant) =>
             executionBatchAssignments[participant.execution_participant_id] ===
             batch.execution_round_id,
@@ -795,7 +814,10 @@ export function RecruitmentExecutionWorkspacePage() {
 
     if (attendanceFilter !== "ALL") {
       rows = rows.filter((participant) => {
-        const row = getEditedRow(effectiveExecutionRoundId!, participant.execution_participant_id);
+        const row = getEditedRow(
+          selectedRound!.execution_round_id,
+          participant.execution_participant_id,
+        );
 
         if (attendanceFilter === "PENDING") {
           return row?.attendanceStatus == null;
@@ -811,7 +833,10 @@ export function RecruitmentExecutionWorkspacePage() {
 
     if (progressFilter !== "ALL") {
       rows = rows.filter((participant) => {
-        const row = getEditedRow(effectiveExecutionRoundId!, participant.execution_participant_id);
+        const row = getEditedRow(
+          selectedRound!.execution_round_id,
+          participant.execution_participant_id,
+        );
 
         return (row?.progressionStatus ?? "NONE") === progressFilter;
       });
@@ -823,7 +848,10 @@ export function RecruitmentExecutionWorkspacePage() {
 
     if (gateFilter !== "ALL") {
       rows = rows.filter((participant) => {
-        const row = getEditedRow(effectiveExecutionRoundId!, participant.execution_participant_id);
+        const row = getEditedRow(
+          selectedRound!.execution_round_id,
+          participant.execution_participant_id,
+        );
 
         if (gateFilter === "OVERRIDE") {
           return row?.restrictionOverride === true;
@@ -864,7 +892,6 @@ export function RecruitmentExecutionWorkspacePage() {
     roleFilter,
     batchFilter,
     executionBatchAssignments,
-    effectiveExecutionRoundId,
     editedRows,
   ]);
 
@@ -1084,12 +1111,12 @@ export function RecruitmentExecutionWorkspacePage() {
   };
 
   const handlePreAttendanceExport = async () => {
-    if (!effectiveExecutionRoundId) return;
+    if (!selectedRound) return;
 
     try {
       const data = await recruitmentExecutionAttendanceExportService.getAttendanceExportData(
         executionId,
-        effectiveExecutionRoundId,
+        selectedRound.execution_round_id,
       );
 
       const configuration = buildAttendanceExportConfiguration(data, "PRE");
@@ -1105,12 +1132,12 @@ export function RecruitmentExecutionWorkspacePage() {
   };
 
   const handlePostAttendanceExport = async () => {
-    if (!effectiveExecutionRoundId) return;
+    if (!selectedRound) return;
 
     try {
       const data = await recruitmentExecutionAttendanceExportService.getAttendanceExportData(
         executionId,
-        effectiveExecutionRoundId,
+        selectedRound.execution_round_id,
       );
 
       const configuration = buildAttendanceExportConfiguration(data, "POST");
@@ -1127,7 +1154,10 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const handleProgressToNextRound = async () => {
     const shortlistedParticipants = participants.filter((participant) => {
-      const row = getEditedRow(effectiveExecutionRoundId!, participant.execution_participant_id);
+      const row = getEditedRow(
+        selectedRound!.execution_round_id,
+        participant.execution_participant_id,
+      );
       return row?.progressionStatus === "SHORTLISTED";
     });
 
@@ -1155,7 +1185,10 @@ export function RecruitmentExecutionWorkspacePage() {
     }
 
     const pendingAttendance = participants.some((participant) => {
-      const row = getEditedRow(effectiveExecutionRoundId!, participant.execution_participant_id);
+      const row = getEditedRow(
+        selectedRound!.execution_round_id,
+        participant.execution_participant_id,
+      );
 
       return row?.attendanceStatus == null;
     });
@@ -1169,13 +1202,7 @@ export function RecruitmentExecutionWorkspacePage() {
     }
 
     return true;
-  }, [
-    participants,
-    effectiveExecutionRoundId,
-    editedRows,
-    isMultipleExecutionStage,
-    unassignedStageParticipants,
-  ]);
+  }, [participants, editedRows, isMultipleExecutionStage, unassignedStageParticipants]);
 
   const handleFinalizeExecution = async () => {
     if (!workspace || !finalizationEngine) {
@@ -1483,7 +1510,7 @@ export function RecruitmentExecutionWorkspacePage() {
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          {selectedStageRounds.length} Round
+                          {selectedStageRounds.length} Execution Round
                           {selectedStageRounds.length === 1 ? "" : "s"}
                         </p>
                       </div>
@@ -1506,33 +1533,22 @@ export function RecruitmentExecutionWorkspacePage() {
                         type="button"
                         onClick={() => {
                           setSelectedRoundId(round.execution_round_id);
-
-                          const firstBatch = workspace.executionBatches
-                            .filter((b) => b.parent_execution_round_id === round.execution_round_id)
-                            .sort((a, b) => a.round_order - b.round_order)[0];
-
-                          setSelectedExecutionBatchId(firstBatch?.execution_round_id ?? null);
-
-                          if (round.scope === "COMMON") {
-                            setSelectedTimeline("COMMON");
-                            return;
-                          }
-
-                          const mapping = workspace?.roundRoleMappings.find(
-                            (m) => m.execution_round_id === round.execution_round_id,
-                          );
-
-                          if (mapping) {
-                            setSelectedTimeline(mapping.drive_role_id);
-                          }
                         }}
-                        className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                        className={`shrink-0 rounded-2xl border px-5 py-3 text-left transition-all ${
                           selectedRoundId === round.execution_round_id
-                            ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                            ? "border-blue-600 bg-blue-50 shadow-md"
+                            : "border-slate-200 bg-white hover:border-blue-300"
                         }`}
                       >
-                        {round.round_name}
+                        <div className="flex flex-col items-start">
+                          <div className="font-medium text-slate-900">{round.round_name}</div>
+
+                          {round.scope === "ROLE_SPECIFIC" && (
+                            <div className="mt-1 text-xs text-slate-500">
+                              {(roundRoleLookup.get(round.execution_round_id) ?? []).join(" + ")}
+                            </div>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -1741,7 +1757,7 @@ export function RecruitmentExecutionWorkspacePage() {
                         <tbody>
                           {filteredParticipants.map((participant) => {
                             const editedRow = getEditedRow(
-                              effectiveExecutionRoundId!,
+                              selectedRound!.execution_round_id,
                               participant.execution_participant_id,
                             );
 
@@ -1809,7 +1825,7 @@ export function RecruitmentExecutionWorkspacePage() {
                                     value={editedRow?.attendanceStatus ?? ""}
                                     onChange={(e) => {
                                       setEditedRow(
-                                        effectiveExecutionRoundId!,
+                                        selectedRound!.execution_round_id,
                                         participant.execution_participant_id,
                                         {
                                           attendanceStatus: (e.target.value ||
@@ -1867,7 +1883,7 @@ export function RecruitmentExecutionWorkspacePage() {
                                       setRoundDirty(true);
 
                                       setEditedRow(
-                                        effectiveExecutionRoundId!,
+                                        selectedRound!.execution_round_id,
                                         participant.execution_participant_id,
                                         {
                                           progressionStatus: e.target
@@ -2169,8 +2185,14 @@ export function RecruitmentExecutionWorkspacePage() {
           setSaving(true);
 
           try {
+            if (!selectedRound) {
+              throw new Error("No execution round selected.");
+            }
+
             const round = await recruitmentExecutionService.createExecutionBatch({
               executionId: workspace.execution.execution_id,
+
+              sourceStageNumber: selectedRound.stage_number,
 
               creationMode: progressToNextRound ? "NEXT_STAGE" : "PARALLEL_STAGE",
 
@@ -2535,7 +2557,7 @@ export function RecruitmentExecutionWorkspacePage() {
         participants={participants}
         editedRows={selectedRound ? (editedRows[selectedRound.execution_round_id] ?? {}) : {}}
         onEditedRowChange={(participantId, changes) => {
-          const current = getEditedRow(effectiveExecutionRoundId!, participantId) ?? {
+          const current = getEditedRow(selectedRound!.execution_round_id, participantId) ?? {
             attendanceStatus: null,
             gateStatus: "ALLOWED",
             progressionStatus: "NONE",
@@ -2561,7 +2583,7 @@ export function RecruitmentExecutionWorkspacePage() {
             next.progressionStatus = "NONE";
           }
 
-          setEditedRow(effectiveExecutionRoundId!, participantId, next);
+          setEditedRow(selectedRound!.execution_round_id, participantId, next);
 
           setHasUnsavedChanges(true);
           setRoundDirty(true);

@@ -31,10 +31,17 @@ import { ExecutionBatchValidator } from "./executionBatchValidator";
 
 export interface ResolveExecutionBatchCreationInput {
   executionId: string;
+
   creationMode: ExecutionRoundCreationMode;
+
   scope: ExecutionScope;
 
   existingRounds: RecruitmentExecutionRoundRow[];
+
+  /*
+   * Stage from which this new round is being created.
+   */
+  sourceStageNumber: number;
 }
 
 export interface ExecutionBatchCreationPlan {
@@ -43,12 +50,18 @@ export interface ExecutionBatchCreationPlan {
   stageNumber?: number;
 
   requiresSynchronization?: boolean;
+
+  reuseExistingStageRoundId?: string | null;
 }
 
 interface StagePlanningResult {
   nextRoundOrder: number;
+
   highestStage: number;
+
   stageNumber: number;
+
+  reuseExistingStageRoundId: string | null;
 }
 
 interface ExecutionBatchPlanningResult {
@@ -59,6 +72,8 @@ interface ExecutionBatchCreationPlanningResult {
   nextRoundOrder: number;
 
   stageNumber: number;
+
+  reuseExistingStageRoundId: string | null;
 }
 
 export interface ValidateExecutionBatchPlanInput {
@@ -197,6 +212,8 @@ export class DefaultStagePlanningProvider implements StagePlanningProvider {
       nextRoundOrder,
       highestStage,
       stageNumber,
+
+      reuseExistingStageRoundId: null,
     };
   }
 }

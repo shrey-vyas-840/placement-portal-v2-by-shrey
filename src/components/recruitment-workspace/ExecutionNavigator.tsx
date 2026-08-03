@@ -33,15 +33,9 @@ interface ExecutionNavigatorProps {
   className?: string;
 }
 
-interface ExecutionNavigatorBatchNode {
-  id: string;
-  round: RecruitmentExecutionBatch;
-}
-
 interface ExecutionNavigatorRoundNode {
   id: string;
   round: RecruitmentExecutionRoundRow;
-  batches: ExecutionNavigatorBatchNode[];
 }
 
 interface ExecutionNavigatorStageNode {
@@ -57,16 +51,6 @@ function sortRounds(rounds: RecruitmentExecutionRoundRow[]) {
     }
 
     return a.round_name.localeCompare(b.round_name);
-  });
-}
-
-function sortBatches(batches: ExecutionNavigatorBatchNode[]): ExecutionNavigatorBatchNode[] {
-  return [...batches].sort((a, b) => {
-    if (a.round.round_order !== b.round.round_order) {
-      return a.round.round_order - b.round.round_order;
-    }
-
-    return a.round.round_name.localeCompare(b.round.round_name);
   });
 }
 
@@ -86,14 +70,6 @@ function buildNavigatorModel(
       .map((round) => ({
         id: round.execution_round_id,
         round,
-        batches: sortBatches(
-          workspace.executionBatches
-            .filter((batch) => batch.parent_execution_round_id === round.execution_round_id)
-            .map((batch) => ({
-              id: batch.execution_round_id,
-              round: batch,
-            })),
-        ),
       }));
 
     return {
@@ -118,7 +94,6 @@ function ExecutionNavigator({
   const [expandedStages, setExpandedStages] = useState<Set<number>>(new Set());
 
   const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
-  const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
 
   const navigatorStages = useMemo(() => {
     if (!workspace) {
@@ -152,18 +127,6 @@ function ExecutionNavigator({
     });
   }, [selectedRoundId]);
 
-  useEffect(() => {
-    if (!selectedExecutionBatchId) {
-      return;
-    }
-
-    setExpandedBatches((previous) => {
-      const next = new Set(previous);
-      next.add(selectedExecutionBatchId);
-      return next;
-    });
-  }, [selectedExecutionBatchId]);
-
   const toggleStage = (stageNumber: number) => {
     setExpandedStages((previous) => {
       const next = new Set(previous);
@@ -183,18 +146,6 @@ function ExecutionNavigator({
         next.delete(roundId);
       } else {
         next.add(roundId);
-      }
-      return next;
-    });
-  };
-
-  const toggleBatch = (batchId: string) => {
-    setExpandedBatches((previous) => {
-      const next = new Set(previous);
-      if (next.has(batchId)) {
-        next.delete(batchId);
-      } else {
-        next.add(batchId);
       }
       return next;
     });
@@ -276,8 +227,6 @@ function ExecutionNavigator({
                           const roundExpanded =
                             expandedRounds.has(round.id) || selectedRoundId === round.id;
 
-                          const hasBatches = round.batches.length > 0;
-
                           return (
                             <div
                               key={round.id}
@@ -296,14 +245,10 @@ function ExecutionNavigator({
                                     : "hover:bg-slate-100",
                                 ].join(" ")}
                               >
-                                {hasBatches ? (
-                                  roundExpanded ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )
+                                {roundExpanded ? (
+                                  <ChevronDown className="h-4 w-4" />
                                 ) : (
-                                  <span className="h-4 w-4" />
+                                  <ChevronRight className="h-4 w-4" />
                                 )}
 
                                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white shadow-sm">
@@ -320,49 +265,17 @@ function ExecutionNavigator({
                                   </div>
                                 </div>
 
-                                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold shadow-sm">
-                                  {round.batches.length}
+                                <span
+                                  className={[
+                                    "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                    round.round.scope === "COMMON"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-violet-100 text-violet-700",
+                                  ].join(" ")}
+                                >
+                                  {round.round.scope === "COMMON" ? "COMMON" : "ROLE"}
                                 </span>
                               </button>
-
-                              {roundExpanded && hasBatches && (
-                                <div className="space-y-1 border-t border-slate-200 bg-white px-2 py-2">
-                                  {round.batches.map((batch) => {
-                                    const selected = selectedExecutionBatchId === batch.id;
-
-                                    return (
-                                      <button
-                                        key={batch.id}
-                                        type="button"
-                                        onClick={() => onBatchSelect(batch.id)}
-                                        className={[
-                                          "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition",
-                                          selected
-                                            ? "bg-slate-900 text-white"
-                                            : "hover:bg-slate-100",
-                                        ].join(" ")}
-                                      >
-                                        <CircleDot className="h-3.5 w-3.5" />
-
-                                        <span className="flex-1 truncate text-sm font-medium">
-                                          {batch.round.round_name}
-                                        </span>
-
-                                        <span
-                                          className={[
-                                            "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                                            selected
-                                              ? "bg-white/15 text-white"
-                                              : "bg-slate-100 text-slate-700",
-                                          ].join(" ")}
-                                        >
-                                          Batch
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
                             </div>
                           );
                         })}
