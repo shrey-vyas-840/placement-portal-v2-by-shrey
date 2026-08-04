@@ -15,6 +15,15 @@ import { getHodEmail, NOC_EMAIL_CONFIG } from "@/config/hodMapping";
 
 import { supabase } from "@/lib/supabase";
 import { StudentLayout } from "@/components/layout/StudentLayout";
+import { CalendarIcon } from "lucide-react";
+
+import { format } from "date-fns";
+
+import { Calendar } from "@/components/ui/calendar";
+
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+import { Button } from "@/components/ui/button";
 
 export function StudentNocPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -38,6 +47,10 @@ export function StudentNocPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [reviewMode, setReviewMode] = useState(false);
+
+  const [startDateOpen, setStartDateOpen] = useState(false);
+
+  const [endDateOpen, setEndDateOpen] = useState(false);
 
   const [form, setForm] = useState({
     noc_type: "On Campus Internship",
@@ -523,7 +536,7 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
 
   return (
     <StudentLayout completionName={profile?.student_name ?? ""} completionPercentage={100}>
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="w-full max-w-none px-4 py-6 lg:px-6 xl:px-8 2xl:px-10">
         <section className="relative overflow-hidden rounded-[32px] border border-primary/10 bg-gradient-to-r from-primary via-blue-700 to-cyan-600 px-6 py-7 text-white shadow-xl sm:px-8 sm:py-8">
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
@@ -542,7 +555,7 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
           <div className="pointer-events-none absolute bottom-0 right-12 h-24 w-24 rounded-full bg-white/10 blur-sm" />
         </section>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 md:grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="rounded-2xl border border-blue-200 bg-white p-5 shadow-sm">
             <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600">
               Requests
@@ -764,17 +777,17 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Opportunity Mode</label>
 
-                   <Select
-  value={form.opportunity_mode}
-  onValueChange={(value) =>
-    setForm({
-      ...form,
-      opportunity_mode: value,
-    })
-  }
->
-  <SelectTrigger
-    className="
+                    <Select
+                      value={form.opportunity_mode}
+                      onValueChange={(value) =>
+                        setForm({
+                          ...form,
+                          opportunity_mode: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger
+                        className="
       h-14
       w-full
       rounded-2xl
@@ -795,14 +808,14 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
       data-[state=open]:ring-4
       data-[state=open]:ring-primary/10
     "
-  >
-    <SelectValue placeholder="Select Opportunity Mode" />
-  </SelectTrigger>
+                      >
+                        <SelectValue placeholder="Select Opportunity Mode" />
+                      </SelectTrigger>
 
-  <SelectContent
-    sideOffset={8}
-    position="popper"
-    className="
+                      <SelectContent
+                        sideOffset={8}
+                        position="popper"
+                        className="
       min-w-[var(--radix-select-trigger-width)]
       rounded-2xl
       border
@@ -811,10 +824,10 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
       p-2
       shadow-2xl
     "
-  >
-    <SelectItem
-      value="Offline"
-      className="
+                      >
+                        <SelectItem
+                          value="Offline"
+                          className="
         my-1
         cursor-pointer
         rounded-xl
@@ -826,13 +839,13 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
         data-[state=checked]:bg-primary
         data-[state=checked]:text-primary-foreground
       "
-    >
-      Offline
-    </SelectItem>
+                        >
+                          Offline
+                        </SelectItem>
 
-    <SelectItem
-      value="Hybrid"
-      className="
+                        <SelectItem
+                          value="Hybrid"
+                          className="
         my-1
         cursor-pointer
         rounded-xl
@@ -844,13 +857,13 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
         data-[state=checked]:bg-primary
         data-[state=checked]:text-primary-foreground
       "
-    >
-      Hybrid
-    </SelectItem>
+                        >
+                          Hybrid
+                        </SelectItem>
 
-    <SelectItem
-      value="Online"
-      className="
+                        <SelectItem
+                          value="Online"
+                          className="
         my-1
         cursor-pointer
         rounded-xl
@@ -862,44 +875,158 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
         data-[state=checked]:bg-primary
         data-[state=checked]:text-primary-foreground
       "
-    >
-      Online
-    </SelectItem>
-  </SelectContent>
-</Select>
-
+                        >
+                          Online
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Start Date</label>
 
-                    <input
-                      type="date"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                      value={form.start_date}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          start_date: e.target.value,
-                        })
-                      }
-                    />
+                    <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="
+          h-14
+          w-full
+          justify-between
+          rounded-2xl
+          border
+          border-slate-400
+          bg-white
+          px-4
+          text-left
+          text-[15px]
+          font-medium
+          shadow-sm
+          hover:border-slate-600
+          hover:bg-white
+          data-[state=open]:border-primary
+          data-[state=open]:ring-4
+          data-[state=open]:ring-primary/10
+        "
+                        >
+                          {form.start_date
+                            ? format(new Date(form.start_date), "dd MMM yyyy")
+                            : "Select start date"}
+
+                          <CalendarIcon className="h-5 w-5 text-slate-500" />
+                        </Button>
+                      </PopoverTrigger>
+
+                      <PopoverContent
+                        align="start"
+                        sideOffset={15}
+                        className="
+        w-auto
+        rounded-3xl
+        border
+        border-slate-400
+        bg-white
+        p-4
+        shadow-2xl
+      "
+                      >
+                        <Calendar
+                          mode="single"
+                          showOutsideDays
+                          className="rounded-2xl
+                           border
+                           border-slate-400"
+                          selected={form.start_date ? new Date(form.start_date) : undefined}
+                          onSelect={(date) => {
+                            if (!date) return;
+
+                            setForm({
+                              ...form,
+                              start_date: format(date, "yyyy-MM-dd"),
+                            });
+
+                            setStartDateOpen(false);
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">End Date</label>
 
-                    <input
-                      type="date"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                      value={form.end_date}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          end_date: e.target.value,
-                        })
-                      }
-                    />
+                    <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="
+          h-14
+          w-full
+          justify-between
+          rounded-2xl
+          border
+          border-slate-400
+          bg-white
+          px-4
+          text-left
+          text-[15px]
+          font-medium
+          shadow-sm
+          hover:border-slate-600
+          hover:bg-white
+          data-[state=open]:border-primary
+          data-[state=open]:ring-4
+          data-[state=open]:ring-primary/10
+        "
+                        >
+                          {form.end_date
+                            ? format(new Date(form.end_date), "dd MMM yyyy")
+                            : "Select end date"}
+
+                          <CalendarIcon className="h-5 w-5 text-slate-500" />
+                        </Button>
+                      </PopoverTrigger>
+
+                      <PopoverContent
+                        align="start"
+                        sideOffset={15}
+                        className="
+        w-auto
+        rounded-3xl
+        border
+        border-slate-400
+        bg-white
+        p-4
+        shadow-2xl
+      "
+                      >
+                        <Calendar
+                          mode="single"
+                          showOutsideDays
+                          defaultMonth={form.start_date ? new Date(form.start_date) : undefined}
+                          className="
+          rounded-2xl
+          border
+          border-slate-400
+        "
+                          selected={form.end_date ? new Date(form.end_date) : undefined}
+                          onSelect={(date) => {
+                            if (!date) return;
+
+                            setForm({
+                              ...form,
+                              end_date: format(date, "yyyy-MM-dd"),
+                            });
+
+                            setEndDateOpen(false);
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 {form.start_date && form.end_date && (
@@ -923,13 +1050,15 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                         </h4>
                       </div>
 
-                      <div className="rounded-xl bg-white px-5 py-3 shadow-sm">
+                      <div className="rounded-xl bg-white px-5 py-3 shadow-sm border border-blue-300">
                         <div className="text-xs uppercase tracking-wide text-muted-foreground">
                           Timeline
                         </div>
 
                         <div className="mt-1 text-sm font-medium">
-                          {form.start_date} → {form.end_date}
+                          {format(new Date(form.start_date), "dd MMM yyyy")}
+                          {" → "}
+                          {format(new Date(form.end_date), "dd MMM yyyy")}
                         </div>
                       </div>
                     </div>
@@ -1024,17 +1153,17 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-3">
-                   <Select
-  value={form.hr_prefix}
-  onValueChange={(value) =>
-    setForm({
-      ...form,
-      hr_prefix: value,
-    })
-  }
->
-  <SelectTrigger
-    className="
+                    <Select
+                      value={form.hr_prefix}
+                      onValueChange={(value) =>
+                        setForm({
+                          ...form,
+                          hr_prefix: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger
+                        className="
       h-14
       w-full
       rounded-2xl
@@ -1055,14 +1184,14 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
       data-[state=open]:ring-4
       data-[state=open]:ring-primary/10
     "
-  >
-    <SelectValue />
-  </SelectTrigger>
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
 
-  <SelectContent
-    sideOffset={8}
-    position="popper"
-    className="
+                      <SelectContent
+                        sideOffset={8}
+                        position="popper"
+                        className="
       min-w-[var(--radix-select-trigger-width)]
       rounded-2xl
       border
@@ -1071,10 +1200,10 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
       p-2
       shadow-2xl
     "
-  >
-    <SelectItem
-      value="Mr."
-      className="
+                      >
+                        <SelectItem
+                          value="Mr."
+                          className="
         my-1
         cursor-pointer
         rounded-xl
@@ -1086,13 +1215,13 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
         data-[state=checked]:bg-primary
         data-[state=checked]:text-primary-foreground
       "
-    >
-      Mr.
-    </SelectItem>
+                        >
+                          Mr.
+                        </SelectItem>
 
-    <SelectItem
-      value="Ms."
-      className="
+                        <SelectItem
+                          value="Ms."
+                          className="
         my-1
         cursor-pointer
         rounded-xl
@@ -1104,11 +1233,11 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
         data-[state=checked]:bg-primary
         data-[state=checked]:text-primary-foreground
       "
-    >
-      Ms.
-    </SelectItem>
-  </SelectContent>
-</Select>
+                        >
+                          Ms.
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
 
                     <input
                       placeholder="HR Name"
@@ -1178,7 +1307,7 @@ disabled:opacity-50
                 request will be forwarded for HOD approval and cannot be edited.
               </p>
 
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="grid gap-6 xl:grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <div className="rounded-[28px] border border-slate-300 bg-white p-7 shadow-md transition-shadow hover:shadow-xl">
                   <div className="mb-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -1661,79 +1790,150 @@ rounded
             </div>
           )}
 
-          <h2 className="mb-4 text-xl font-semibold">My NOC Requests</h2>
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              HISTORY
+            </p>
 
-          <div className="overflow-hidden rounded-lg border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="p-3 text-left">Company</th>
+            <h2 className="mt-2 text-2xl font-semibold">My NOC Requests</h2>
 
-                  <th className="p-3 text-left">Type</th>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Track every NOC request, approval, issuance and completion status.
+            </p>
+          </div>
 
-                  <th className="p-3 text-left">Duration</th>
+          <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="max-h-[420px] overflow-auto rounded-3xl">
+              <table className="w-full table-fixed border-collapse">
+                <thead className="bg-slate-50">
+                  <tr className="border-b">
+                    <th className="w-[220px] px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+                      Company
+                    </th>
 
-                  <th className="p-3 text-left">Applied On</th>
+                    <th className="w-[170px] px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+                      Type
+                    </th>
 
-                  <th className="p-3 text-left">Approval Deadline</th>
+                    <th className="w-[110px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Duration
+                    </th>
 
-                  <th className="p-3 text-left">Reference No</th>
+                    <th className="w-[120px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Applied
+                    </th>
 
-                  <th className="p-3 text-left">Issued Date</th>
+                    <th className="w-[165px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Deadline
+                    </th>
 
-                  <th className="p-3 text-left">Prints</th>
+                    <th className="w-[100px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Ref.
+                    </th>
 
-                  <th className="p-3 text-left">Status</th>
+                    <th className="w-[120px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Issued
+                    </th>
 
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
+                    <th className="w-[70px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Prints
+                    </th>
 
-              <tbody>
-                {requests.map((request) => (
-                  <tr key={request.noc_request_id} className="border-b">
-                    <td className="p-3">{request.snapshot?.company_name}</td>
+                    <th className="w-[140px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Status
+                    </th>
 
-                    <td className="p-3">{request.noc_type}</td>
+                    <th className="w-[170px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
 
-                    <td className="p-3">
-                      {Math.max(
-                        1,
-                        (new Date(request.snapshot?.end_date).getFullYear() -
-                          new Date(request.snapshot?.start_date).getFullYear()) *
-                          12 +
-                          (new Date(request.snapshot?.end_date).getMonth() -
-                            new Date(request.snapshot?.start_date).getMonth()),
-                      )}{" "}
-                      Month(s)
-                    </td>
+                <tbody>
+                  {requests.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="px-8 py-16 text-center">
+                        <div className="max-w-sm">
+                          <div className="text-5xl">📄</div>
 
-                    <td className="p-3">
-                      {request.created_at ? new Date(request.created_at).toLocaleDateString() : "-"}
-                    </td>
+                          <h3 className="mt-4 text-lg font-semibold">No NOC Requests Yet</h3>
 
-                    <td className="p-3">
-                      {request.hod_approval_deadline
-                        ? new Date(request.hod_approval_deadline).toLocaleString()
-                        : "-"}
-                    </td>
+                          <p className="mt-2 text-sm text-slate-500">
+                            Your submitted NOC requests will appear here.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    requests.map((request) => (
+                      <tr
+                        key={request.noc_request_id}
+                        className="
+        border-b
+        even:bg-slate-50/60
+        hover:bg-primary/5
+        transition-colors
+    "
+                      >
+                        <td className="min-w-[220px] px-5 py-4">
+                          <td className="min-w-[220px] px-5 py-4">
+                            <div className="font-semibold text-slate-900">
+                              {request.snapshot?.company_name}
+                            </div>
 
-                    <td className="p-3">{request.reference_number ?? "-"}</td>
+                            <div className="mt-1 text-xs text-slate-500">{request.noc_type}</div>
+                          </td>
+                        </td>
 
-                    <td className="p-3">
-                      {request.issued_at ? new Date(request.issued_at).toLocaleDateString() : "-"}
-                    </td>
+                        <td className="p-3">{request.noc_type}</td>
 
-                    <td className="p-3">{request.print_count ?? 0}</td>
+                        <td className="p-3">
+                          {Math.max(
+                            1,
+                            (new Date(request.snapshot?.end_date).getFullYear() -
+                              new Date(request.snapshot?.start_date).getFullYear()) *
+                              12 +
+                              (new Date(request.snapshot?.end_date).getMonth() -
+                                new Date(request.snapshot?.start_date).getMonth()),
+                          )}{" "}
+                          Month(s)
+                        </td>
 
-                    <td className="p-3">
-                      <span
-                        className={`
-            rounded-full
-            px-3
-            py-1
-            text-xs
-            font-medium
+                        <td className="p-3">
+                          {request.created_at
+                            ? new Date(request.created_at).toLocaleDateString()
+                            : "-"}
+                        </td>
+
+                        <td className="p-3">
+                          {request.hod_approval_deadline
+                            ? new Date(request.hod_approval_deadline).toLocaleString()
+                            : "-"}
+                        </td>
+
+                        <td className="p-3">{request.reference_number ?? "-"}</td>
+
+                        <td className="p-3">
+                          {request.issued_at
+                            ? new Date(request.issued_at).toLocaleDateString()
+                            : "-"}
+                        </td>
+
+                        <td className="p-3">{request.print_count ?? 0}</td>
+
+                        <td className="p-3">
+                          <span
+                            className={`
+rounded-full
+px-3
+py-1
+text-xs
+font-semibold
+shadow-sm
+inline-flex
+items-center
+justify-center
+whitespace-nowrap
             ${
               request.status === "PENDING_HOD_APPROVAL"
                 ? "bg-yellow-100 text-yellow-800"
@@ -1752,74 +1952,95 @@ rounded
                             : "bg-gray-100 text-gray-800"
             }
         `}
-                      >
-                        {request.status === "PENDING_HOD_APPROVAL"
-                          ? "Pending HOD"
-                          : request.status === "PENDING_PRINT"
-                            ? "Pending Print"
-                            : request.status === "PRINTED"
-                              ? "Printed"
-                              : request.status === "ISSUED"
-                                ? "Issued - Active"
-                                : request.status === "COMPLETED_TENURE_PENDING_VERIFICATION"
-                                  ? "Completion Verification Pending"
-                                  : request.status === "TENURE_COMPLETED"
-                                    ? "Eligible For New NOC"
-                                    : request.status === "CANCELLED"
-                                      ? "Cancelled"
-                                      : request.status === "HOD_REJECTED"
-                                        ? "Rejected by HOD"
-                                        : request.status === "ADMIN_REJECTED"
-                                          ? "Rejected by Admin"
-                                          : request.status === "TENURE_REJECTED"
-                                            ? "Tenure Rejected"
-                                            : request.status}
-                      </span>
-                    </td>
+                          >
+                            {request.status === "PENDING_HOD_APPROVAL"
+                              ? "Pending HOD"
+                              : request.status === "PENDING_PRINT"
+                                ? "Pending Print"
+                                : request.status === "PRINTED"
+                                  ? "Printed"
+                                  : request.status === "ISSUED"
+                                    ? "Issued - Active"
+                                    : request.status === "COMPLETED_TENURE_PENDING_VERIFICATION"
+                                      ? "Completion Verification Pending"
+                                      : request.status === "TENURE_COMPLETED"
+                                        ? "Eligible For New NOC"
+                                        : request.status === "CANCELLED"
+                                          ? "Cancelled"
+                                          : request.status === "HOD_REJECTED"
+                                            ? "Rejected by HOD"
+                                            : request.status === "ADMIN_REJECTED"
+                                              ? "Rejected by Admin"
+                                              : request.status === "TENURE_REJECTED"
+                                                ? "Tenure Rejected"
+                                                : request.status}
+                          </span>
+                        </td>
 
-                    <td className="p-3">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() => setSelectedRequest(request)}
-                          className="rounded border px-3 py-1"
-                        >
-                          View
-                        </button>
-                        {request.status === "PENDING_HOD_APPROVAL" &&
-                          request.hod_mail_send_count < 2 &&
-                          !(
-                            request.hod_mail_send_count >= 1 &&
-                            new Date() < new Date(request.hod_approval_deadline)
-                          ) && (
-                            <button
-                              onClick={() => sendHodApprovalMail(request)}
-                              className="
-                                                            rounded
-                                                            border
-                                                            px-3
-                                                            py-1
-                                                            bg-blue-50
-"
+                        <td className="p-3">
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+
+                              onClick={() => setSelectedRequest(request)}
+                              className="rounded-lg
+border
+border-blue-200
+bg-blue-50
+px-4
+py-2
+text-sm
+font-medium
+text-blue-700
+transition-colors
+hover:bg-blue-100"
                             >
-                              {request.hod_mail_send_count > 0
-                                ? "Resend HOD Approval"
-                                : "Send HOD Approval Request"}
-                            </button>
-                          )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                              View
+                            </Button>
+                            {request.status === "PENDING_HOD_APPROVAL" &&
+                              request.hod_mail_send_count < 2 &&
+                              !(
+                                request.hod_mail_send_count >= 1 &&
+                                new Date() < new Date(request.hod_approval_deadline)
+                              ) && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => sendHodApprovalMail(request)}
+                                  className="
+                                                       border
+                                                            rounded-lg
+bg-blue-500
+px-4
+py-2
+text-sm
+font-medium
+text-white
+hover:bg-blue-700
+transition-colors
+"
+                                >
+                                  {request.hod_mail_send_count > 0
+                                    ? "Resend Approval Request"
+                                    : "Request Approval"}
+                                </Button>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
 
-                {requests.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                      No NOC requests found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  {requests.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                        No NOC requests found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 

@@ -19,7 +19,18 @@ export function StudentLayout({
         completionPercentage={completionPercentage}
       />
 
-      <main className="flex-1 px-6 py-10 sm:px-8 lg:px-10">
+      <main
+  className="
+    min-w-0
+    flex-1
+    px-5
+    py-8
+    sm:px-6
+    lg:px-8
+    xl:px-10
+    2xl:px-12
+  "
+>
         {children}
       </main>
     </div>

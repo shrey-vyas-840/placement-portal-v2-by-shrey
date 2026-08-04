@@ -67,16 +67,20 @@ export function StudentSidebar({
   completionPercentage,
 }: StudentSidebarProps) {
   return (
-    <aside
-      className="
-        border-r
-        border-border/60
-        bg-white/70
-        backdrop-blur-xl
-        p-5
-        lg:w-80
-      "
-    >
+<aside
+  className="
+    w-full
+    border-r
+    border-border/60
+    bg-white/70
+    backdrop-blur-xl
+    p-5
+    lg:w-[285px]
+    lg:min-w-[285px]
+    lg:max-w-[285px]
+    lg:flex-shrink-0
+  "
+>
       <div className="mb-6">
         <div className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
           Indus Placement Nexus
