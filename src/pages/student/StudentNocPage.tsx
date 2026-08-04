@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
-
+import { ChevronDown } from "lucide-react";
 import AppLoadingScreen from "@/components/ui/AppLoadingScreen";
 import { usePageLoader } from "@/hooks/usePageLoader";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { nocService, NOC_TYPES } from "@/services/nocService";
 
 import { getHodEmail, NOC_EMAIL_CONFIG } from "@/config/hodMapping";
@@ -681,40 +687,187 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">NOC Type</label>
-
-                    <select
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    <Select
                       value={form.noc_type}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setForm({
                           ...form,
-                          noc_type: e.target.value,
+                          noc_type: value,
                         })
                       }
                     >
-                      {NOC_TYPES.map((item) => (
-                        <option key={item}>{item}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        className="
+    h-14
+    w-full
+    rounded-2xl
+    border
+    border-slate-400
+    bg-white
+    px-4
+    text-[15px]
+    font-medium
+    shadow-sm
+    transition-all
+    duration-200
+    hover:border-slate-300
+    hover:shadow-md
+    focus:ring-4
+    focus:ring-primary/10
+    data-[state=open]:border-primary
+    data-[state=open]:ring-4
+    data-[state=open]:ring-primary/10
+  "
+                      >
+                        <SelectValue placeholder="Select NOC Type" />
+                      </SelectTrigger>
+
+                      <SelectContent
+                        sideOffset={8}
+                        position="popper"
+                        className="
+    min-w-[var(--radix-select-trigger-width)]
+    rounded-2xl
+    border
+    border-slate-600
+    bg-white
+    p-2
+    shadow-2xl
+  "
+                      >
+                        {NOC_TYPES.map((item) => (
+                          <SelectItem
+                            key={item}
+                            value={item}
+                            className="
+        my-1
+        cursor-pointer
+        rounded-xl
+        px-3
+        py-3
+        text-[14px]
+        font-medium
+        outline-none
+        focus:bg-primary/10
+        data-[highlighted]:bg-primary/10
+        data-[state=checked]:bg-primary
+        data-[state=checked]:text-primary-foreground
+      "
+                          >
+                            {item}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>{" "}
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Opportunity Mode</label>
 
-                    <select
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                      value={form.opportunity_mode}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          opportunity_mode: e.target.value,
-                        })
-                      }
-                    >
-                      <option>Offline</option>
-                      <option>Hybrid</option>
-                      <option>Online</option>
-                    </select>
+                   <Select
+  value={form.opportunity_mode}
+  onValueChange={(value) =>
+    setForm({
+      ...form,
+      opportunity_mode: value,
+    })
+  }
+>
+  <SelectTrigger
+    className="
+      h-14
+      w-full
+      rounded-2xl
+      border
+      border-slate-400
+      bg-white
+      px-4
+      text-[15px]
+      font-medium
+      shadow-sm
+      transition-all
+      duration-200
+      hover:border-slate-300
+      hover:shadow-md
+      focus:ring-4
+      focus:ring-primary/10
+      data-[state=open]:border-primary
+      data-[state=open]:ring-4
+      data-[state=open]:ring-primary/10
+    "
+  >
+    <SelectValue placeholder="Select Opportunity Mode" />
+  </SelectTrigger>
+
+  <SelectContent
+    sideOffset={8}
+    position="popper"
+    className="
+      min-w-[var(--radix-select-trigger-width)]
+      rounded-2xl
+      border
+      border-slate-600
+      bg-white
+      p-2
+      shadow-2xl
+    "
+  >
+    <SelectItem
+      value="Offline"
+      className="
+        my-1
+        cursor-pointer
+        rounded-xl
+        px-3
+        py-3
+        text-[14px]
+        font-medium
+        data-[highlighted]:bg-primary/10
+        data-[state=checked]:bg-primary
+        data-[state=checked]:text-primary-foreground
+      "
+    >
+      Offline
+    </SelectItem>
+
+    <SelectItem
+      value="Hybrid"
+      className="
+        my-1
+        cursor-pointer
+        rounded-xl
+        px-3
+        py-3
+        text-[14px]
+        font-medium
+        data-[highlighted]:bg-primary/10
+        data-[state=checked]:bg-primary
+        data-[state=checked]:text-primary-foreground
+      "
+    >
+      Hybrid
+    </SelectItem>
+
+    <SelectItem
+      value="Online"
+      className="
+        my-1
+        cursor-pointer
+        rounded-xl
+        px-3
+        py-3
+        text-[14px]
+        font-medium
+        data-[highlighted]:bg-primary/10
+        data-[state=checked]:bg-primary
+        data-[state=checked]:text-primary-foreground
+      "
+    >
+      Online
+    </SelectItem>
+  </SelectContent>
+</Select>
+
                   </div>
 
                   <div className="space-y-2">
@@ -785,7 +938,7 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
               </div>
             </div>
 
-            <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50/40 p-6">
+            <div className="mt-12 rounded-3xl border border-slate-200 bg-slate-50/40 p-6">
               <div className="mb-8">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                   Company Information
@@ -829,11 +982,24 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                   />
                 </div>
 
-                <div>
-                  <label>Company Address 2</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Company Address 2</label>
 
                   <input
-                    className="w-full border rounded p-2"
+                    className="
+            w-full
+            rounded-2xl
+            border
+            border-slate-200
+            bg-white
+            px-4
+            py-3
+            transition-all
+            outline-none
+            focus:border-primary
+            focus:ring-4
+            focus:ring-primary/10
+        "
                     value={form.company_address_2}
                     onChange={(e) =>
                       setForm({
@@ -858,20 +1024,91 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-3">
-                    <select
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                      value={form.hr_prefix}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          hr_prefix: e.target.value,
-                        })
-                      }
-                    >
-                      <option>Mr.</option>
+                   <Select
+  value={form.hr_prefix}
+  onValueChange={(value) =>
+    setForm({
+      ...form,
+      hr_prefix: value,
+    })
+  }
+>
+  <SelectTrigger
+    className="
+      h-14
+      w-full
+      rounded-2xl
+      border
+      border-slate-400
+      bg-white
+      px-4
+      text-[15px]
+      font-medium
+      shadow-sm
+      transition-all
+      duration-200
+      hover:border-slate-300
+      hover:shadow-md
+      focus:ring-4
+      focus:ring-primary/10
+      data-[state=open]:border-primary
+      data-[state=open]:ring-4
+      data-[state=open]:ring-primary/10
+    "
+  >
+    <SelectValue />
+  </SelectTrigger>
 
-                      <option>Ms.</option>
-                    </select>
+  <SelectContent
+    sideOffset={8}
+    position="popper"
+    className="
+      min-w-[var(--radix-select-trigger-width)]
+      rounded-2xl
+      border
+      border-slate-600
+      bg-white
+      p-2
+      shadow-2xl
+    "
+  >
+    <SelectItem
+      value="Mr."
+      className="
+        my-1
+        cursor-pointer
+        rounded-xl
+        px-3
+        py-3
+        text-[14px]
+        font-medium
+        data-[highlighted]:bg-primary/10
+        data-[state=checked]:bg-primary
+        data-[state=checked]:text-primary-foreground
+      "
+    >
+      Mr.
+    </SelectItem>
+
+    <SelectItem
+      value="Ms."
+      className="
+        my-1
+        cursor-pointer
+        rounded-xl
+        px-3
+        py-3
+        text-[14px]
+        font-medium
+        data-[highlighted]:bg-primary/10
+        data-[state=checked]:bg-primary
+        data-[state=checked]:text-primary-foreground
+      "
+    >
+      Ms.
+    </SelectItem>
+  </SelectContent>
+</Select>
 
                     <input
                       placeholder="HR Name"
@@ -903,16 +1140,18 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
                     onClick={() => setReviewMode(true)}
                     className="
 w-full
-md:w-auto
+md:min-w-[200px]
+mt-10
+mb-4
 rounded-2xl
 bg-primary
-px-8
+px-10
 py-3
-font-medium
+text-2xl font-semibold
 text-primary-foreground
-shadow-lg
+shadow-md
 transition-all
-hover:shadow-xl
+hover:shadow-2xl
 disabled:cursor-not-allowed
 disabled:opacity-50
 "
@@ -926,17 +1165,21 @@ disabled:opacity-50
         )}
 
         {reviewMode && (
-          <section className="mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <div className="mt-8">
-              <h2 className="mb-2 text-xl font-semibold">Review & Confirm</h2>
-
-              <p className="mb-6 text-sm text-muted-foreground">
-                Please verify all details carefully before submitting. Once submitted, the request
-                will be sent for HOD approval.
+          <section className="mt-6 rounded-[30px] border border-slate-300 bg-white p-6 shadow-sm sm:p-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                FINAL REVIEW
               </p>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mt-2 text-3xl font-semibold">Review & Confirm</h2>
+
+              <p className="mb-6 text-sm text-muted-foreground">
+                Review every section below before submitting your NOC request. Once submitted, the
+                request will be forwarded for HOD approval and cannot be edited.
+              </p>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <div className="rounded-[28px] border border-slate-300 bg-white p-7 shadow-md transition-shadow hover:shadow-xl">
                   <div className="mb-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                       Student Information
@@ -979,7 +1222,7 @@ disabled:opacity-50
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-[28px] border border-slate-300 bg-white p-7 shadow-md transition-shadow hover:shadow-xl">
                   <div className="mb-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                       Opportunity Details
@@ -1034,7 +1277,7 @@ disabled:opacity-50
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-[28px] border border-slate-300 bg-white p-7 shadow-md transition-shadow hover:shadow-xl">
                   <div className="mb-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                       Company Details
@@ -1047,24 +1290,30 @@ disabled:opacity-50
                     <div className="border-b border-slate-100 pb-3">
                       <div className="text-sm text-muted-foreground">Company</div>
 
-                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">{form.company_name || "Not provided"}</div>
+                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">
+                        {form.company_name || "Not provided"}
+                      </div>
                     </div>
 
                     <div className="border-b border-slate-100 pb-3">
                       <div className="text-sm text-muted-foreground">Address Line 1</div>
 
-                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">{form.company_address_1 || "Not provided"}</div>
+                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">
+                        {form.company_address_1 || "Not provided"}
+                      </div>
                     </div>
 
                     <div>
                       <div className="text-sm text-muted-foreground">Address Line 2</div>
 
-                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">{form.company_address_2 || "Not provided"}</div>
+                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">
+                        {form.company_address_2 || "Not provided"}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-[28px] border border-slate-300 bg-white p-7 shadow-md transition-shadow hover:shadow-xl">
                   <div className="mb-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                       HR Contact
@@ -1077,32 +1326,42 @@ disabled:opacity-50
                     <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
                       <span className="text-sm text-muted-foreground">Prefix</span>
 
-                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">{form.hr_prefix || "Not provided"}</span>
+                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">
+                        {form.hr_prefix || "Not provided"}
+                      </span>
                     </div>
 
                     <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
                       <span className="text-sm text-muted-foreground">HR Name</span>
 
-                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">{form.hr_name || "Not provided"}</span>
+                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">
+                        {form.hr_name || "Not provided"}
+                      </span>
                     </div>
 
                     <div className="flex justify-between gap-4">
                       <span className="text-sm text-muted-foreground">Position</span>
 
-                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">{form.hr_position || "Not provided"}</span>
+                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">
+                        {form.hr_position || "Not provided"}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-3">
-                <button onClick={() => setReviewMode(false)} className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400">
+              <div className="mt-10 flex flex-col-reverse gap-4 border-t border-slate-200 pt-8 sm:flex-row">
+                <button
+                  onClick={() => setReviewMode(false)}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400"
+                >
                   Back
                 </button>
 
                 <button
                   disabled={submitting || !!activeNoc || !!completionRequest}
-                  onClick={submitRequest} className="inline-flex items-center justify-center rounded-2xl bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={submitRequest}
+                  className="inline-flex items-center justify-center rounded-2xl bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Submit Request
                 </button>
@@ -1113,19 +1372,36 @@ disabled:opacity-50
 
         <div className="mt-8">
           {completionRequest && (
-            <div className="mb-8 rounded-lg border p-6">
-              <h2 className="mb-2 text-xl font-semibold">NOC Completion Verification</h2>
+            <div className="mb-8 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <div className="mb-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  COMPLETION VERIFICATION
+                </p>
 
-              <p className="mb-6 text-sm text-muted-foreground">
-                Upload your completion certificate and HR verification details to close your
-                previous NOC and become eligible for future NOC requests.
-              </p>
+                <h2 className="mt-2 text-2xl font-semibold">Internship Completion Details</h2>
+
+                <p className="mt-2 text-sm text-muted-foreground max-w-3xl">
+                  Upload your internship completion certificate and HR verification details. Once
+                  verified by the Training & Placement Cell, you will become eligible to apply for
+                  another NOC.
+                </p>
+              </div>
 
               {(!completionRequest?.completion_submitted_at ||
                 completionRequest?.status === "TENURE_REJECTED") && (
                 <div className="space-y-6">
-                  <div className="rounded-lg border bg-slate-50 p-4">
-                    <div className="mb-2 font-medium">Completion Certificate</div>
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50/40 p-6">
+                    <div className="mb-6">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                        DOCUMENT
+                      </p>
+
+                      <h3 className="mt-2 text-xl font-semibold">Completion Certificate</h3>
+
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Upload the internship completion certificate issued by the company.
+                      </p>
+                    </div>
 
                     <div
                       onDragOver={(e) => {
@@ -1174,14 +1450,12 @@ disabled:opacity-50
                         });
                       }}
                       className={`
-                        rounded-lg
+                        rounded-3xl
                         border-2
                         border-dashed
-                        p-8
+                        p-10
                         text-center
-                        cursor-pointer
-                        transition
-
+                        cursor-pointer transition-all duration-200 hover:border-primary hover:bg-primary/5
                         ${dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white"}
                     `}
                     >
@@ -1217,8 +1491,8 @@ disabled:opacity-50
                     </div>
 
                     {completionForm.certificate && (
-                      <div className="mt-4 rounded border bg-green-50 p-3">
-                        <div className="font-medium text-green-700">File Selected</div>
+                      <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                        <div className="font-semibold text-emerald-700">File Selected</div>
 
                         <div className="text-sm">{completionForm.certificate.name}</div>
 
@@ -1245,8 +1519,19 @@ disabled:opacity-50
                     )}
                   </div>
 
-                  <div className="rounded-lg border bg-slate-50 p-4">
-                    <div className="mb-4 font-medium">HR Verification Details</div>
+                  <div className="rounded-3xl border border-slate-200 bg-slate-50/40 p-6">
+                    <div className="mb-6">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                        HR VERIFICATION
+                      </p>
+
+                      <h3 className="mt-2 text-xl font-semibold">Verification Contact</h3>
+
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Provide the HR details that will be used by the Training & Placement Cell
+                        for internship verification.
+                      </p>
+                    </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <input
