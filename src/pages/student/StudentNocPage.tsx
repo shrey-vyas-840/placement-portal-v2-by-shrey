@@ -936,211 +936,173 @@ disabled:opacity-50
               </p>
 
               <div className="grid gap-6 lg:grid-cols-2">
-<div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-  <div className="mb-5">
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-      Student Information
-    </p>
-    <h3 className="mt-1 text-lg font-semibold">
-      Profile Snapshot
-    </h3>
-  </div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                      Student Information
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold">Profile Snapshot</h3>
+                  </div>
 
-  <div className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">Student Name</span>
+                      <span className="font-medium text-right">{profile?.student_name}</span>
+                    </div>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">Student Name</span>
-      <span className="font-medium text-right">{profile?.student_name}</span>
-    </div>
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">Enrollment</span>
+                      <span className="font-medium text-right">{profile?.enrollment_no}</span>
+                    </div>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">Enrollment</span>
-      <span className="font-medium text-right">{profile?.enrollment_no}</span>
-    </div>
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">Institute Email</span>
+                      <span className="font-medium text-right break-all">
+                        {profile?.institute_email}
+                      </span>
+                    </div>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">Institute Email</span>
-      <span className="font-medium text-right break-all">
-        {profile?.institute_email}
-      </span>
-    </div>
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">Institute</span>
+                      <span className="font-medium text-right">{profile?.institute_name}</span>
+                    </div>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">Institute</span>
-      <span className="font-medium text-right">
-        {profile?.institute_name}
-      </span>
-    </div>
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">Course</span>
+                      <span className="font-medium text-right">{profile?.course}</span>
+                    </div>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">Course</span>
-      <span className="font-medium text-right">{profile?.course}</span>
-    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">Branch</span>
+                      <span className="font-medium text-right">{profile?.branch}</span>
+                    </div>
+                  </div>
+                </div>
 
-    <div className="flex justify-between gap-4">
-      <span className="text-sm text-muted-foreground">Branch</span>
-      <span className="font-medium text-right">{profile?.branch}</span>
-    </div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                      Opportunity Details
+                    </p>
 
-  </div>
-</div>
+                    <h3 className="mt-1 text-lg font-semibold">Internship Information</h3>
+                  </div>
 
-<div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="space-y-4">
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">NOC Type</span>
+                      <span className="font-medium text-right">{form.noc_type}</span>
+                    </div>
 
-  <div className="mb-5">
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-      Opportunity Details
-    </p>
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">Mode</span>
+                      <span className="font-medium text-right">{form.opportunity_mode}</span>
+                    </div>
 
-    <h3 className="mt-1 text-lg font-semibold">
-      Internship Information
-    </h3>
-  </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">Start Date</span>
 
-  <div className="space-y-4">
+                      <span className="text-right font-medium">
+                        {form.start_date || "Not specified"}
+                      </span>
+                    </div>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">NOC Type</span>
-      <span className="font-medium text-right">{form.noc_type}</span>
-    </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">End Date</span>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">Mode</span>
-      <span className="font-medium text-right">{form.opportunity_mode}</span>
-    </div>
+                      <span className="text-right font-medium">
+                        {form.end_date || "Not specified"}
+                      </span>
+                    </div>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">Start Date</span>
-      <span className="font-medium text-right">{form.start_date}</span>
-    </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">Duration</span>
 
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">End Date</span>
-      <span className="font-medium text-right">{form.end_date}</span>
-    </div>
+                      <span className="text-right font-semibold text-primary">
+                        {form.start_date && form.end_date
+                          ? `${Math.max(
+                              1,
+                              (new Date(form.end_date).getFullYear() -
+                                new Date(form.start_date).getFullYear()) *
+                                12 +
+                                (new Date(form.end_date).getMonth() -
+                                  new Date(form.start_date).getMonth()),
+                            )} Month(s)`
+                          : "Not specified"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-    <div className="flex justify-between gap-4">
-      <span className="text-sm text-muted-foreground">Duration</span>
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                      Company Details
+                    </p>
 
-      <span className="font-semibold text-primary">
-        {Math.max(
-          1,
-          (new Date(form.end_date).getFullYear() -
-            new Date(form.start_date).getFullYear()) *
-            12 +
-            (new Date(form.end_date).getMonth() -
-              new Date(form.start_date).getMonth())
-        )}{" "}
-        Month(s)
-      </span>
-    </div>
+                    <h3 className="mt-1 text-lg font-semibold">Organization</h3>
+                  </div>
 
-  </div>
-</div>
+                  <div className="space-y-4">
+                    <div className="border-b border-slate-100 pb-3">
+                      <div className="text-sm text-muted-foreground">Company</div>
 
-<div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">{form.company_name || "Not provided"}</div>
+                    </div>
 
-  <div className="mb-5">
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-      Company Details
-    </p>
+                    <div className="border-b border-slate-100 pb-3">
+                      <div className="text-sm text-muted-foreground">Address Line 1</div>
 
-    <h3 className="mt-1 text-lg font-semibold">
-      Organization
-    </h3>
-  </div>
+                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">{form.company_address_1 || "Not provided"}</div>
+                    </div>
 
-  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground">Address Line 2</div>
 
-    <div className="border-b border-slate-100 pb-3">
-      <div className="text-sm text-muted-foreground">
-        Company
-      </div>
+                      <div className="mt-1 text-[15px] font-semibold text-slate-900 break-words">{form.company_address_2 || "Not provided"}</div>
+                    </div>
+                  </div>
+                </div>
 
-      <div className="mt-1 font-medium">
-        {form.company_name}
-      </div>
-    </div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                      HR Contact
+                    </p>
 
-    <div className="border-b border-slate-100 pb-3">
-      <div className="text-sm text-muted-foreground">
-        Address Line 1
-      </div>
+                    <h3 className="mt-1 text-lg font-semibold">Company Representative</h3>
+                  </div>
 
-      <div className="mt-1 font-medium">
-        {form.company_address_1}
-      </div>
-    </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">Prefix</span>
 
-    <div>
-      <div className="text-sm text-muted-foreground">
-        Address Line 2
-      </div>
+                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">{form.hr_prefix || "Not provided"}</span>
+                    </div>
 
-      <div className="mt-1 font-medium">
-        {form.company_address_2 || "-"}
-      </div>
-    </div>
+                    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
+                      <span className="text-sm text-muted-foreground">HR Name</span>
 
-  </div>
-</div>
+                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">{form.hr_name || "Not provided"}</span>
+                    </div>
 
-<div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">Position</span>
 
-  <div className="mb-5">
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-      HR Contact
-    </p>
-
-    <h3 className="mt-1 text-lg font-semibold">
-      Company Representative
-    </h3>
-  </div>
-
-  <div className="space-y-4">
-
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">
-        Prefix
-      </span>
-
-      <span className="font-medium">
-        {form.hr_prefix}
-      </span>
-    </div>
-
-    <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-      <span className="text-sm text-muted-foreground">
-        HR Name
-      </span>
-
-      <span className="font-medium">
-        {form.hr_name}
-      </span>
-    </div>
-
-    <div className="flex justify-between gap-4">
-      <span className="text-sm text-muted-foreground">
-        Position
-      </span>
-
-      <span className="font-medium">
-        {form.hr_position}
-      </span>
-    </div>
-
-  </div>
-</div>
+                      <span className="text-right text-[15px] font-semibold text-slate-900 break-words">{form.hr_position || "Not provided"}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4 flex gap-3">
-                <button onClick={() => setReviewMode(false)} className="rounded border px-4 py-2">
+                <button onClick={() => setReviewMode(false)} className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400">
                   Back
                 </button>
 
                 <button
                   disabled={submitting || !!activeNoc || !!completionRequest}
-                  onClick={submitRequest}
+                  onClick={submitRequest} className="inline-flex items-center justify-center rounded-2xl bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Submit Request
                 </button>
