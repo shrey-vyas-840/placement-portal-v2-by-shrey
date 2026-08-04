@@ -1803,127 +1803,156 @@ rounded
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div className="max-h-[420px] overflow-auto rounded-3xl">
-              <table className="w-full table-fixed border-collapse">
-                <thead className="bg-slate-50">
-                  <tr className="border-b">
-                    <th className="w-[220px] px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider">
-                      Company
-                    </th>
+            {requests.length === 0 ? (
+              <div className="flex min-h-[360px] flex-col items-center justify-center px-8 py-16">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-11 w-11 text-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12h6m-6 4h6M8 4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z"
+                    />
+                  </svg>
+                </div>
 
-                    <th className="w-[170px] px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">
-                      Type
-                    </th>
+                <h3 className="mt-8 text-2xl font-semibold text-slate-900">No NOC Requests Yet</h3>
 
-                    <th className="w-[110px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Duration
-                    </th>
+                <p className="mt-4 max-w-lg text-center text-sm leading-7 text-slate-500">
+                  You haven't submitted any NOC request yet.
+                  <br />
+                  Complete the application form above to submit your first request. Once submitted,
+                  you'll be able to track approvals, issuance and completion history here.
+                </p>
+              </div>
+            ) : (
+              <div className="max-h-[420px] overflow-auto rounded-3xl">
+                <table className="w-full table-fixed border-collapse">
+                  <thead className="bg-slate-50">
+                    <tr className="border-b">
+                      <th className="w-[220px] px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+                        Company
+                      </th>
 
-                    <th className="w-[120px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Applied
-                    </th>
+                      <th className="w-[170px] px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+                        Type
+                      </th>
 
-                    <th className="w-[165px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Deadline
-                    </th>
+                      <th className="w-[110px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Duration
+                      </th>
 
-                    <th className="w-[100px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Ref.
-                    </th>
+                      <th className="w-[120px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Applied
+                      </th>
 
-                    <th className="w-[120px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Issued
-                    </th>
+                      <th className="w-[165px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Deadline
+                      </th>
 
-                    <th className="w-[70px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Prints
-                    </th>
+                      <th className="w-[100px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Ref.
+                      </th>
 
-                    <th className="w-[140px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Status
-                    </th>
+                      <th className="w-[120px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Issued
+                      </th>
 
-                    <th className="w-[170px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
+                      <th className="w-[70px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Prints
+                      </th>
 
-                <tbody>
-                  {requests.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="px-8 py-16 text-center">
-                        <div className="max-w-sm">
-                          <div className="text-5xl">📄</div>
+                      <th className="w-[140px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Status
+                      </th>
 
-                          <h3 className="mt-4 text-lg font-semibold">No NOC Requests Yet</h3>
-
-                          <p className="mt-2 text-sm text-slate-500">
-                            Your submitted NOC requests will appear here.
-                          </p>
-                        </div>
-                      </td>
+                      <th className="w-[170px] px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ) : (
-                    requests.map((request) => (
-                      <tr
-                        key={request.noc_request_id}
-                        className="
+                  </thead>
+
+                  <tbody>
+                    {requests.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="px-8 py-16 text-center">
+                          <div className="max-w-sm">
+                            <div className="text-5xl">📄</div>
+
+                            <h3 className="mt-4 text-lg font-semibold">No NOC Requests Yet</h3>
+
+                            <p className="mt-2 text-sm text-slate-500">
+                              Your submitted NOC requests will appear here.
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      requests.map((request) => (
+                        <tr
+                          key={request.noc_request_id}
+                          className="
         border-b
         even:bg-slate-50/60
         hover:bg-primary/5
         transition-colors
     "
-                      >
-                        <td className="min-w-[220px] px-5 py-4">
+                        >
                           <td className="min-w-[220px] px-5 py-4">
-                            <div className="font-semibold text-slate-900">
-                              {request.snapshot?.company_name}
-                            </div>
+                            <td className="min-w-[220px] px-5 py-4">
+                              <div className="font-semibold text-slate-900">
+                                {request.snapshot?.company_name}
+                              </div>
 
-                            <div className="mt-1 text-xs text-slate-500">{request.noc_type}</div>
+                              <div className="mt-1 text-xs text-slate-500">{request.noc_type}</div>
+                            </td>
                           </td>
-                        </td>
 
-                        <td className="p-3">{request.noc_type}</td>
+                          <td className="p-3">{request.noc_type}</td>
 
-                        <td className="p-3">
-                          {Math.max(
-                            1,
-                            (new Date(request.snapshot?.end_date).getFullYear() -
-                              new Date(request.snapshot?.start_date).getFullYear()) *
-                              12 +
-                              (new Date(request.snapshot?.end_date).getMonth() -
-                                new Date(request.snapshot?.start_date).getMonth()),
-                          )}{" "}
-                          Month(s)
-                        </td>
+                          <td className="p-3">
+                            {Math.max(
+                              1,
+                              (new Date(request.snapshot?.end_date).getFullYear() -
+                                new Date(request.snapshot?.start_date).getFullYear()) *
+                                12 +
+                                (new Date(request.snapshot?.end_date).getMonth() -
+                                  new Date(request.snapshot?.start_date).getMonth()),
+                            )}{" "}
+                            Month(s)
+                          </td>
 
-                        <td className="p-3">
-                          {request.created_at
-                            ? new Date(request.created_at).toLocaleDateString()
-                            : "-"}
-                        </td>
+                          <td className="p-3">
+                            {request.created_at
+                              ? new Date(request.created_at).toLocaleDateString()
+                              : "-"}
+                          </td>
 
-                        <td className="p-3">
-                          {request.hod_approval_deadline
-                            ? new Date(request.hod_approval_deadline).toLocaleString()
-                            : "-"}
-                        </td>
+                          <td className="p-3">
+                            {request.hod_approval_deadline
+                              ? new Date(request.hod_approval_deadline).toLocaleString()
+                              : "-"}
+                          </td>
 
-                        <td className="p-3">{request.reference_number ?? "-"}</td>
+                          <td className="p-3">{request.reference_number ?? "-"}</td>
 
-                        <td className="p-3">
-                          {request.issued_at
-                            ? new Date(request.issued_at).toLocaleDateString()
-                            : "-"}
-                        </td>
+                          <td className="p-3">
+                            {request.issued_at
+                              ? new Date(request.issued_at).toLocaleDateString()
+                              : "-"}
+                          </td>
 
-                        <td className="p-3">{request.print_count ?? 0}</td>
+                          <td className="p-3">{request.print_count ?? 0}</td>
 
-                        <td className="p-3">
-                          <span
-                            className={`
+                          <td className="p-3">
+                            <span
+                              className={`
 rounded-full
 px-3
 py-1
@@ -1952,39 +1981,39 @@ whitespace-nowrap
                             : "bg-gray-100 text-gray-800"
             }
         `}
-                          >
-                            {request.status === "PENDING_HOD_APPROVAL"
-                              ? "Pending HOD"
-                              : request.status === "PENDING_PRINT"
-                                ? "Pending Print"
-                                : request.status === "PRINTED"
-                                  ? "Printed"
-                                  : request.status === "ISSUED"
-                                    ? "Issued - Active"
-                                    : request.status === "COMPLETED_TENURE_PENDING_VERIFICATION"
-                                      ? "Completion Verification Pending"
-                                      : request.status === "TENURE_COMPLETED"
-                                        ? "Eligible For New NOC"
-                                        : request.status === "CANCELLED"
-                                          ? "Cancelled"
-                                          : request.status === "HOD_REJECTED"
-                                            ? "Rejected by HOD"
-                                            : request.status === "ADMIN_REJECTED"
-                                              ? "Rejected by Admin"
-                                              : request.status === "TENURE_REJECTED"
-                                                ? "Tenure Rejected"
-                                                : request.status}
-                          </span>
-                        </td>
+                            >
+                              {request.status === "PENDING_HOD_APPROVAL"
+                                ? "Pending HOD"
+                                : request.status === "PENDING_PRINT"
+                                  ? "Pending Print"
+                                  : request.status === "PRINTED"
+                                    ? "Printed"
+                                    : request.status === "ISSUED"
+                                      ? "Issued - Active"
+                                      : request.status === "COMPLETED_TENURE_PENDING_VERIFICATION"
+                                        ? "Completion Verification Pending"
+                                        : request.status === "TENURE_COMPLETED"
+                                          ? "Eligible For New NOC"
+                                          : request.status === "CANCELLED"
+                                            ? "Cancelled"
+                                            : request.status === "HOD_REJECTED"
+                                              ? "Rejected by HOD"
+                                              : request.status === "ADMIN_REJECTED"
+                                                ? "Rejected by Admin"
+                                                : request.status === "TENURE_REJECTED"
+                                                  ? "Tenure Rejected"
+                                                  : request.status}
+                            </span>
+                          </td>
 
-                        <td className="p-3">
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
+                          <td className="p-3">
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
 
-                              onClick={() => setSelectedRequest(request)}
-                              className="rounded-lg
+                                onClick={() => setSelectedRequest(request)}
+                                className="rounded-lg
 border
 border-blue-200
 bg-blue-50
@@ -1995,19 +2024,19 @@ font-medium
 text-blue-700
 transition-colors
 hover:bg-blue-100"
-                            >
-                              View
-                            </Button>
-                            {request.status === "PENDING_HOD_APPROVAL" &&
-                              request.hod_mail_send_count < 2 &&
-                              !(
-                                request.hod_mail_send_count >= 1 &&
-                                new Date() < new Date(request.hod_approval_deadline)
-                              ) && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => sendHodApprovalMail(request)}
-                                  className="
+                              >
+                                View
+                              </Button>
+                              {request.status === "PENDING_HOD_APPROVAL" &&
+                                request.hod_mail_send_count < 2 &&
+                                !(
+                                  request.hod_mail_send_count >= 1 &&
+                                  new Date() < new Date(request.hod_approval_deadline)
+                                ) && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => sendHodApprovalMail(request)}
+                                    className="
                                                        border
                                                             rounded-lg
 bg-blue-500
@@ -2019,28 +2048,21 @@ text-white
 hover:bg-blue-700
 transition-colors
 "
-                                >
-                                  {request.hod_mail_send_count > 0
-                                    ? "Resend Approval Request"
-                                    : "Request Approval"}
-                                </Button>
-                              )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-
-                  {requests.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                        No NOC requests found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                                  >
+                                    {request.hod_mail_send_count > 0
+                                      ? "Resend Approval Request"
+                                      : "Request Approval"}
+                                  </Button>
+                                )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
