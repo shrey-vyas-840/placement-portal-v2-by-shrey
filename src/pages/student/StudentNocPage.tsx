@@ -517,416 +517,526 @@ ${branchLine}, ${request.snapshot?.institute_name}`;
 
   return (
     <StudentLayout completionName={profile?.student_name ?? ""} completionPercentage={100}>
-      <div className="mx-auto max-w-7xl p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">NOC Request</h1>
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden rounded-[32px] border border-primary/10 bg-gradient-to-r from-primary via-blue-700 to-cyan-600 px-6 py-7 text-white shadow-xl sm:px-8 sm:py-8">
+          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs uppercase tracking-[0.28em] text-white/75">Student Services</p>
 
-          <p className="mt-2 text-sm text-muted-foreground">
-            Step 1: Fill Form → Step 2: Review & Confirm → Step 3: Wait For HOD Approval → Step 4:
-            NOC Issued → Step 5: Collect From T&P Cell
-          </p>
+              <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">NOC Request</h1>
+
+              <p className="mt-3 max-w-2xl text-base text-white/80">
+                Submit and monitor your No Objection Certificate requests from one centralized
+                workspace.
+              </p>
+            </div>
+          </div>
+
+          <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-white/10 blur-sm" />
+          <div className="pointer-events-none absolute bottom-0 right-12 h-24 w-24 rounded-full bg-white/10 blur-sm" />
+        </section>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-blue-200 bg-white p-5 shadow-sm">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600">
+              Requests
+            </div>
+
+            <div className="mt-3 text-5xl font-bold tracking-tight">{requests.length}</div>
+
+            <div className="mt-2 text-sm text-slate-500">Total submitted requests</div>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-300 bg-white p-5 shadow-sm">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
+              Active
+            </div>
+
+            <div className="mt-3 text-5xl font-bold tracking-tight">{activeNoc ? 1 : 0}</div>
+
+            <div className="mt-2 text-sm text-slate-500">Active NOC</div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-300 bg-white p-5 shadow-sm">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-600">
+              Completion Pending
+            </div>
+
+            <div className="mt-3 text-5xl font-bold tracking-tight">
+              {completionRequest ? 1 : 0}
+            </div>
+
+            <div className="mt-2 text-sm text-slate-500">Requires submission</div>
+          </div>
         </div>
 
-        {activeNoc && (
-          <div
-            className="
-mb-6
-rounded-lg
-border
-border-yellow-300
-bg-yellow-50
-p-4
-"
-          >
-            <strong>Active NOC Exists</strong>
-            <br />
-            You already have an active NOC until{" "}
-            <strong>{activeNoc?.snapshot?.end_date ?? "-"}</strong>. New NOC requests are restricted
-            until completion.
-          </div>
-        )}
+        <div className="mt-5 rounded-2xl border border-blue-400 bg-gradient-to-r from-blue-50/80 via-white to-cyan-50/70 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="min-w-[180px]">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+                Quick Process
+              </div>
 
-        {completionRequest && (
-          <div
-            className="
-mb-6
-rounded-lg
-border
-border-red-300
-bg-red-50
-p-4
-"
-          >
-            <strong>Previous NOC Completion Required</strong>
-            <br />
-            Submit internship/job completion details before applying for a new NOC.
-            <br />
-            <br />
-            Certificate Upload is Mandatory. HR Verification Details are Mandatory. New NOC requests
-            remain blocked until completion verification.
-          </div>
-        )}
-
-        {!reviewMode && (
-          <div className="rounded-lg border p-6 space-y-4">
-            <div>
-              <label>NOC Type</label>
-
-              <select
-                className="w-full border rounded p-2"
-                value={form.noc_type}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    noc_type: e.target.value,
-                  })
-                }
-              >
-                {NOC_TYPES.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-
-              <div>
-                <label>Opportunity Mode</label>
-
-                <select
-                  className="w-full border rounded p-2"
-                  value={form.opportunity_mode}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      opportunity_mode: e.target.value,
-                    })
-                  }
-                >
-                  <option>Offline</option>
-
-                  <option>Hybrid</option>
-
-                  <option>Online</option>
-                </select>
+              <div className="mt-1 text-lg font-semibold text-slate-900">
+                Complete your NOC in 3 simple steps
               </div>
             </div>
-            {selectedRequest && (
-              <div className="mb-6">
-                <div className="flex flex-wrap gap-2">
-                  <span
-                    className="
-px-3
-py-1
-rounded
-bg-green-100
-text-green-800
-"
-                  >
-                    ✓ Submitted
-                  </span>
 
-                  <span
-                    className={`
-px-3
-py-1
-rounded
-${
-  ["PENDING_PRINT", "PRINTED", "ISSUED"].includes(selectedRequest.status) ||
-  selectedRequest.approval_source === "HOD_APPROVED"
-    ? "bg-green-100 text-green-800"
-    : "bg-gray-100 text-gray-600"
-}
-`}
-                  >
-                    ✓ HOD Approved
-                  </span>
+            <div className="grid flex-1 gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-blue-400 bg-white/80 px-4 py-3">
+                <div className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                  Step 1
+                </div>
 
-                  <span
-                    className={`
-px-3
-py-1
-rounded
-${
-  ["PRINTED", "ISSUED"].includes(selectedRequest.status)
-    ? "bg-green-100 text-green-800"
-    : "bg-gray-100 text-gray-600"
-}
-`}
-                  >
-                    ✓ Ready For Print
-                  </span>
+                <div className="mt-1 font-medium text-slate-900">Fill Required Details</div>
 
-                  <span
-                    className={`
-px-3
-py-1
-rounded
-${
-  ["ISSUED"].includes(selectedRequest.status)
-    ? "bg-green-100 text-green-800"
-    : "bg-gray-100 text-gray-600"
-}
-`}
-                  >
-                    ✓ Issued
-                  </span>
+                <div className="mt-1 text-sm text-slate-500">
+                  Complete the NOC request form and review before submission.
                 </div>
               </div>
-            )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label>Start Date</label>
+              <div className="rounded-xl border border-amber-400 bg-white/80 px-4 py-3">
+                <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">
+                  Step 2
+                </div>
 
-                <input
-                  type="date"
-                  className="w-full border rounded p-2"
-                  value={form.start_date}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      start_date: e.target.value,
-                    })
-                  }
-                />
+                <div className="mt-1 font-medium text-slate-900">Wait for Approvals</div>
+
+                <div className="mt-1 text-sm text-slate-500">
+                  Your request moves through the HOD and T&amp;P approval workflow.
+                </div>
               </div>
 
-              <div>
-                <label>End Date</label>
+              <div className="rounded-xl border border-emerald-400 bg-white/80 px-4 py-3">
+                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+                  Step 3
+                </div>
 
-                <input
-                  type="date"
-                  className="w-full border rounded p-2"
-                  value={form.end_date}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      end_date: e.target.value,
-                    })
-                  }
-                />
+                <div className="mt-1 font-medium text-slate-900">Track &amp; Collect NOC</div>
+
+                <div className="mt-1 text-sm text-slate-500">
+                  Once the status becomes <strong>NOC Issued</strong>, collect it from the T&amp;P
+                  Cell.
+                </div>
               </div>
             </div>
-            {form.start_date && form.end_date && (
-              <div className="rounded border p-3 bg-muted">
-                Duration:{" "}
-                <strong>
-                  {Math.max(
-                    1,
-                    (new Date(form.end_date).getFullYear() -
-                      new Date(form.start_date).getFullYear()) *
-                      12 +
-                      (new Date(form.end_date).getMonth() - new Date(form.start_date).getMonth()),
-                  )}
-                </strong>{" "}
-                Month(s)
-              </div>
-            )}
-
-            <div>
-              <label>Company Name</label>
-
-              <input
-                className="w-full border rounded p-2"
-                value={form.company_name}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    company_name: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <div>
-              <label>Company Address 1</label>
-
-              <input
-                className="w-full border rounded p-2"
-                value={form.company_address_1}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    company_address_1: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <div>
-              <label>Company Address 2</label>
-
-              <input
-                className="w-full border rounded p-2"
-                value={form.company_address_2}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    company_address_2: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <select
-                className="border rounded p-2"
-                value={form.hr_prefix}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    hr_prefix: e.target.value,
-                  })
-                }
-              >
-                <option>Mr.</option>
-
-                <option>Ms.</option>
-              </select>
-
-              <input
-                placeholder="HR Name"
-                className="border rounded p-2"
-                value={form.hr_name}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    hr_name: e.target.value,
-                  })
-                }
-              />
-
-              <input
-                placeholder="HR Position"
-                className="border rounded p-2"
-                value={form.hr_position}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    hr_position: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <button
-              disabled={!!activeNoc || !!completionRequest}
-              onClick={() => setReviewMode(true)}
-              className="rounded border px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Review & Confirm
-            </button>
           </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {activeNoc && (
+            <div className="rounded-[24px] border border-yellow-200 bg-yellow-50/90 p-5 shadow-sm">
+              <div className="text-sm font-semibold text-yellow-900">Active NOC Exists</div>
+              <p className="mt-2 text-sm leading-6 text-yellow-900/80">
+                You already have an active NOC until{" "}
+                <strong>{activeNoc?.snapshot?.end_date ?? "-"}</strong>. New NOC requests are
+                restricted until completion.
+              </p>
+            </div>
+          )}
+
+          {completionRequest && (
+            <div className="rounded-[24px] border border-red-200 bg-red-50/90 p-5 shadow-sm">
+              <div className="text-sm font-semibold text-red-700">
+                Previous NOC Completion Required
+              </div>
+              <p className="mt-2 text-sm leading-6 text-red-700/80">
+                Submit internship/job completion details before applying for a new NOC. Certificate
+                upload and HR verification details are mandatory.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {!reviewMode && (
+          <section className="mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  NOC APPLICATION
+                </p>
+
+                <h2 className="mt-2 text-2xl font-semibold">Internship / Placement Details</h2>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Fill in all required organisation details before reviewing your application.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-8">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50/40 p-6">
+                <div className="mb-8">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    Opportunity Information
+                  </p>
+
+                  <h3 className="mt-2 text-xl font-semibold">Internship / Placement Details</h3>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Configure the basic details of your internship or placement opportunity.
+                  </p>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">NOC Type</label>
+
+                    <select
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={form.noc_type}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          noc_type: e.target.value,
+                        })
+                      }
+                    >
+                      {NOC_TYPES.map((item) => (
+                        <option key={item}>{item}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Opportunity Mode</label>
+
+                    <select
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={form.opportunity_mode}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          opportunity_mode: e.target.value,
+                        })
+                      }
+                    >
+                      <option>Offline</option>
+                      <option>Hybrid</option>
+                      <option>Online</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Start Date</label>
+
+                    <input
+                      type="date"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={form.start_date}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          start_date: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">End Date</label>
+
+                    <input
+                      type="date"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={form.end_date}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          end_date: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                {form.start_date && form.end_date && (
+                  <div className="mt-6 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 p-5">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                          Internship Duration
+                        </p>
+
+                        <h4 className="mt-1 text-lg font-semibold">
+                          {Math.max(
+                            1,
+                            (new Date(form.end_date).getFullYear() -
+                              new Date(form.start_date).getFullYear()) *
+                              12 +
+                              (new Date(form.end_date).getMonth() -
+                                new Date(form.start_date).getMonth()),
+                          )}{" "}
+                          Month(s)
+                        </h4>
+                      </div>
+
+                      <div className="rounded-xl bg-white px-5 py-3 shadow-sm">
+                        <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Timeline
+                        </div>
+
+                        <div className="mt-1 text-sm font-medium">
+                          {form.start_date} → {form.end_date}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50/40 p-6">
+              <div className="mb-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Company Information
+                </p>
+
+                <h3 className="mt-2 text-xl font-semibold">Organization Details</h3>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Enter the organization where you will be joining for your internship or placement.
+                </p>
+              </div>
+
+              <div className="grid gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Company Name</label>
+
+                  <input
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    value={form.company_name}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        company_name: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Company Address 1</label>
+
+                  <input
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                    value={form.company_address_1}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        company_address_1: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label>Company Address 2</label>
+
+                  <input
+                    className="w-full border rounded p-2"
+                    value={form.company_address_2}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        company_address_2: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="mt-10 border-t border-slate-200 pt-8">
+                  <div className="mb-8">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                      HR Contact
+                    </p>
+
+                    <h3 className="mt-2 text-xl font-semibold">Organization Representative</h3>
+
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Enter the HR or authorised company representative details.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-3">
+                    <select
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={form.hr_prefix}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          hr_prefix: e.target.value,
+                        })
+                      }
+                    >
+                      <option>Mr.</option>
+
+                      <option>Ms.</option>
+                    </select>
+
+                    <input
+                      placeholder="HR Name"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={form.hr_name}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          hr_name: e.target.value,
+                        })
+                      }
+                    />
+
+                    <input
+                      placeholder="HR Position"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={form.hr_position}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          hr_position: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <button
+                    disabled={!!activeNoc || !!completionRequest}
+                    onClick={() => setReviewMode(true)}
+                    className="
+w-full
+md:w-auto
+rounded-2xl
+bg-primary
+px-8
+py-3
+font-medium
+text-primary-foreground
+shadow-lg
+transition-all
+hover:shadow-xl
+disabled:cursor-not-allowed
+disabled:opacity-50
+"
+                  >
+                    Review & Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
         )}
 
         {reviewMode && (
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-2 text-xl font-semibold">Review & Confirm</h2>
+          <section className="mt-6 rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="rounded-lg border p-6">
+              <h2 className="mb-2 text-xl font-semibold">Review & Confirm</h2>
 
-            <p className="mb-6 text-sm text-muted-foreground">
-              Please verify all details carefully before submitting. Once submitted, the request
-              will be sent for HOD approval.
-            </p>
+              <p className="mb-6 text-sm text-muted-foreground">
+                Please verify all details carefully before submitting. Once submitted, the request
+                will be sent for HOD approval.
+              </p>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Student Name</p>
-                <p className="font-medium">{profile?.student_name}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Student Name</p>
+                  <p className="font-medium">{profile?.student_name}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Enrollment Number</p>
+                  <p className="font-medium">{profile?.enrollment_no}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Institute Email</p>
+                  <p className="font-medium">{profile?.institute_email}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Institute</p>
+                  <p className="font-medium">{profile?.institute_name}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Course</p>
+                  <p className="font-medium">{profile?.course}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Semester</p>
+                  <p className="font-medium">{profile?.semester}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Branch</p>
+                  <p className="font-medium">{profile?.branch}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">NOC Type</p>
+                  <p className="font-medium">{form.noc_type}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Opportunity Mode</p>
+
+                  <p className="font-medium">{form.opportunity_mode}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">Start Date</p>
+                  <p className="font-medium">{form.start_date}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">End Date</p>
+                  <p className="font-medium">{form.end_date}</p>
+                </div>
+
+                <div className="rounded border p-3 md:col-span-2">
+                  <p className="text-xs text-muted-foreground">Company Name</p>
+                  <p className="font-medium">{form.company_name}</p>
+                </div>
+
+                <div className="rounded border p-3 md:col-span-2">
+                  <p className="text-xs text-muted-foreground">Company Address 1</p>
+                  <p className="font-medium">{form.company_address_1}</p>
+                </div>
+
+                <div className="rounded border p-3 md:col-span-2">
+                  <p className="text-xs text-muted-foreground">Company Address 2</p>
+                  <p className="font-medium">{form.company_address_2}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">HR Prefix</p>
+                  <p className="font-medium">{form.hr_prefix}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">HR Name</p>
+                  <p className="font-medium">{form.hr_name}</p>
+                </div>
+
+                <div className="rounded border p-3">
+                  <p className="text-xs text-muted-foreground">HR Position</p>
+                  <p className="font-medium">{form.hr_position}</p>
+                </div>
               </div>
 
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Enrollment Number</p>
-                <p className="font-medium">{profile?.enrollment_no}</p>
-              </div>
+              <div className="mt-4 flex gap-3">
+                <button onClick={() => setReviewMode(false)} className="rounded border px-4 py-2">
+                  Back
+                </button>
 
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Institute Email</p>
-                <p className="font-medium">{profile?.institute_email}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Institute</p>
-                <p className="font-medium">{profile?.institute_name}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Course</p>
-                <p className="font-medium">{profile?.course}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Semester</p>
-                <p className="font-medium">{profile?.semester}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Branch</p>
-                <p className="font-medium">{profile?.branch}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">NOC Type</p>
-                <p className="font-medium">{form.noc_type}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Opportunity Mode</p>
-
-                <p className="font-medium">{form.opportunity_mode}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">Start Date</p>
-                <p className="font-medium">{form.start_date}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">End Date</p>
-                <p className="font-medium">{form.end_date}</p>
-              </div>
-
-              <div className="rounded border p-3 md:col-span-2">
-                <p className="text-xs text-muted-foreground">Company Name</p>
-                <p className="font-medium">{form.company_name}</p>
-              </div>
-
-              <div className="rounded border p-3 md:col-span-2">
-                <p className="text-xs text-muted-foreground">Company Address 1</p>
-                <p className="font-medium">{form.company_address_1}</p>
-              </div>
-
-              <div className="rounded border p-3 md:col-span-2">
-                <p className="text-xs text-muted-foreground">Company Address 2</p>
-                <p className="font-medium">{form.company_address_2}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">HR Prefix</p>
-                <p className="font-medium">{form.hr_prefix}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">HR Name</p>
-                <p className="font-medium">{form.hr_name}</p>
-              </div>
-
-              <div className="rounded border p-3">
-                <p className="text-xs text-muted-foreground">HR Position</p>
-                <p className="font-medium">{form.hr_position}</p>
+                <button
+                  disabled={submitting || !!activeNoc || !!completionRequest}
+                  onClick={submitRequest}
+                >
+                  Submit Request
+                </button>
               </div>
             </div>
-
-            <div className="mt-4 flex gap-3">
-              <button onClick={() => setReviewMode(false)} className="rounded border px-4 py-2">
-                Back
-              </button>
-
-              <button
-                disabled={submitting || !!activeNoc || !!completionRequest}
-                onClick={submitRequest}
-              >
-                Submit Request
-              </button>
-            </div>
-          </div>
+          </section>
         )}
 
         <div className="mt-8">
