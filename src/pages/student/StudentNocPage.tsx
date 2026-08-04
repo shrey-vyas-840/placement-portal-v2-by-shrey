@@ -2045,120 +2045,180 @@ transition-colors
         </div>
 
         {selectedRequest && (
-          <div
-            className="
-fixed
-inset-0
-z-50
-flex
-items-center
-justify-center
-bg-black/50
-"
-          >
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
             <div
               className="
-w-full
-max-w-4xl
-rounded-lg
-bg-white
-p-6
-"
+    mx-auto
+    my-10
+    w-full
+    max-w-5xl
+    overflow-hidden
+    rounded-3xl
+    bg-white
+    shadow-2xl
+  "
             >
-              <h2 className="mb-4 text-xl font-semibold">NOC Details</h2>
+              {/* Header */}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <strong>Company</strong>
+              <div className="border-b bg-gradient-to-r from-slate-50 via-white to-slate-50 px-8 py-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
+                      NOC REQUEST
+                    </p>
 
-                  <br />
+                    <h2 className="mt-2 text-3xl font-bold">NOC Details</h2>
 
-                  {selectedRequest.snapshot?.company_name}
-                </div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Reference #{selectedRequest.reference_number ?? "Pending"}
+                    </p>
+                  </div>
 
-                <div>
-                  <strong>NOC Type</strong>
-
-                  <br />
-
-                  {selectedRequest.noc_type}
-                </div>
-
-                <div>
-                  <strong>Start Date</strong>
-
-                  <br />
-
-                  {selectedRequest.snapshot?.start_date}
-                </div>
-
-                <div>
-                  <strong>End Date</strong>
-
-                  <br />
-
-                  {selectedRequest.snapshot?.end_date}
-                </div>
-
-                <div>
-                  <strong>HR Name</strong>
-
-                  <br />
-
-                  {selectedRequest.snapshot?.hr_name}
-                </div>
-
-                <div>
-                  <strong>HR Position</strong>
-
-                  <br />
-
-                  {selectedRequest.snapshot?.hr_position}
-                </div>
-
-                <div>
-                  <strong>Approval Source</strong>
-
-                  <br />
-
-                  {selectedRequest.approval_source ?? "-"}
-                </div>
-
-                <div>
-                  <strong>Approved At</strong>
-
-                  <br />
-
-                  {selectedRequest.approved_at
-                    ? new Date(selectedRequest.approved_at).toLocaleString()
-                    : "-"}
-                </div>
-
-                <div>
-                  {["ISSUED", "CANCELLED"].includes(selectedRequest.status) && (
-                    <>
-                      <strong>Reference Number</strong>
-
-                      <br />
-
-                      {selectedRequest.reference_number ?? "-"}
-                    </>
-                  )}
+                  <span
+                    className="
+              rounded-full
+              bg-amber-100
+              px-4
+              py-2
+              text-sm
+              font-semibold
+              text-amber-700
+            "
+                  >
+                    {selectedRequest.status.replaceAll("_", " ")}
+                  </span>
                 </div>
               </div>
 
-              <div>
-                <strong>Issued At</strong>
+              <div className="space-y-8 p-8">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="rounded-2xl border bg-slate-50 p-6">
+                    <div className="mb-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                        Opportunity Details
+                      </p>
 
-                <br />
+                      <h3 className="mt-2 text-xl font-semibold">Internship / Placement</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex justify-between border-b pb-3">
+                        <span className="text-muted-foreground">Company</span>
+
+                        <span className="font-semibold">
+                          {selectedRequest.snapshot?.company_name}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between border-b pb-3">
+                        <span className="text-muted-foreground">NOC Type</span>
+
+                        <span className="font-semibold">{selectedRequest.noc_type}</span>
+                      </div>
+
+                      <div className="flex justify-between border-b pb-3">
+                        <span className="text-muted-foreground">Start Date</span>
+
+                        <span className="font-semibold">
+                          {selectedRequest.snapshot?.start_date ?? "-"}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between border-b pb-3">
+                        <span className="text-muted-foreground">End Date</span>
+
+                        <span className="font-semibold">
+                          {selectedRequest.snapshot?.end_date ?? "-"}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Issued At</span>
+
+                        <span className="font-semibold">
+                          {selectedRequest.issued_at
+                            ? new Date(selectedRequest.issued_at).toLocaleString()
+                            : "Pending"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border bg-slate-50 p-6">
+                    <div className="mb-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                        HR Contact
+                      </p>
+
+                      <h3 className="mt-2 text-xl font-semibold">Organization Representative</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex justify-between border-b pb-3">
+                        <span className="text-muted-foreground">HR Name</span>
+
+                        <span className="font-semibold">{selectedRequest.snapshot?.hr_name}</span>
+                      </div>
+
+                      <div className="flex justify-between border-b pb-3">
+                        <span className="text-muted-foreground">Position</span>
+
+                        <span className="font-semibold">
+                          {selectedRequest.snapshot?.hr_position}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between border-b pb-3">
+                        <span className="text-muted-foreground">Approval Source</span>
+
+                        <span className="font-semibold">
+                          {selectedRequest.approval_source ?? "Pending"}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Approved At</span>
+
+                        <span className="font-semibold">
+                          {selectedRequest.approved_at
+                            ? new Date(selectedRequest.approved_at).toLocaleString()
+                            : "Pending"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedRequest.rejection_reason && (
+                  <div className="rounded-2xl border border-red-300 bg-red-50 p-5">
+                    <div className="font-semibold text-red-700">Rejection Reason</div>
+
+                    <div className="mt-2 text-sm">{selectedRequest.rejection_reason}</div>
+                  </div>
+                )}
+
+                {selectedRequest.cancellation_reason && (
+                  <div className="rounded-2xl border border-orange-300 bg-orange-50 p-5">
+                    <div className="font-semibold text-orange-700">Cancellation Reason</div>
+
+                    <div className="mt-2 text-sm">{selectedRequest.cancellation_reason}</div>
+                  </div>
+                )}
+
+                {selectedRequest.tenure_rejection_reason && (
+                  <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-5">
+                    <div className="font-semibold text-yellow-700">
+                      Tenure Verification Rejected
+                    </div>
+
+                    <div className="mt-2 text-sm">{selectedRequest.tenure_rejection_reason}</div>
+                  </div>
+                )}
 
                 {selectedRequest?.completion_certificate_url && (
-                  <div>
-                    <strong>Completion Certificate</strong>
-
-                    <br />
-
+                  <div className="rounded-2xl border bg-slate-50 p-5">
                     <button
+                      className="font-semibold text-primary underline"
                       onClick={async () => {
                         const url = await nocService.getCertificateUrl(
                           selectedRequest.completion_certificate_url,
@@ -2166,86 +2226,47 @@ p-6
 
                         window.open(url, "_blank");
                       }}
-                      className="text-blue-600 underline"
                     >
-                      View Certificate
+                      View Completion Certificate
                     </button>
                   </div>
                 )}
 
-                {selectedRequest.issued_at
-                  ? new Date(selectedRequest.issued_at).toLocaleString()
-                  : "-"}
-              </div>
+                <div className="rounded-2xl border bg-slate-50 p-6">
+                  <h3 className="mb-6 text-xl font-semibold">Timeline</h3>
 
-              <h3 className="mb-4 text-lg font-semibold">NOC Timeline History</h3>
+                  <div className="space-y-5">
+                    {getStudentNocTimeline(selectedRequest).map((step: any, index: number) => (
+                      <div key={step.title + index} className="flex gap-4">
+                        <div
+                          className={`mt-1 h-4 w-4 rounded-full flex-shrink-0 ${
+                            step.done ? "bg-green-600" : "bg-slate-300"
+                          }`}
+                        />
 
-              {selectedRequest.rejection_reason && (
-                <div className="mb-4 rounded-lg border border-red-300 bg-red-50 p-4">
-                  <div className="font-semibold text-red-700">Rejection Reason</div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div className="font-semibold">{step.title}</div>
 
-                  <div className="mt-2 text-sm">{selectedRequest.rejection_reason}</div>
-                </div>
-              )}
+                            <div className="text-sm text-muted-foreground">
+                              {formatNocTimelineTime(step.time)}
+                            </div>
+                          </div>
 
-              {selectedRequest.cancellation_reason && (
-                <div className="mb-4 rounded-lg border border-orange-300 bg-orange-50 p-4">
-                  <div className="font-semibold text-orange-700">Cancellation Reason</div>
-
-                  <div className="mt-2 text-sm">{selectedRequest.cancellation_reason}</div>
-                </div>
-              )}
-
-              {selectedRequest.tenure_rejection_reason && (
-                <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
-                  <div className="font-semibold text-yellow-700">Tenure Verification Rejected</div>
-
-                  <div className="mt-2 text-sm">{selectedRequest.tenure_rejection_reason}</div>
-                </div>
-              )}
-
-              <div className="mt-6 rounded-lg border bg-slate-50 p-4">
-                <h3 className="mb-4 text-lg font-semibold">NOC Timeline History</h3>
-
-                <div className="space-y-4">
-                  {getStudentNocTimeline(selectedRequest).map((step: any, index: number) => (
-                    <div key={step.title + index} className="flex gap-3">
-                      <div
-                        className={`
-mt-1
-h-3
-w-3
-rounded-full
-flex-shrink-0
-${step.done ? "bg-green-600" : "bg-gray-300"}
-`}
-                      />
-
-                      <div className="flex-1">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="font-medium">{step.title}</div>
-
-                          <div className="text-xs text-muted-foreground">
-                            {formatNocTimelineTime(step.time)}
+                          <div className="mt-1 text-sm text-muted-foreground">
+                            {step.description}
                           </div>
                         </div>
-
-                        <div className="text-sm text-muted-foreground">{step.description}</div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="border-t bg-slate-50 px-8 py-5">
                 <button
                   onClick={() => setSelectedRequest(null)}
-                  className="
-rounded
-border
-px-4
-py-2
-"
+                  className="rounded-xl border bg-white px-6 py-3 font-medium shadow-sm hover:bg-slate-100"
                 >
                   Close
                 </button>
