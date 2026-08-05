@@ -50,20 +50,18 @@ export const ADMIN_NAVIGATION: AdminNavigationGroup[] = [
         icon: Users,
       },
       {
-        id: "recruitment-register",
-        label: "Recruitment Register",
-        description:
-          "Browse and manage every recruitment conducted by the placement cell.",
-        to: "/admin/drives",
-        icon: ClipboardList,
-      },
-      {
         id: "companies",
         label: "Companies",
-        description:
-          "Manage company profiles and recruiter contact information.",
+        description: "Manage company profiles and recruiter contact information.",
         to: "/admin/companies",
         icon: Building2,
+      },
+      {
+        id: "recruitment-register",
+        label: "Drive Details",
+        description: "Browse and manage every recruitment conducted by the placement cell.",
+        to: "/admin/recruitment-register",
+        icon: ClipboardList,
       },
     ],
   },
@@ -75,8 +73,7 @@ export const ADMIN_NAVIGATION: AdminNavigationGroup[] = [
       {
         id: "recruitment-workspace",
         label: "Recruitment Workspace",
-        description:
-          "Create, edit, publish and manage recruitments from one workspace.",
+        description: "Create, edit, publish and manage recruitments from one workspace.",
         to: "/admin/recruitment",
         icon: FolderKanban,
       },
@@ -90,8 +87,7 @@ export const ADMIN_NAVIGATION: AdminNavigationGroup[] = [
       {
         id: "onboarding",
         label: "Onboarding",
-        description:
-          "Approve, reject and manage student onboarding requests.",
+        description: "Approve, reject and manage student onboarding requests.",
         to: "/admin/onboarding-approvals",
         icon: GraduationCap,
       },
@@ -105,8 +101,7 @@ export const ADMIN_NAVIGATION: AdminNavigationGroup[] = [
       {
         id: "noc",
         label: "NOC",
-        description:
-          "Issue, review and manage No Objection Certificates.",
+        description: "Issue, review and manage No Objection Certificates.",
         to: "/admin/noc",
         icon: ShieldCheck,
       },
@@ -120,4 +115,3 @@ export const ADMIN_LAYOUT = {
   SIDEBAR_EXPANDED_WIDTH: 320,
   SIDEBAR_COLLAPSED_WIDTH: 88,
 };
-

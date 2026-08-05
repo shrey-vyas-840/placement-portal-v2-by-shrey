@@ -34,21 +34,21 @@ export function AdminNavLink({
       "
       activeProps={{
         className:
-          "shadow-xl shadow-blue-200/40 dark:shadow-blue-900/20",
+          "shadow-[0_15px_40px_rgba(37,99,235,0.18)] dark:shadow-blue-900/20",
       }}
     >
       {({ isActive }) => (
         <div
           className={cn(
-            "relative flex items-center gapx-4 py-3 rounded-2xl border px-4 py-3 transition-all duration-300",
+            "relative flex items-center gap-4 py-3 rounded-2xl border px-4 py-3 transition-all duration-300",
 
             isActive
-              ? "border-blue-200 bg-gradient-to-r from-blue-50 via-white to-white"
-              : "border-slate-200/70 bg-white hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:shadow-md"
+              ? "border-blue-200 bg-gradient-to-r from-blue-50 via-blue-50/30 to-white"
+              : "border-slate-200/60 bg-gradient-to-br from-white to-slate-50/85 backdrop-blur-sm hover:-translate-y-0.5 hover:border-slate-200 hover:bg-gradient-to-br from-white to-slate-50 hover:shadow-lg"
           )}
         >
           {isActive && (
-            <div className="absolute left-0 topx-4 py-3 bottom-4 w-1 rounded-r-full bg-blue-600" />
+            <div className="absolute left-0 top-4 py-3 bottom-4 w-1 rounded-r-full bg-blue-600" />
           )}
 
           <div
@@ -57,7 +57,7 @@ export function AdminNavLink({
 
               isActive
                 ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-300/40"
-                : "border-slate-200 bg-white text-slate-700 group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-600"
+                : "border-slate-200 bg-gradient-to-br from-white to-slate-50 text-slate-700 group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-600"
             )}
           >
             <Icon className="h-5 w-5" />
