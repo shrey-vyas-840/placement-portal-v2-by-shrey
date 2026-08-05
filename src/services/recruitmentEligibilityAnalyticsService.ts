@@ -137,18 +137,15 @@ export interface EligibilityAnalyticsResult {
 
 export interface StudentMasterRecord {
   student_id: string;
-
   enrollment_no: string | null;
 
   first_name: string | null;
-
   middle_name: string | null;
-
   last_name: string | null;
 
-  placement_preference: string | null;
-
   is_active: boolean;
+  placement_preference: string | null;
+  placement_status: string | null;
 }
 
 export interface StudentAcademicRecord {
@@ -176,7 +173,7 @@ export interface RecruitmentEligibilityCriteria {
 
   branches: string[];
 
-  graduationYears: number[];
+graduationYears: (number | string)[];
 
   minimumCgpa: number | null;
 
@@ -298,7 +295,24 @@ async function loadRecruitmentEligibilityCriteria(
 
     branches: eligibility.selectedBranches ?? eligibility.branches ?? [],
 
-    graduationYears: eligibility.selectedGraduationYears ?? eligibility.graduationYears ?? [],
+graduationYears: (() => {
+  const years =
+    eligibility.selectedGraduationYears ??
+    eligibility.graduationYears ??
+    [];
+
+  if (Array.isArray(years)) {
+    return years
+      .map((year: unknown) => Number(year))
+      .filter((year: number) => !Number.isNaN(year));
+  }
+
+  return String(years)
+    .replace(/[{}]/g, "")
+    .split(",")
+    .map((year) => Number(year.trim()))
+    .filter((year) => !Number.isNaN(year));
+})(),
 
     minimumCgpa: eligibility.minimumCgpa ?? eligibility.minimum_cgpa ?? null,
 
@@ -312,14 +326,15 @@ async function loadRecruitmentEligibilityCriteria(
 async function loadStudents() {
   const [{ data: students }, { data: academics }] = await Promise.all([
     (supabase as any).from("student_master").select(`
-          student_id,
-          enrollment_no,
-          first_name,
-          middle_name,
-          last_name,
-          placement_preference,
-          is_active
-        `),
+    student_id,
+    enrollment_no,
+    first_name,
+    middle_name,
+    last_name,
+    is_active,
+    placement_preference,
+    placement_status
+`),
 
     (supabase as any).from("student_academic_details").select(`
           student_id,
@@ -697,12 +712,22 @@ export function evaluateStudentEligibility(
     });
   }
 
-  if (academic && !matchesNumberRule(criteria.graduationYears, academic.graduation_year)) {
-    failureReasons.push({
-      code: "GRADUATION_YEAR",
-      message: "Graduation year is not eligible.",
-    });
-  }
+ const studentGraduationYear = Number(academic?.graduation_year);
+
+const allowedGraduationYears = (criteria.graduationYears ?? [])
+  .map((year) => Number(year))
+  .filter((year) => !Number.isNaN(year));
+
+if (
+  allowedGraduationYears.length > 0 &&
+  academic &&
+  !allowedGraduationYears.includes(studentGraduationYear)
+) {
+  failureReasons.push({
+    code: "GRADUATION_YEAR",
+    message: "Graduation year is not eligible.",
+  });
+}
 
   if (
     academic &&
@@ -736,6 +761,20 @@ export function evaluateStudentEligibility(
       message: "Year gap exceeds the allowed limit.",
     });
   }
+
+  console.log("========== Eligibility Debug ==========");
+  console.log("Student:", student);
+  console.log("is_active =", student.is_active);
+  console.log("placement_preference =", student.placement_preference);
+  console.log("Academic:", academic);
+  console.dir(criteria, { depth: null });
+  console.dir(failureReasons, { depth: null });
+
+  for (const reason of failureReasons) {
+    console.log("FAILED:", reason.code, "-", reason.message);
+  }
+  console.log("Eligible:", failureReasons.length === 0);
+  console.log("======================================");
 
   return {
     studentId: student.student_id,
@@ -807,7 +846,15 @@ export async function getRecruitmentEligibilityAnalytics(
     } else {
       optedOutStudents++;
     }
-
+    console.log("========= BEFORE ENGINE =========");
+    console.log(student);
+    console.log({
+      student_id: student.student_id,
+      is_active: student.is_active,
+      placement_preference: student.placement_preference,
+      placement_status: student.placement_status,
+    });
+    console.log("===============================");
     const result = evaluateStudentEligibility(
       student,
       academicMap.get(student.student_id),
@@ -831,11 +878,7 @@ export async function getRecruitmentEligibilityAnalytics(
 
       const hasPlacedOverride = override?.placed === true;
 
-      if (
-  restriction &&
-  !hasRestrictedOverride &&
-  !applicantIds.has(student.student_id)
-) {
+      if (restriction && !hasRestrictedOverride && !applicantIds.has(student.student_id)) {
         restrictedEligibleStudents.push({
           studentId: student.student_id,
           fullName: buildStudentFullName(student),
@@ -849,11 +892,7 @@ export async function getRecruitmentEligibilityAnalytics(
 
       const placement = placementMap.get(student.student_id);
 
-      if (
-  placement &&
-  !hasPlacedOverride &&
-  !applicantIds.has(student.student_id)
-) {
+      if (placement && !hasPlacedOverride && !applicantIds.has(student.student_id)) {
         placedEligibleStudents.push({
           studentId: student.student_id,
           fullName: buildStudentFullName(student),

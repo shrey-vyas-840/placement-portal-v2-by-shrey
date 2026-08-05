@@ -857,15 +857,16 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   const { data: student, error: studentError } = await db
     .from("student_master")
-    .select(
-      `
-      student_id,
-      enrollment_no,
-      first_name,
-      middle_name,
-      last_name
-    `,
-    )
+    .select(`
+  student_id,
+  enrollment_no,
+  first_name,
+  middle_name,
+  last_name,
+  is_active,
+  placement_preference,
+  placement_status
+`)
     .eq("enrollment_no", enrollment)
     .maybeSingle();
 
@@ -1065,8 +1066,6 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   let eligibleDrives = 0;
 
-  const unregisteredDrives = (eligibleDrives ?? totalActiveDrives) - registeredDriveIds.size;
-
   const driveBreakdown: StudentDriveBreakdownItem[] = activeDrives.map((drive) => {
     const driveOpportunityIds = opportunities
       .filter((item) => item.drive_id === drive.drive_id)
@@ -1132,7 +1131,7 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
     registered_drives: registeredDriveIds.size,
     present_drives: presentDriveIds.size,
     absent_drives: absentDriveIds.size,
-    unregistered_drives: Math.max(unregisteredDrives, 0),
+    unregistered_drives: Math.max(eligibleDrives - registeredDriveIds.size, 0),
     applications_count: applications.length,
     shortlisted_count: applications.filter((item) => isShortlistedStatus(item.application_status))
       .length,
