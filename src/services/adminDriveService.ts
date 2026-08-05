@@ -97,38 +97,45 @@ export const adminDriveService = {
   },
 
   async getCompanyRecruiters(companyId: string) {
-  const { data, error } = await (supabase as any)
-    .from("company_contacts")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("primary_contact", { ascending: false });
-
-  if (error) throw error;
-
-  return data ?? [];
-},
-
-async getLatestPublishedRecruitmentTemplate(companyId: string) {
     const { data, error } = await (supabase as any)
-        .from("recruitment_drafts")
-        .select(`
-            draft_id,
-            drive_data,
-            eligibility_data,
-            default_questions_data,
-            roles_data,
-            publish_data
-        `)
-        .eq("created_company_id", companyId)
-        .eq("status", "PUBLISHED")
-        .order("published_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      .from("company_contacts")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("primary_contact", { ascending: false });
+
+    if (error) throw error;
+
+    return data ?? [];
+  },
+
+  async getLatestPublishedRecruitmentTemplate(companyId: string) {
+    const { data, error } = await (supabase as any)
+      .from("recruitment_drafts")
+      .select(
+        `
+          draft_id,
+          draft_name,
+          company_data,
+          recruiters_data,
+          drive_data,
+          eligibility_data,
+          default_questions_data,
+          roles_data,
+          publish_data,
+          created_company_id
+        `,
+      )
+      .eq("created_company_id", companyId)
+      .eq("status", "PUBLISHED")
+      .eq("is_archived", false)
+      .order("published_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error) throw error;
 
     return data;
-},
+  },
 
   async createCompanyForPublish(payload: {
     company_id: string;
@@ -396,128 +403,124 @@ async getLatestPublishedRecruitmentTemplate(companyId: string) {
   },
 
   async saveEligibility(payload: {
-      drive_id: string;
-      allowed_institutes: string;
-      allowed_branches: string;
-      allowed_degrees: string;
-      additional_requirements?: string;
-      passing_out_batches: string;
-      minimum_cgpa: number;
-      maximum_active_backlogs: number;
-      willing_to_relocate_required: boolean;
+    drive_id: string;
+    allowed_institutes: string;
+    allowed_branches: string;
+    allowed_degrees: string;
+    additional_requirements?: string;
+    passing_out_batches: string;
+    minimum_cgpa: number;
+    maximum_active_backlogs: number;
+    willing_to_relocate_required: boolean;
   }) {
-      const { data: existing } = await (supabase as any)
-          .from("drive_eligibility")
-          .select("eligibility_id")
-          .eq("drive_id", payload.drive_id)
-          .maybeSingle();
+    const { data: existing } = await (supabase as any)
+      .from("drive_eligibility")
+      .select("eligibility_id")
+      .eq("drive_id", payload.drive_id)
+      .maybeSingle();
 
-      if (existing) {
-          const { error } = await (supabase as any)
-              .from("drive_eligibility")
-              .update(payload)
-              .eq("drive_id", payload.drive_id);
-
-          if (error) throw error;
-
-          return;
-      }
-
+    if (existing) {
       const { error } = await (supabase as any)
-          .from("drive_eligibility")
-          .insert(payload);
+        .from("drive_eligibility")
+        .update(payload)
+        .eq("drive_id", payload.drive_id);
 
       if (error) throw error;
+
+      return;
+    }
+
+    const { error } = await (supabase as any).from("drive_eligibility").insert(payload);
+
+    if (error) throw error;
   },
 
   async updateCompanyContact(
-      contactId: string,
-      payload: {
-          contact_name: string;
-          contact_email: string;
-          contact_number?: string;
-          contact_position?: string;
-          primary_contact: boolean;
-      },
-  ) {
-      const { data, error } = await (supabase as any)
-          .from("company_contacts")
-          .update({
-              contact_name: payload.contact_name,
-              contact_email: payload.contact_email,
-              contact_number: payload.contact_number ?? null,
-              contact_position: payload.contact_position ?? null,
-              primary_contact: payload.primary_contact,
-          })
-          .eq("contact_id", contactId)
-          .select()
-          .single();
-
-      if (error) throw error;
-
-      return data;
-  },
-
-  async getPrimaryCompanyContact(companyId: string) {
-      const { data, error } = await (supabase as any)
-          .from("company_contacts")
-          .select("*")
-          .eq("company_id", companyId)
-          .eq("primary_contact", true)
-          .maybeSingle();
-
-      if (error) throw error;
-
-      return data;
-  },
-
-  async getCompanyContacts(companyId: string) {
-    const { data, error } = await (supabase as any)
-        .from("company_contacts")
-        .select("*")
-        .eq("company_id", companyId)
-        .order("primary_contact", { ascending: false })
-        .order("contact_name");
-
-    if (error) throw error;
-
-    return data ?? [];
-},
-
-async createCompanyContact(
+    contactId: string,
     payload: {
-        company_id: string;
-        contact_name: string;
-        contact_email: string;
-        contact_number?: string;
-        contact_position?: string;
-        primary_contact: boolean;
+      contact_name: string;
+      contact_email: string;
+      contact_number?: string;
+      contact_position?: string;
+      primary_contact: boolean;
     },
-) {
+  ) {
     const { data, error } = await (supabase as any)
-        .from("company_contacts")
-        .insert({
-            company_id: payload.company_id,
-            contact_name: payload.contact_name,
-            contact_email: payload.contact_email,
-            contact_number: payload.contact_number ?? null,
-            contact_position: payload.contact_position ?? null,
-            primary_contact: payload.primary_contact,
-        })
-        .select()
-        .single();
+      .from("company_contacts")
+      .update({
+        contact_name: payload.contact_name,
+        contact_email: payload.contact_email,
+        contact_number: payload.contact_number ?? null,
+        contact_position: payload.contact_position ?? null,
+        primary_contact: payload.primary_contact,
+      })
+      .eq("contact_id", contactId)
+      .select()
+      .single();
 
     if (error) throw error;
 
     return data;
-},
+  },
 
-async deleteCompanyContact(contactId: string) {
-    const { error } = await (supabase as any)
-        .from("company_contacts")
-        .delete()
-        .eq("contact_id", contactId);
+  async getPrimaryCompanyContact(companyId: string) {
+    const { data, error } = await (supabase as any)
+      .from("company_contacts")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("primary_contact", true)
+      .maybeSingle();
 
     if (error) throw error;
-},
+
+    return data;
+  },
+
+  async getCompanyContacts(companyId: string) {
+    const { data, error } = await (supabase as any)
+      .from("company_contacts")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("primary_contact", { ascending: false })
+      .order("contact_name");
+
+    if (error) throw error;
+
+    return data ?? [];
+  },
+
+  async createCompanyContact(payload: {
+    company_id: string;
+    contact_name: string;
+    contact_email: string;
+    contact_number?: string;
+    contact_position?: string;
+    primary_contact: boolean;
+  }) {
+    const { data, error } = await (supabase as any)
+      .from("company_contacts")
+      .insert({
+        company_id: payload.company_id,
+        contact_name: payload.contact_name,
+        contact_email: payload.contact_email,
+        contact_number: payload.contact_number ?? null,
+        contact_position: payload.contact_position ?? null,
+        primary_contact: payload.primary_contact,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  },
+
+  async deleteCompanyContact(contactId: string) {
+    const { error } = await (supabase as any)
+      .from("company_contacts")
+      .delete()
+      .eq("contact_id", contactId);
+
+    if (error) throw error;
+  },
 };

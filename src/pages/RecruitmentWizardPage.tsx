@@ -453,6 +453,32 @@ export function RecruitmentWizardPage() {
         return;
       }
 
+      if (template.company_data) {
+        const companyData = template.company_data as Record<string, unknown>;
+
+        setCompany({
+          company_name: String(companyData.company_name ?? ""),
+          company_website: String(companyData.company_website ?? ""),
+          hiring_location: String(companyData.hiring_location ?? ""),
+          industry_type: String(companyData.industry_type ?? ""),
+          company_description: String(companyData.company_description ?? ""),
+          company_size: String(companyData.company_size ?? ""),
+        });
+      }
+
+      if (Array.isArray(template.recruiters_data) && template.recruiters_data.length > 0) {
+        setRecruiters(
+          template.recruiters_data.map((recruiter: any) => ({
+            id: generateUuid(),
+            contact_name: String(recruiter.contact_name ?? ""),
+            contact_email: String(recruiter.contact_email ?? ""),
+            contact_number: String(recruiter.contact_number ?? ""),
+            contact_position: String(recruiter.contact_position ?? "Campus HR"),
+            primary_contact: Boolean(recruiter.primary_contact),
+          })),
+        );
+      }
+
       if (template.drive_data) {
         setDrive(template.drive_data as DriveFormData);
       }
@@ -1030,7 +1056,7 @@ export function RecruitmentWizardPage() {
                         }}
                         className="rounded-xl bg-primary px-5 py-2 text-primary-foreground"
                       >
-                        Continue with Draft Copy
+                        Use As Template
                       </button>
                     </div>
                   </div>

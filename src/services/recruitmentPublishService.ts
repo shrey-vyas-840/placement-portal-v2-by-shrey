@@ -323,10 +323,15 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
 
   const generatedDriveName = `${String(draft.company_data.company_name).trim()} Recruitment`;
 
-  const driveAlreadyPublished =
-    typeof draft.created_drive_id === "string" && draft.created_drive_id.trim() !== "";
+  const draftLifecycleKind = String(
+    wizardState.recruitmentDraftKind ?? wizardState.draftKind ?? "",
+  ).toLowerCase();
 
-  const isRepublish = driveAlreadyPublished;
+  const isRepublish = draftLifecycleKind === "revision";
+
+  if (String(draft.status ?? "").toUpperCase() === "PUBLISHED" && !isRepublish) {
+    throw new Error("Published recruitments must be edited from a revision draft.");
+  }
 
   const rollbackContext: PublishRollbackContext = {
     companyCreated: false,
@@ -839,9 +844,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       })
       .eq("draft_id", draftId);
 
-await recruitmentProjectionService.initializeProjection(
-  driveId
-);
+    await recruitmentProjectionService.initializeProjection(driveId);
 
     return {
       driveId,

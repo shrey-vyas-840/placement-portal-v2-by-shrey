@@ -1,6 +1,5 @@
 import { supabase } from "@/lib/supabase";
 
-
 export type RecruitmentDraftStatus = "DRAFT" | "READY_FOR_PUBLISH" | "PUBLISHED" | "ARCHIVED";
 
 export interface RecruitmentDraftRow {
@@ -186,9 +185,7 @@ export async function createDraft(
   return data as RecruitmentDraftRow;
 }
 
-export async function getDraftForUser(
-  authProviderId: string,
-): Promise<RecruitmentDraftRow> {
+export async function getDraftForUser(authProviderId: string): Promise<RecruitmentDraftRow> {
   const existing = await getDraftByAuthProviderId(authProviderId);
 
   if (existing) {
@@ -198,16 +195,10 @@ export async function getDraftForUser(
   return ensureDraftForUser(authProviderId);
 }
 
-export async function saveDraft(
-  input: SaveRecruitmentDraftInput,
-): Promise<RecruitmentDraftRow> {
-
+export async function saveDraft(input: SaveRecruitmentDraftInput): Promise<RecruitmentDraftRow> {
   const updates = {
     created_by: input.createdBy,
-    draft_name:
-      input.draftName !== undefined
-        ? normalizeDraftName(input.draftName)
-        : undefined,
+    draft_name: input.draftName !== undefined ? normalizeDraftName(input.draftName) : undefined,
     current_step: input.currentStep,
     status: input.status,
     company_data: input.companyData,
@@ -276,6 +267,7 @@ export async function resolveCompanyWorkspace(
     .select("draft_id")
     .eq("created_company_id", companyId)
     .eq("status", "PUBLISHED")
+    .eq("is_archived", false)
     .order("published_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -340,8 +332,8 @@ export async function updateCurrentStep(
   currentStep: number,
 ) {
   return saveDraft({
-      draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     currentStep,
   });
 }
@@ -352,8 +344,8 @@ export async function updateWizardState(
   wizardState: unknown,
 ) {
   return saveDraft({
-      draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     wizardState,
   });
 }
@@ -364,8 +356,8 @@ export async function updateCompanyData(
   companyData: unknown,
 ) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     companyData,
   });
 }
@@ -376,20 +368,16 @@ export async function updateRecruitersData(
   recruitersData: unknown,
 ) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     recruitersData,
   });
 }
 
-export async function updateDriveData(
-  draftId: string,
-  authProviderId: string,
-  driveData: unknown,
-) {
+export async function updateDriveData(draftId: string, authProviderId: string, driveData: unknown) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     driveData,
   });
 }
@@ -400,8 +388,8 @@ export async function updateEligibilityData(
   eligibilityData: unknown,
 ) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     eligibilityData,
   });
 }
@@ -411,20 +399,16 @@ export async function updateDefaultQuestionsData(
   defaultQuestionsData: unknown,
 ) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     defaultQuestionsData,
   });
 }
 
-export async function updateRolesData(
-  draftId: string,
-  authProviderId: string,
-  rolesData: unknown,
-) {
+export async function updateRolesData(draftId: string, authProviderId: string, rolesData: unknown) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     rolesData,
   });
 }
@@ -434,9 +418,9 @@ export async function updatePublishData(
   authProviderId: string,
   publishData: unknown,
 ) {
-    return saveDraft({
-      draftId,
-      authProviderId,
+  return saveDraft({
+    draftId,
+    authProviderId,
     publishData,
   });
 }
@@ -448,24 +432,24 @@ export async function markPublished(
   companyId?: string,
 ) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     status: "PUBLISHED",
     isCompleted: true,
     publishedAt: new Date().toISOString(),
     publishedDriveId: driveId,
     createdDriveId: driveId,
     createdCompanyId: companyId ?? null,
+    wizardState: {
+      recruitmentDraftKind: "draft",
+    },
   });
 }
 
-export async function archiveDraft(
-  draftId: string,
-  authProviderId: string,
-) {
+export async function archiveDraft(draftId: string, authProviderId: string) {
   return saveDraft({
-  draftId,
-  authProviderId,
+    draftId,
+    authProviderId,
     status: "ARCHIVED",
   });
 }
@@ -486,14 +470,13 @@ export async function draftExists(authProviderId: string): Promise<boolean> {
   return !!draft;
 }
 
-export async function getDraftsForUser(
-  authProviderId: string,
-): Promise<RecruitmentDraftRow[]> {
+export async function getDraftsForUser(authProviderId: string): Promise<RecruitmentDraftRow[]> {
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
     .select("*")
     .eq("auth_provider_id", authProviderId)
     .eq("is_archived", false)
+    .neq("status", "PUBLISHED")
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -520,9 +503,7 @@ export async function getArchivedDraftsForUser(
   return (data as RecruitmentDraftRow[]) ?? [];
 }
 
-export async function deleteDraftById(
-  draftId: string,
-): Promise<void> {
+export async function deleteDraftById(draftId: string): Promise<void> {
   const { error } = await (supabase as any)
     .from("recruitment_drafts")
     .delete()
@@ -533,34 +514,55 @@ export async function deleteDraftById(
   }
 }
 
-export async function duplicateDraft(
-  draftId: string,
+export async function createDraftFromPublishedRecruitment(
+  publishedRecruitment: RecruitmentDraftRow,
 ): Promise<RecruitmentDraftRow> {
-  const source = await getDraftById(draftId);
-
-  if (!source) {
-    throw new Error("Draft not found.");
+  if (String(publishedRecruitment.status ?? "").toUpperCase() !== "PUBLISHED") {
+    throw new Error("Only published recruitments can be used as templates.");
   }
 
-  const {
-    draft_id,
-    created_at,
-    updated_at,
-    last_saved_at,
-    published_at,
-    published_drive_id,
-    ...copy
-  } = source;
+  const sourceCompanyId =
+    typeof publishedRecruitment.created_company_id === "string" &&
+    publishedRecruitment.created_company_id.trim() !== ""
+      ? publishedRecruitment.created_company_id
+      : null;
+
+  const sourceName =
+    typeof publishedRecruitment.draft_name === "string" &&
+    publishedRecruitment.draft_name.trim() !== ""
+      ? publishedRecruitment.draft_name.trim()
+      : "Untitled Recruitment";
 
   const { data, error } = await (supabase as any)
     .from("recruitment_drafts")
     .insert({
-      ...copy,
-      draft_name: `${source.draft_name ?? "Untitled Recruitment"} (Copy)`,
+      auth_provider_id: publishedRecruitment.auth_provider_id,
+      created_by: publishedRecruitment.created_by,
+      draft_name: `${sourceName} (Template)`,
+      current_step: 0,
       status: "DRAFT",
+      company_data: publishedRecruitment.company_data ?? null,
+      recruiters_data: publishedRecruitment.recruiters_data ?? null,
+      drive_data: publishedRecruitment.drive_data ?? null,
+      eligibility_data: publishedRecruitment.eligibility_data ?? null,
+      default_questions_data: publishedRecruitment.default_questions_data ?? null,
+      roles_data: publishedRecruitment.roles_data ?? null,
+      publish_data: publishedRecruitment.publish_data ?? null,
+      wizard_state: {
+        selectedCompanyId: sourceCompanyId,
+        companySelectionMode: sourceCompanyId ? "existing" : "new",
+        recruitmentDraftKind: "template",
+        templateSourceDraftId: publishedRecruitment.draft_id,
+      },
       is_completed: false,
-      published_at: null,
+      created_company_id: sourceCompanyId,
+      created_drive_id: null,
       published_drive_id: null,
+      published_at: null,
+      last_saved_at: new Date().toISOString(),
+      is_archived: false,
+      archived_at: null,
+      archived_by: null,
     })
     .select("*")
     .single();
@@ -572,9 +574,7 @@ export async function duplicateDraft(
   return data as RecruitmentDraftRow;
 }
 
-export async function archiveDraftById(
-  draftId: string,
-): Promise<void> {
+export async function archiveDraftById(draftId: string): Promise<void> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -593,9 +593,7 @@ export async function archiveDraftById(
   }
 }
 
-export async function restoreDraftById(
-  draftId: string,
-): Promise<void> {
+export async function restoreDraftById(draftId: string): Promise<void> {
   const { error } = await (supabase as any)
     .from("recruitment_drafts")
     .update({
@@ -609,14 +607,13 @@ export async function restoreDraftById(
     throw error;
   }
 }
-export async function getPublishedRecruitmentsForUser(
-  authProviderId: string,
-): Promise<any[]> {
+export async function getPublishedRecruitmentsForUser(authProviderId: string): Promise<any[]> {
   const { data: drafts, error } = await (supabase as any)
     .from("recruitment_drafts")
     .select("*")
     .eq("auth_provider_id", authProviderId)
     .eq("status", "PUBLISHED")
+    .eq("is_archived", false)
     .order("published_at", { ascending: false });
 
   if (error) {
@@ -631,11 +628,7 @@ export async function getPublishedRecruitmentsForUser(
         return draft;
       }
 
-      const [
-        driveResult,
-        opportunityResult,
-        rolesResult,
-      ] = await Promise.all([
+      const [driveResult, opportunityResult, rolesResult] = await Promise.all([
         (supabase as any)
           .from("drive_master")
           .select("drive_name, company_id")
@@ -648,10 +641,7 @@ export async function getPublishedRecruitmentsForUser(
           .eq("drive_id", driveId)
           .maybeSingle(),
 
-        (supabase as any)
-          .from("drive_roles")
-          .select("drive_role_id")
-          .eq("drive_id", driveId),
+        (supabase as any).from("drive_roles").select("drive_role_id").eq("drive_id", driveId),
       ]);
 
       let companyName = "-";
@@ -689,22 +679,15 @@ export async function getPublishedRecruitmentsForUser(
       return {
         ...draft,
 
-        recruitment_name:
-          driveResult.data?.drive_name ??
-          draft.draft_name ??
-          "-",
+        recruitment_name: driveResult.data?.drive_name ?? draft.draft_name ?? "-",
 
         company_name: companyName,
 
-        roles_count:
-          rolesResult.data?.length ?? 0,
+        roles_count: rolesResult.data?.length ?? 0,
 
-        application_count:
-          applicationCount,
+        application_count: applicationCount,
 
-        application_status:
-          opportunityResult.data?.application_status ??
-          "Closed",
+        application_status: opportunityResult.data?.application_status ?? "Closed",
       };
     }),
   );

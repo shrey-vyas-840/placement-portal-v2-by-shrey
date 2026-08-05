@@ -1,11 +1,11 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   getDraftsForUser,
   getArchivedDraftsForUser,
   getPublishedRecruitmentsForUser,
-  duplicateDraft,
+  createDraftFromPublishedRecruitment,
   archiveDraftById,
   deleteDraftById,
   restoreDraftById,
@@ -46,6 +46,7 @@ export function AdminRecruitmentHubPage() {
   const [archivedDrafts, setArchivedDrafts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
 
@@ -91,19 +92,24 @@ export function AdminRecruitmentHubPage() {
     setArchivedDrafts(archivedData);
   }
 
-  async function handleDuplicate(draftId: string) {
+  async function handleUseAsTemplate(publishedRecruitment: any) {
     try {
-      await duplicateDraft(draftId);
+      const draft = await createDraftFromPublishedRecruitment(publishedRecruitment);
 
       await refreshDrafts();
 
-      toast.success("Draft duplicated successfully.");
+      navigate({
+        to: "/admin/recruitment-new",
+        search: {
+          draft: draft.draft_id,
+        },
+      });
     } catch (error) {
       console.error(error);
-
-      toast.error("Failed to duplicate draft.");
+      toast.error("Failed to create recruitment template.");
     }
   }
+
   async function handleArchive(draftId: string) {
     try {
       await archiveDraftById(draftId);
@@ -302,15 +308,25 @@ export function AdminRecruitmentHubPage() {
                             </td>
 
                             <td className="px-4 py-4 text-center">
-                              <Link
-                                to="/admin/recruitment/$draftId"
-                                params={{
-                                  draftId: item.draft_id,
-                                }}
-                                className="text-primary hover:underline"
-                              >
-                                View →
-                              </Link>
+                              <div className="flex flex-wrap items-center justify-center gap-3">
+                                <Link
+                                  to="/admin/recruitment/$draftId"
+                                  params={{
+                                    draftId: item.draft_id,
+                                  }}
+                                  className="text-primary hover:underline"
+                                >
+                                  View →
+                                </Link>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleUseAsTemplate(item)}
+                                  className="rounded-full border border-border px-3 py-1 text-xs font-medium transition hover:bg-muted"
+                                >
+                                  Use As Template
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -342,13 +358,67 @@ export function AdminRecruitmentHubPage() {
                 </div>
               ) : (
                 drafts.map((draft) => (
-                  <RecruitmentDraftCard
+                  <div
                     key={draft.draft_id}
-                    draft={draft}
-                    onDuplicate={handleDuplicate}
-                    onArchive={handleArchive}
-                    onDelete={handlePermanentDelete}
-                  />
+                    className="rounded-2xl border border-border bg-background p-4 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          Draft
+                        </div>
+                        <div className="mt-1 text-base font-semibold">
+                          {draft.draft_name ?? draft.recruitment_name ?? "Untitled Recruitment"}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {draft.company_name ?? draft.company_data?.company_name ?? "-"}
+                        </div>
+                      </div>
+
+                      <div className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
+                        Step {typeof draft.current_step === "number" ? draft.current_step + 1 : 1}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      {draft.last_saved_at
+                        ? `Last saved ${new Date(draft.last_saved_at).toLocaleString()}`
+                        : "Not saved yet"}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate({
+                            to: "/admin/recruitment-new",
+                            search: {
+                              draft: draft.draft_id,
+                            },
+                          })
+                        }
+                        className="rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground"
+                      >
+                        Open
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleArchive(draft.draft_id)}
+                        className="rounded-full border border-border px-4 py-2 text-xs font-medium transition hover:bg-muted"
+                      >
+                        Archive
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handlePermanentDelete(draft.draft_id)}
+                        className="rounded-full border border-border px-4 py-2 text-xs font-medium text-destructive transition hover:bg-muted"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 ))
               )}
             </div>
