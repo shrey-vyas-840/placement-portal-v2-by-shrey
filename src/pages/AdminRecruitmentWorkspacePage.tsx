@@ -92,59 +92,53 @@ export function AdminRecruitmentWorkspacePage() {
   }, [draftId]);
 
   const handleStartProcess = async () => {
-  if (!draft) {
-    return;
-  }
+    if (!draft) {
+      return;
+    }
 
-  const bootstrap =
-    await getExecutionBootstrapContext(
-      draft.draft_id,
-    );
+    const bootstrap = await getExecutionBootstrapContext(draft.draft_id);
 
-  const execution =
-    await recruitmentExecutionService.startExecutionWorkflow({
+    const execution = await recruitmentExecutionService.startExecutionWorkflow({
       ...bootstrap,
     });
 
-  await navigate({
-    to: "/admin/recruitment-execution",
-    search: {
-      executionId: execution.execution_id,
-    },
-  });
-};
-
+    await navigate({
+      to: "/admin/recruitment-execution",
+      search: {
+        executionId: execution.execution_id,
+      },
+    });
+  };
 
   const handleResumeProcess = () => {
-  const executionId = summary?.execution.latestExecutionId;
-  
-if (!executionId) {
-  return;
-}
+    const executionId = summary?.execution.latestExecutionId;
 
-  navigate({
-    to: "/admin/recruitment-execution",
-    search: {
-      executionId,
-    },
-  });
-};
+    if (!executionId) {
+      return;
+    }
 
-const handleViewProcess = () => {
-  const executionId = summary?.execution.latestExecutionId;
+    navigate({
+      to: "/admin/recruitment-execution",
+      search: {
+        executionId,
+      },
+    });
+  };
 
-if (!executionId) {
-  return;
-}
+  const handleViewProcess = () => {
+    const executionId = summary?.execution.latestExecutionId;
 
-  navigate({
-    to: "/admin/recruitment-execution",
-    search: {
-      executionId,
-    },
-  });
-};
+    if (!executionId) {
+      return;
+    }
 
+    navigate({
+      to: "/admin/recruitment-execution",
+      search: {
+        executionId,
+      },
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -193,13 +187,13 @@ if (!executionId) {
             )}
 
             {activeTab === "recruitment-process" && (
-            <RecruitmentProcessTab
-    summary={summary}
-    loading={loading}
-    onStartProcess={handleStartProcess}
-    onResumeProcess={handleResumeProcess}
-    onViewProcess={handleViewProcess}
-/>
+              <RecruitmentProcessTab
+                summary={summary}
+                loading={loading}
+                onStartProcess={handleStartProcess}
+                onResumeProcess={handleResumeProcess}
+                onViewProcess={handleViewProcess}
+              />
             )}
 
             {activeTab === "exports" && (

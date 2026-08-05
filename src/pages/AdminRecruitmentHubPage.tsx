@@ -50,6 +50,8 @@ export function AdminRecruitmentHubPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
 
+  const [selectedRecruitment, setSelectedRecruitment] = useState<any | null>(null);
+
   async function loadDrafts() {
     try {
       const {
@@ -109,6 +111,10 @@ export function AdminRecruitmentHubPage() {
       toast.error("Failed to create recruitment template.");
     }
   }
+
+  function handleEditRecruitment() {
+  toast.info("Revision Draft will be implemented next.");
+}
 
   async function handleArchive(draftId: string) {
     try {
@@ -276,7 +282,11 @@ export function AdminRecruitmentHubPage() {
 
                       <tbody>
                         {filteredRecruitments.map((item) => (
-                          <tr key={item.draft_id} className="border-t">
+                          <tr
+                            key={item.draft_id}
+                            onClick={() => setSelectedRecruitment(item)}
+                            className="border-t cursor-pointer transition hover:bg-muted/40"
+                          >
                             <td className="px-4 py-4 font-medium">
                               {item.drive_name ?? item.recruitment_name ?? "-"}
                             </td>
@@ -309,23 +319,17 @@ export function AdminRecruitmentHubPage() {
 
                             <td className="px-4 py-4 text-center">
                               <div className="flex flex-wrap items-center justify-center gap-3">
-                                <Link
-                                  to="/admin/recruitment/$draftId"
-                                  params={{
-                                    draftId: item.draft_id,
-                                  }}
-                                  className="text-primary hover:underline"
-                                >
-                                  View →
-                                </Link>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleUseAsTemplate(item)}
-                                  className="rounded-full border border-border px-3 py-1 text-xs font-medium transition hover:bg-muted"
-                                >
-                                  Use As Template
-                                </button>
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <Link
+                                    to="/admin/recruitment/$draftId"
+                                    params={{
+                                      draftId: item.draft_id,
+                                    }}
+                                    className="text-primary hover:underline"
+                                  >
+                                    View →
+                                  </Link>
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -471,6 +475,68 @@ export function AdminRecruitmentHubPage() {
           </div>
         </div>
       </div>
+         {selectedRecruitment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-background p-6 shadow-2xl">
+
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">
+                {selectedRecruitment.drive_name ??
+                  selectedRecruitment.recruitment_name ??
+                  "Recruitment"}
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => setSelectedRecruitment(null)}
+                className="text-xl text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRecruitment(null);
+                  handleEditRecruitment();
+                }}
+                className="w-full rounded-2xl border border-border p-4 text-left transition hover:bg-muted"
+              >
+                <div className="font-medium">
+                  Edit Recruitment
+                </div>
+
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Update this recruitment using a Revision Draft.
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleUseAsTemplate(selectedRecruitment);
+                  setSelectedRecruitment(null);
+                }}
+                className="w-full rounded-2xl border border-border p-4 text-left transition hover:bg-muted"
+              >
+                <div className="font-medium">
+                  Use As Template
+                </div>
+
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Create a completely new recruitment from this one.
+                </div>
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -547,7 +547,11 @@ export async function createDraftFromPublishedRecruitment(
       eligibility_data: publishedRecruitment.eligibility_data ?? null,
       default_questions_data: publishedRecruitment.default_questions_data ?? null,
       roles_data: publishedRecruitment.roles_data ?? null,
-      publish_data: publishedRecruitment.publish_data ?? null,
+
+      // A template starts a completely new recruitment lifecycle.
+      // Publish-specific metadata must never be inherited.
+      publish_data: null,
+
       wizard_state: {
         selectedCompanyId: sourceCompanyId,
         companySelectionMode: sourceCompanyId ? "existing" : "new",
