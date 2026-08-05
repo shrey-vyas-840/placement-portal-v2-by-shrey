@@ -13,7 +13,7 @@ import {
 } from "@/services/recruitmentDraftService";
 import { RecruitmentDraftCard } from "@/components/RecruitmentDraftCard";
 import { toast } from "sonner";
-
+import { AdminLayout } from "@/components/admin/AdminLayout";
 const HUB_CARDS = [
   {
     to: "/admin/companies",
@@ -199,34 +199,20 @@ export function AdminRecruitmentHubPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Recruitment Management
-              </div>
-
-              <h1 className="mt-2 text-4xl font-bold">Recruitment Hub</h1>
-
-              <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
-                Create, manage and monitor complete campus recruitment cycles from one place.
-              </p>
-            </div>
-
-            <Link
-              to="/admin/recruitment-new"
-              className="rounded-2xl bg-primary px-8 py-5 text-center text-primary-foreground shadow transition hover:opacity-90"
-            >
-              <div className="text-lg font-semibold">+ New Recruitment</div>
-
-              <div className="mt-1 text-xs opacity-80">Guided recruitment wizard</div>
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-8">
+    <AdminLayout
+      title="Recruitment Workspace"
+      description="Create, publish and manage campus recruitment cycles from one centralized workspace."
+      actions={
+        <Link
+          to="/admin/recruitment-new"
+          className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground transition hover:opacity-90"
+        >
+          + New Recruitment
+        </Link>
+      }
+    >
+      <div className="mx-auto max-w-7xl">
+        <div>
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -544,6 +530,6 @@ export function AdminRecruitmentHubPage() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }
