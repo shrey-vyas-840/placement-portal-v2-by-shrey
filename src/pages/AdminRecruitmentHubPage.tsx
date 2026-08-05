@@ -6,6 +6,7 @@ import {
   getArchivedDraftsForUser,
   getPublishedRecruitmentsForUser,
   createDraftFromPublishedRecruitment,
+  createRevisionDraftFromPublishedRecruitment,
   archiveDraftById,
   deleteDraftById,
   restoreDraftById,
@@ -112,9 +113,24 @@ export function AdminRecruitmentHubPage() {
     }
   }
 
-  function handleEditRecruitment() {
-  toast.info("Revision Draft will be implemented next.");
-}
+  async function handleEditRecruitment(publishedRecruitment: any) {
+    try {
+      const draft = await createRevisionDraftFromPublishedRecruitment(publishedRecruitment);
+
+      await refreshDrafts();
+
+      navigate({
+        to: "/admin/recruitment-new",
+        search: {
+          draft: draft.draft_id,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+
+      toast.error("Failed to create Revision Draft.");
+    }
+  }
 
   async function handleArchive(draftId: string) {
     try {
@@ -475,10 +491,9 @@ export function AdminRecruitmentHubPage() {
           </div>
         </div>
       </div>
-         {selectedRecruitment && (
+      {selectedRecruitment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-md rounded-3xl border border-border bg-background p-6 shadow-2xl">
-
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
                 {selectedRecruitment.drive_name ??
@@ -496,18 +511,15 @@ export function AdminRecruitmentHubPage() {
             </div>
 
             <div className="space-y-3">
-
               <button
                 type="button"
                 onClick={() => {
                   setSelectedRecruitment(null);
-                  handleEditRecruitment();
+                  handleEditRecruitment(selectedRecruitment);
                 }}
                 className="w-full rounded-2xl border border-border p-4 text-left transition hover:bg-muted"
               >
-                <div className="font-medium">
-                  Edit Recruitment
-                </div>
+                <div className="font-medium">Edit Recruitment</div>
 
                 <div className="mt-1 text-xs text-muted-foreground">
                   Update this recruitment using a Revision Draft.
@@ -522,21 +534,16 @@ export function AdminRecruitmentHubPage() {
                 }}
                 className="w-full rounded-2xl border border-border p-4 text-left transition hover:bg-muted"
               >
-                <div className="font-medium">
-                  Use As Template
-                </div>
+                <div className="font-medium">Use As Template</div>
 
                 <div className="mt-1 text-xs text-muted-foreground">
                   Create a completely new recruitment from this one.
                 </div>
               </button>
-
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

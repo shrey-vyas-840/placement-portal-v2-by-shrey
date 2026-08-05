@@ -578,6 +578,83 @@ export async function createDraftFromPublishedRecruitment(
   return data as RecruitmentDraftRow;
 }
 
+export async function createRevisionDraftFromPublishedRecruitment(
+  publishedRecruitment: RecruitmentDraftRow,
+): Promise<RecruitmentDraftRow> {
+  if (String(publishedRecruitment.status ?? "").toUpperCase() !== "PUBLISHED") {
+    throw new Error("Only published recruitments can be edited.");
+  }
+
+  const sourceCompanyId =
+    typeof publishedRecruitment.created_company_id === "string" &&
+    publishedRecruitment.created_company_id.trim() !== ""
+      ? publishedRecruitment.created_company_id
+      : null;
+
+  const sourceName =
+    typeof publishedRecruitment.draft_name === "string" &&
+    publishedRecruitment.draft_name.trim() !== ""
+      ? publishedRecruitment.draft_name.trim()
+      : "Untitled Recruitment";
+
+  const { data, error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .insert({
+      auth_provider_id: publishedRecruitment.auth_provider_id,
+      created_by: publishedRecruitment.created_by,
+
+      draft_name: `${sourceName} (Revision)`,
+
+      current_step: 0,
+
+      status: "DRAFT",
+
+      company_data: publishedRecruitment.company_data ?? null,
+      recruiters_data: publishedRecruitment.recruiters_data ?? null,
+      drive_data: publishedRecruitment.drive_data ?? null,
+      eligibility_data: publishedRecruitment.eligibility_data ?? null,
+      default_questions_data: publishedRecruitment.default_questions_data ?? null,
+      roles_data: publishedRecruitment.roles_data ?? null,
+
+      publish_data: publishedRecruitment.publish_data ?? null,
+
+      wizard_state: {
+        ...(publishedRecruitment.wizard_state ?? {}),
+
+        selectedCompanyId: sourceCompanyId,
+        companySelectionMode: sourceCompanyId ? "existing" : "new",
+
+        recruitmentDraftKind: "revision",
+
+        revisionSourceDraftId: publishedRecruitment.draft_id,
+      },
+
+      is_completed: false,
+
+      created_company_id: sourceCompanyId,
+
+      // IMPORTANT
+      // Keep the published recruitment identity.
+      created_drive_id: publishedRecruitment.created_drive_id,
+      published_drive_id: publishedRecruitment.published_drive_id,
+      published_at: publishedRecruitment.published_at,
+
+      last_saved_at: new Date().toISOString(),
+
+      is_archived: false,
+      archived_at: null,
+      archived_by: null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as RecruitmentDraftRow;
+}
+
 export async function archiveDraftById(draftId: string): Promise<void> {
   const {
     data: { user },
