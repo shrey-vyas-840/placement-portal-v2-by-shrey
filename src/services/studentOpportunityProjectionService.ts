@@ -13,6 +13,12 @@ const db = supabase as any;
 const PROJECTION_TABLE = "student_opportunity_projection";
 const PROJECTION_EVALUATION_VERSION = "v1";
 
+type ProjectionLifecycleStatus = "EMPTY" | "BUILDING" | "READY" | "STALE";
+
+let projectionLifecycleStatus: ProjectionLifecycleStatus = "EMPTY";
+let projectionInitializationPromise: Promise<void> | null = null;
+let projectionRebuildPromise: Promise<ProjectionRefreshResult> | null = null;
+
 export type ProjectionVisibilityStatus = "VISIBLE" | "NOT_VISIBLE";
 export type ProjectionEligibilityStatus = "ELIGIBLE" | "INELIGIBLE" | "NOT_EVALUATED";
 export type ProjectionRestrictionStatus = "ALLOWED" | "RESTRICTED" | "OVERRIDDEN";
@@ -33,6 +39,8 @@ export interface ProjectionFailureReason {
 }
 
 export interface StudentOpportunityProjectionRecord {
+  projection_id: string;
+
   student_id: string;
 
   opportunity_id: string;
@@ -191,6 +199,45 @@ function chunkArray<T>(items: T[], size: number): T[][] {
 
 function makeProjectionKey(studentId: string, opportunityId: string) {
   return `${studentId}::${opportunityId}`;
+}
+
+function cyrb128(value: string) {
+  let h1 = 1779033703;
+  let h2 = 3144134277;
+  let h3 = 1013904242;
+  let h4 = 2773480762;
+
+  for (let i = 0; i < value.length; i += 1) {
+    const k = value.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+  h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+
+  return [(h1 ^ h2 ^ h3 ^ h4) >>> 0, (h2 ^ h1) >>> 0, (h3 ^ h1) >>> 0, (h4 ^ h2) >>> 0];
+}
+
+function makeProjectionRecordId(studentId: string, opportunityId: string) {
+  const hex = cyrb128(makeProjectionKey(studentId, opportunityId))
+    .map((part) => part.toString(16).padStart(8, "0"))
+    .join("");
+
+  const timeLow = hex.slice(0, 8);
+  const timeMid = hex.slice(8, 12);
+  const timeHiAndVersion = `5${hex.slice(13, 16)}`;
+  const clockSeqHiAndReserved = `${((parseInt(hex[16], 16) & 0x3) | 0x8).toString(16)}${hex.slice(
+    17,
+    20,
+  )}`;
+  const node = hex.slice(20, 32);
+
+  return `${timeLow}-${timeMid}-${timeHiAndVersion}-${clockSeqHiAndReserved}-${node}`;
 }
 
 function splitCsvList(
@@ -433,6 +480,11 @@ function buildProjectionRow(input: {
   const alreadyApplied = !!input.applicationRecord;
 
   return {
+    projection_id: makeProjectionRecordId(
+      input.student.student_id,
+      input.opportunity.opportunity_id,
+    ),
+
     student_id: input.student.student_id,
 
     opportunity_id: input.opportunity.opportunity_id,
@@ -771,239 +823,272 @@ async function clearProjectionRowsForStudent(studentId: string) {
   if (error) throw error;
 }
 
-async function insertProjectionRows(rows: StudentOpportunityProjectionRecord[]) {
+async function getProjectionRowCount(): Promise<number> {
+  const { count, error } = await db
+    .from(PROJECTION_TABLE)
+    .select("projection_id", { count: "exact", head: true });
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+async function upsertProjectionRows(rows: StudentOpportunityProjectionRecord[]) {
   for (const batch of chunkArray(rows, 250)) {
     if (batch.length === 0) continue;
 
-    const { error } = await db.from(PROJECTION_TABLE).insert(batch);
+    const { error } = await db.from(PROJECTION_TABLE).upsert(batch, {
+      onConflict: "projection_id",
+    });
+
     if (error) throw error;
   }
 }
 
-async function replaceProjectionRowsForOpportunity(
-  opportunityId: string,
-  rows: StudentOpportunityProjectionRecord[],
-) {
-  await clearProjectionRowsForOpportunity(opportunityId);
-  await insertProjectionRows(rows);
+async function rebuildProjectionInternal(): Promise<ProjectionRefreshResult> {
+  if (projectionRebuildPromise) {
+    return projectionRebuildPromise;
+  }
+
+  projectionLifecycleStatus = "BUILDING";
+
+  projectionRebuildPromise = (async () => {
+    try {
+      const universe = await loadProjectionUniverse();
+      const nowIso = new Date().toISOString();
+
+      await clearProjectionTable();
+
+      let rowsWritten = 0;
+      let opportunitiesProcessed = 0;
+
+      for (const opportunity of universe.opportunities) {
+        const rows = buildProjectionRowsForOpportunity(opportunity, universe, nowIso);
+        opportunitiesProcessed += 1;
+        rowsWritten += rows.length;
+
+        if (rows.length > 0) {
+          await upsertProjectionRows(rows);
+        }
+      }
+
+      projectionLifecycleStatus = "READY";
+
+      return {
+        rowsWritten,
+        opportunitiesProcessed,
+      };
+    } catch (error) {
+      projectionLifecycleStatus = "STALE";
+      throw error;
+    } finally {
+      projectionRebuildPromise = null;
+    }
+  })();
+
+  return projectionRebuildPromise;
 }
 
-async function replaceProjectionRowsForDrive(
-  driveId: string,
-  rows: StudentOpportunityProjectionRecord[],
-) {
-  await clearProjectionRowsForDrive(driveId);
-  await insertProjectionRows(rows);
+async function ensureProjectionInitializedInternal(): Promise<void> {
+  if (projectionLifecycleStatus === "READY") {
+    return;
+  }
+
+  if (projectionRebuildPromise) {
+    await projectionRebuildPromise;
+    return;
+  }
+
+  if (projectionInitializationPromise) {
+    await projectionInitializationPromise;
+    return;
+  }
+
+  projectionInitializationPromise = (async () => {
+    const rowCount = await getProjectionRowCount();
+
+    if (rowCount > 0) {
+      projectionLifecycleStatus = "READY";
+      return;
+    }
+
+    await rebuildProjectionInternal();
+  })()
+    .catch((error) => {
+      projectionLifecycleStatus = "STALE";
+      throw error;
+    })
+    .finally(() => {
+      projectionInitializationPromise = null;
+    });
+
+  await projectionInitializationPromise;
 }
 
-async function replaceProjectionRowsForStudent(
-  studentId: string,
-  rows: StudentOpportunityProjectionRecord[],
-) {
+async function refreshStudentInternal(studentId: string): Promise<ProjectionRefreshResult> {
+  await ensureProjectionInitializedInternal();
+
+  const { data: studentRow, error } = await db
+    .from("student_master")
+    .select("student_id")
+    .eq("student_id", studentId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!studentRow) {
+    await clearProjectionRowsForStudent(studentId);
+    projectionLifecycleStatus = "READY";
+    return {
+      rowsWritten: 0,
+      opportunitiesProcessed: 0,
+    };
+  }
+
+  const universe = await loadProjectionUniverse({ studentIds: [studentId] });
+  const nowIso = new Date().toISOString();
+
+  const allRows: StudentOpportunityProjectionRecord[] = [];
+  for (const opportunity of universe.opportunities) {
+    allRows.push(...buildProjectionRowsForOpportunity(opportunity, universe, nowIso));
+  }
+
   await clearProjectionRowsForStudent(studentId);
-  await insertProjectionRows(rows);
+  await upsertProjectionRows(allRows);
+
+  projectionLifecycleStatus = "READY";
+
+  return {
+    rowsWritten: allRows.length,
+    opportunitiesProcessed: universe.opportunities.length,
+  };
+}
+
+async function refreshOpportunityInternal(opportunityId: string): Promise<ProjectionRefreshResult> {
+  await ensureProjectionInitializedInternal();
+
+  const { data: opportunityRow, error } = await db
+    .from("opportunity_master")
+    .select(
+      `
+        opportunity_id,
+        drive_id,
+        visible_to_students,
+        is_deleted
+      `,
+    )
+    .eq("opportunity_id", opportunityId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (
+    !opportunityRow ||
+    opportunityRow.visible_to_students !== true ||
+    opportunityRow.is_deleted === true
+  ) {
+    await clearProjectionRowsForOpportunity(opportunityId);
+    projectionLifecycleStatus = "READY";
+    return {
+      rowsWritten: 0,
+      opportunitiesProcessed: 0,
+    };
+  }
+
+  const universe = await loadProjectionUniverse({ opportunityIds: [opportunityId] });
+  const opportunity = universe.opportunities[0];
+
+  if (!opportunity) {
+    await clearProjectionRowsForOpportunity(opportunityId);
+    projectionLifecycleStatus = "READY";
+    return {
+      rowsWritten: 0,
+      opportunitiesProcessed: 0,
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+  const rows = buildProjectionRowsForOpportunity(opportunity, universe, nowIso);
+
+  await clearProjectionRowsForOpportunity(opportunityId);
+  await upsertProjectionRows(rows);
+
+  projectionLifecycleStatus = "READY";
+
+  return {
+    rowsWritten: rows.length,
+    opportunitiesProcessed: 1,
+  };
+}
+
+async function refreshRecruitmentInternal(driveId: string): Promise<ProjectionRefreshResult> {
+  await ensureProjectionInitializedInternal();
+
+  const { data: driveRow, error } = await db
+    .from("drive_master")
+    .select(
+      `
+        drive_id,
+        is_active,
+        is_deleted
+      `,
+    )
+    .eq("drive_id", driveId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!driveRow || driveRow.is_active !== true || driveRow.is_deleted === true) {
+    await clearProjectionRowsForDrive(driveId);
+    projectionLifecycleStatus = "READY";
+    return {
+      rowsWritten: 0,
+      opportunitiesProcessed: 0,
+    };
+  }
+
+  const universe = await loadProjectionUniverse({ driveIds: [driveId] });
+
+  if (universe.opportunities.length === 0) {
+    await clearProjectionRowsForDrive(driveId);
+    projectionLifecycleStatus = "READY";
+    return {
+      rowsWritten: 0,
+      opportunitiesProcessed: 0,
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+
+  const allRows: StudentOpportunityProjectionRecord[] = [];
+  for (const opportunity of universe.opportunities) {
+    allRows.push(...buildProjectionRowsForOpportunity(opportunity, universe, nowIso));
+  }
+
+  await clearProjectionRowsForDrive(driveId);
+  await upsertProjectionRows(allRows);
+
+  projectionLifecycleStatus = "READY";
+
+  return {
+    rowsWritten: allRows.length,
+    opportunitiesProcessed: universe.opportunities.length,
+  };
 }
 
 export const studentOpportunityProjectionService = {
-  async refreshAll(): Promise<ProjectionRefreshResult> {
-    const universe = await loadProjectionUniverse();
-    const nowIso = new Date().toISOString();
-
-    await clearProjectionTable();
-
-    let rowsWritten = 0;
-    let opportunitiesProcessed = 0;
-
-    for (const opportunity of universe.opportunities) {
-      const rows = buildProjectionRowsForOpportunity(opportunity, universe, nowIso);
-      opportunitiesProcessed += 1;
-      rowsWritten += rows.length;
-
-      if (rows.length > 0) {
-        await insertProjectionRows(rows);
-      }
-    }
-
-    return {
-      rowsWritten,
-      opportunitiesProcessed,
-    };
-  },
-
-  async refreshOpportunity(opportunityId: string): Promise<ProjectionRefreshResult> {
-    const { data: opportunityRow, error } = await db
-      .from("opportunity_master")
-      .select(
-        `
-          opportunity_id,
-          drive_id,
-          visible_to_students,
-          is_deleted
-        `,
-      )
-      .eq("opportunity_id", opportunityId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (
-      !opportunityRow ||
-      opportunityRow.visible_to_students !== true ||
-      opportunityRow.is_deleted === true
-    ) {
-      await clearProjectionRowsForOpportunity(opportunityId);
-      return {
-        rowsWritten: 0,
-        opportunitiesProcessed: 0,
-      };
-    }
-
-    const universe = await loadProjectionUniverse({ opportunityIds: [opportunityId] });
-    const opportunity = universe.opportunities[0];
-
-    if (!opportunity) {
-      await clearProjectionRowsForOpportunity(opportunityId);
-      return {
-        rowsWritten: 0,
-        opportunitiesProcessed: 0,
-      };
-    }
-
-    const nowIso = new Date().toISOString();
-    const rows = buildProjectionRowsForOpportunity(opportunity, universe, nowIso);
-
-    await replaceProjectionRowsForOpportunity(opportunityId, rows);
-
-    return {
-      rowsWritten: rows.length,
-      opportunitiesProcessed: 1,
-    };
-  },
-
-  async refreshDrive(driveId: string): Promise<ProjectionRefreshResult> {
-    const { data: opportunityRows, error } = await db
-      .from("opportunity_master")
-      .select(
-        `
-          opportunity_id,
-          drive_id,
-          visible_to_students,
-          is_deleted
-        `,
-      )
-      .eq("drive_id", driveId)
-      .eq("visible_to_students", true)
-      .eq("is_deleted", false);
-
-    if (error) throw error;
-
-    const opportunityIds = uniqueStrings(
-      (opportunityRows ?? []).map((row: any) => String(row.opportunity_id)),
-    );
-
-    if (opportunityIds.length === 0) {
-      await clearProjectionRowsForDrive(driveId);
-      return {
-        rowsWritten: 0,
-        opportunitiesProcessed: 0,
-      };
-    }
-
-    const universe = await loadProjectionUniverse({ driveIds: [driveId] });
-    const nowIso = new Date().toISOString();
-
-    const allRows: StudentOpportunityProjectionRecord[] = [];
-    for (const opportunity of universe.opportunities) {
-      allRows.push(...buildProjectionRowsForOpportunity(opportunity, universe, nowIso));
-    }
-
-    await replaceProjectionRowsForDrive(driveId, allRows);
-
-    return {
-      rowsWritten: allRows.length,
-      opportunitiesProcessed: universe.opportunities.length,
-    };
-  },
-
-  async refreshStudent(studentId: string): Promise<ProjectionRefreshResult> {
-    const { data: studentRow, error } = await db
-      .from("student_master")
-      .select("student_id")
-      .eq("student_id", studentId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!studentRow) {
-      await clearProjectionRowsForStudent(studentId);
-      return {
-        rowsWritten: 0,
-        opportunitiesProcessed: 0,
-      };
-    }
-
-    const universe = await loadProjectionUniverse({ studentIds: [studentId] });
-    const nowIso = new Date().toISOString();
-
-    const allRows: StudentOpportunityProjectionRecord[] = [];
-    for (const opportunity of universe.opportunities) {
-      allRows.push(...buildProjectionRowsForOpportunity(opportunity, universe, nowIso));
-    }
-
-    await replaceProjectionRowsForStudent(studentId, allRows);
-
-    return {
-      rowsWritten: allRows.length,
-      opportunitiesProcessed: universe.opportunities.length,
-    };
-  },
-
-  async getByStudentId(studentId: string): Promise<StudentOpportunityProjectionRecord[]> {
-    const { data, error } = await db
-      .from(PROJECTION_TABLE)
-      .select("*")
-      .eq("student_id", studentId)
-      .order("opportunity_id", { ascending: true });
-
-    if (error) throw error;
-    return toArray<StudentOpportunityProjectionRecord>(data);
-  },
-
-  async getByOpportunityId(opportunityId: string): Promise<StudentOpportunityProjectionRecord[]> {
-    const { data, error } = await db
-      .from(PROJECTION_TABLE)
-      .select("*")
-      .eq("opportunity_id", opportunityId)
-      .order("student_id", { ascending: true });
-
-    if (error) throw error;
-    return toArray<StudentOpportunityProjectionRecord>(data);
-  },
-
-  async getByDriveId(driveId: string): Promise<StudentOpportunityProjectionRecord[]> {
-    const { data, error } = await db
-      .from(PROJECTION_TABLE)
-      .select("*")
-      .eq("drive_id", driveId)
-      .order("student_id", { ascending: true })
-      .order("opportunity_id", { ascending: true });
-
-    if (error) throw error;
-    return toArray<StudentOpportunityProjectionRecord>(data);
-  },
-
-  async getOne(
-    studentId: string,
-    opportunityId: string,
-  ): Promise<StudentOpportunityProjectionRecord | null> {
-    const { data, error } = await db
-      .from(PROJECTION_TABLE)
-      .select("*")
-      .eq("student_id", studentId)
-      .eq("opportunity_id", opportunityId)
-      .maybeSingle();
-
-    if (error) throw error;
-    return (data as StudentOpportunityProjectionRecord | null) ?? null;
-  },
+  ensureProjectionInitialized: ensureProjectionInitializedInternal,
+  rebuildProjection: rebuildProjectionInternal,
+  refreshStudent: refreshStudentInternal,
+  refreshOpportunity: refreshOpportunityInternal,
+  refreshRecruitment: refreshRecruitmentInternal,
 };
+
+if (typeof window !== "undefined") {
+  queueMicrotask(() => {
+    void ensureProjectionInitializedInternal().catch((error) => {
+      console.warn("studentOpportunityProjectionService bootstrap failed", error);
+    });
+  });
+}
+
+export default studentOpportunityProjectionService;
