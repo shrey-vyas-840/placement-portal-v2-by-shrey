@@ -143,7 +143,9 @@ export interface StudentMasterRecord {
   middle_name: string | null;
   last_name: string | null;
 
-  is_active: boolean;
+  is_active: boolean | null;
+  is_visible: boolean | null;
+
   placement_preference: string | null;
   placement_status: string | null;
 }
@@ -173,7 +175,7 @@ export interface RecruitmentEligibilityCriteria {
 
   branches: string[];
 
-graduationYears: (number | string)[];
+  graduationYears: (number | string)[];
 
   minimumCgpa: number | null;
 
@@ -295,24 +297,21 @@ async function loadRecruitmentEligibilityCriteria(
 
     branches: eligibility.selectedBranches ?? eligibility.branches ?? [],
 
-graduationYears: (() => {
-  const years =
-    eligibility.selectedGraduationYears ??
-    eligibility.graduationYears ??
-    [];
+    graduationYears: (() => {
+      const years = eligibility.selectedGraduationYears ?? eligibility.graduationYears ?? [];
 
-  if (Array.isArray(years)) {
-    return years
-      .map((year: unknown) => Number(year))
-      .filter((year: number) => !Number.isNaN(year));
-  }
+      if (Array.isArray(years)) {
+        return years
+          .map((year: unknown) => Number(year))
+          .filter((year: number) => !Number.isNaN(year));
+      }
 
-  return String(years)
-    .replace(/[{}]/g, "")
-    .split(",")
-    .map((year) => Number(year.trim()))
-    .filter((year) => !Number.isNaN(year));
-})(),
+      return String(years)
+        .replace(/[{}]/g, "")
+        .split(",")
+        .map((year) => Number(year.trim()))
+        .filter((year) => !Number.isNaN(year));
+    })(),
 
     minimumCgpa: eligibility.minimumCgpa ?? eligibility.minimum_cgpa ?? null,
 
@@ -332,6 +331,7 @@ async function loadStudents() {
     middle_name,
     last_name,
     is_active,
+    is_visible,
     placement_preference,
     placement_status
 `),
@@ -677,13 +677,10 @@ export function evaluateStudentEligibility(
 ): StudentEligibilityResult {
   const failureReasons: EligibilityFailureReason[] = [];
 
-  if (!student.is_active) {
-    failureReasons.push({
-      code: "INACTIVE",
-      message: "Student account is inactive.",
-    });
-  }
-
+  // Account activity is intentionally NOT part of recruitment eligibility.
+  // Student Opportunities and Projection both use placement/business rules only.
+  // Keeping this disabled avoids analytics disagreeing with the projection engine.
+  const accountInactive = false;
   if (student.placement_preference !== "Interested") {
     failureReasons.push({
       code: "OPT_OUT",
@@ -712,22 +709,22 @@ export function evaluateStudentEligibility(
     });
   }
 
- const studentGraduationYear = Number(academic?.graduation_year);
+  const studentGraduationYear = Number(academic?.graduation_year);
 
-const allowedGraduationYears = (criteria.graduationYears ?? [])
-  .map((year) => Number(year))
-  .filter((year) => !Number.isNaN(year));
+  const allowedGraduationYears = (criteria.graduationYears ?? [])
+    .map((year) => Number(year))
+    .filter((year) => !Number.isNaN(year));
 
-if (
-  allowedGraduationYears.length > 0 &&
-  academic &&
-  !allowedGraduationYears.includes(studentGraduationYear)
-) {
-  failureReasons.push({
-    code: "GRADUATION_YEAR",
-    message: "Graduation year is not eligible.",
-  });
-}
+  if (
+    allowedGraduationYears.length > 0 &&
+    academic &&
+    !allowedGraduationYears.includes(studentGraduationYear)
+  ) {
+    failureReasons.push({
+      code: "GRADUATION_YEAR",
+      message: "Graduation year is not eligible.",
+    });
+  }
 
   if (
     academic &&
@@ -837,24 +834,14 @@ export async function getRecruitmentEligibilityAnalytics(
   };
 
   for (const student of students) {
-    if (student.is_active) {
-      activeStudents++;
-    }
+    activeStudents++;
 
     if (student.placement_preference === "Interested") {
       optedInStudents++;
     } else {
       optedOutStudents++;
     }
-    console.log("========= BEFORE ENGINE =========");
-    console.log(student);
-    console.log({
-      student_id: student.student_id,
-      is_active: student.is_active,
-      placement_preference: student.placement_preference,
-      placement_status: student.placement_status,
-    });
-    console.log("===============================");
+
     const result = evaluateStudentEligibility(
       student,
       academicMap.get(student.student_id),

@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { generateUuid } from "@/lib/generateUuid";
 import { recruitmentProjectionService } from "@/services/recruitmentProjectionService";
-
+import { studentOpportunityProjectionService } from "@/services/studentOpportunityProjectionService";
 export interface RepublishRecruitmentResult {
   driveId: string;
   companyId: string;
@@ -162,6 +162,8 @@ export async function republishRecruitmentDraft(draft: any): Promise<RepublishRe
    */
 
   await recruitmentProjectionService.initializeProjection(driveId);
+
+  await studentOpportunityProjectionService.refreshRecruitment(driveId);
 
   return {
     driveId,

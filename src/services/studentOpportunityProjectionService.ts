@@ -1,7 +1,5 @@
 import { supabase } from "@/lib/supabase";
 import {
-  evaluateStudentEligibility,
-  type EligibilityFailureReason,
   type RecruitmentEligibilityCriteria,
   type StudentAcademicRecord,
   type StudentMasterRecord,
@@ -11,7 +9,7 @@ type AnyRecord = Record<string, any>;
 
 const db = supabase as any;
 const PROJECTION_TABLE = "student_opportunity_projection";
-const PROJECTION_EVALUATION_VERSION = "v1";
+const PROJECTION_EVALUATION_VERSION = 1;
 
 type ProjectionLifecycleStatus = "EMPTY" | "BUILDING" | "READY" | "STALE";
 
@@ -96,7 +94,7 @@ export interface StudentOpportunityProjectionRecord {
 
   updated_at: string;
 
-  evaluation_version: string;
+  evaluation_version: number;
 }
 
 export interface ProjectionRefreshResult {
@@ -264,32 +262,6 @@ function splitNumberList(
     .filter((item) => !Number.isNaN(item));
 }
 
-function toProjectionFailures(
-  failureReasons: Array<EligibilityFailureReason | ProjectionFailureReason>,
-): ProjectionFailureReason[] {
-  return failureReasons.map((reason) => {
-    const projectionReason = reason as ProjectionFailureReason;
-
-    return {
-      code: String(reason.code),
-
-      title:
-        projectionReason.title ??
-        String(reason.code)
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase()),
-
-      message: String(reason.message),
-
-      source: projectionReason.source ?? "ELIGIBILITY",
-
-      expected: projectionReason.expected,
-
-      actual: projectionReason.actual,
-    };
-  });
-}
-
 function buildCriteriaFromEligibilityRow(
   eligibilityRow: LoadedEligibilityRecord | null | undefined,
 ): RecruitmentEligibilityCriteria {
@@ -315,69 +287,37 @@ function buildVisibilityResult(
   academic: StudentAcademicRecord | undefined,
   eligibilityRow: LoadedEligibilityRecord | null | undefined,
 ) {
-  const failures: ProjectionFailureReason[] = [];
+  if (!academic) {
+    return {
+      isVisible: false,
+      visibilityStatus: "NOT_VISIBLE" as ProjectionVisibilityStatus,
+      visibilityFailures: [],
+    };
+  }
 
   const allowedBranches = splitCsvList(eligibilityRow?.allowed_branches ?? null);
 
   const allowedYears = splitNumberList(eligibilityRow?.passing_out_batches ?? null);
 
-  if (!academic) {
+  const branchMatch =
+    allowedBranches.length === 0 ||
+    allowedBranches.includes(String(academic.current_branch_name ?? ""));
+
+  const yearMatch =
+    allowedYears.length === 0 || allowedYears.includes(Number(academic.graduation_year));
+
+  if (branchMatch && yearMatch) {
     return {
-      isVisible: false,
-      visibilityStatus: "NOT_VISIBLE" as ProjectionVisibilityStatus,
-      visibilityFailures: [
-        {
-          code: "BRANCH",
-          title: "Branch Not Eligible",
-          message: "Branch is not eligible.",
-          source: "VISIBILITY",
-        },
-        {
-          code: "GRADUATION_YEAR",
-          title: "Graduation Year Not Eligible",
-          message: "Graduation year is not eligible.",
-          source: "VISIBILITY",
-        },
-      ] satisfies ProjectionFailureReason[],
+      isVisible: true,
+      visibilityStatus: "VISIBLE" as ProjectionVisibilityStatus,
+      visibilityFailures: [],
     };
   }
 
-  if (
-    allowedBranches.length > 0 &&
-    (!academic.current_branch_name || !allowedBranches.includes(academic.current_branch_name))
-  ) {
-    failures.push({
-      code: "BRANCH",
-      title: "Branch Not Eligible",
-      message: "Branch is not eligible.",
-      source: "VISIBILITY",
-      expected: allowedBranches,
-      actual: academic.current_branch_name ?? null,
-    });
-  }
-
-  if (allowedYears.length > 0) {
-    const graduationYear = academic.graduation_year;
-
-    if (graduationYear == null || !allowedYears.includes(Number(graduationYear))) {
-      failures.push({
-        code: "GRADUATION_YEAR",
-        title: "Graduation Year Not Eligible",
-        message: "Graduation year is not eligible.",
-        source: "VISIBILITY",
-        expected: allowedYears,
-        actual: graduationYear ?? null,
-      });
-    }
-  }
-
-  const visibilityStatus: ProjectionVisibilityStatus =
-    failures.length === 0 ? "VISIBLE" : "NOT_VISIBLE";
-
   return {
-    isVisible: failures.length === 0,
-    visibilityStatus,
-    visibilityFailures: failures,
+    isVisible: false,
+    visibilityStatus: "NOT_VISIBLE" as ProjectionVisibilityStatus,
+    visibilityFailures: [],
   };
 }
 
@@ -392,32 +332,69 @@ function buildEligibilityResult(input: {
   };
 }) {
   const criteria = buildCriteriaFromEligibilityRow(input.eligibilityRow);
+  const academic = input.academic;
 
-  const engineResult = evaluateStudentEligibility(input.student, input.academic, criteria);
+  const failures: ProjectionFailureReason[] = [];
 
-  const failures: ProjectionFailureReason[] = toProjectionFailures(engineResult.failureReasons);
+  if (!academic) {
+    return {
+      isEligible: false,
+      eligibilityStatus: "NOT_EVALUATED" as ProjectionEligibilityStatus,
+      eligibilityFailures: [] as ProjectionFailureReason[],
+      resolvedPlacementStatus: input.student.placement_status ?? null,
+    };
+  }
 
-  if (input.activeRestriction && !input.overrideState.restricted) {
+  if (
+    criteria.institutes.length > 0 &&
+    !criteria.institutes.includes(academic.current_institute_name ?? "")
+  ) {
     failures.push({
-      code: "RESTRICTION",
-      title: "Student Restricted",
-      message:
-        input.activeRestriction.restriction_reason ??
-        "Placement activities are currently restricted.",
-      source: "RESTRICTION",
-      actual: input.activeRestriction.restriction_type ?? null,
+      code: "INSTITUTE",
+      title: "Institute Not Eligible",
+      message: "Institute is not eligible.",
+      source: "ELIGIBILITY",
+      expected: criteria.institutes,
+      actual: academic.current_institute_name ?? null,
     });
   }
 
-  const placementStatus = input.student.placement_status;
-
-  if (placementStatus && placementStatus !== "Unplaced" && !input.overrideState.placed) {
+  if (
+    criteria.degrees.length > 0 &&
+    !criteria.degrees.includes(academic.current_degree_name ?? "")
+  ) {
     failures.push({
-      code: "PLACEMENT_STATUS",
-      title: "Student Already Placed",
-      message: "Student has already been placed.",
-      source: "PLACEMENT",
-      actual: placementStatus,
+      code: "DEGREE",
+      title: "Degree Not Eligible",
+      message: "Degree is not eligible.",
+      source: "ELIGIBILITY",
+      expected: criteria.degrees,
+      actual: academic.current_degree_name ?? null,
+    });
+  }
+
+  if (criteria.minimumCgpa !== null && Number(academic.current_cgpa ?? 0) < criteria.minimumCgpa) {
+    failures.push({
+      code: "CGPA",
+      title: "CGPA Below Requirement",
+      message: "CGPA is below the minimum requirement.",
+      source: "ELIGIBILITY",
+      expected: criteria.minimumCgpa,
+      actual: academic.current_cgpa ?? null,
+    });
+  }
+
+  if (
+    criteria.maximumActiveBacklogs !== null &&
+    Number(academic.active_backlogs ?? 0) > criteria.maximumActiveBacklogs
+  ) {
+    failures.push({
+      code: "BACKLOG",
+      title: "Backlog Limit Exceeded",
+      message: "Backlog limit exceeded.",
+      source: "ELIGIBILITY",
+      expected: criteria.maximumActiveBacklogs,
+      actual: academic.active_backlogs ?? null,
     });
   }
 
@@ -428,7 +405,7 @@ function buildEligibilityResult(input: {
     isEligible: failures.length === 0,
     eligibilityStatus,
     eligibilityFailures: failures,
-    resolvedPlacementStatus: placementStatus ?? null,
+    resolvedPlacementStatus: input.student.placement_status ?? null,
   };
 }
 
@@ -462,22 +439,55 @@ function buildProjectionRow(input: {
         resolvedPlacementStatus: input.student.placement_status ?? null,
       };
 
-  const restrictionActive = !!input.activeRestriction;
+const restrictionActive = !!input.activeRestriction;
 
-  const restrictionStatus: ProjectionRestrictionStatus = restrictionActive
-    ? input.overrideState.restricted
-      ? "OVERRIDDEN"
-      : "RESTRICTED"
-    : "ALLOWED";
+const restrictionOverridden =
+  restrictionActive && input.overrideState.restricted;
 
-  const placementAllowed =
-    !input.student.placement_status ||
-    input.student.placement_status === "Unplaced" ||
-    input.overrideState.placed;
+const restrictionStatus: ProjectionRestrictionStatus = restrictionActive
+  ? restrictionOverridden
+    ? "OVERRIDDEN"
+    : "RESTRICTED"
+  : "ALLOWED";
 
-  const participationAllowed = !restrictionActive || input.overrideState.restricted;
+const driveSettings = input.opportunity.drive_master ?? {};
 
-  const alreadyApplied = !!input.applicationRecord;
+const placementAllowed =
+  !input.student.placement_status ||
+  input.student.placement_status === "Unplaced" ||
+  driveSettings.allow_placed_students === true ||
+  input.overrideState.placed;
+
+const participationAllowed =
+  input.student.placement_preference === "Interested";
+
+const restrictionAllowed =
+  !restrictionActive ||
+  driveSettings.allow_restricted_students === true ||
+  restrictionOverridden;
+
+/*
+ * Final business eligibility
+ *
+ * Total Opportunities:
+ *   Branch + Passing Year
+ *
+ * Eligible:
+ *   Stage-2 eligibility
+ *   AND participation
+ *   AND restriction
+ *   AND placement
+ */
+const finalEligible =
+  eligibility.isEligible &&
+  participationAllowed &&
+  placementAllowed &&
+  restrictionAllowed;
+
+const finalEligibilityStatus: ProjectionEligibilityStatus =
+  finalEligible ? "ELIGIBLE" : "INELIGIBLE";
+
+const alreadyApplied = !!input.applicationRecord;
 
   return {
     projection_id: makeProjectionRecordId(
@@ -497,9 +507,9 @@ function buildProjectionRow(input: {
 
     visibility_failures: visibility.visibilityFailures,
 
-    is_eligible: eligibility.isEligible,
+    is_eligible: finalEligible,
 
-    eligibility_status: eligibility.eligibilityStatus,
+    eligibility_status: finalEligibilityStatus,
 
     eligibility_failures: eligibility.eligibilityFailures,
 
@@ -588,6 +598,39 @@ async function loadProjectionUniverse(
     academicsQuery = academicsQuery.in("student_id", studentIdsFilter);
   }
 
+  /*
+   * Dashboard universe
+   *
+   * Student dashboard must contain every published recruitment
+   * that is NOT archived.
+   *
+   * It must NOT depend on visible_to_students because visibility
+   * is only for the Student Opportunities page.
+   */
+
+  let publishedDriveIds: string[] = [];
+
+  const publishedRecruitmentsQuery = db
+    .from("recruitment_drafts")
+    .select("created_drive_id")
+    .eq("status", "PUBLISHED")
+    .eq("is_archived", false);
+
+  if (driveIdsFilter.length > 0) {
+    publishedRecruitmentsQuery.in("created_drive_id", driveIdsFilter);
+  }
+
+  const { data: publishedRecruitments, error: publishedRecruitmentsError } =
+    await publishedRecruitmentsQuery;
+
+  if (publishedRecruitmentsError) {
+    throw publishedRecruitmentsError;
+  }
+
+  publishedDriveIds = uniqueStrings(
+    (publishedRecruitments ?? []).map((row: any) => row.created_drive_id),
+  );
+
   let opportunitiesQuery = db
     .from("opportunity_master")
     .select(
@@ -616,14 +659,15 @@ async function loadProjectionUniverse(
         )
       `,
     )
-    .eq("visible_to_students", true)
-    .eq("is_deleted", false)
     .order("created_at", { ascending: false });
 
   if (opportunityIdsFilter.length > 0) {
     opportunitiesQuery = opportunitiesQuery.in("opportunity_id", opportunityIdsFilter);
-  } else if (driveIdsFilter.length > 0) {
-    opportunitiesQuery = opportunitiesQuery.in("drive_id", driveIdsFilter);
+  } else {
+    opportunitiesQuery = opportunitiesQuery.in(
+      "drive_id",
+      publishedDriveIds.length > 0 ? publishedDriveIds : ["__NO_MATCH__"],
+    );
   }
 
   const [studentsResult, academicsResult, opportunitiesResult] = await Promise.all([
@@ -772,6 +816,24 @@ function buildProjectionRowsForOpportunity(
 
   for (const student of universe.students) {
     const academic = universe.academicMap.get(String(student.student_id));
+    if (!academic) {
+      continue;
+    }
+
+    /*
+     * Stage-1 business rule
+     *
+     * Only students whose Branch + Passing Year belong to this
+     * recruitment should receive a projection row.
+     *
+     * The visibility engine is the single source of truth.
+     */
+    const visibility = buildVisibilityResult(academic, eligibilityRow);
+
+    if (!visibility.isVisible) {
+      continue;
+    }
+
     const activeRestriction = universe.restrictionMap.get(String(student.student_id)) ?? null;
 
     const overrideState = universe.overrideMap.get(
@@ -782,30 +844,32 @@ function buildProjectionRowsForOpportunity(
         makeProjectionKey(String(student.student_id), String(opportunity.opportunity_id)),
       ) ?? null;
 
-    rows.push(
-      buildProjectionRow({
-        student,
-        academic,
-        opportunity,
-        eligibilityRow,
-        activeRestriction,
+    const row = buildProjectionRow({
+      student,
+      academic,
+      opportunity,
+      eligibilityRow,
+      activeRestriction,
+      overrideState,
+      applicationRecord,
+      nowIso,
+    });
 
-        overrideState,
-        applicationRecord,
-        nowIso,
-      }),
-    );
+    // Stage-1 visibility must match Student Opportunities page.
+    // Hidden opportunities are NOT part of the student's dashboard universe.
+
+    rows.push(row);
   }
 
   return rows;
 }
 
 async function clearProjectionTable() {
-  const { error } = await db
-    .from(PROJECTION_TABLE)
-    .delete()
-    .neq("evaluation_version", "__delete_all__");
-  if (error) throw error;
+  const { error } = await db.from(PROJECTION_TABLE).delete().gte("evaluation_version", 0);
+
+  if (error) {
+    throw error;
+  }
 }
 
 async function clearProjectionRowsForOpportunity(opportunityId: string) {
@@ -970,24 +1034,31 @@ async function refreshOpportunityInternal(opportunityId: string): Promise<Projec
     .from("opportunity_master")
     .select(
       `
-        opportunity_id,
-        drive_id,
-        visible_to_students,
-        is_deleted
-      `,
+    opportunity_id,
+    drive_id,
+    visible_to_students
+`,
     )
     .eq("opportunity_id", opportunityId)
     .maybeSingle();
 
   if (error) throw error;
 
-  if (
-    !opportunityRow ||
-    opportunityRow.visible_to_students !== true ||
-    opportunityRow.is_deleted === true
-  ) {
+  /*
+   * Historical dashboard rule
+   *
+   * An opportunity becoming invisible to students after its
+   * application window closes must NOT remove historical
+   * analytics.
+   *
+   * Only remove projection rows when the production
+   * opportunity itself no longer exists.
+   */
+  if (!opportunityRow) {
     await clearProjectionRowsForOpportunity(opportunityId);
+
     projectionLifecycleStatus = "READY";
+
     return {
       rowsWritten: 0,
       opportunitiesProcessed: 0,
@@ -997,9 +1068,20 @@ async function refreshOpportunityInternal(opportunityId: string): Promise<Projec
   const universe = await loadProjectionUniverse({ opportunityIds: [opportunityId] });
   const opportunity = universe.opportunities[0];
 
+  /*
+   * Opportunity not found in the analytics universe.
+   *
+   * This means either:
+   * - the production opportunity no longer exists, or
+   * - its recruitment has been archived.
+   *
+   * In either case, remove its projection rows.
+   */
   if (!opportunity) {
     await clearProjectionRowsForOpportunity(opportunityId);
+
     projectionLifecycleStatus = "READY";
+
     return {
       rowsWritten: 0,
       opportunitiesProcessed: 0,

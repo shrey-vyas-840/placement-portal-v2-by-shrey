@@ -3,6 +3,7 @@ import { adminDriveService } from "@/services/adminDriveService";
 import { adminOpportunityService } from "@/services/adminOpportunityService";
 import { adminQuestionService } from "@/services/adminQuestionService";
 import { recruitmentProjectionService } from "@/services/recruitmentProjectionService";
+import { studentOpportunityProjectionService } from "@/services/studentOpportunityProjectionService";
 import { generateUuid } from "@/lib/generateUuid";
 import { republishRecruitmentDraft } from "./recruitmentRepublishService";
 export interface PublishRecruitmentResult {
@@ -845,12 +846,14 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
       })
       .eq("draft_id", draftId);
 
-    await recruitmentProjectionService.initializeProjection(driveId);
+await recruitmentProjectionService.initializeProjection(driveId);
 
-    return {
-      driveId,
-      companyId,
-    };
+await studentOpportunityProjectionService.refreshRecruitment(driveId);
+
+return {
+  driveId,
+  companyId,
+};
   } catch (error) {
     await rollbackPublish(rollbackContext, companyId, driveId);
 
