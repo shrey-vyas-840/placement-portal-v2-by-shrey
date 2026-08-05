@@ -20,30 +20,74 @@ export type ProjectionAttendanceStatus = "PRESENT" | "ABSENT" | null;
 
 export interface ProjectionFailureReason {
   code: string;
+
+  title: string;
+
   message: string;
+
+  source: "VISIBILITY" | "ELIGIBILITY" | "RESTRICTION" | "PLACEMENT" | "PARTICIPATION";
+
+  expected?: unknown;
+
+  actual?: unknown;
 }
 
 export interface StudentOpportunityProjectionRecord {
   student_id: string;
+
   opportunity_id: string;
+
   drive_id: string;
+
   is_visible: boolean;
+
   visibility_status: ProjectionVisibilityStatus;
+
   visibility_failures: ProjectionFailureReason[];
+
   is_eligible: boolean;
+
   eligibility_status: ProjectionEligibilityStatus;
+
   eligibility_failures: ProjectionFailureReason[];
+
   restriction_status: ProjectionRestrictionStatus;
-  placement_status_snapshot: string | null;
-  placement_preference_snapshot: string | null;
-  application_status_snapshot: string | null;
-  attendance_status_snapshot: ProjectionAttendanceStatus;
+
+  restriction_active: boolean;
+
+  restriction_type: string | null;
+
+  restriction_reason: string | null;
+
+  participation_allowed: boolean;
+
+  placement_allowed: boolean;
+
+  already_applied: boolean;
+
   applied: boolean;
+
   registered: boolean;
+
+  application_status_snapshot: string | null;
+
+  placement_status_snapshot: string | null;
+
+  placement_preference_snapshot: string | null;
+
+  attendance_status_snapshot: ProjectionAttendanceStatus;
+
+  // TODO:
+  // Attendance engine will populate these fields when
+  // attendance workflow is implemented.
   present: boolean;
+
   absent: boolean;
+
   computed_at: string;
+
   updated_at: string;
+
   evaluation_version: string;
 }
 
@@ -51,7 +95,6 @@ export interface ProjectionRefreshResult {
   rowsWritten: number;
   opportunitiesProcessed: number;
 }
-
 interface LoadedOpportunityRecord extends AnyRecord {
   opportunity_id: string;
   drive_id: string;
@@ -82,12 +125,13 @@ interface LoadedRestrictionRecord extends AnyRecord {
   restriction_type?: string | null;
 }
 
-interface LoadedPlacementRecord extends AnyRecord {
-  student_id: string;
-  company_name?: string | null;
-  package_lpa?: number | null;
-  is_current?: boolean | null;
-}
+// Placement history is intentionally NOT loaded into the projection.
+//
+// Eligibility is evaluated exclusively using
+// student_master.placement_status.
+//
+// Historical placements are analytics data and must never
+// influence current eligibility.
 
 interface LoadedOverrideRecord extends AnyRecord {
   student_id: string;
@@ -117,7 +161,6 @@ interface ProjectionUniverse {
   opportunities: LoadedOpportunityRecord[];
   eligibilityMap: Map<string, LoadedEligibilityRecord>;
   restrictionMap: Map<string, LoadedRestrictionRecord>;
-  placementMap: Map<string, LoadedPlacementRecord>;
   overrideMap: Map<string, { restricted: boolean; placed: boolean }>;
   applicationMap: Map<string, LoadedApplicationRecord>;
 }
@@ -177,10 +220,27 @@ function splitNumberList(
 function toProjectionFailures(
   failureReasons: Array<EligibilityFailureReason | ProjectionFailureReason>,
 ): ProjectionFailureReason[] {
-  return failureReasons.map((reason) => ({
-    code: String(reason.code),
-    message: String(reason.message),
-  }));
+  return failureReasons.map((reason) => {
+    const projectionReason = reason as ProjectionFailureReason;
+
+    return {
+      code: String(reason.code),
+
+      title:
+        projectionReason.title ??
+        String(reason.code)
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase()),
+
+      message: String(reason.message),
+
+      source: projectionReason.source ?? "ELIGIBILITY",
+
+      expected: projectionReason.expected,
+
+      actual: projectionReason.actual,
+    };
+  });
 }
 
 function buildCriteriaFromEligibilityRow(
@@ -211,44 +271,55 @@ function buildVisibilityResult(
   const failures: ProjectionFailureReason[] = [];
 
   const allowedBranches = splitCsvList(eligibilityRow?.allowed_branches ?? null);
+
   const allowedYears = splitNumberList(eligibilityRow?.passing_out_batches ?? null);
 
   if (!academic) {
     return {
       isVisible: false,
-      visibilityStatus: "NOT_VISIBLE" as const,
+      visibilityStatus: "NOT_VISIBLE" as ProjectionVisibilityStatus,
       visibilityFailures: [
         {
           code: "BRANCH",
+          title: "Branch Not Eligible",
           message: "Branch is not eligible.",
+          source: "VISIBILITY",
         },
         {
           code: "GRADUATION_YEAR",
+          title: "Graduation Year Not Eligible",
           message: "Graduation year is not eligible.",
+          source: "VISIBILITY",
         },
-      ],
+      ] satisfies ProjectionFailureReason[],
     };
   }
 
-  if (allowedBranches.length > 0) {
-    if (!academic.current_branch_name || !allowedBranches.includes(academic.current_branch_name)) {
-      failures.push({
-        code: "BRANCH",
-        message: "Branch is not eligible.",
-      });
-    }
+  if (
+    allowedBranches.length > 0 &&
+    (!academic.current_branch_name || !allowedBranches.includes(academic.current_branch_name))
+  ) {
+    failures.push({
+      code: "BRANCH",
+      title: "Branch Not Eligible",
+      message: "Branch is not eligible.",
+      source: "VISIBILITY",
+      expected: allowedBranches,
+      actual: academic.current_branch_name ?? null,
+    });
   }
 
   if (allowedYears.length > 0) {
     const graduationYear = academic.graduation_year;
-    if (
-      graduationYear === null ||
-      graduationYear === undefined ||
-      !allowedYears.includes(Number(graduationYear))
-    ) {
+
+    if (graduationYear == null || !allowedYears.includes(Number(graduationYear))) {
       failures.push({
         code: "GRADUATION_YEAR",
+        title: "Graduation Year Not Eligible",
         message: "Graduation year is not eligible.",
+        source: "VISIBILITY",
+        expected: allowedYears,
+        actual: graduationYear ?? null,
       });
     }
   }
@@ -268,10 +339,13 @@ function buildEligibilityResult(input: {
   academic: StudentAcademicRecord | undefined;
   eligibilityRow: LoadedEligibilityRecord | null | undefined;
   activeRestriction: LoadedRestrictionRecord | null;
-  placementRecord: LoadedPlacementRecord | null;
-  overrideState: { restricted: boolean; placed: boolean };
+  overrideState: {
+    restricted: boolean;
+    placed: boolean;
+  };
 }) {
   const criteria = buildCriteriaFromEligibilityRow(input.eligibilityRow);
+
   const engineResult = evaluateStudentEligibility(input.student, input.academic, criteria);
 
   const failures: ProjectionFailureReason[] = toProjectionFailures(engineResult.failureReasons);
@@ -279,19 +353,24 @@ function buildEligibilityResult(input: {
   if (input.activeRestriction && !input.overrideState.restricted) {
     failures.push({
       code: "RESTRICTION",
+      title: "Student Restricted",
       message:
-        input.activeRestriction.restriction_reason ||
+        input.activeRestriction.restriction_reason ??
         "Placement activities are currently restricted.",
+      source: "RESTRICTION",
+      actual: input.activeRestriction.restriction_type ?? null,
     });
   }
 
-  const resolvedPlacementStatus =
-    input.student.placement_status ?? (input.placementRecord ? "Placed" : null);
+  const placementStatus = input.student.placement_status;
 
-  if (resolvedPlacementStatus !== "Unplaced" && !input.overrideState.placed) {
+  if (placementStatus && placementStatus !== "Unplaced" && !input.overrideState.placed) {
     failures.push({
       code: "PLACEMENT_STATUS",
+      title: "Student Already Placed",
       message: "Student has already been placed.",
+      source: "PLACEMENT",
+      actual: placementStatus,
     });
   }
 
@@ -302,7 +381,7 @@ function buildEligibilityResult(input: {
     isEligible: failures.length === 0,
     eligibilityStatus,
     eligibilityFailures: failures,
-    resolvedPlacementStatus,
+    resolvedPlacementStatus: placementStatus ?? null,
   };
 }
 
@@ -312,8 +391,10 @@ function buildProjectionRow(input: {
   opportunity: LoadedOpportunityRecord;
   eligibilityRow: LoadedEligibilityRecord | null | undefined;
   activeRestriction: LoadedRestrictionRecord | null;
-  placementRecord: LoadedPlacementRecord | null;
-  overrideState: { restricted: boolean; placed: boolean };
+  overrideState: {
+    restricted: boolean;
+    placed: boolean;
+  };
   applicationRecord: LoadedApplicationRecord | null;
   nowIso: string;
 }): StudentOpportunityProjectionRecord {
@@ -325,47 +406,89 @@ function buildProjectionRow(input: {
         academic: input.academic,
         eligibilityRow: input.eligibilityRow,
         activeRestriction: input.activeRestriction,
-        placementRecord: input.placementRecord,
         overrideState: input.overrideState,
       })
     : {
         isEligible: false,
-        eligibilityStatus: "NOT_EVALUATED" as const,
+        eligibilityStatus: "NOT_EVALUATED" as ProjectionEligibilityStatus,
         eligibilityFailures: [] as ProjectionFailureReason[],
-        resolvedPlacementStatus:
-          input.student.placement_status ?? (input.placementRecord ? "Placed" : null),
+        resolvedPlacementStatus: input.student.placement_status ?? null,
       };
 
-  const hasRestriction = !!input.activeRestriction;
-  const restrictionStatus: ProjectionRestrictionStatus = hasRestriction
+  const restrictionActive = !!input.activeRestriction;
+
+  const restrictionStatus: ProjectionRestrictionStatus = restrictionActive
     ? input.overrideState.restricted
       ? "OVERRIDDEN"
       : "RESTRICTED"
     : "ALLOWED";
 
-  const applicationStatusSnapshot = input.applicationRecord?.application_status ?? null;
+  const placementAllowed =
+    !input.student.placement_status ||
+    input.student.placement_status === "Unplaced" ||
+    input.overrideState.placed;
+
+  const participationAllowed = !restrictionActive || input.overrideState.restricted;
+
+  const alreadyApplied = !!input.applicationRecord;
 
   return {
     student_id: input.student.student_id,
+
     opportunity_id: input.opportunity.opportunity_id,
+
     drive_id: input.opportunity.drive_id,
+
     is_visible: visibility.isVisible,
+
     visibility_status: visibility.visibilityStatus,
+
     visibility_failures: visibility.visibilityFailures,
+
     is_eligible: eligibility.isEligible,
+
     eligibility_status: eligibility.eligibilityStatus,
+
     eligibility_failures: eligibility.eligibilityFailures,
+
     restriction_status: restrictionStatus,
-    placement_status_snapshot: eligibility.resolvedPlacementStatus ?? null,
+
+    restriction_active: restrictionActive,
+
+    restriction_type: input.activeRestriction?.restriction_type ?? null,
+
+    restriction_reason: input.activeRestriction?.restriction_reason ?? null,
+
+    participation_allowed: participationAllowed,
+
+    placement_allowed: placementAllowed,
+
+    already_applied: alreadyApplied,
+
+    applied: alreadyApplied,
+
+    registered: alreadyApplied,
+
+    application_status_snapshot: input.applicationRecord?.application_status ?? null,
+
+    placement_status_snapshot: eligibility.resolvedPlacementStatus,
+
     placement_preference_snapshot: input.student.placement_preference ?? null,
-    application_status_snapshot: applicationStatusSnapshot,
+
     attendance_status_snapshot: null,
-    applied: !!input.applicationRecord,
-    registered: !!input.applicationRecord,
+
+    // TODO:
+    // Populate when attendance module is implemented.
     present: false,
+
+    // TODO:
+    // Populate when attendance module is implemented.
     absent: false,
+
     computed_at: input.nowIso,
+
     updated_at: input.nowIso,
+
     evaluation_version: PROJECTION_EVALUATION_VERSION,
   };
 }
@@ -381,15 +504,14 @@ async function loadProjectionUniverse(
     .from("student_master")
     .select(
       `
-        student_id,
-        enrollment_no,
-        first_name,
-        middle_name,
-        last_name,
-        is_active,
-        placement_preference,
-        placement_status
-      `,
+      student_id,
+      enrollment_no,
+      first_name,
+      middle_name,
+      last_name,
+      placement_preference,
+      placement_status
+    `,
     )
     .order("enrollment_no", { ascending: true });
 
@@ -482,14 +604,6 @@ async function loadProjectionUniverse(
     ? db.from("student_restrictions").select("*").eq("is_active", true).in("student_id", studentIds)
     : Promise.resolve({ data: [], error: null });
 
-  const placementQuery = studentIds.length
-    ? db
-        .from("student_placement_history")
-        .select("*")
-        .eq("is_current", true)
-        .in("student_id", studentIds)
-    : Promise.resolve({ data: [], error: null });
-
   let applicationQuery: Promise<{ data: any[]; error: any }>;
 
   if (opportunityIds.length > 0 && studentIdsFilter.length > 0) {
@@ -537,18 +651,12 @@ async function loadProjectionUniverse(
     overrideQuery = db.from("student_placement_overrides").select("*").eq("is_active", true);
   }
 
-  const [eligibilityResult, restrictionResult, placementResult, applicationResult, overrideResult] =
-    await Promise.all([
-      eligibilityQuery,
-      restrictionQuery,
-      placementQuery,
-      applicationQuery,
-      overrideQuery,
-    ]);
+  const [eligibilityResult, restrictionResult, applicationResult, overrideResult] =
+    await Promise.all([eligibilityQuery, restrictionQuery, applicationQuery, overrideQuery]);
 
   if (eligibilityResult.error) throw eligibilityResult.error;
   if (restrictionResult.error) throw restrictionResult.error;
-  if (placementResult.error) throw placementResult.error;
+
   if (applicationResult.error) throw applicationResult.error;
   if (overrideResult.error) throw overrideResult.error;
 
@@ -563,11 +671,6 @@ async function loadProjectionUniverse(
   const restrictionMap = new Map<string, LoadedRestrictionRecord>();
   for (const row of (restrictionResult.data ?? []) as LoadedRestrictionRecord[]) {
     restrictionMap.set(String(row.student_id), row);
-  }
-
-  const placementMap = new Map<string, LoadedPlacementRecord>();
-  for (const row of (placementResult.data ?? []) as LoadedPlacementRecord[]) {
-    placementMap.set(String(row.student_id), row);
   }
 
   const applicationMap = new Map<string, LoadedApplicationRecord>();
@@ -602,7 +705,6 @@ async function loadProjectionUniverse(
     opportunities,
     eligibilityMap,
     restrictionMap,
-    placementMap,
     overrideMap,
     applicationMap,
   };
@@ -619,7 +721,7 @@ function buildProjectionRowsForOpportunity(
   for (const student of universe.students) {
     const academic = universe.academicMap.get(String(student.student_id));
     const activeRestriction = universe.restrictionMap.get(String(student.student_id)) ?? null;
-    const placementRecord = universe.placementMap.get(String(student.student_id)) ?? null;
+
     const overrideState = universe.overrideMap.get(
       makeProjectionKey(String(student.student_id), String(opportunity.opportunity_id)),
     ) ?? { restricted: false, placed: false };
@@ -635,7 +737,7 @@ function buildProjectionRowsForOpportunity(
         opportunity,
         eligibilityRow,
         activeRestriction,
-        placementRecord,
+
         overrideState,
         applicationRecord,
         nowIso,
