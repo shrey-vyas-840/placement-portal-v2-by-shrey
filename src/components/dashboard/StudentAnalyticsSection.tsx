@@ -1,9 +1,12 @@
 import { useMemo } from "react";
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
 import type { StudentDrilldownReport } from "@/services/adminDashboardAnalyticsService";
 
-const CHART_COLORS = ["#1d4ed8", "#7c3aed", "#059669", "#f59e0b"];
+const CHART_COLORS = [
+  "#16a34a", // Present
+  "#dc2626", // Absent
+];
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-IN").format(value);
@@ -33,32 +36,117 @@ function MetricCard({
   return (
     <div
       className="
-                group
-                relative
-                overflow-hidden
-                rounded-3xl
-                border
-                border-border/60
-                bg-white
-                p-7
-                transition-all
-                duration-300
-                hover:-translate-y-1
-                hover:shadow-x2
-            "
+        relative
+        overflow-hidden
+        mt-5
+        mb-3
+        rounded-xl
+        border
+        border-slate-200
+        bg-white
+        px-5
+        py-4
+        shadow-sm
+        transition-all
+        duration-200
+        hover:-translate-y-0.5
+        hover:shadow-md
+      "
     >
-      <div className={`absolute left-0 top-0 h-1.25 w-full bg-gradient-to-r ${accent}`} />
+      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accent}`} />
 
-      <div className="text-[14px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
         {title}
       </div>
 
-      <div className="mt-3 text-4xl font-bold tracking-tight text-foreground">{value}</div>
+      <div className="mt-2 text-3xl font-bold leading-none text-slate-900">{value}</div>
 
-      {subtitle ? <div className="mt-3 text-xs text-muted-foreground">{subtitle}</div> : null}
+      {subtitle ? <div className="mt-2 text-xs text-slate-500">{subtitle}</div> : null}
     </div>
   );
 }
+
+const CenterLabel = ({ title, value }: { title: string; value: number }) => (
+  <>
+    <text
+      x="50%"
+      y="46%"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      className="fill-foreground text-[30px] font-bold"
+    >
+      {formatNumber(value)}
+    </text>
+
+    <text
+      x="50%"
+      y="60%"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      className="fill-muted-foreground text-[13px] font-medium"
+    >
+      {title}
+    </text>
+  </>
+);
+
+function ChartLegend({
+  items,
+}: {
+  items: {
+    label: string;
+    value: number;
+    color: string;
+  }[];
+}) {
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+        >
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+
+            <div>
+              <div className="text-sm font-medium leading-none">{item.label}</div>
+
+              <div className="mt-1 text-[11px] text-slate-500">Opportunities</div>
+            </div>
+          </div>
+
+          <div className="text-xl font-bold">{formatNumber(item.value)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatusBadge({
+  color,
+  children,
+}: {
+  color: "blue" | "green" | "red" | "yellow" | "gray";
+  children: React.ReactNode;
+}) {
+  const styles = {
+    blue: "border-blue-200 bg-blue-50 text-blue-700",
+    green: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    red: "border-red-200 bg-red-50 text-red-700",
+    yellow: "border-amber-200 bg-amber-50 text-amber-700",
+    gray: "border-slate-200 bg-slate-100 text-slate-700",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${styles[color]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 function SectionCard({
   title,
   subtitle,
@@ -71,23 +159,23 @@ function SectionCard({
   return (
     <section
       className="
-                rounded-3xl
-                border
-                border-border/60
-                bg-white
-                p-6
-                shadow-sm
-            "
+        rounded-2xl
+        border
+        border-slate-200
+        bg-white
+        p-5
+        shadow-sm
+      "
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-xl font-semibold tracking-tight text-foreground">{title}</h3>
+          <h3 className="text-lg font-semibold tracking-tight text-slate-900">{title}</h3>
 
-          {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
         </div>
       </div>
 
-      <div className="mt-6">{children}</div>
+      <div className="mt-5">{children}</div>
     </section>
   );
 }
@@ -111,8 +199,8 @@ function LoadingSkeleton() {
         <div className="h-24 animate-pulse rounded-2xl border border-border bg-card" />
       </div>
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="h-[360px] animate-pulse rounded-2xl border border-border bg-card" />
-        <div className="h-[360px] animate-pulse rounded-2xl border border-border bg-card" />
+        <div className="h-[260px] animate-pulse rounded-2xl border border-border bg-card" />
+        <div className="h-[260px] animate-pulse rounded-2xl border border-border bg-card" />
       </div>
     </div>
   );
@@ -165,11 +253,15 @@ export function StudentAnalyticsSection({
     if (!report) return [];
 
     return [
-      { label: "Registered", value: report.registered_drives },
-      { label: "Present", value: report.present_drives },
-      { label: "Absent", value: report.absent_drives },
-      { label: "Unregistered", value: report.unregistered_drives },
-    ].filter((item) => item.value > 0 || report.registered_drives > 0);
+      {
+        label: "Present",
+        value: report.present_drives,
+      },
+      {
+        label: "Absent",
+        value: report.absent_drives,
+      },
+    ];
   }, [report]);
 
   if (loading) {
@@ -200,247 +292,190 @@ export function StudentAnalyticsSection({
     <section className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          title="Registered Drives"
-          accent="from-blue-600 to-blue-400"
-          value={formatNumber(report.registered_drives)}
-          subtitle="Drive-wise participation"
-        />
-        <MetricCard
-          title="Present Drives"
-          accent="from-emerald-600 to-emerald-400"
-          value={formatNumber(report.present_drives)}
-          subtitle="Marked present"
-        />
-        <MetricCard
-          title="Absent Drives"
-          accent="from-red-600 to-rose-400"
-          value={formatNumber(report.absent_drives)}
-          subtitle="Marked absent"
-        />
-        <MetricCard
-          title="Attendance %"
-          accent="from-violet-600 to-fuchsia-400"
-          value={`${clampPercent(report.attendance_percentage)}%`}
-          subtitle="Present / participated"
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="Applications"
-          accent="from-indigo-600 to-blue-400"
-          value={formatNumber(report.applications_count)}
-          subtitle="Submitted applications"
-        />
-
-        <MetricCard
-          title="Shortlisted"
-          accent="from-amber-600 to-yellow-400"
-          value={formatNumber(report.shortlisted_count)}
-          subtitle="Pipeline progress"
-        />
-
-        <MetricCard
-          title="Selected"
-          accent="from-green-600 to-lime-400"
-          value={formatNumber(report.selected_count)}
-          subtitle="Final selections"
-        />
-
-        <MetricCard
-          title="Eligible Drives"
-          accent="from-cyan-600 to-sky-400"
+          title="Eligible"
+          accent="from-blue-600 to-cyan-500"
           value={formatNumber(summary?.eligibleDrives ?? totalDrives)}
           subtitle="Matched opportunities"
         />
+
+        <MetricCard
+          title="Applied"
+          accent="from-violet-600 to-indigo-500"
+          value={formatNumber(report.applications_count)}
+          subtitle="Applications submitted"
+        />
+
+        <MetricCard
+          title="Attended"
+          accent="from-emerald-600 to-green-500"
+          value={formatNumber(report.present_drives)}
+          subtitle="Successfully attended"
+        />
+
+        <MetricCard
+          title="Absent"
+          accent="from-red-600 to-rose-500"
+          value={formatNumber(report.absent_drives)}
+          subtitle="Missed participation"
+        />
       </div>
 
-      <SectionCard
-        title="Student Analytics Overview"
-        subtitle="All analytics below are restricted to the logged-in student only."
-      >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div
-            className="
-    rounded-3xl
-    border
-    border-border/50
-    bg-gradient-to-b
-    from-white
-    to-slate-50/60
-    p-5
-"
-          >
-            <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
-              Participation Coverage
-            </div>
-            <div className="mt-2 text-2xl font-bold">{summary?.participationCoverage ?? 0}%</div>
-            <div
-              className="
-    mt-3
-    h-2.5
-    w-full
-    overflow-hidden
-    rounded-full
-    bg-slate-100
-"
-            >
-              <div
-                className="h-full bg-primary"
-                style={{
-                  width: `${summary?.participationCoverage ?? 0}%`,
-                }}
-              />
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Registered drives out of total active drives
-            </div>
-          </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Eligibility Overview" subtitle="Eligible vs Ineligible opportunities">
+          <div className="flex h-[320px] flex-col">
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      {
+                        label: "Eligible",
+                        value: summary?.eligibleDrives ?? totalDrives,
+                      },
+                      {
+                        label: "Ineligible",
+                        value: Math.max(0, totalDrives - (summary?.eligibleDrives ?? totalDrives)),
+                      },
+                    ]}
+                    dataKey="value"
+                    nameKey="label"
+                    cx="50%"
+                    cy="48%"
+                    innerRadius={58}
+                    outerRadius={88}
+                    paddingAngle={3}
+                    stroke="#ffffff"
+                    strokeWidth={2}
+                  >
+                    <Cell fill="#2563eb" />
+                    <Cell fill="#64748b" />
 
-          <div
-            className="
-    rounded-3xl
-    border
-    border-border/50
-    bg-gradient-to-b
-    from-white
-    to-slate-50/60
-    p-5
-"
-          >
-            <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
-              Registration Success
-            </div>
-            <div className="mt-2 text-2xl font-bold">{summary?.registeredRate ?? 0}%</div>
-            <div
-              className="
-    mt-3
-    h-2.5
-    w-full
-    overflow-hidden
-    rounded-full
-    bg-slate-100
-"
-            >
-              <div
-                className="h-full bg-emerald-500"
-                style={{
-                  width: `${summary?.registeredRate ?? 0}%`,
-                }}
-              />
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Registered drives against eligible drives
-            </div>
-          </div>
+                    <CenterLabel title="Eligible" value={summary?.eligibleDrives ?? totalDrives} />
+                  </Pie>
 
-          <div
-            className="
-    rounded-3xl
-    border
-    border-border/50
-    bg-gradient-to-b
-    from-white
-    to-slate-50/60
-    p-5
-"
-          >
-            <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
-              Attendance Success
+                  <Tooltip formatter={(value: number) => formatNumber(value)} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="mt-2 text-2xl font-bold">
-              {summary?.attendanceRateVsRegistered ?? 0}%
-            </div>
-            <div
-              className="
-    mt-3
-    h-2.5
-    w-full
-    overflow-hidden
-    rounded-full
-    bg-slate-100
-"
-            >
-              <div
-                className="h-full bg-violet-500"
-                style={{
-                  width: `${summary?.attendanceRateVsRegistered ?? 0}%`,
-                }}
-              />
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Present drives against registered drives
-            </div>
-          </div>
 
-          <div
-            className="
-    rounded-3xl
-    border
-    border-border/50
-    bg-gradient-to-b
-    from-white
-    to-slate-50/60
-    p-5
-"
-          >
-            <div className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
-              Shortlist / Selection
-            </div>
-            <div className="mt-2 text-2xl font-bold">
-              {summary?.shortlistingRate ?? 0}% / {summary?.selectionRate ?? 0}%
-            </div>
-            <div
-              className="
-    mt-3
-    h-2.5
-    w-full
-    overflow-hidden
-    rounded-full
-    bg-slate-100
-"
-            >
-              <div
-                className="h-full bg-amber-500"
-                style={{
-                  width: `${summary?.selectionRate ?? 0}%`,
-                }}
-              />
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Shortlisted and selected from all applications
-            </div>
+            <ChartLegend
+              items={[
+                {
+                  label: "Eligible",
+                  value: summary?.eligibleDrives ?? totalDrives,
+                  color: "#2563eb",
+                },
+                {
+                  label: "Ineligible",
+                  value: Math.max(0, totalDrives - (summary?.eligibleDrives ?? totalDrives)),
+                  color: "#64748b",
+                },
+              ]}
+            />
           </div>
-        </div>
-      </SectionCard>
+        </SectionCard>
 
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <SectionCard title="Student Status" subtitle="Drive participation breakdown">
-          <div className="h-[360px] w-full">
-            {pieData.length ? (
+        <SectionCard title="Application Overview" subtitle="Applied vs Missed opportunities">
+          <div className="flex h-[320px] flex-col">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    {
+                      label: "Applied",
+                      value: report.applications_count,
+                    },
+                    {
+                      label: "Missed",
+                      value: Math.max(
+                        0,
+                        (summary?.eligibleDrives ?? totalDrives) - report.applications_count,
+                      ),
+                    },
+                  ]}
+                  dataKey="value"
+                  nameKey="label"
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={58}
+                  outerRadius={88}
+                  paddingAngle={3}
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                >
+                  <Cell fill="#7c3aed" />
+                  <Cell fill="#64748b" />
+
+                  <CenterLabel title="Applied" value={report.applications_count} />
+                </Pie>
+
+                <Tooltip formatter={(value: number) => formatNumber(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+            <ChartLegend
+              items={[
+                {
+                  label: "Applied",
+                  value: report.applications_count,
+                  color: "#7c3aed",
+                },
+                {
+                  label: "Missed",
+                  value: Math.max(
+                    0,
+                    (summary?.eligibleDrives ?? totalDrives) - report.applications_count,
+                  ),
+                  color: "#64748b",
+                },
+              ]}
+            />
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)] items-start">
+        <SectionCard title="Attendance Overview" subtitle="Present vs Absent participation">
+          <div className="flex h-[540px] flex-col">
+            <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieData}
                     dataKey="value"
                     nameKey="label"
-                    outerRadius={120}
-                    innerRadius={78}
+                    cx="50%"
+                    cy="48%"
+                    innerRadius={58}
+                    outerRadius={88}
                     paddingAngle={3}
-                    stroke="transparent"
+                    stroke="#ffffff"
+                    strokeWidth={2}
                   >
-                    {pieData.map((entry, index) => (
-                      <Cell key={entry.label} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
+                    <Cell fill="#16a34a" />
+                    <Cell fill="#dc2626" />
+
+                    <CenterLabel title="Present" value={report.present_drives} />
                   </Pie>
+
                   <Tooltip formatter={(value: number) => formatNumber(value)} />
                 </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border text-sm text-muted-foreground">
-                No data to chart
-              </div>
-            )}
+            </div>
+
+            <ChartLegend
+              items={[
+                {
+                  label: "Present",
+                  value: report.present_drives,
+                  color: "#16a34a",
+                },
+                {
+                  label: "Absent",
+                  value: report.absent_drives,
+                  color: "#dc2626",
+                },
+              ]}
+            />
           </div>
         </SectionCard>
 
@@ -450,40 +485,34 @@ export function StudentAnalyticsSection({
         >
           <div
             className="
-        hidden
-        overflow-hidden
-        rounded-3xl
+      hidden
+overflow-auto
+max-h-[560px]
+rounded-3xl
         border
         border-border/50
         bg-white
         md:block
     "
           >
-            <table className="min-w-[1100px] w-full text-sm">
-              <thead
-                className="
-        sticky
-        top-0
-        border-b
-        border-border
-        bg-slate-50
-        text-left
-        text-xs
-        uppercase
-        tracking-[0.12em]
-        text-muted-foreground
-    "
-              >
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 border-b border-border bg-slate-50">
                 <tr>
-                  <th className="px-3 py-3">Drive</th>
-                  <th className="px-3 py-3">Company</th>
-                  <th className="px-3 py-3">Status</th>
-                  <th className="px-3 py-3">Applications</th>
-                  <th className="px-3 py-3">Eligible</th>
-                  <th className="px-3 py-3">Registered</th>
-                  <th className="px-3 py-3">Present</th>
-                  <th className="px-3 py-3">Shortlisted</th>
-                  <th className="px-3 py-3">Selected</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                    Company
+                  </th>
+
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                    Status
+                  </th>
+
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                    Registration
+                  </th>
+
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
+                    Attendance
+                  </th>
                 </tr>
               </thead>
 
@@ -491,39 +520,45 @@ export function StudentAnalyticsSection({
                 {report.drive_breakdown.map((row) => (
                   <tr
                     key={row.drive_id}
-                    className="
-    border-b
-    border-border/50
-    transition-colors
-    hover:bg-slate-50
-    last:border-b-0
-"
+                    className="border-b border-slate-100 transition-colors hover:bg-slate-50"
                   >
-                    <td className="px-3 py-3 font-medium text-foreground">{row.drive_name}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{row.company_name ?? "-"}</td>
-                    <td className="px-3 py-3">
-                      <span
-                        className="
-        rounded-full
-        border
-        border-primary/15
-        bg-primary/5
-        px-3
-        py-1
-        text-xs
-        font-semibold
-        text-primary
-    "
+                    <td className="px-4 py-4 font-medium">{row.company_name ?? "-"}</td>
+
+                    <td className="px-4 py-4">
+                      <StatusBadge
+                        color={
+                          row.status === "REGISTERED"
+                            ? "blue"
+                            : row.status === "UNREGISTERED"
+                              ? "yellow"
+                              : "gray"
+                        }
                       >
-                        {row.status}
-                      </span>
+                        {row.status === "REGISTERED"
+                          ? "Registered"
+                          : row.status === "UNREGISTERED"
+                            ? "Unregistered"
+                            : row.status}
+                      </StatusBadge>
                     </td>
-                    <td className="px-3 py-3">{formatNumber(row.application_count)}</td>
-                    <td className="px-3 py-3">{row.eligible ? "Yes" : "No"}</td>
-                    <td className="px-3 py-3">{row.registered ? "Yes" : "No"}</td>
-                    <td className="px-3 py-3">{row.present ? "Yes" : "No"}</td>
-                    <td className="px-3 py-3">{row.shortlisted ? "Yes" : "No"}</td>
-                    <td className="px-3 py-3">{row.selected ? "Yes" : "No"}</td>
+
+                    <td className="px-4 py-4">
+                      {row.registered ? (
+                        <StatusBadge color="blue">✓ Registered</StatusBadge>
+                      ) : (
+                        <StatusBadge color="yellow">✕ Unregistered</StatusBadge>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      {!row.registered ? (
+                        <span className="text-slate-400">Not Marked</span>
+                      ) : row.present ? (
+                        <StatusBadge color="green">✓ Present</StatusBadge>
+                      ) : (
+                        <StatusBadge color="red">✕ Absent</StatusBadge>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
