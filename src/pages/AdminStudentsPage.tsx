@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { adminStudentService } from "@/services/adminStudentService";
 import { toast } from "sonner";
-
+import { AdminLayout } from "@/components/admin/AdminLayout";
 export function AdminStudentsPage() {
   const [students, setStudents] = useState<any[]>([]);
 
@@ -205,10 +205,35 @@ export function AdminStudentsPage() {
     return sortDirection === "asc" ? "▲" : "▼";
   };
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[1850px] px-6 py-8">
-        <h1 className="text-3xl font-bold">Students</h1>
-
+    <AdminLayout
+      title="Students"
+      description="Browse, search and manage every student registered in the placement portal."
+      actions={
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 16V4m0 12l-4-4m4 4l4-4M5 20h14"
+              />
+            </svg>
+            Export Students
+          </button>
+        </div>
+      }
+    >
+      <div className="mx-auto max-w-[1850px]">
         <div className="mt-5 rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex min-w-[320px] flex-1 items-center">
@@ -308,7 +333,7 @@ export function AdminStudentsPage() {
               <option value="7+">7+</option>
             </select>
 
-            <button
+            {/* <button
               type="button"
               className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
             >
@@ -342,7 +367,7 @@ export function AdminStudentsPage() {
               className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium shadow-sm transition-all hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               Reset
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -532,6 +557,6 @@ export function AdminStudentsPage() {
           </table>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
