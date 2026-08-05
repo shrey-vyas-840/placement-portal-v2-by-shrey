@@ -1,10 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import {
-  evaluateStudentEligibility,
-  type RecruitmentEligibilityCriteria,
-  type StudentAcademicRecord,
-  type StudentMasterRecord,
-} from "@/services/recruitmentEligibilityAnalyticsService";
+import type { StudentMasterRecord } from "@/services/recruitmentEligibilityAnalyticsService";
 type AnyRecord = Record<string, any>;
 
 const db = supabase as any;
@@ -875,38 +870,37 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   const studentId = student.student_id as string;
 
-  const [applicationsResult, attendanceResult, activeDrivesResult, academicResult] =
-    await Promise.all([
-      db
-        .from("student_opportunity_applications")
-        .select(
-          `
+const [
+  applicationsResult,
+  attendanceResult,
+  activeDrivesResult,
+  projectionResult,
+] = await Promise.all([
+  db
+    .from("student_opportunity_applications")
+    .select(`
       application_id,
       opportunity_id,
       student_id,
       application_status,
       applied_at
-    `,
-        )
-        .eq("student_id", studentId),
+    `)
+    .eq("student_id", studentId),
 
-      db
-        .from("attendance_records")
-        .select(
-          `
+  db
+    .from("attendance_records")
+    .select(`
       attendance_id,
       round_id,
       student_id,
       attendance_status,
       marked_at
-    `,
-        )
-        .eq("student_id", studentId),
+    `)
+    .eq("student_id", studentId),
 
-      db
-        .from("drive_master")
-        .select(
-          `
+  db
+    .from("drive_master")
+    .select(`
       drive_id,
       drive_name,
       company_id,
@@ -914,55 +908,39 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
       company_master (
         company_name
       )
-    `,
-        )
-        .eq("is_active", true)
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false }),
+    `)
+    .eq("is_active", true)
+    .eq("is_deleted", false)
+    .order("created_at", { ascending: false }),
 
-      db
-        .from("student_academic_details")
-        .select(
-          `
-      student_id,
-      current_institute_name,
-      current_degree_name,
-      current_branch_name,
-      graduation_year,
-      current_cgpa,
-      active_backlogs
-    `,
-        )
-        .eq("student_id", studentId)
-        .maybeSingle(),
-    ]);
+  db
+    .from("student_opportunity_projection")
+    .select(`
+      drive_id,
+      opportunity_id,
+      is_visible,
+      is_eligible,
+      restriction_active,
+      participation_allowed,
+      placement_allowed,
+      already_applied,
+      application_status_snapshot,
+      attendance_status_snapshot,
+      eligibility_failures,
+      visibility_failures
+    `)
+    .eq("student_id", studentId),
+]);
 
-  const applications = toArray<any>(applicationsResult.data);
-  const attendance = toArray<any>(attendanceResult.data);
-  const activeDrives = toArray<any>(activeDrivesResult.data);
-  const academic = academicResult.data as StudentAcademicRecord | null;
-  const studentRecord = student as StudentMasterRecord;
+const applications = toArray<any>(applicationsResult.data);
 
-  let eligibilityRows: AnyRecord[] = [];
+const attendance = toArray<any>(attendanceResult.data);
 
-  const eligibilityResult = await db.from("drive_eligibility").select(`
-    eligibility_id,
-    drive_id,
-    allowed_institutes,
-    allowed_branches,
-    allowed_degrees,
-    minimum_cgpa,
-    maximum_active_backlogs,
-    willing_to_relocate_required,
-    additional_requirements,
-    passing_out_batches
-  `);
+const activeDrives = toArray<any>(activeDrivesResult.data);
 
-  if (eligibilityResult.error) {
-    throw eligibilityResult.error;
-  }
+const projections = toArray<any>(projectionResult.data);
 
-  eligibilityRows = toArray<any>(eligibilityResult.data);
+const studentRecord = student as StudentMasterRecord;
 
   const opportunityIds = uniqueStrings(applications.map((item) => item.opportunity_id));
 
@@ -1032,95 +1010,104 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
     }
   });
 
-  const totalActiveDrives = activeDrives.length;
+const totalActiveDrives = activeDrives.length;
 
-  const eligibilityCriteriaByDrive = new Map<string, RecruitmentEligibilityCriteria>();
+const projectionByDrive = new Map<string, AnyRecord[]>();
 
-  for (const row of eligibilityRows) {
-    eligibilityCriteriaByDrive.set(row.drive_id, {
-      institutes: String(row.allowed_institutes ?? "")
-        .split(",")
-        .map((v) => v.trim())
-        .filter(Boolean),
+for (const row of projections) {
+  const existing = projectionByDrive.get(row.drive_id) ?? [];
+  existing.push(row);
+  projectionByDrive.set(row.drive_id, existing);
+}
 
-      degrees: String(row.allowed_degrees ?? "")
-        .split(",")
-        .map((v) => v.trim())
-        .filter(Boolean),
+let eligibleDrives = 0;
 
-      branches: String(row.allowed_branches ?? "")
-        .split(",")
-        .map((v) => v.trim())
-        .filter(Boolean),
+const driveBreakdown: StudentDriveBreakdownItem[] = activeDrives.map((drive) => {
+  const driveProjection = projectionByDrive.get(drive.drive_id) ?? [];
 
-      graduationYears: String(row.passing_out_batches ?? "")
-        .split(",")
-        .map((v) => Number(v.trim()))
-        .filter((v) => !Number.isNaN(v)),
+  const eligible =
+    driveProjection.length > 0 &&
+    driveProjection.some(
+      (row) =>
+        row.is_visible &&
+        row.is_eligible &&
+        row.participation_allowed &&
+        row.placement_allowed,
+    );
 
-      minimumCgpa: row.minimum_cgpa ?? null,
-      maximumActiveBacklogs: row.maximum_active_backlogs ?? null,
-      maximumYearGap: null,
-    });
+  if (eligible) {
+    eligibleDrives++;
   }
 
-  let eligibleDrives = 0;
+  const driveOpportunityIds = driveProjection.map(
+    (row) => row.opportunity_id,
+  );
 
-  const driveBreakdown: StudentDriveBreakdownItem[] = activeDrives.map((drive) => {
-    const driveOpportunityIds = opportunities
-      .filter((item) => item.drive_id === drive.drive_id)
-      .map((item) => item.opportunity_id);
+  const driveApplications = applications.filter((application) =>
+    driveOpportunityIds.includes(application.opportunity_id),
+  );
 
-    const driveApplications = applications.filter((item) =>
-      driveOpportunityIds.includes(item.opportunity_id),
-    );
-
-    const driveAttendance = attendance.filter((record) => {
-      const round = roundMap.get(record.round_id);
-      return round ? driveOpportunityIds.includes(round.opportunity_id) : false;
-    });
-
-    const hasPresent = driveAttendance.some((record) => record.attendance_status === "PRESENT");
-    const hasAbsent = driveAttendance.some((record) => record.attendance_status === "ABSENT");
-    const shortlisted = driveApplications.some((item) =>
-      isShortlistedStatus(item.application_status),
-    );
-    const selected = driveApplications.some((item) => isSelectedStatus(item.application_status));
-    const registered = driveApplications.length > 0;
-    const criteria = eligibilityCriteriaByDrive.get(drive.drive_id);
-
-    const evaluation =
-      criteria && academic ? evaluateStudentEligibility(studentRecord, academic, criteria) : null;
-
-    const eligible = evaluation?.eligible ?? false;
-
-    if (eligible) {
-      eligibleDrives++;
-    }
-
-    let status: StudentDriveBreakdownItem["status"] = "UNREGISTERED";
-    if (hasPresent) {
-      status = "PRESENT";
-    } else if (hasAbsent) {
-      status = "ABSENT";
-    } else if (registered) {
-      status = "REGISTERED";
-    }
-
-    return {
-      drive_id: drive.drive_id,
-      drive_name: drive.drive_name ?? "Unnamed Drive",
-      company_name: drive.company_master?.company_name ?? null,
-      status,
-      application_count: driveApplications.length,
-      eligible,
-      registered,
-      present: hasPresent,
-      absent: !hasPresent && hasAbsent,
-      shortlisted,
-      selected,
-    };
+  const driveAttendance = attendance.filter((record) => {
+    const round = roundMap.get(record.round_id);
+    return round
+      ? driveOpportunityIds.includes(round.opportunity_id)
+      : false;
   });
+
+  const hasPresent = driveAttendance.some(
+    (record) => record.attendance_status === "PRESENT",
+  );
+
+  const hasAbsent = driveAttendance.some(
+    (record) => record.attendance_status === "ABSENT",
+  );
+
+  const shortlisted = driveApplications.some((application) =>
+    isShortlistedStatus(application.application_status),
+  );
+
+  const selected = driveApplications.some((application) =>
+    isSelectedStatus(application.application_status),
+  );
+
+  const registered =
+    driveProjection.some((row) => row.already_applied) ||
+    driveApplications.length > 0;
+
+  let status: StudentDriveBreakdownItem["status"] = "UNREGISTERED";
+
+  if (hasPresent) {
+    status = "PRESENT";
+  } else if (hasAbsent) {
+    status = "ABSENT";
+  } else if (registered) {
+    status = "REGISTERED";
+  }
+
+  return {
+    drive_id: drive.drive_id,
+
+    drive_name: drive.drive_name ?? "Unnamed Drive",
+
+    company_name: drive.company_master?.company_name ?? null,
+
+    status,
+
+    application_count: driveApplications.length,
+
+    eligible,
+
+    registered,
+
+    present: hasPresent,
+
+    absent: !hasPresent && hasAbsent,
+
+    shortlisted,
+
+    selected,
+  };
+});
 
   return {
     student_id: studentId,
