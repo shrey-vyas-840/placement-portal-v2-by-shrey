@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import type { AdminNavigationItem } from "./adminNavigation";
 
@@ -19,40 +21,87 @@ export function AdminNavLink({
     <Link
       to={item.to}
       onClick={onNavigate}
-      activeProps={{
-        className:
-          "border-primary/30 bg-primary/10 text-primary shadow-sm",
-      }}
       activeOptions={{
         exact: item.to === "/admin",
       }}
-      className={cn(
-        "group flex items-center gap-3 rounded-2xl border border-transparent",
-        "px-3 py-3 transition-all duration-200",
-        "hover:border-border hover:bg-muted/60",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-      )}
+      className="
+        group
+        relative
+        block
+        rounded-2xl
+        transition-all
+        duration-300
+      "
+      activeProps={{
+        className:
+          "shadow-xl shadow-blue-200/40 dark:shadow-blue-900/20",
+      }}
     >
-      <div
-        className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
-          "border border-border bg-background",
-          "transition-colors duration-200",
-          "group-hover:border-primary/20 group-hover:bg-primary/5",
-        )}
-      >
-        <Icon className="h-5 w-5" />
-      </div>
+      {({ isActive }) => (
+        <div
+          className={cn(
+            "relative flex items-center gapx-4 py-3 rounded-2xl border px-4 py-3 transition-all duration-300",
 
-      {!collapsed && (
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">
-            {item.label}
+            isActive
+              ? "border-blue-200 bg-gradient-to-r from-blue-50 via-white to-white"
+              : "border-slate-200/70 bg-white hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:shadow-md"
+          )}
+        >
+          {isActive && (
+            <div className="absolute left-0 topx-4 py-3 bottom-4 w-1 rounded-r-full bg-blue-600" />
+          )}
+
+          <div
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition-all duration-300",
+
+              isActive
+                ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-300/40"
+                : "border-slate-200 bg-white text-slate-700 group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-600"
+            )}
+          >
+            <Icon className="h-5 w-5" />
           </div>
 
-          <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-            {item.description}
-          </div>
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1">
+                <div
+                  className={cn(
+                    "truncate text-base font-semibold transition-colors",
+
+                    isActive
+                      ? "text-slate-900"
+                      : "text-slate-800"
+                  )}
+                >
+                  {item.label}
+                </div>
+
+                <div
+                  className={cn(
+                    "mt-1 text-[13px] leading-5",
+
+                    isActive
+                      ? "text-slate-500"
+                      : "text-slate-500"
+                  )}
+                >
+                  {item.description}
+                </div>
+              </div>
+
+              <ChevronRight
+                className={cn(
+                  "h-4 w-4 transition-all duration-300",
+
+                  isActive
+                    ? "translate-x-0 text-blue-600 opacity-100"
+                    : "translate-x-0 text-slate-300 opacity-0 group-hover:translate-x-1 group-hover:opacity-100"
+                )}
+              />
+            </>
+          )}
         </div>
       )}
     </Link>
