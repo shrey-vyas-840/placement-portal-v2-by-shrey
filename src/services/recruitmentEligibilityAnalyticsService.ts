@@ -135,7 +135,7 @@ export interface EligibilityAnalyticsResult {
   }[];
 }
 
-interface StudentMasterRecord {
+export interface StudentMasterRecord {
   student_id: string;
 
   enrollment_no: string | null;
@@ -151,7 +151,7 @@ interface StudentMasterRecord {
   is_active: boolean;
 }
 
-interface StudentAcademicRecord {
+export interface StudentAcademicRecord {
   student_id: string;
 
   current_institute_name: string | null;
@@ -169,7 +169,7 @@ interface StudentAcademicRecord {
   year_gap_count: number | null;
 }
 
-interface RecruitmentEligibilityCriteria {
+export interface RecruitmentEligibilityCriteria {
   institutes: string[];
 
   degrees: string[];
@@ -655,7 +655,7 @@ function buildActionCenter(
   return actions;
 }
 
-function evaluateStudentEligibility(
+export function evaluateStudentEligibility(
   student: StudentMasterRecord,
   academic: StudentAcademicRecord | undefined,
   criteria: RecruitmentEligibilityCriteria,

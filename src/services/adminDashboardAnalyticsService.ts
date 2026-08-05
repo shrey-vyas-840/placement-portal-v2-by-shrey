@@ -1,5 +1,10 @@
 import { supabase } from "@/lib/supabase";
-
+import {
+  evaluateStudentEligibility,
+  type RecruitmentEligibilityCriteria,
+  type StudentAcademicRecord,
+  type StudentMasterRecord,
+} from "@/services/recruitmentEligibilityAnalyticsService";
 type AnyRecord = Record<string, any>;
 
 const db = supabase as any;
@@ -869,67 +874,94 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
 
   const studentId = student.student_id as string;
 
-  const [applicationsResult, attendanceResult, activeDrivesResult] = await Promise.all([
-    db
-      .from("student_opportunity_applications")
-      .select(
-        `
-        application_id,
-        opportunity_id,
-        student_id,
-        application_status,
-        applied_at
-      `,
-      )
-      .eq("student_id", studentId),
-
-    db
-      .from("attendance_records")
-      .select(
-        `
-        attendance_id,
-        round_id,
-        student_id,
-        attendance_status,
-        marked_at
-      `,
-      )
-      .eq("student_id", studentId),
-
-    db
-      .from("drive_master")
-      .select(
-        `
-        drive_id,
-        drive_name,
-        company_id,
-        created_at,
-        company_master (
-          company_name
+  const [applicationsResult, attendanceResult, activeDrivesResult, academicResult] =
+    await Promise.all([
+      db
+        .from("student_opportunity_applications")
+        .select(
+          `
+      application_id,
+      opportunity_id,
+      student_id,
+      application_status,
+      applied_at
+    `,
         )
-      `,
+        .eq("student_id", studentId),
+
+      db
+        .from("attendance_records")
+        .select(
+          `
+      attendance_id,
+      round_id,
+      student_id,
+      attendance_status,
+      marked_at
+    `,
+        )
+        .eq("student_id", studentId),
+
+      db
+        .from("drive_master")
+        .select(
+          `
+      drive_id,
+      drive_name,
+      company_id,
+      created_at,
+      company_master (
+        company_name
       )
-      .eq("is_active", true)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: false }),
-  ]);
+    `,
+        )
+        .eq("is_active", true)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false }),
+
+      db
+        .from("student_academic_details")
+        .select(
+          `
+      student_id,
+      current_institute_name,
+      current_degree_name,
+      current_branch_name,
+      graduation_year,
+      current_cgpa,
+      active_backlogs
+    `,
+        )
+        .eq("student_id", studentId)
+        .maybeSingle(),
+    ]);
 
   const applications = toArray<any>(applicationsResult.data);
   const attendance = toArray<any>(attendanceResult.data);
   const activeDrives = toArray<any>(activeDrivesResult.data);
+  const academic = academicResult.data as StudentAcademicRecord | null;
+  const studentRecord = student as StudentMasterRecord;
 
   let eligibilityRows: AnyRecord[] = [];
-  try {
-    const eligibilityResult = await db
-      .from("drive_eligibility")
-      .select("drive_id, student_id")
-      .eq("student_id", studentId);
 
-    eligibilityRows = toArray<any>(eligibilityResult.data);
-  } catch (err) {
-    console.warn("drive_eligibility lookup skipped:", err);
-    eligibilityRows = [];
+  const eligibilityResult = await db.from("drive_eligibility").select(`
+    eligibility_id,
+    drive_id,
+    allowed_institutes,
+    allowed_branches,
+    allowed_degrees,
+    minimum_cgpa,
+    maximum_active_backlogs,
+    willing_to_relocate_required,
+    additional_requirements,
+    passing_out_batches
+  `);
+
+  if (eligibilityResult.error) {
+    throw eligibilityResult.error;
   }
+
+  eligibilityRows = toArray<any>(eligibilityResult.data);
 
   const opportunityIds = uniqueStrings(applications.map((item) => item.opportunity_id));
 
@@ -1000,9 +1032,39 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
   });
 
   const totalActiveDrives = activeDrives.length;
-  const eligibleDrives = eligibilityRows.length
-    ? countDistinct(eligibilityRows.map((item) => item.drive_id))
-    : null;
+
+  const eligibilityCriteriaByDrive = new Map<string, RecruitmentEligibilityCriteria>();
+
+  for (const row of eligibilityRows) {
+    eligibilityCriteriaByDrive.set(row.drive_id, {
+      institutes: String(row.allowed_institutes ?? "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
+
+      degrees: String(row.allowed_degrees ?? "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
+
+      branches: String(row.allowed_branches ?? "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean),
+
+      graduationYears: String(row.passing_out_batches ?? "")
+        .split(",")
+        .map((v) => Number(v.trim()))
+        .filter((v) => !Number.isNaN(v)),
+
+      minimumCgpa: row.minimum_cgpa ?? null,
+      maximumActiveBacklogs: row.maximum_active_backlogs ?? null,
+      maximumYearGap: null,
+    });
+  }
+
+  let eligibleDrives = 0;
+
   const unregisteredDrives = (eligibleDrives ?? totalActiveDrives) - registeredDriveIds.size;
 
   const driveBreakdown: StudentDriveBreakdownItem[] = activeDrives.map((drive) => {
@@ -1026,7 +1088,16 @@ async function fetchStudentDrilldown(enrollmentNo: string): Promise<StudentDrill
     );
     const selected = driveApplications.some((item) => isSelectedStatus(item.application_status));
     const registered = driveApplications.length > 0;
-    const eligible = eligibilityRows.some((item) => item.drive_id === drive.drive_id);
+    const criteria = eligibilityCriteriaByDrive.get(drive.drive_id);
+
+    const evaluation =
+      criteria && academic ? evaluateStudentEligibility(studentRecord, academic, criteria) : null;
+
+    const eligible = evaluation?.eligible ?? false;
+
+    if (eligible) {
+      eligibleDrives++;
+    }
 
     let status: StudentDriveBreakdownItem["status"] = "UNREGISTERED";
     if (hasPresent) {
