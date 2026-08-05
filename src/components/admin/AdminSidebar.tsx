@@ -12,13 +12,13 @@ interface AdminSidebarProps {
 export function AdminSidebar({ collapsed, onCollapsedChange }: AdminSidebarProps) {
   return (
     <aside
-className={cn(
-  "sticky top-0 h-screen shrink-0 transition-all duration-300",
-  collapsed ? "w-24" : "w-[380px]",
-)}
+      className={cn(
+        "sticky top-0 h-screen shrink-0 transition-all duration-300",
+        collapsed ? "w-24" : "w-[380px]",
+      )}
     >
       <div
-  className="
+        className="
     flex
     h-full
     flex-col
@@ -30,7 +30,7 @@ className={cn(
     to-slate-100
     shadow-xl
 "
->
+      >
         {/* Header */}
 
         <div className="border-b border-slate-200/60 bg-white/70 backdrop-blur-xl px-6 py-5">
@@ -135,31 +135,30 @@ className={cn(
 
         {!collapsed && (
           <div className="border-t border-slate-200 px-5 pt-5 pb-8">
-            <div className="rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 px-5 pt-5 pb-8 text-white shadow-lg">
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-6 text-white shadow-xl">
-                <div className="relative z-10">
-                  <div className="text-xl font-bold">Indus Placement Nexus</div>
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-6 text-white shadow-xl">
+              <div className="relative z-10">
+                <div className="text-xl font-bold">Indus Placement Nexus</div>
 
-                  <div className="mt-3 text-sm leading-7 text-blue-100">
-                    Unified administration workspace for campus recruitment management.
-                  </div>
+                <div className="mt-3 text-sm leading-7 text-blue-100">
+                  Unified administration workspace for campus recruitment management.
                 </div>
+              </div>
 
-                <div
-                  className="
+              <div
+                className="
         absolute
         -right-5
-        
+
         -bottom-6
         h-28
         w-28
         rounded-full
         bg-white/10
     "
-                />
+              />
 
-                <div
-                  className="
+              <div
+                className="
         absolute
         right-8
         top-6
@@ -168,10 +167,10 @@ className={cn(
         rounded-full
         bg-white/70
     "
-                />
+              />
 
-                <div
-                  className="
+              <div
+                className="
         absolute
         right-14
         top-12
@@ -180,8 +179,7 @@ className={cn(
         rounded-full
         bg-white/40
     "
-                />
-              </div>
+              />
             </div>
           </div>
         )}
