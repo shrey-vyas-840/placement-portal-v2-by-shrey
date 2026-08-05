@@ -40,7 +40,7 @@ export function AdminNavLink({
       {({ isActive }) => (
         <div
           className={cn(
-            "relative flex items-center gap-4 py-3 rounded-2xl border px-4 py-3 transition-all duration-300",
+            "relative flex items-center gap-4 py-3 rounded-2xl border px-4 transition-all duration-300",
 
             isActive
               ? "border-blue-200 bg-gradient-to-r from-blue-50 via-blue-50/30 to-white"
