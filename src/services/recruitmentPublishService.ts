@@ -4,6 +4,7 @@ import { adminOpportunityService } from "@/services/adminOpportunityService";
 import { adminQuestionService } from "@/services/adminQuestionService";
 import { recruitmentProjectionService } from "@/services/recruitmentProjectionService";
 import { generateUuid } from "@/lib/generateUuid";
+import { republishRecruitmentDraft } from "./recruitmentRepublishService";
 export interface PublishRecruitmentResult {
   driveId: string;
   companyId: string;
@@ -379,7 +380,7 @@ export async function publishRecruitmentDraft(draftId: string): Promise<PublishR
   // Phase 1 publish pipeline will be implemented here
   // using the existing admin services only.
   if (isRepublish) {
-    throw new Error("Republish pipeline is not implemented yet.");
+    return await republishRecruitmentDraft(draft);
   }
 
   try {

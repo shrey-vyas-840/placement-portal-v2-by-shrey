@@ -137,6 +137,7 @@ export async function republishRecruitmentDraft(draft: any): Promise<RepublishRe
    * PHASE 2
    * ----------------------------------------------------------
    */
+  await synchronizeRecruiters(context);
 
   await replaceRoles(context);
 
@@ -286,6 +287,61 @@ async function replaceDriveEligibility(context: RepublishContext): Promise<void>
 
   if (error) {
     throw error;
+  }
+}
+
+async function synchronizeRecruiters(context: RepublishContext): Promise<void> {
+  const { draft, companyId } = context;
+
+  /*
+   * Replace recruiter snapshot
+   */
+
+  const { error: deleteError } = await (supabase as any)
+    .from("company_contacts")
+    .delete()
+    .eq("company_id", companyId);
+
+  if (deleteError) {
+    throw deleteError;
+  }
+
+  for (const recruiter of draft.recruiters_data ?? []) {
+    const contactName = String(recruiter.contact_name ?? recruiter.name ?? "").trim();
+
+    const contactEmail = String(recruiter.contact_email ?? recruiter.email ?? "").trim();
+
+    const contactNumber = String(recruiter.contact_number ?? recruiter.phone ?? "").trim();
+
+    const contactPosition = String(
+      recruiter.contact_position ?? recruiter.designation ?? "",
+    ).trim();
+
+    if (!contactName) {
+      throw new Error("Recruiter contact name is missing.");
+    }
+
+    if (!contactEmail) {
+      throw new Error("Recruiter contact email is missing.");
+    }
+
+    const { error } = await (supabase as any).from("company_contacts").insert({
+      company_id: companyId,
+
+      contact_name: contactName,
+
+      contact_email: contactEmail,
+
+      contact_number: contactNumber || null,
+
+      contact_position: contactPosition || null,
+
+      primary_contact: Boolean(recruiter.primary_contact ?? recruiter.isPrimary),
+    });
+
+    if (error) {
+      throw error;
+    }
   }
 }
 
@@ -493,9 +549,320 @@ async function replaceRoles(context: RepublishContext): Promise<void> {
 }
 
 async function replaceQuestions(context: RepublishContext): Promise<void> {
-  throw new Error("Not implemented.");
+  const { draft, opportunityId } = context;
+
+  /*
+   * -------------------------------------------------------
+   * Remove previous production question graph
+   * -------------------------------------------------------
+   */
+
+  const { data: existingQuestions, error: existingQuestionsError } = await (supabase as any)
+    .from("opportunity_questions")
+    .select("question_id")
+    .eq("opportunity_id", opportunityId);
+
+  if (existingQuestionsError) {
+    throw existingQuestionsError;
+  }
+
+  const existingQuestionIds = (existingQuestions ?? []).map(
+    (question: any) => question.question_id,
+  );
+
+  if (existingQuestionIds.length > 0) {
+    await (supabase as any)
+      .from("opportunity_question_options")
+      .delete()
+      .in("question_id", existingQuestionIds);
+
+    await (supabase as any)
+      .from("opportunity_questions")
+      .delete()
+      .in("question_id", existingQuestionIds);
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Publish default questions
+   * (identical behaviour to Publish pipeline)
+   * -------------------------------------------------------
+   */
+
+  const publishedQuestionMap = new Map<string, string>();
+
+  let nextQuestionPosition = 1;
+
+  for (const question of draft.default_questions_data ?? []) {
+    const { data, error } = await (supabase as any)
+      .from("opportunity_questions")
+      .insert({
+        opportunity_id: opportunityId,
+
+        question_title: question.question_title,
+
+        question_type: question.question_type,
+
+        is_required: Boolean(question.is_required),
+
+        validation: question.validation ?? {},
+
+        position: nextQuestionPosition++,
+      })
+      .select("question_id")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    publishedQuestionMap.set(
+      String(question.question_title).trim().toLowerCase(),
+      data.question_id,
+    );
+
+    if (Array.isArray(question.options) && question.options.length > 0) {
+      const { error: optionError } = await (supabase as any)
+        .from("opportunity_question_options")
+        .insert(
+          question.options.map((option: string, index: number) => ({
+            question_id: data.question_id,
+
+            option_text: option,
+
+            position: index,
+          })),
+        );
+
+      if (optionError) {
+        throw optionError;
+      }
+    }
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Publish role questions
+   *
+   * (Mirror of Publish pipeline)
+   * -------------------------------------------------------
+   */
+
+  for (const role of draft.roles_data ?? []) {
+    const roleQuestions = [...(role.questions ?? [])];
+
+    /*
+     * Documents are published as file questions.
+     */
+
+    for (const document of role.documents ?? []) {
+      roleQuestions.push({
+        question_title: document.document_name,
+
+        question_type: "file",
+
+        is_required: Boolean(document.required),
+
+        validation: {
+          allowedExtensions: document.allowed_extensions ?? ["pdf"],
+
+          maxFileSizeMb: document.max_file_size_mb ?? 10,
+
+          description: document.description ?? "",
+        },
+
+        options: [],
+      });
+    }
+
+    /*
+     * Option B
+     *
+     * Deduplicate by normalized title.
+     */
+
+    for (const question of roleQuestions) {
+      const key = String(question.question_title).trim().toLowerCase();
+
+      if (publishedQuestionMap.has(key)) {
+        continue;
+      }
+
+      const { data, error } = await (supabase as any)
+        .from("opportunity_questions")
+        .insert({
+          opportunity_id: opportunityId,
+
+          question_title: question.question_title,
+
+          question_type: question.question_type,
+
+          is_required: Boolean(question.is_required),
+
+          validation: question.validation ?? {},
+
+          position: nextQuestionPosition++,
+        })
+        .select("question_id")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      publishedQuestionMap.set(key, data.question_id);
+
+      if (Array.isArray(question.options) && question.options.length > 0) {
+        const { error: optionError } = await (supabase as any)
+          .from("opportunity_question_options")
+          .insert(
+            question.options.map((option: string, index: number) => ({
+              question_id: data.question_id,
+
+              option_text: option,
+
+              position: index,
+            })),
+          );
+
+        if (optionError) {
+          throw optionError;
+        }
+      }
+    }
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Rebuild drive_role_questions
+   *
+   * (Mirror of Publish pipeline)
+   * -------------------------------------------------------
+   */
+
+  for (const role of draft.roles_data ?? []) {
+    const publishedRole = context.publishRoleMap.get(role.role_id);
+
+    if (!publishedRole) {
+      throw new Error(`Missing published role mapping for ${role.role_name}`);
+    }
+
+    const roleQuestionsToMap = role.inheritDefaultQuestions
+      ? [
+          ...(draft.default_questions_data ?? []),
+          ...(role.questions ?? []),
+          ...(role.documents ?? []).map((document: any) => ({
+            question_title: document.document_name,
+          })),
+        ]
+      : [
+          ...(role.questions ?? []),
+          ...(role.documents ?? []).map((document: any) => ({
+            question_title: document.document_name,
+          })),
+        ];
+
+    for (const question of roleQuestionsToMap) {
+      const questionId = publishedQuestionMap.get(
+        String(question.question_title).trim().toLowerCase(),
+      );
+
+      if (!questionId) {
+        throw new Error(`Published question not found: ${question.question_title}`);
+      }
+
+      const { error } = await (supabase as any).from("drive_role_questions").insert({
+        drive_role_id: publishedRole.driveRoleId,
+
+        question_id: questionId,
+      });
+
+      if (error) {
+        throw error;
+      }
+    }
+  }
 }
 
 async function synchronizeRevisionDraft(context: RepublishContext): Promise<void> {
-  throw new Error("Not implemented.");
+  const { draft, driveId, companyId, opportunityId, publishedAt } = context;
+
+  const publishData = {
+    ...(draft.publish_data ?? {}),
+
+    application_start_date:
+      draft.drive_data?.application_open ??
+      draft.publish_data?.application_start_date ??
+      publishedAt.toISOString(),
+
+    application_end_date:
+      draft.drive_data?.application_close ??
+      draft.publish_data?.application_end_date ??
+      new Date(publishedAt.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+
+    published_at: publishedAt.toISOString(),
+
+    application_status:
+      new Date(draft.drive_data?.application_open ?? publishedAt.toISOString()).getTime() <=
+      publishedAt.getTime()
+        ? "Open"
+        : "Upcoming",
+
+    publish_immediately: true,
+
+    role_selection_enabled: draft.publish_data?.role_selection_enabled ?? true,
+
+    minimum_role_selection: draft.publish_data?.minimum_role_selection ?? 1,
+
+    maximum_role_selection: draft.publish_data?.maximum_role_selection ?? 1,
+  };
+
+  const wizardState = {
+    ...(draft.wizard_state ?? {}),
+
+    publishCompleted: true,
+
+    publishedDriveId: driveId,
+
+    publishedCompanyId: companyId,
+
+    publishedOpportunityId: opportunityId,
+
+    draftKind: "revision",
+
+    recruitmentDraftKind: "revision",
+
+    lastRepublishedAt: publishedAt.toISOString(),
+  };
+
+  const { error } = await (supabase as any)
+    .from("recruitment_drafts")
+    .update({
+      status: "PUBLISHED",
+
+      is_completed: true,
+
+      published_at: publishedAt.toISOString(),
+
+      published_drive_id: driveId,
+
+      created_company_id: companyId,
+
+      created_drive_id: driveId,
+
+      current_step: 6,
+
+      last_saved_at: publishedAt.toISOString(),
+
+      updated_at: publishedAt.toISOString(),
+
+      publish_data: publishData,
+
+      wizard_state: wizardState,
+    })
+    .eq("draft_id", draft.draft_id);
+
+  if (error) {
+    throw error;
+  }
 }
