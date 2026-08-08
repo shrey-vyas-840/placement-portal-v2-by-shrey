@@ -168,20 +168,78 @@ export class RecruitmentExecutionReadService {
       }));
   }
 
-  async loadExecutionBatches(executionId: string): Promise<RecruitmentExecutionBatch[]> {
-    const { data, error } = await (supabase as any)
-      .from(this.EXECUTION_ROUNDS_TABLE)
-      .select("*")
-      .eq("execution_id", executionId)
-      .not("parent_execution_round_id", "is", null)
-      .order("stage_number", { ascending: true })
-      .order("round_order", { ascending: true });
+async loadExecutionBatches(executionId: string): Promise<RecruitmentExecutionBatch[]> {
+  /*
+   * IMPORTANT:
+   *
+   * execution_rounds contains two different kinds of child rows:
+   *
+   * 1. TRUE EXECUTION BATCH
+   *    - has parent_execution_round_id
+   *    - has NO role mappings
+   *
+   * 2. ROLE-SPECIFIC PARALLEL WORKSPACE
+   *    - has parent_execution_round_id
+   *    - HAS entries in recruitment_execution_round_roles
+   *
+   * Both are children of a stage, so parent_execution_round_id
+   * alone is NOT sufficient to identify a batch.
+   *
+   * A batch is therefore identified structurally by the absence
+   * of a role mapping.
+   */
 
-    if (error) {
-      throw error;
-    }
+  const { data: childRounds, error: childRoundsError } = await (supabase as any)
+    .from(this.EXECUTION_ROUNDS_TABLE)
+    .select("*")
+    .eq("execution_id", executionId)
+    .not("parent_execution_round_id", "is", null)
+    .order("stage_number", { ascending: true })
+    .order("round_order", { ascending: true });
 
-    return (data ?? []).map((batch: any) => ({
+  if (childRoundsError) {
+    throw childRoundsError;
+  }
+
+  const rounds = (childRounds ?? []) as any[];
+
+  if (rounds.length === 0) {
+    return [];
+  }
+
+  const childRoundIds = rounds.map(
+    (round) => round.execution_round_id,
+  );
+
+  const { data: roleMappings, error: roleMappingsError } = await (supabase as any)
+    .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+    .select("execution_round_id")
+    .in("execution_round_id", childRoundIds);
+
+  if (roleMappingsError) {
+    throw roleMappingsError;
+  }
+
+  const roleSpecificChildRoundIds = new Set(
+    (roleMappings ?? []).map(
+      (mapping: { execution_round_id: string }) =>
+        mapping.execution_round_id,
+    ),
+  );
+
+  /*
+   * Only child rounds without role mappings are actual batches.
+   *
+   * This keeps batches working for BOTH:
+   * - COMMON stages
+   * - ROLE_SPECIFIC stages
+   */
+  return rounds
+    .filter(
+      (round) =>
+        !roleSpecificChildRoundIds.has(round.execution_round_id),
+    )
+    .map((batch: any) => ({
       execution_round_id: batch.execution_round_id,
       parent_execution_round_id: batch.parent_execution_round_id,
       stage_number: batch.stage_number,
@@ -194,7 +252,7 @@ export class RecruitmentExecutionReadService {
       remarks: batch.remarks,
       participant_count: 0,
     }));
-  }
+}
 
   async getRoundRoleIds(executionRoundId: string): Promise<string[]> {
     const { data, error } = await (supabase as any)

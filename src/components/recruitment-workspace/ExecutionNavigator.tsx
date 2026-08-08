@@ -55,6 +55,36 @@ function sortRounds(rounds: RecruitmentExecutionRoundRow[]) {
   });
 }
 
+function getEffectiveStageNumber(
+  round: RecruitmentExecutionRoundRow,
+  rounds: RecruitmentExecutionRoundRow[],
+): number {
+  const roundById = new Map(
+    rounds.map((item) => [item.execution_round_id, item]),
+  );
+
+  let current = round;
+  const visited = new Set<string>();
+
+  while (current.parent_execution_round_id) {
+    if (visited.has(current.execution_round_id)) {
+      break;
+    }
+
+    visited.add(current.execution_round_id);
+
+    const parent = roundById.get(current.parent_execution_round_id);
+
+    if (!parent) {
+      break;
+    }
+
+    current = parent;
+  }
+
+  return current.stage_number;
+}
+
 function buildNavigatorModel(
   workspace: RecruitmentExecutionWorkspace,
 ): ExecutionNavigatorStageNode[] {
@@ -74,14 +104,37 @@ function buildNavigatorModel(
     roleLookup.set(mapping.execution_round_id, existing);
   });
 
-  const stageNumbers = [...new Set(workspace.rounds.map((r) => r.stage_number))].sort(
-    (a, b) => a - b,
-  );
+  const stageNumbers = [
+    ...new Set(
+      workspace.rounds.map((round) =>
+        getEffectiveStageNumber(round, workspace.rounds),
+      ),
+    ),
+  ].sort((a, b) => a - b);
 
   return stageNumbers.map((stageNumber) => {
     const rounds = workspace.rounds
-      .filter((r) => r.stage_number === stageNumber)
-      .sort((a, b) => a.round_order - b.round_order)
+      .filter(
+        (round) =>
+          getEffectiveStageNumber(round, workspace.rounds) === stageNumber,
+      )
+      .sort((a, b) => {
+        if (
+          a.parent_execution_round_id == null &&
+          b.parent_execution_round_id != null
+        ) {
+          return -1;
+        }
+
+        if (
+          a.parent_execution_round_id != null &&
+          b.parent_execution_round_id == null
+        ) {
+          return 1;
+        }
+
+        return a.round_order - b.round_order;
+      })
       .map((round) => ({
         id: round.execution_round_id,
         round,

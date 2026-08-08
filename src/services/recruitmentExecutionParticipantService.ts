@@ -21,6 +21,8 @@ export interface RecruitmentExecutionParticipantProvider {
 
   loadRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]>;
 
+  loadExecutionRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]>;
+
   loadExecutionBatches(executionId: string): Promise<RecruitmentExecutionBatch[]>;
 
   loadRoundParticipantIds(executionRoundId: string): Promise<string[]>;
@@ -95,45 +97,67 @@ export class RecruitmentExecutionParticipantService {
         studentIds,
       );
 
-    const { data: batchAssignments, error: batchAssignmentError } = await (supabase as any)
-      .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
-      .select(
-        `
-          execution_participant_id,
-        recruitment_execution_rounds (
-          execution_round_id,
-          parent_execution_round_id,
-          round_name,
-          scheduled_date,
-          scheduled_time
-        )
-      `,
-      );
+const executionBatches = await this.provider.loadExecutionBatches(
+  executionId,
+);
 
-    if (batchAssignmentError) {
-      throw batchAssignmentError;
-    }
+const executionBatchIds = new Set(
+  executionBatches.map(
+    (batch) => batch.execution_round_id,
+  ),
+);
 
-    const participantBatchMap = new Map<string, any>();
+const { data: batchAssignments, error: batchAssignmentError } = await (supabase as any)
+  .from(this.EXECUTION_ROUND_PARTICIPANTS_TABLE)
+  .select(
+    `
+      execution_participant_id,
+      recruitment_execution_rounds (
+        execution_round_id,
+        parent_execution_round_id,
+        round_name,
+        scheduled_date,
+        scheduled_time
+      )
+    `,
+  );
 
-    (batchAssignments ?? []).forEach((row: any) => {
-      const round = row.recruitment_execution_rounds;
+if (batchAssignmentError) {
+  throw batchAssignmentError;
+}
 
-      if (!round.parent_execution_round_id) {
-        return;
-      }
+const participantBatchMap = new Map<string, any>();
 
-      if (!round) {
-        return;
-      }
+(batchAssignments ?? []).forEach((row: any) => {
+  const round = row.recruitment_execution_rounds;
 
-      participantBatchMap.set(row.execution_participant_id, {
-        execution_round_id: round.execution_round_id,
-        batch_name: round.round_name,
-        batch_date: round.scheduled_date,
-        batch_time: round.scheduled_time,
-      });
-    });
+  if (!round) {
+    return;
+  }
+
+  /*
+   * IMPORTANT:
+   *
+   * Do NOT classify a child round as a batch merely because
+   * parent_execution_round_id exists.
+   *
+   * Only rounds explicitly resolved by loadExecutionBatches()
+   * are allowed to appear as execution_batch.
+   *
+   * This prevents role-specific parallel workspaces such as
+   * Stage 6 / Stage 7 / Stage 8 from appearing as batches.
+   */
+  if (!executionBatchIds.has(round.execution_round_id)) {
+    return;
+  }
+
+  participantBatchMap.set(row.execution_participant_id, {
+    execution_round_id: round.execution_round_id,
+    batch_name: round.round_name,
+    batch_date: round.scheduled_date,
+    batch_time: round.scheduled_time,
+  });
+});
 
     return participantRows.map((participant: any) => {
       const restriction = restrictionStates.get(participant.student_id);
@@ -242,16 +266,16 @@ return stageParticipants.filter((participant) =>
 );
   }
 
-  async loadRoundRoleMappings(
-    executionId: string,
-  ): Promise<RecruitmentExecutionRoundRoleMapping[]> {
-    const rounds = await this.provider.loadRounds(executionId);
+async loadRoundRoleMappings(
+  executionId: string,
+): Promise<RecruitmentExecutionRoundRoleMapping[]> {
+  const rounds = await this.provider.loadExecutionRounds(executionId);
 
-    if (rounds.length === 0) {
-      return [];
-    }
+  if (rounds.length === 0) {
+    return [];
+  }
 
-    const roundIds = rounds.map((r) => r.execution_round_id);
+  const roundIds = rounds.map((r) => r.execution_round_id);
 
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUND_ROLES_TABLE)

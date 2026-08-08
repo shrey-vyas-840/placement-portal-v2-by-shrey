@@ -119,6 +119,8 @@ class RecruitmentExecutionService {
 
     loadRounds: (executionId) => this.loadRounds(executionId),
 
+    loadExecutionRounds: (executionId) => this.loadExecutionRounds(executionId),
+
     loadExecutionBatches: (executionId) => this.loadExecutionBatches(executionId),
 
     loadRoundParticipantIds: (executionRoundId) => this.loadRoundParticipantIds(executionRoundId),
@@ -431,9 +433,24 @@ class RecruitmentExecutionService {
     remarks?: string | null;
     createdBy?: string | null;
   }): Promise<RecruitmentExecutionRoundRow> {
-    return this.roundService.createRoleSpecificParallelStage(input);
-  }
+    const parentRound = await this.getRound(input.parentExecutionRoundId);
 
+    if (!parentRound) {
+      throw new Error("Parent execution round not found.");
+    }
+
+    return this.roundService.createRoleSpecificParallelStage({
+      executionId: input.executionId,
+      sourceStageNumber: parentRound.stage_number,
+      roundName: input.roundName,
+      roleIds: input.roleIds,
+      scheduledDate: input.scheduledDate,
+      scheduledTime: input.scheduledTime,
+      venue: input.venue,
+      remarks: input.remarks,
+      createdBy: input.createdBy,
+    });
+  }
   async createRound(input: {
     executionId: string;
     creationMode: ExecutionRoundCreationMode;
@@ -1081,6 +1098,7 @@ class RecruitmentExecutionService {
     await this.initializeParticipants(executionId);
 
     const rounds = await this.loadRounds(executionId);
+    const workspaceRounds = await this.loadExecutionRounds(executionId);
 
     const participants = await this.loadParticipants(executionId);
 
@@ -1116,7 +1134,7 @@ class RecruitmentExecutionService {
     return {
       series,
       execution,
-      rounds,
+      rounds: workspaceRounds,
       participants,
       roundRoleMappings,
       historySummary,

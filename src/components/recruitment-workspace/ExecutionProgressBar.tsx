@@ -77,6 +77,35 @@ const connectorClasses = {
   ACTION_REQUIRED: "bg-red-600",
   NOT_CONFIGURED: "bg-slate-300",
 };
+
+function getEffectiveStageNumber(
+  round: RecruitmentExecutionRoundRow,
+  rounds: RecruitmentExecutionRoundRow[],
+): number {
+  const roundById = new Map(rounds.map((item) => [item.execution_round_id, item]));
+
+  let current = round;
+  const visited = new Set<string>();
+
+  while (current.parent_execution_round_id) {
+    if (visited.has(current.execution_round_id)) {
+      break;
+    }
+
+    visited.add(current.execution_round_id);
+
+    const parent = roundById.get(current.parent_execution_round_id);
+
+    if (!parent) {
+      break;
+    }
+
+    current = parent;
+  }
+
+  return current.stage_number;
+}
+
 export default function ExecutionProgressBar({
   rounds,
   roundRoleMappings,
@@ -91,9 +120,11 @@ export default function ExecutionProgressBar({
     const stageMap = new Map<number, StageProgressNode>();
 
     rounds.forEach((round) => {
-      if (!stageMap.has(round.stage_number)) {
-        stageMap.set(round.stage_number, {
-          stageNumber: round.stage_number,
+      const effectiveStageNumber = getEffectiveStageNumber(round, rounds);
+
+      if (!stageMap.has(effectiveStageNumber)) {
+        stageMap.set(effectiveStageNumber, {
+          stageNumber: effectiveStageNumber,
           status: "COMPLETED",
           rounds: [],
           configuredRoles: [],
@@ -102,7 +133,7 @@ export default function ExecutionProgressBar({
         });
       }
 
-      stageMap.get(round.stage_number)!.rounds.push(round);
+      stageMap.get(effectiveStageNumber)!.rounds.push(round);
     });
 
     stageMap.forEach((stage) => {
