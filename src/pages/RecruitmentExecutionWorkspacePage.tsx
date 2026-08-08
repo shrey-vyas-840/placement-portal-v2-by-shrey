@@ -134,8 +134,6 @@ export function RecruitmentExecutionWorkspacePage() {
 
   const [pendingExecutionRoundId, setPendingExecutionRoundId] = useState<string | null>(null);
 
-  const [assignmentExecutionBatchId, setAssignmentExecutionBatchId] = useState<string | null>(null);
-
   const [selectedExecutionBatchId, setSelectedExecutionBatchId] = useState<string | null>(null);
 
   const [createExecutionBatchOpen, setCreateExecutionBatchOpen] = useState(false);
@@ -770,6 +768,59 @@ export function RecruitmentExecutionWorkspacePage() {
     return shortlistedRoleSummary.filter((role) => currentRoundRoleIds.includes(role.driveRoleId));
   }, [currentRoundRoleIds, shortlistedRoleSummary]);
 
+  /**
+   * Roles available for creating a role-specific workspace under the
+   * currently selected parent round.
+   *
+   * IMPORTANT:
+   * workspaceData.remainingActiveRoles is transition-level state.
+   * It does NOT know which roles have already been consumed by sibling
+   * role-specific workspaces under this exact parent.
+   *
+   * Therefore the Create Round dialog must derive availability from:
+   *
+   *   active roles for the selected parent
+   *   -
+   *   roles already mapped to child rounds of that parent
+   */
+  const createRoundRoleOptions = useMemo<ActiveRoleOption[]>(() => {
+    if (!workspace || !selectedRound) {
+      return [];
+    }
+
+    const activeRoles = progressToNextRound ? currentRoundRoleSummary : shortlistedRoleSummary;
+
+    const childRoundIds = new Set(
+      workspace.rounds
+        .filter((round) => round.parent_execution_round_id === selectedRound.execution_round_id)
+        .map((round) => round.execution_round_id),
+    );
+
+    const configuredRoleIds = new Set(
+      workspace.roundRoleMappings
+        .filter((mapping) => childRoundIds.has(mapping.execution_round_id))
+        .map((mapping) => mapping.drive_role_id),
+    );
+
+    return activeRoles.map((role) => {
+      const alreadyConfigured = configuredRoleIds.has(role.driveRoleId);
+
+      return {
+        ...role,
+        disabled: alreadyConfigured,
+        disabledReason: alreadyConfigured
+          ? "This role is already configured in another workspace for this stage."
+          : undefined,
+      };
+    });
+  }, [
+    workspace,
+    selectedRound,
+    progressToNextRound,
+    currentRoundRoleSummary,
+    shortlistedRoleSummary,
+  ]);
+
   const workspaceParticipants = useMemo(() => {
     if (!selectedRound) {
       return [];
@@ -1392,6 +1443,13 @@ export function RecruitmentExecutionWorkspacePage() {
   }
 
   const workspaceData = workspace;
+
+  // `round_order` is an internal ordering value and must never be shown as the
+  // stage number. A stage can contain multiple execution workspaces and child
+  // batches. The dialog therefore receives the actual target stage number.
+  const createDialogStageNumber = selectedRound
+    ? getEffectiveStageNumber(selectedRound, workspace.rounds) + (progressToNextRound ? 1 : 0)
+    : 1;
 
   return (
     <div className="min-h-screen bg-background">
@@ -2305,16 +2363,8 @@ export function RecruitmentExecutionWorkspacePage() {
       <CreateRoundDialog
         open={createRoundOpen}
         mandatory={!hasRounds}
-        nextRoundOrder={(workspaceData?.rounds.length ?? 0) + 1}
-        activeRoles={
-          progressToNextRound
-            ? currentRoundRoleSummary
-            : workspaceData.remainingActiveRoles.map((role) => ({
-                driveRoleId: role.drive_role_id,
-                roleName: role.drive_role_name,
-                candidateCount: role.candidate_count,
-              }))
-        }
+        stageNumber={createDialogStageNumber}
+        activeRoles={createRoundRoleOptions}
         loading={saving}
 
         // configurationStage={currentConfigurationStage}
@@ -2424,8 +2474,7 @@ export function RecruitmentExecutionWorkspacePage() {
           } catch (error) {
             console.error(error);
             setProgressToNextRound(false);
-
-            toast.error(error instanceof Error ? error.message : "Unable to create round.");
+            throw error;
           } finally {
             setSaving(false);
           }
@@ -2618,16 +2667,13 @@ export function RecruitmentExecutionWorkspacePage() {
           setViewingExecutionBatchId(null);
         }}
         onContinue={async ({ executionRoundId, participantIds }) => {
-          if (!pendingExecutionRoundId) {
+          if (!executionRoundId) {
+            toast.error("Execution batch not selected.");
             return;
           }
 
           try {
             setLoading(true);
-
-            if (!assignmentExecutionBatchId) {
-              throw new Error("Execution batch not selected.");
-            }
 
             await recruitmentExecutionService.assignExecutionBatchParticipants({
               executionRoundId,
@@ -2721,7 +2767,6 @@ export function RecruitmentExecutionWorkspacePage() {
           setManageExecutionBatchesOpen(false);
           setViewingExecutionBatchId(executionRoundId);
           setSelectedExecutionBatchId(executionRoundId);
-          setAssignmentExecutionBatchId(executionRoundId);
           const batch = workspaceData.executionBatches.find(
             (b) => b.execution_round_id === executionRoundId,
           );

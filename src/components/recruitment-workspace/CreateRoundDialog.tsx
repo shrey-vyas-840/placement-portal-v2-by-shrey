@@ -6,6 +6,8 @@ export interface ActiveRoleOption {
   driveRoleId: string;
   roleName: string;
   candidateCount: number;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 interface CreateRoundDialogProps {
@@ -13,7 +15,7 @@ interface CreateRoundDialogProps {
 
   mandatory?: boolean;
 
-  nextRoundOrder: number;
+  stageNumber: number;
 
   activeRoles: ActiveRoleOption[];
 
@@ -39,7 +41,7 @@ interface CreateRoundDialogProps {
 export default function CreateRoundDialog({
   open,
   mandatory = false,
-  nextRoundOrder,
+  stageNumber,
   activeRoles,
   loading = false,
   commonStageLocked = false,
@@ -69,67 +71,92 @@ export default function CreateRoundDialog({
 
   const [configuredRoleIds, setConfiguredRoleIds] = useState<string[]>([]);
 
+  const [createError, setCreateError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!open) {
       return;
     }
 
     setRoundName("");
-    setRoundType("COMMON");
+    setRoundType(commonStageLocked ? "ROLE_SPECIFIC" : "COMMON");
     setScheduledDate("");
     setScheduledTime("");
     setVenue("");
     setRemarks("");
     setSelectedRoles([]);
-  }, [open]);
+    setConfiguredRoleIds([]);
+    setCreateError(null);
+  }, [open, commonStageLocked]);
 
   const commonRoleIds = useMemo(() => activeRoles.map((role) => role.driveRoleId), [activeRoles]);
 
   const remainingRoles = useMemo(() => {
-    return activeRoles.filter((role) => !configuredRoleIds.includes(role.driveRoleId));
+    return activeRoles.filter(
+      (role) => !role.disabled && !configuredRoleIds.includes(role.driveRoleId),
+    );
   }, [activeRoles, configuredRoleIds]);
 
-  const effectiveRoleIds = useMemo(() => {
-    return roundType === "COMMON" ? commonRoleIds : selectedRoles;
-  }, [roundType, commonRoleIds, selectedRoles]);
-
   const handleCreate = async () => {
+    setCreateError(null);
+
     if (!roundName.trim()) {
       toast.error("Round name is required.");
       return;
     }
 
-    if (roundType === "ROLE_SPECIFIC" && selectedRoles.length === 0) {
-      toast.error("Select at least one active role.");
-      return;
-    }
-
-    await onCreate({
-      roundName: roundName.trim(),
-      roundType,
-      scheduledDate: scheduledDate || null,
-      scheduledTime: scheduledTime || null,
-      venue: venue.trim(),
-      remarks: remarks.trim(),
-      roleIds: roundType === "COMMON" ? commonRoleIds : selectedRoles,
-    });
-
     if (roundType === "ROLE_SPECIFIC") {
-      setConfiguredRoleIds((previous) => [...new Set([...previous, ...selectedRoles])]);
+      const validSelectedRoleIds = selectedRoles.filter((roleId) =>
+        activeRoles.some((role) => role.driveRoleId === roleId && !role.disabled),
+      );
 
-      setRoundName("");
-      setScheduledDate("");
-      setScheduledTime("");
-      setVenue("");
-      setRemarks("");
-      setSelectedRoles([]);
+      if (validSelectedRoleIds.length === 0) {
+        toast.error("Select at least one active role.");
+        return;
+      }
 
-      if (remainingRoles.length > selectedRoles.length) {
-        toast.success(
-          "Role configured. Continue configuring the remaining active roles for this stage.",
+      if (validSelectedRoleIds.length !== selectedRoles.length) {
+        setSelectedRoles(validSelectedRoleIds);
+        toast.error(
+          "One or more selected roles are no longer active. Please review the selection.",
         );
         return;
       }
+    }
+
+    try {
+      await onCreate({
+        roundName: roundName.trim(),
+        roundType,
+        scheduledDate: scheduledDate || null,
+        scheduledTime: scheduledTime || null,
+        venue: venue.trim(),
+        remarks: remarks.trim(),
+        roleIds: roundType === "COMMON" ? commonRoleIds : selectedRoles,
+      });
+
+      if (roundType === "ROLE_SPECIFIC") {
+        setConfiguredRoleIds((previous) => [...new Set([...previous, ...selectedRoles])]);
+
+        setRoundName("");
+        setScheduledDate("");
+        setScheduledTime("");
+        setVenue("");
+        setRemarks("");
+        setSelectedRoles([]);
+
+        if (remainingRoles.length > selectedRoles.length) {
+          toast.success(
+            "Role configured. Continue configuring the remaining active roles for this stage.",
+          );
+          return;
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to create round.";
+
+      setCreateError(message);
+      toast.error(message);
     }
   };
 
@@ -152,12 +179,12 @@ export default function CreateRoundDialog({
               </p>
 
               <h2 className="mt-1 text-3xl font-bold">
-                {nextRoundOrder === 1 ? "Create First Round" : `Create Round ${nextRoundOrder}`}
+                {stageNumber === 1 ? "Create Stage 1" : `Create Stage ${stageNumber}`}
               </h2>
             </div>
 
             <span className="rounded-full bg-white/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm">
-              Stage Round {nextRoundOrder}
+              Stage {stageNumber}
             </span>
           </div>
         </div>
@@ -181,7 +208,9 @@ export default function CreateRoundDialog({
               <button
                 type="button"
                 disabled={commonStageLocked}
-                onClick={() => setRoundType("COMMON")}
+                onClick={() => {
+                  if (!commonStageLocked && !loading) setRoundType("COMMON");
+                }}
                 className={`rounded-2xl border p-4 text-left transition-all ${
                   roundType === "COMMON"
                     ? "border-blue-500 bg-blue-50 shadow-md"
@@ -201,7 +230,9 @@ export default function CreateRoundDialog({
 
               <button
                 type="button"
-                onClick={() => setRoundType("ROLE_SPECIFIC")}
+                onClick={() => {
+                  if (!loading) setRoundType("ROLE_SPECIFIC");
+                }}
                 className={`rounded-2xl border p-4 text-left transition-all ${
                   roundType === "ROLE_SPECIFIC"
                     ? "border-blue-500 bg-blue-50 shadow-md"
@@ -246,14 +277,20 @@ export default function CreateRoundDialog({
               </div>
 
               <div className="grid max-h-80 grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2">
-                {remainingRoles.map((role) => {
+                {activeRoles.map((role) => {
                   const checked = selectedRoles.includes(role.driveRoleId);
+                  const disabled = role.disabled || configuredRoleIds.includes(role.driveRoleId);
 
                   return (
                     <button
                       key={role.driveRoleId}
                       type="button"
+                      disabled={disabled}
                       onClick={() => {
+                        if (disabled) {
+                          return;
+                        }
+
                         if (checked) {
                           setSelectedRoles((prev) => prev.filter((id) => id !== role.driveRoleId));
                         } else {
@@ -261,9 +298,11 @@ export default function CreateRoundDialog({
                         }
                       }}
                       className={`rounded-2xl border p-4 text-left transition-all ${
-                        checked
-                          ? "border-blue-500 bg-blue-50 shadow-md"
-                          : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm"
+                        disabled
+                          ? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-60"
+                          : checked
+                            ? "border-blue-500 bg-blue-50 shadow-md"
+                            : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm"
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -276,21 +315,44 @@ export default function CreateRoundDialog({
                             👥 {role.candidateCount} Candidate
                             {role.candidateCount !== 1 ? "s" : ""}
                           </div>
+
+                          {disabled && (
+                            <div className="mt-2 text-xs font-semibold text-amber-700">
+                              🔒 {role.disabledReason ?? "Already configured for this stage."}
+                            </div>
+                          )}
                         </div>
 
                         <div
                           className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs ${
-                            checked
-                              ? "border-blue-600 bg-blue-600 text-white"
-                              : "border-slate-300 bg-white text-transparent"
+                            disabled
+                              ? "border-slate-300 bg-slate-200 text-slate-500"
+                              : checked
+                                ? "border-blue-600 bg-blue-600 text-white"
+                                : "border-slate-300 bg-white text-transparent"
                           }`}
                         >
-                          ✓
+                          {disabled ? "🔒" : "✓"}
                         </div>
                       </div>
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+          {createError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="text-lg">⚠️</div>
+
+                <div>
+                  <div className="text-sm font-semibold text-red-800">
+                    Unable to create execution round
+                  </div>
+
+                  <div className="mt-1 text-sm text-red-700">{createError}</div>
+                </div>
               </div>
             </div>
           )}
@@ -364,9 +426,11 @@ export default function CreateRoundDialog({
             onClick={() => void handleCreate()}
             className="rounded-xl mt-5 mb-5 bg-gradient-to-r from-blue-700 to-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
           >
-            {remainingRoles.length > 0
-              ? "→ Create & Configure Next Round"
-              : "Finish Stage Configuration"}
+            {roundType === "COMMON"
+              ? "Create Common Round"
+              : remainingRoles.length > selectedRoles.length
+                ? "→ Create & Configure Next Round"
+                : "Finish Stage Configuration"}
           </button>
         </div>
       </div>

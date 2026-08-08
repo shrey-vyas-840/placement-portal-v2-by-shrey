@@ -30,7 +30,7 @@ interface ExecutionModeDialogProps {
 
   onCancel: () => void;
 
-  onContinue: (executionMode: ExecutionMode) => void;
+  onContinue: (executionMode: ExecutionMode) => void | Promise<void>;
 }
 
 export default function ExecutionModeDialog({
@@ -48,7 +48,7 @@ export default function ExecutionModeDialog({
 
   onContinue,
 }: ExecutionModeDialogProps) {
-  const [mode, setMode] = useState<ExecutionMode>("SINGLE");
+  const [mode, setMode] = useState<ExecutionMode>(defaultMode);
 
   useEffect(() => {
     if (!open) return;
@@ -109,7 +109,17 @@ export default function ExecutionModeDialog({
             <Card
               role="button"
               tabIndex={0}
-              onClick={() => setMode("SINGLE")}
+              onClick={() => {
+                if (!loading) setMode("SINGLE");
+              }}
+              onKeyDown={(event) => {
+                if (!loading && (event.key === "Enter" || event.key === " ")) {
+                  event.preventDefault();
+                  setMode("SINGLE");
+                }
+              }}
+              aria-pressed={mode === "SINGLE"}
+              aria-disabled={loading}
               className={`cursor-pointer rounded-2xl border-2 bg-white shadow-sm transition-all duration-200 ${
                 mode === "SINGLE"
                   ? "border-blue-600 bg-blue-50 ring-2 ring-blue-200 shadow-lg"
@@ -131,7 +141,17 @@ export default function ExecutionModeDialog({
             <Card
               role="button"
               tabIndex={0}
-              onClick={() => setMode("MULTIPLE")}
+              onClick={() => {
+                if (!loading) setMode("MULTIPLE");
+              }}
+              onKeyDown={(event) => {
+                if (!loading && (event.key === "Enter" || event.key === " ")) {
+                  event.preventDefault();
+                  setMode("MULTIPLE");
+                }
+              }}
+              aria-pressed={mode === "MULTIPLE"}
+              aria-disabled={loading}
               className={`cursor-pointer rounded-2xl border-2 bg-white shadow-sm transition-all duration-200 ${
                 mode === "MULTIPLE"
                   ? "border-blue-600 bg-blue-50 ring-2 ring-blue-200 shadow-lg"
@@ -149,6 +169,12 @@ export default function ExecutionModeDialog({
                 </p>
               </div>
             </Card>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-800">
+            <span className="font-semibold">Execution strategy:</span>{" "}
+            this controls how participants are conducted in this stage. It does not create
+            another recruitment stage.
           </div>
         </div>
         <DialogFooter className="flex items-center justify-between border-t border-slate-200 bg-white px-8 py-5">

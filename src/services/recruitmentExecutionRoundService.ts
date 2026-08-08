@@ -218,7 +218,7 @@ export class RecruitmentExecutionRoundService {
 
   async createRoleSpecificParallelStage(input: {
     executionId: string;
-    sourceStageNumber: number;
+    parentExecutionRoundId: string;
     roundName: string;
     roleIds: string[];
     scheduledDate?: string | null;
@@ -229,32 +229,20 @@ export class RecruitmentExecutionRoundService {
   }): Promise<RecruitmentExecutionRoundRow> {
     const allRounds = await this.provider.loadExecutionRounds(input.executionId);
 
-    const targetStageNumber = input.sourceStageNumber + 1;
-
-    const parentCandidates = allRounds.filter(
-      (round) =>
-        round.stage_number === targetStageNumber &&
-        round.parent_execution_round_id === null,
+    const parent = allRounds.find(
+      (round) => round.execution_round_id === input.parentExecutionRoundId,
     );
 
-    if (parentCandidates.length === 0) {
-      throw new Error(
-        `Stage ${targetStageNumber} parent execution stage does not exist.`,
-      );
+    if (!parent) {
+      throw new Error("Parent execution stage does not exist.");
     }
 
-    if (parentCandidates.length > 1) {
-      throw new Error(
-        `Stage ${targetStageNumber} has multiple parent execution stages.`,
-      );
+    if (parent.parent_execution_round_id !== null) {
+      throw new Error("Role-specific parallel stages must use a parent execution stage.");
     }
-
-    const parent = parentCandidates[0];
 
     if (input.roleIds.length === 0) {
-      throw new Error(
-        "At least one role must be selected for a role-specific execution stage.",
-      );
+      throw new Error("At least one role must be selected for a role-specific execution stage.");
     }
 
     // Validate role exclusivity before creating the child round so a rejected
@@ -262,9 +250,7 @@ export class RecruitmentExecutionRoundService {
     const uniqueRoleIds = [...new Set(input.roleIds)];
 
     if (uniqueRoleIds.length !== input.roleIds.length) {
-      throw new Error(
-        "Duplicate roles cannot be assigned to the same execution workspace.",
-      );
+      throw new Error("Duplicate roles cannot be assigned to the same execution workspace.");
     }
 
     const { data: childRounds, error: childRoundsError } = await (supabase as any)
@@ -291,13 +277,9 @@ export class RecruitmentExecutionRoundService {
         throw error;
       }
 
-      const assignedRoleIds = new Set(
-        (data ?? []).map((row: any) => row.drive_role_id),
-      );
+      const assignedRoleIds = new Set((data ?? []).map((row: any) => row.drive_role_id));
 
-      const duplicateRole = uniqueRoleIds.find((roleId) =>
-        assignedRoleIds.has(roleId),
-      );
+      const duplicateRole = uniqueRoleIds.find((roleId) => assignedRoleIds.has(roleId));
 
       if (duplicateRole) {
         throw new Error(
@@ -306,8 +288,7 @@ export class RecruitmentExecutionRoundService {
       }
     }
 
-    const nextRoundOrder =
-      Math.max(...allRounds.map((round) => round.round_order), 0) + 1;
+    const nextRoundOrder = Math.max(...allRounds.map((round) => round.round_order), 0) + 1;
 
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)
@@ -343,6 +324,20 @@ export class RecruitmentExecutionRoundService {
       .insert(roleRows);
 
     if (roleMappingError) {
+      // The execution round and its role mappings form one logical creation
+      // operation. If the role-mapping insert fails, remove the newly-created
+      // child so it cannot be misclassified later as a TRUE EXECUTION BATCH.
+      const { error: rollbackError } = await (supabase as any)
+        .from(this.EXECUTION_ROUNDS_TABLE)
+        .delete()
+        .eq("execution_round_id", round.execution_round_id);
+
+      if (rollbackError) {
+        throw new Error(
+          `Unable to assign roles to the new execution workspace, and rollback failed: ${rollbackError.message ?? rollbackError}`,
+        );
+      }
+
       throw roleMappingError;
     }
 

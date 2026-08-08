@@ -422,35 +422,36 @@ class RecruitmentExecutionService {
     return this.roundService.createExecutionChildBatch(input);
   }
 
-  async createRoleSpecificParallelStage(input: {
-    executionId: string;
-    parentExecutionRoundId: string;
-    roundName: string;
-    roleIds: string[];
-    scheduledDate?: string | null;
-    scheduledTime?: string | null;
-    venue?: string | null;
-    remarks?: string | null;
-    createdBy?: string | null;
-  }): Promise<RecruitmentExecutionRoundRow> {
-    const parentRound = await this.getRound(input.parentExecutionRoundId);
+async createRoleSpecificParallelStage(input: {
+  executionId: string;
+  parentExecutionRoundId: string;
+  roundName: string;
+  roleIds: string[];
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  venue?: string | null;
+  remarks?: string | null;
+  createdBy?: string | null;
+}): Promise<RecruitmentExecutionRoundRow> {
+  const parentRound = await this.getRound(input.parentExecutionRoundId);
 
-    if (!parentRound) {
-      throw new Error("Parent execution round not found.");
-    }
-
-    return this.roundService.createRoleSpecificParallelStage({
-      executionId: input.executionId,
-      sourceStageNumber: parentRound.stage_number,
-      roundName: input.roundName,
-      roleIds: input.roleIds,
-      scheduledDate: input.scheduledDate,
-      scheduledTime: input.scheduledTime,
-      venue: input.venue,
-      remarks: input.remarks,
-      createdBy: input.createdBy,
-    });
+  if (!parentRound) {
+    throw new Error("Parent execution round not found.");
   }
+
+  return this.roundService.createRoleSpecificParallelStage({
+    executionId: input.executionId,
+    parentExecutionRoundId: input.parentExecutionRoundId,
+    roundName: input.roundName,
+    roleIds: input.roleIds,
+    scheduledDate: input.scheduledDate,
+    scheduledTime: input.scheduledTime,
+    venue: input.venue,
+    remarks: input.remarks,
+    createdBy: input.createdBy,
+  });
+}
+
   async createRound(input: {
     executionId: string;
     creationMode: ExecutionRoundCreationMode;
