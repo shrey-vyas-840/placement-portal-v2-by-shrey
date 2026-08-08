@@ -216,6 +216,116 @@ export class RecruitmentExecutionRoundService {
     );
   }
 
+  async createRoleSpecificParallelStage(input: {
+    executionId: string;
+    parentExecutionRoundId: string;
+    roundName: string;
+    roleIds: string[];
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    const parent = await this.provider.getRound(input.parentExecutionRoundId);
+
+    if (!parent) {
+      throw new Error("Parent execution stage not found.");
+    }
+
+    if (parent.parent_execution_round_id !== null) {
+      throw new Error("Role-specific parallel stages must use a parent execution stage.");
+    }
+
+    if (input.roleIds.length === 0) {
+      throw new Error("At least one role must be selected for a role-specific execution stage.");
+    }
+
+    // Validate role exclusivity before creating the child round so a rejected
+    // role assignment cannot leave behind an orphan execution round.
+    const uniqueRoleIds = [...new Set(input.roleIds)];
+
+    if (uniqueRoleIds.length !== input.roleIds.length) {
+      throw new Error("Duplicate roles cannot be assigned to the same execution workspace.");
+    }
+
+    const { data: childRounds, error: childRoundsError } = await (supabase as any)
+      .from(this.EXECUTION_ROUNDS_TABLE)
+      .select("execution_round_id")
+      .eq("execution_id", input.executionId)
+      .eq("parent_execution_round_id", parent.execution_round_id);
+
+    if (childRoundsError) {
+      throw childRoundsError;
+    }
+
+    const childRoundIds = (childRounds ?? []).map(
+      (round: { execution_round_id: string }) => round.execution_round_id,
+    );
+
+    if (childRoundIds.length > 0) {
+      const { data, error } = await (supabase as any)
+        .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+        .select("drive_role_id")
+        .in("execution_round_id", childRoundIds);
+
+      if (error) {
+        throw error;
+      }
+
+      const assignedRoleIds = new Set((data ?? []).map((row: any) => row.drive_role_id));
+      const duplicateRole = uniqueRoleIds.find((roleId) => assignedRoleIds.has(roleId));
+
+      if (duplicateRole) {
+        throw new Error(
+          "One or more selected roles are already assigned to another workspace in this stage.",
+        );
+      }
+    }
+
+    const allRounds = await this.provider.loadExecutionRounds(input.executionId);
+    const nextRoundOrder = Math.max(...allRounds.map((round) => round.round_order), 0) + 1;
+
+    const { data, error } = await (supabase as any)
+      .from(this.EXECUTION_ROUNDS_TABLE)
+      .insert({
+        execution_id: input.executionId,
+        stage_number: parent.stage_number,
+        round_order: nextRoundOrder,
+        round_name: input.roundName,
+        scope: "ROLE_SPECIFIC",
+        scheduled_date: input.scheduledDate ?? parent.scheduled_date,
+        scheduled_time: input.scheduledTime ?? parent.scheduled_time,
+        venue: input.venue ?? parent.venue,
+        remarks: input.remarks ?? parent.remarks,
+        created_by: input.createdBy ?? null,
+        parent_execution_round_id: parent.execution_round_id,
+      })
+      .select()
+      .single();
+
+    const round = requireData(
+      data as RecruitmentExecutionRoundRow | null,
+      error,
+      "createRoleSpecificParallelStage",
+    );
+
+    const roleRows = uniqueRoleIds.map((roleId) => ({
+      execution_round_id: round.execution_round_id,
+      drive_role_id: roleId,
+    }));
+
+    const { error: roleMappingError } = await (supabase as any)
+      .from(this.EXECUTION_ROUND_ROLE_MAPPING_TABLE)
+      .insert(roleRows);
+
+    if (roleMappingError) {
+      throw roleMappingError;
+    }
+
+    return round;
+  }
+
   private async loadExecutionRounds(executionId: string): Promise<RecruitmentExecutionRoundRow[]> {
     const { data, error } = await (supabase as any)
       .from(this.EXECUTION_ROUNDS_TABLE)

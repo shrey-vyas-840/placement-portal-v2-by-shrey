@@ -420,6 +420,20 @@ class RecruitmentExecutionService {
     return this.roundService.createExecutionChildBatch(input);
   }
 
+  async createRoleSpecificParallelStage(input: {
+    executionId: string;
+    parentExecutionRoundId: string;
+    roundName: string;
+    roleIds: string[];
+    scheduledDate?: string | null;
+    scheduledTime?: string | null;
+    venue?: string | null;
+    remarks?: string | null;
+    createdBy?: string | null;
+  }): Promise<RecruitmentExecutionRoundRow> {
+    return this.roundService.createRoleSpecificParallelStage(input);
+  }
+
   async createRound(input: {
     executionId: string;
     creationMode: ExecutionRoundCreationMode;
